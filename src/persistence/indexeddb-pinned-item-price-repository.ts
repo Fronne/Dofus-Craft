@@ -1,0 +1,33 @@
+import type { PinnedItemPrice } from '../domain/types';
+import { createServerScopedPriceStore } from './server-scoped-price-store';
+
+export interface PinnedItemPriceRepository {
+  get(serverId: string, itemId: string): Promise<PinnedItemPrice | undefined>;
+  getMany(serverId: string, itemIds: string[]): Promise<Record<string, PinnedItemPrice>>;
+  save(serverId: string, itemId: string, marketPriceKamas: number): Promise<PinnedItemPrice>;
+  removeAllForItem(itemId: string): Promise<void>;
+}
+
+const store = createServerScopedPriceStore('pinned-item-prices-by-server');
+
+export const pinnedItemPrices: PinnedItemPriceRepository = {
+  async get(serverId, itemId) {
+    const record = await store.get(serverId, itemId);
+    return record && { itemId, marketPriceKamas: record.amountKamas, updatedAt: record.updatedAt };
+  },
+  async getMany(serverId, itemIds) {
+    const records = await store.getMany(serverId, itemIds);
+    const output: Record<string, PinnedItemPrice> = {};
+    for (const [itemId, record] of Object.entries(records)) {
+      output[itemId] = { itemId, marketPriceKamas: record.amountKamas, updatedAt: record.updatedAt };
+    }
+    return output;
+  },
+  async save(serverId, itemId, marketPriceKamas) {
+    const record = await store.save(serverId, itemId, marketPriceKamas);
+    return { itemId, marketPriceKamas: record.amountKamas, updatedAt: record.updatedAt };
+  },
+  async removeAllForItem(itemId) {
+    await store.removeAllForEntry(itemId);
+  },
+};

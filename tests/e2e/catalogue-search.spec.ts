@@ -1,0 +1,45 @@
+import { expect, test } from '@playwright/test';
+
+test('finds Strigide and Volkorne items in the real catalogue flow', async ({ page }) => {
+  await page.goto('/');
+  const search = page.getByLabel('Rechercher un objet');
+
+  await search.fill('Amulette du Strigide');
+  await expect(page.getByRole('button', { name: /Amulette du Strigide/ })).toBeVisible({ timeout: 30_000 });
+
+  await search.fill('Strigide');
+  await expect(page.getByRole('button', { name: /Strigide/ }).first()).toBeVisible({ timeout: 30_000 });
+
+  await search.fill('Volkorne');
+  await expect(page.getByRole('button', { name: /Volkorne/ }).first()).toBeVisible({ timeout: 30_000 });
+});
+
+test('shows aligned resource images and formats price input', async ({ page }) => {
+  await page.goto('/');
+  const search = page.getByLabel('Rechercher un objet');
+  await search.fill('Amulette du Strigide');
+
+  const item = page.getByRole('button', { name: /Amulette du Strigide/ });
+  await expect(item).toBeVisible({ timeout: 30_000 });
+  await item.click();
+
+  await expect(page.getByRole('heading', { name: 'Vos prix' })).toBeVisible({ timeout: 30_000 });
+  const rows = page.locator('.price-line');
+  await expect(rows).toHaveCount(8);
+  const images = rows.locator('.resource-display img');
+  await expect(images).toHaveCount(8);
+
+  const firstImage = await images.first().boundingBox();
+  expect(firstImage).not.toBeNull();
+  for (let index = 1; index < await images.count(); index += 1) {
+    const image = await images.nth(index).boundingBox();
+    expect(image).not.toBeNull();
+    expect(image?.width).toBe(firstImage?.width);
+    expect(image?.height).toBe(firstImage?.height);
+  }
+
+  const price = rows.first().locator('input');
+  await price.fill('1000');
+  await expect(price).toHaveValue('1 000');
+  await expect(page.getByRole('heading', { name: 'Recette' })).toBeVisible();
+});

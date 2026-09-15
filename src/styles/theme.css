@@ -1,0 +1,148 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #edf2f7;
+  background: #0b1018;
+  font-synthesis: none;
+  --bg: #0b1018;
+  --bg-raised: #111927;
+  --panel: rgba(19, 29, 44, .88);
+  --panel-strong: #172236;
+  --panel-soft: #202d42;
+  --text: #edf2f7;
+  --text-muted: #93a4ba;
+  --text-faint: #6f8097;
+
+  /* Accent color presets: one base + "bright" hue per theme, chosen so it
+     stays readable on both dark and light backgrounds. --gold/--gold-bright
+     below always point at the active preset for the active theme; every
+     other accent-derived token (--gold-soft, --border-strong) is computed
+     from --gold, so switching preset or theme updates the whole app. */
+  --accent-blue-dark: #5b9dee;
+  --accent-blue-bright-dark: #7db4f5;
+  --accent-blue-light: #2f6fd1;
+  --accent-blue-bright-light: #1f57ad;
+  --accent-red-dark: #e2685f;
+  --accent-red-bright-dark: #ef8880;
+  --accent-red-light: #c53d33;
+  --accent-red-bright-light: #a52e26;
+  --accent-green-dark: #4fbf74;
+  --accent-green-bright-dark: #74d694;
+  --accent-green-light: #2f8f4e;
+  --accent-green-bright-light: #1f7038;
+  --accent-purple-dark: #a480e0;
+  --accent-purple-bright-dark: #bb9cee;
+  --accent-purple-light: #7c4fc7;
+  --accent-purple-bright-light: #6238a8;
+  --accent-orange-dark: #e2984f;
+  --accent-orange-bright-dark: #efb474;
+  --accent-orange-light: #c26a1f;
+  --accent-orange-bright-light: #a3560f;
+
+  --gold: var(--accent-blue-dark);
+  --gold-bright: var(--accent-blue-bright-dark);
+  --gold-soft: color-mix(in srgb, var(--gold) 13%, transparent);
+  --border-strong: color-mix(in srgb, var(--gold) 55%, transparent);
+
+  --blue: #65a8d9;
+  --teal: #65c2b4;
+  --danger: #f38b8b;
+  --danger-soft: rgba(243, 139, 139, .14);
+  --success: #4fbf74;
+  --success-soft: rgba(79, 191, 116, .14);
+  --warning: #e2b04f;
+  --warning-soft: rgba(226, 176, 79, .14);
+  --border: rgba(148, 171, 201, .18);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .16), 0 1px 1px rgba(0, 0, 0, .08);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, .22);
+  --shadow: 0 12px 32px rgba(0, 0, 0, .28);
+  --panel-gradient: var(--panel);
+  --input-bg: rgba(7, 13, 23, .55);
+  --button-bg: rgba(255, 255, 255, .035);
+  --icon-bg: rgba(101, 168, 217, .14);
+  --image-bg: rgba(255, 255, 255, .06);
+  --inner-bg: rgba(7, 13, 23, .22);
+  --result-gradient: var(--panel);
+
+  /* Spacing scale (4px base). Prefer these over ad hoc rem values in new/edited rules. */
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* Corner radius scale — subtle, not "pill" everywhere. */
+  --radius-sm: .5rem;
+  --radius-md: .75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+
+  /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
+  --transition-fast: 120ms ease;
+  --transition-base: 180ms ease;
+}
+
+:root[data-accent="red"]    { --gold: var(--accent-red-dark);    --gold-bright: var(--accent-red-bright-dark); }
+:root[data-accent="green"]  { --gold: var(--accent-green-dark);  --gold-bright: var(--accent-green-bright-dark); }
+:root[data-accent="purple"] { --gold: var(--accent-purple-dark); --gold-bright: var(--accent-purple-bright-dark); }
+:root[data-accent="orange"] { --gold: var(--accent-orange-dark); --gold-bright: var(--accent-orange-bright-dark); }
+
+:root[data-theme="light"] {
+  color: #253246;
+  background: #eef1f5;
+  --bg: #eef1f5;
+  --bg-raised: #e5e9ef;
+  --panel: rgba(255, 255, 255, .92);
+  --panel-strong: #ffffff;
+  --panel-soft: #e5eaf1;
+  --text: #253246;
+  --text-muted: #5f6d80;
+  --text-faint: #8491a2;
+  --gold: var(--accent-blue-light);
+  --gold-bright: var(--accent-blue-bright-light);
+  --blue: #367cae;
+  --teal: #217d78;
+  --danger: #b94b4b;
+  --danger-soft: rgba(185, 75, 75, .1);
+  --success: #2f8f4e;
+  --success-soft: rgba(47, 143, 78, .1);
+  --warning: #a3760f;
+  --warning-soft: rgba(163, 118, 15, .1);
+  --border: rgba(45, 67, 94, .16);
+  --shadow-sm: 0 1px 2px rgba(53, 69, 91, .06), 0 1px 1px rgba(53, 69, 91, .04);
+  --shadow-md: 0 6px 16px rgba(53, 69, 91, .1);
+  --shadow: 0 10px 28px rgba(53, 69, 91, .16);
+  --panel-gradient: var(--panel);
+  --input-bg: rgba(232, 237, 244, .78);
+  --button-bg: rgba(39, 62, 90, .045);
+  --icon-bg: rgba(54, 124, 174, .11);
+  --image-bg: rgba(39, 62, 90, .07);
+  --inner-bg: rgba(224, 230, 238, .48);
+  --result-gradient: var(--panel);
+}
+
+:root[data-theme="light"][data-accent="red"]    { --gold: var(--accent-red-light);    --gold-bright: var(--accent-red-bright-light); }
+:root[data-theme="light"][data-accent="green"]  { --gold: var(--accent-green-light);  --gold-bright: var(--accent-green-bright-light); }
+:root[data-theme="light"][data-accent="purple"] { --gold: var(--accent-purple-light); --gold-bright: var(--accent-purple-bright-light); }
+:root[data-theme="light"][data-accent="orange"] { --gold: var(--accent-orange-light); --gold-bright: var(--accent-orange-bright-light); }
+
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { font-size: 16px; line-height: 1.5; }
+button, input, select { font: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+::selection { background: var(--gold-soft); color: var(--gold-bright); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
