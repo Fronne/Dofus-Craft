@@ -1,7 +1,10 @@
 type CacheEntry<T> = { value: T; expiresAt: number };
 const cache = new Map<string, CacheEntry<unknown>>();
 const pending = new Map<string, Promise<unknown>>();
-const TTL = 10 * 60 * 1000;
+// DofusDB's catalogue barely changes (roughly once every two weeks), and this cache lives only
+// in memory anyway (cleared on reload), so a long TTL just avoids needless refetches within a
+// single long-lived tab without any real staleness risk.
+const TTL = 24 * 60 * 60 * 1000;
 
 export function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
   const current = cache.get(key);

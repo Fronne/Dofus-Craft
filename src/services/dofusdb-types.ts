@@ -67,3 +67,11 @@ export type DofusDbPage<T> = {
   skip: number;
   data: T[];
 };
+
+export type DofusDbServer = {
+  id: number;
+  language?: string;
+  gameTypeId?: number;
+  monoAccount?: boolean;
+  name?: DofusDbLocalizedText;
+};

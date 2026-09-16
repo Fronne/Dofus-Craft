@@ -1,11 +1,12 @@
 import type { PinnedItemPrice } from '../domain/types';
 import { createServerScopedPriceStore } from './server-scoped-price-store';
 
-export interface PinnedItemPriceRepository {
+interface PinnedItemPriceRepository {
   get(serverId: string, itemId: string): Promise<PinnedItemPrice | undefined>;
   getMany(serverId: string, itemIds: string[]): Promise<Record<string, PinnedItemPrice>>;
   save(serverId: string, itemId: string, marketPriceKamas: number): Promise<PinnedItemPrice>;
   removeAllForItem(itemId: string): Promise<void>;
+  listAllForServer(serverId: string): Promise<PinnedItemPrice[]>;
 }
 
 const store = createServerScopedPriceStore('pinned-item-prices-by-server');
@@ -29,5 +30,13 @@ export const pinnedItemPrices: PinnedItemPriceRepository = {
   },
   async removeAllForItem(itemId) {
     await store.removeAllForEntry(itemId);
+  },
+  async listAllForServer(serverId) {
+    const records = await store.listAllForServer(serverId);
+    return records.map((record) => ({
+      itemId: record.entryId,
+      marketPriceKamas: record.amountKamas,
+      updatedAt: record.updatedAt,
+    }));
   },
 };

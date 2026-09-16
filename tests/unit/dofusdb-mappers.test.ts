@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDofusDbItemKind, mapDofusDbCategories, mapDofusDbItem, mapDofusDbResource } from '../../src/services/dofusdb-mappers';
+import { getDofusDbItemKind, mapDofusDbCategories, mapDofusDbItem, mapDofusDbResource, mapDofusDbServers } from '../../src/services/dofusdb-mappers';
 
 const equipment = {
   id: 2425,
@@ -38,23 +38,8 @@ describe('DofusDB catalogue classification', () => {
         id: 'equipment-type-2',
         label: 'Arme',
         typeIds: [2, 3, 4, 5, 6, 7, 8, 19, 20, 21, 22, 114, 271],
-        iconUrl: 'https://api.dofusdb.fr/img/items/6007.png',
       }),
     ]);
-  });
-
-  it('assigns verified DofusDB item images to category icons', () => {
-    const categories = mapDofusDbCategories([
-      { id: 1, categoryId: 0, name: { fr: 'Amulette' }, superType: { id: 1, positions: [0], name: { fr: 'Amulette' } } },
-      { id: 151, categoryId: 0, name: { fr: 'Trophée' }, superType: { id: 13, positions: [9], name: { fr: 'Dofus / Trophée / Prysmaradite' } } },
-      { id: 217, categoryId: 0, name: { fr: 'Prysmaradite' }, superType: { id: 13, positions: [9], name: { fr: 'Dofus / Trophée / Prysmaradite' } } },
-    ]);
-
-    expect(categories).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'equipment-type-1', iconUrl: 'https://api.dofusdb.fr/img/items/1016.png' }),
-      expect.objectContaining({ id: 'equipment-type-151', iconUrl: 'https://api.dofusdb.fr/img/items/151002.png' }),
-      expect.objectContaining({ id: 'equipment-type-217', iconUrl: 'https://api.dofusdb.fr/img/items/217032.png' }),
-    ]));
   });
 
   it('uses each real DofusDB super type for equipment categories', () => {
@@ -71,7 +56,7 @@ describe('DofusDB catalogue classification', () => {
     ]);
   });
 
-  it('excludes Dofus while keeping trophies and prysmaradites', () => {
+  it('excludes Dofus while merging trophies and prysmaradites into one Trophée category', () => {
     const types = [
       { id: 23, categoryId: 0, name: { fr: 'Dofus' }, superType: { id: 13, positions: [9], name: { fr: 'Dofus / Trophée / Prysmaradite' } } },
       { id: 151, categoryId: 0, name: { fr: 'Trophée' }, superType: { id: 13, positions: [9], name: { fr: 'Dofus / Trophée / Prysmaradite' } } },
@@ -79,8 +64,7 @@ describe('DofusDB catalogue classification', () => {
     ];
 
     expect(mapDofusDbCategories(types).map(({ id, label, typeIds }) => ({ id, label, typeIds }))).toEqual([
-      { id: 'equipment-type-151', label: 'Trophée', typeIds: [151] },
-      { id: 'equipment-type-217', label: 'Prysmaradite', typeIds: [217] },
+      { id: 'equipment-type-151', label: 'Trophée', typeIds: [151, 217] },
     ]);
     expect(getDofusDbItemKind({
       id: 7754,
@@ -91,6 +75,11 @@ describe('DofusDB catalogue classification', () => {
       id: 12713,
       name: { fr: 'Acrobate' },
       type: { id: 151, categoryId: 0, superTypeId: 13 },
+    })).toMatchObject({ kind: 'Equipment', categoryId: 'equipment-type-151' });
+    expect(mapDofusDbItem({
+      id: 12714,
+      name: { fr: 'Prysmaradite de test' },
+      type: { id: 217, categoryId: 0, superTypeId: 13 },
     })).toMatchObject({ kind: 'Equipment', categoryId: 'equipment-type-151' });
   });
 
@@ -176,5 +165,34 @@ describe('DofusDB catalogue classification', () => {
       name: { fr: '(MJ) timer' },
       type: { superType: { id: 26, name: { fr: 'Certificat' } } },
     })).toBeUndefined();
+  });
+});
+
+describe('DofusDB server classification', () => {
+  it('sorts permanent servers into mono-account and multi-account, straight from the API flag', () => {
+    const servers = mapDofusDbServers([
+      { id: 351, gameTypeId: 0, monoAccount: false, name: { fr: 'Brial' } },
+      { id: 354, gameTypeId: 0, monoAccount: true, name: { fr: 'Mikhal' } },
+      { id: 291, gameTypeId: 0, monoAccount: false, name: { fr: 'Imagiro' } },
+      { id: 295, gameTypeId: 0, monoAccount: true, name: { fr: 'Draconiros' } },
+    ]);
+
+    expect(servers).toEqual([
+      { id: 'brial', name: 'Brial', type: 'multi' },
+      { id: 'draconiros', name: 'Draconiros', type: 'mono' },
+      { id: 'imagiro', name: 'Imagiro', type: 'multi' },
+      { id: 'mikhal', name: 'Mikhal', type: 'mono' },
+    ]);
+  });
+
+  it('excludes event, Retro and flagged-inactive servers', () => {
+    const servers = mapDofusDbServers([
+      { id: 354, gameTypeId: 0, monoAccount: true, name: { fr: 'Mikhal' } },
+      { id: 909, gameTypeId: 3, monoAccount: false, name: { fr: 'Speed Rush 1' } },
+      { id: 501, gameTypeId: 2, monoAccount: false, name: { fr: 'Kidibom' } },
+      { id: 800, gameTypeId: 0, monoAccount: false, name: { fr: 'Shukrute', en: '[!] Shukrute' } },
+    ]);
+
+    expect(servers.map((server) => server.name)).toEqual(['Mikhal']);
   });
 });

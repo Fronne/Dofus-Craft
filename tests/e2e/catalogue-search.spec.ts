@@ -41,5 +41,5 @@ test('shows aligned resource images and formats price input', async ({ page }) =
   const price = rows.first().locator('input');
   await price.fill('1000');
   await expect(price).toHaveValue('1 000');
-  await expect(page.getByRole('heading', { name: 'Recette' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible();
 });

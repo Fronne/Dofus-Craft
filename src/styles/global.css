@@ -29,7 +29,7 @@ small { display: block; margin-top: .75rem; font-size: .8rem; }
 * { box-sizing: border-box; }
 button, a { transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast); }
 
-/* ---------- App shell (sidebar + topbar) ---------- */
+/* ---------- App shell (sidebar) ---------- */
 
 .app-shell {
   display: flex;
@@ -44,6 +44,16 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   padding: var(--space-5) var(--space-4);
   border-right: 1px solid var(--border);
   background: var(--panel-strong);
+  /* height: 100vh is required, not decorative: without it the flex row's default align-items:
+     stretch matches .app-nav's box to .app-shell-main's full content height, so on a page taller
+     than the viewport the sticky box itself becomes page-tall too. Content laid out inside it
+     (in particular .app-nav-footer, pushed to the box's bottom by .app-nav-list's flex: 1) then
+     sits far below the viewport, invisible until you scroll all the way to the bottom of the
+     page. Pinning the box to exactly one viewport tall keeps its own bottom edge — and anything
+     flex-pushed to it — aligned with the viewport's bottom at all times. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .app-nav-brand {
@@ -67,7 +77,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .app-nav-brand-name { font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; color: var(--text); }
 .app-nav-brand-accent { color: var(--gold-bright); }
 
-.app-nav-list { display: flex; flex-direction: column; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
+.app-nav-list { display: flex; flex-direction: column; flex: 1 1 auto; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
 .app-nav-link {
   display: flex;
   align-items: center;
@@ -88,28 +98,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 .app-shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 
-.app-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--border);
-  background: var(--panel-strong);
-}
-.app-topbar-server { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; min-width: 0; }
-.app-topbar-actions { display: flex; align-items: center; gap: var(--space-2); flex: 0 0 auto; }
-.app-server-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: .35rem .75rem;
-  border-radius: var(--radius-pill);
-  background: var(--panel-soft);
-  color: var(--text-muted);
-  font-size: .82rem;
-  white-space: nowrap;
-}
-.app-server-badge strong { color: var(--text); font-weight: 700; }
+.app-nav-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex: 0 0 auto; }
+.app-nav-version { color: var(--text-faint); font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
 
 .app-page { flex: 1 1 auto; max-width: 1180px; width: 100%; margin: 0 auto; padding: var(--space-6); }
 
@@ -169,9 +159,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   font-weight: 750;
   font-size: .92rem;
 }
-.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-success { background: var(--panel-soft); color: var(--success); }
 .badge-warning { background: var(--warning-soft); color: var(--warning); }
 .badge-neutral { background: var(--panel-soft); color: var(--text-muted); }
+.badge-with-hint { display: flex; flex-direction: column; gap: .3rem; }
 
 /* ---------- Panels / cards ---------- */
 
@@ -221,20 +212,21 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .search-primary input:focus { outline: 2px solid var(--gold-soft); outline-offset: 1px; }
 
 .filters-panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  align-items: start;
+  gap: var(--space-5);
   margin: 0;
   padding: var(--space-4);
   border: 0;
   border-top: 1px solid var(--border);
 }
 .filters-panel legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.level-range { display: grid; grid-template-columns: repeat(2, minmax(110px, 160px)); gap: .75rem; }
+.level-filters { display: flex; flex-direction: column; gap: .75rem; }
+.level-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .level-range input { width: 100%; box-sizing: border-box; }
 .reset-filters {
-  justify-self: start;
+  align-self: flex-start;
   min-height: 38px;
   padding: .45rem .8rem;
   border: 1px solid var(--border);
@@ -262,15 +254,55 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   border-color: var(--border-strong);
   color: var(--gold-bright);
 }
-.category-icon, .category-icon-fallback { display: grid; width: 1.4rem; height: 1.4rem; place-items: center; flex: 0 0 1.4rem; border-radius: 6px; background: var(--icon-bg); color: var(--blue); font-size: .56rem; font-weight: 800; letter-spacing: .03em; overflow: hidden; }
-.category-icon img { width: 100%; height: 100%; object-fit: contain; }
-.category-icons button.selected .category-icon, .category-icons button.selected .category-icon-fallback { background: color-mix(in srgb, var(--gold) 20%, transparent); color: var(--gold-bright); }
+/* Slot look matches the real Dofus equipment panel (indigo slot, periwinkle glyph) instead of
+   the app's own accent palette — via --slot-* (theme.css), which only shifts with light/dark,
+   not the --accent-* presets, and is kept constant across hover/selected states since those are
+   already signaled by the button itself. The source PNGs are a single solid color with alpha
+   edges, so they're applied as a mask and tinted rather than drawn as-is — that's what lets a
+   swatch this small reproduce the game's light-on-dark glyph instead of the dark-on-transparent
+   original, and what makes a light-theme variant (dark glyph on a light slot) possible at all. */
+.category-icon {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 1.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--slot-border);
+  background: var(--slot-bg);
+  overflow: hidden;
+}
+.category-icon-glyph {
+  width: 80%;
+  height: 80%;
+  background-color: var(--slot-glyph);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.category-icon svg { color: var(--slot-glyph); }
 
 /* ---------- Results ---------- */
 
 .results-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); color: var(--text-muted); font-size: .88rem; font-weight: 700; }
 .results-meta label { display: inline-flex; align-items: center; gap: .45rem; }
 .results-meta select { min-height: 38px; padding: .45rem .65rem; }
+.results-meta-pending { display: inline-flex; align-items: center; gap: .5rem; }
+
+.loading-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold-bright);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
 .results button {
@@ -284,7 +316,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .results button:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: var(--border-strong); }
 .results button.selected { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
-.results button img, .result-image-fallback { width: 38px; height: 38px; flex: 0 0 38px; object-fit: contain; border-radius: 8px; background: var(--image-bg); }
+.results button img, .result-image-fallback { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; border-radius: 8px; background: var(--image-bg); }
 .result-image-fallback { display: grid; place-items: center; color: var(--text-muted); font-weight: 750; }
 .result-item-info { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .result-item-name { color: var(--text); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -321,50 +353,14 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .skeleton-line.short { flex: 0 0 40%; }
 @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* ---------- Pinned items (compact bar on the search page) ---------- */
-
-.pinned-items { margin-top: var(--space-5); padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); }
-.pinned-items-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.pinned-items-heading h2 { margin: 0; font-size: 1rem; }
-.pinned-items-list { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .75rem; }
-.pinned-item { display: inline-flex; align-items: stretch; }
-.pinned-item > button:first-child {
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-  min-height: 42px;
-  padding: .45rem .65rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  background: var(--button-bg);
-  color: var(--text-muted);
-  font-weight: 700;
-  cursor: pointer;
-}
-.pinned-item > button:first-child:hover, .pinned-item-remove:hover {
-  border-color: var(--border-strong);
-  background: var(--gold-soft);
-  color: var(--gold-bright);
-}
-.pinned-item img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; background: var(--image-bg); }
-.pinned-item-remove {
-  min-width: 34px;
-  border: 1px solid var(--border);
-  border-left: 0;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--button-bg);
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
 /* ---------- Pinned grid (Épinglés page + Accueil preview) ---------- */
 
-.pinned-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-3); }
+.pinned-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4); }
 .pinned-card {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-4);
+  padding: var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--panel);
@@ -377,17 +373,26 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pinned-card-info { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 .pinned-card-name { color: var(--text); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pinned-card-level { color: var(--text-muted); font-size: .8rem; }
+.pinned-card-prices { display: flex; flex-direction: column; gap: .1rem; margin-top: .2rem; }
+.pinned-card-price { font-size: .8rem; color: var(--text); font-weight: 700; }
+.pinned-card-price.unset { color: var(--text-faint); font-weight: 600; font-style: italic; }
+.pinned-card-price.cheaper { color: var(--success); }
+.pinned-card-price.pricier { color: var(--danger); }
 .pinned-card-remove { flex: 0 0 auto; width: 34px; height: 34px; }
 
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); align-items: start; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); align-items: stretch; }
+
 
 /* ---------- Item detail card ---------- */
 
+.item-detail-card { position: relative; }
 .pin-item-button {
   display: flex;
   align-items: center;
   gap: .45rem;
-  margin: 0 auto var(--space-4);
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
   padding: .5rem .85rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -406,17 +411,36 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .resource-display img, .resource-image-fallback { flex: 0 0 32px; width: 32px; height: 32px; }
 .resource-display img { object-fit: contain; border-radius: 7px; background: var(--image-bg); margin: 0; }
 .resource-image-fallback { display: grid; place-items: center; border-radius: 7px; background: var(--panel-soft); color: var(--text-muted); font-weight: 750; }
+/* Bigger in the Recherche page's ingredient list only (.price-line): PricesPage reuses the same
+   .resource-display for its overview rows and wasn't part of this request. */
+.price-line .resource-display img, .price-line .resource-image-fallback { flex: 0 0 36px; width: 36px; height: 36px; }
 .resource-display > span:last-child { min-width: 0; }
 
 .card h2, .card h3 { color: var(--text); line-height: 1.2; }
 .card h2 { margin: var(--space-4) 0 var(--space-3); font-size: 1.3rem; letter-spacing: -.02em; text-align: center; }
-.card h3, .detail-subheading { margin-top: var(--space-5); padding-bottom: .45rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.card h3 { margin-top: var(--space-5); padding-bottom: .45rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .card p, .card li { font-size: .96rem; }
+.item-category { display: flex; align-items: center; gap: .3rem; }
+.category-icon-inline {
+  display: inline-block;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
 .card > img { display: block; max-width: 128px; max-height: 128px; object-fit: contain; margin: auto; }
 .image-fallback { display: grid; place-items: center; min-height: 128px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--text-muted); font-weight: 700; text-align: center; padding: var(--space-4); }
-.item-stats, .recipe, .dofusdb-info { margin-top: var(--space-4); padding: 0 .9rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--inner-bg); }
+.item-stats { margin-top: var(--space-4); padding: 0 .9rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--inner-bg); }
 .item-set-name { margin: .45rem 0 .65rem; color: var(--text-muted); font-size: .9rem; font-weight: 600; text-align: center; }
-.item-stats ul, .recipe ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+.item-stats ul { display: flex; flex-direction: column; gap: .4rem; margin: .5rem 0 0; padding-left: 0; list-style: none; }
+.item-stats li { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
+.item-stats li.stat-positive { color: var(--success); }
+.item-stats li.stat-negative { color: var(--danger); }
+.characteristic-icon { flex: 0 0 auto; object-fit: contain; }
 
 /* ---------- Price list ---------- */
 
@@ -424,40 +448,129 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   display: grid;
   grid-template-columns: minmax(0, 1fr) 90px minmax(130px, 150px);
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border);
 }
 .price-line:last-of-type { border-bottom: 0; }
 .price-resource { display: contents; }
 .price-resource .resource-display { grid-column: 1; }
 .price-resource-quantity { grid-column: 2; white-space: nowrap; color: var(--text-muted); font-size: .9rem; }
-.price-line small { grid-column: 1 / -1; margin-top: 0; }
-.price-line input { grid-column: 3; grid-row: 1; width: 100%; justify-self: end; }
+.price-line small { grid-column: 1 / 3; grid-row: 2; margin-top: 0; }
+.price-line .kamas-input-wrap { grid-column: 3; grid-row: 1; width: 100%; justify-self: end; }
 .price-resource-formatted { grid-column: 3; grid-row: 2; justify-self: end; text-align: right; color: var(--success); font-size: .85rem; font-weight: 700; }
 .price-line em { grid-column: 1 / -1; }
 
 .market { margin: var(--space-4) 0; }
+.market-price-label { display: block; margin: 0 0 .5rem; font-size: .88rem; font-weight: 700; color: var(--text-muted); }
+.market-price-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-5);
+}
+/* align-self: flex-start, not the row's stretch: the summary now runs 3 lines (badge, craft
+   cost, savings note) taller than the input, and letting .market stretch to match dragged its
+   grid child (.kamas-input-wrap) taller too, which threw off the "kamas" suffix's top:50%
+   anchor — it centered on that stretched height instead of the input's actual height. */
+.market-price-panel .market { margin: 0; max-width: 320px; flex: 0 0 auto; align-self: flex-start; }
+.market-price-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .4rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--border);
+}
+.market-price-summary .badge { margin: 0; }
+.market-price-summary p:not(.badge) { margin: 0; font-size: .95rem; color: var(--text-muted); }
+.market-price-summary p strong { color: var(--text); }
+
+/* "kamas" suffix shared by every price-entry input (resource unit price, HDV price), shown once
+   a value is typed. padding-right stays reserved even while the suffix is absent so the input
+   doesn't resize/jump as soon as typing starts. */
+.kamas-input-wrap { position: relative; display: block; }
+.kamas-input-wrap input { width: 100%; box-sizing: border-box; padding-right: 3.1rem; }
+.kamas-input-suffix {
+  position: absolute;
+  top: 50%;
+  right: .7rem;
+  z-index: 1;
+  color: var(--text-faint);
+  font-size: .82rem;
+  font-weight: 700;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
 /* ---------- Server switcher & onboarding ---------- */
 
-.server-switcher {
+.server-switcher { position: relative; }
+.server-switcher-trigger {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .55rem;
   min-width: 0;
+  height: 40px;
+  padding: 0 .9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: inherit;
+  cursor: pointer;
 }
+.server-switcher-trigger:hover,
+.server-switcher-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); }
+.server-switcher-trigger:hover .server-switcher-icon,
+.server-switcher-trigger:hover .server-switcher-chevron,
+.server-switcher-trigger[aria-expanded="true"] .server-switcher-icon,
+.server-switcher-trigger[aria-expanded="true"] .server-switcher-chevron { color: var(--gold-bright); }
 .server-switcher-icon { flex: 0 0 auto; color: var(--gold-bright); }
-.server-switcher-text { display: flex; flex-direction: column; min-width: 0; }
-.server-switcher-text label { font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
-.server-switcher-text select { min-height: auto; padding: 0; border: 0; background: transparent; color: var(--text); font-weight: 700; font-size: .95rem; appearance: none; cursor: pointer; }
-.server-switcher-chevron { display: none; }
+.server-switcher-text { display: flex; align-items: baseline; gap: .5rem; min-width: 0; text-align: left; }
+.server-switcher-label { font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+.server-switcher-value { color: var(--text); font-weight: 700; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.server-switcher-chevron { flex: 0 0 auto; color: var(--text-faint); }
+
+.server-switcher-panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + .5rem);
+  left: 0;
+  display: grid;
+  gap: var(--space-3);
+  width: max-content;
+  min-width: 220px;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+}
+.server-switcher-group { display: grid; gap: .3rem; }
+.server-switcher-option {
+  width: 100%;
+  padding: .5rem .6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.server-switcher-option:hover { background: var(--button-bg); }
+.server-switcher-option.selected { background: var(--gold-soft); color: var(--gold-bright); }
 
 .server-onboarding { display: grid; place-items: center; min-height: 100vh; padding: var(--space-4); }
 .server-onboarding-card {
   display: grid;
   gap: var(--space-4);
-  width: min(420px, 100%);
+  width: min(600px, 100%);
   padding: var(--space-6);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -468,7 +581,9 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .server-onboarding-brand { font-weight: 800; font-size: 1.2rem; color: var(--text); }
 .server-onboarding-card h2 { margin: 0; }
 .server-onboarding-card p { margin: 0; color: var(--text-muted); }
-.server-onboarding-list { display: grid; gap: .6rem; list-style: none; margin: 0; padding: 0; }
+.server-onboarding-group { display: grid; gap: .6rem; }
+.server-onboarding-group h3 { margin: 0; }
+.server-onboarding-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem; list-style: none; margin: 0; padding: 0; }
 .server-onboarding-option { width: 100%; justify-content: center; }
 
 /* ---------- Settings page ---------- */
@@ -505,11 +620,34 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   text-align: left;
   cursor: pointer;
 }
-.price-mode-option-label { font-weight: 700; }
+.price-mode-option-label { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
 .price-mode-option-description { color: var(--text-muted); font-size: .85rem; line-height: 1.4; }
 .price-mode-option:hover { border-color: var(--border-strong); }
 .price-mode-option.selected { border-color: var(--gold-bright); background: var(--gold-soft); }
 .price-mode-option.selected .price-mode-option-label { color: var(--gold-bright); }
+
+.settings-section-confirmation { margin: 0; color: var(--success); font-weight: 700; font-size: .9rem; }
+.settings-withdraw-contributions { display: grid; gap: .5rem; }
+.settings-choice:disabled { cursor: not-allowed; opacity: .55; }
+.settings-choice:disabled:hover { border-color: var(--border); }
+
+.community-price-section { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 0 var(--space-3); }
+.community-price-display p { margin: 0; color: var(--text-muted); font-size: .88rem; }
+.community-price-display strong { color: var(--text); }
+.community-price-stale { color: var(--warning); font-style: italic; }
+.community-contribute-button {
+  min-height: 38px;
+  padding: .45rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.community-contribute-button:hover:not(:disabled) { border-color: var(--border-strong); color: var(--gold-bright); }
+.community-contribute-button:disabled { cursor: not-allowed; opacity: .55; }
 
 .accent-swatch {
   width: 30px;
@@ -571,8 +709,51 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 /* ---------- Home page ---------- */
 
-.home-hero { display: grid; gap: var(--space-3); max-width: 620px; margin-bottom: var(--space-5); }
-.home-hero p { margin: 0; color: var(--text-muted); font-size: 1.02rem; }
+/* Key art background for the whole Accueil page — painted on .app-shell-main (scoped via
+   :has(.home-hero) so every other route is untouched), not on .app-page itself: .app-page is
+   capped at max-width and centered, so on wide screens it leaves an empty strip of plain page
+   background on each side, while .app-shell-main spans the full width of that column. The
+   sidebar (.app-nav) is a separate flex sibling of .app-shell-main, so it's structurally
+   untouched — it keeps its normal opaque background and theme-driven colors. Blurred rather
+   than sharp: sharp, it would
+   compete with the hero text and the floating cards, and its corner watermark/logo would read as
+   a second, unrelated logo on our page. .panel/.stat-tile are already a translucent --panel color
+   by design, so they pick up a faint tint from it rather than sitting on it as flat opaque cards.
+   Hero text goes white/fixed-contrast instead of the usual theme-driven colors since the art
+   stays dark under its overlay in both light and dark mode. blur() fades to transparent within
+   its own radius at the edge of whatever box it's applied to, so scale(1.1) + overflow:hidden
+   push that fade outside the clipped, visible area instead of showing as a band next to the
+   plain background. (.app-shell-main has no fixed-position descendant — that's only the mobile
+   bottom nav, which lives in .app-nav, a sibling — so this doesn't risk clipping it.) */
+.app-shell-main:has(.home-hero) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.app-shell-main:has(.home-hero)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/home-hero.jpg');
+  background-size: cover;
+  background-position: center 22%;
+  filter: blur(0px);
+  transform: scale(1.1);
+}
+.app-shell-main:has(.home-hero)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(9, 13, 20, .88) 0%, rgba(9, 13, 20, .68) 38%, rgba(9, 13, 20, .8) 100%);
+}
+
+.home-hero { display: grid; gap: var(--space-3); margin-bottom: var(--space-5); }
+.home-hero-content { display: grid; gap: var(--space-3); max-width: 620px; }
+.home-hero .eyebrow { color: rgba(255, 255, 255, .75); }
+.home-hero h1 { color: #fff; }
+.home-hero p { margin: 0; color: rgba(255, 255, 255, .82); font-size: 1.02rem; }
 .home-hero-cta { justify-self: start; margin-top: var(--space-2); }
 
 .stat-tile-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-5); }
@@ -593,10 +774,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .stat-tile-hint { color: var(--text-faint); font-size: .78rem; }
 
 .home-pinned-preview { margin-top: 0; }
+.home-pinned-preview-footer { margin-top: var(--space-4); text-align: center; }
 
 /* ---------- Prices page ---------- */
 
-.prices-section + .prices-section { margin-top: var(--space-4); }
+.prices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
+.prices-grid > .panel + .panel { margin-top: 0; }
+.prices-search { max-width: 360px; margin: var(--space-3) 0 var(--space-4); }
 .price-overview-list { display: grid; gap: 0; list-style: none; margin: var(--space-2) 0 0; padding: 0; }
 .price-overview-row {
   display: flex;
@@ -608,6 +792,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .price-overview-row:last-child { border-bottom: 0; }
 .price-overview-row b { color: var(--success); font-weight: 700; white-space: nowrap; }
+.price-overview-main { flex: 1 1 auto; display: flex; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
+.price-overview-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
 
 /* ---------- Responsive ---------- */
 
@@ -616,6 +802,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .app-nav {
     position: fixed;
     inset: auto 0 0 0;
+    /* Cancel the desktop height: 100vh: with bottom: 0 (from inset) a fixed height would anchor
+       the box's bottom to the screen's bottom and stretch it upward to fill the full screen,
+       ballooning this icon row over the whole viewport instead of staying a thin bottom bar. */
+    height: auto;
     z-index: 10;
     flex-direction: row;
     justify-content: space-around;
@@ -628,15 +818,29 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .app-nav-list { flex-direction: row; justify-content: space-around; width: 100%; }
   .app-nav-link { flex-direction: column; gap: .2rem; padding: .4rem .3rem; border-left: 0; border-radius: var(--radius-sm); font-size: .68rem; text-align: center; min-height: 48px; justify-content: center; }
   .app-nav-link.active { border-left-color: transparent; }
+  /* The theme toggle drops out on mobile (it's redundant with Paramètres' own theme controls),
+     and the server switcher escapes .app-nav entirely: .app-nav is the bottom tab bar here, with
+     no room for a text dropdown, so it's pinned to the top of the screen instead. */
+  .app-nav-footer { display: none; }
+  .server-switcher {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 10;
+    padding: .5rem var(--space-4);
+    background: var(--panel-strong);
+    border-bottom: 1px solid var(--border);
+  }
+  .app-shell-main { padding-top: 64px; }
   .app-page { padding: var(--space-4) var(--space-3) calc(64px + var(--space-4)); }
-  .app-topbar { padding: var(--space-3) var(--space-4); flex-wrap: wrap; }
-  .app-server-badge { display: none; }
 }
 
 @media (max-width: 720px) {
   .panel, .card, .result { padding: var(--space-4); border-radius: var(--radius-md); }
   .search-primary { max-width: none; }
+  .filters-panel { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr; gap: var(--space-3); }
+  .market-price-summary { padding-left: 0; border-left: 0; border-top: 1px solid var(--border); padding-top: var(--space-4); }
+  .prices-grid { grid-template-columns: 1fr; gap: var(--space-3); }
   .category-icons { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
   .category-icons button { flex: 0 0 auto; min-height: 44px; }
   .level-range { grid-template-columns: 1fr 1fr; }
@@ -646,7 +850,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .skeleton-grid { grid-template-columns: 1fr; }
   .card > img { max-width: 100px; max-height: 100px; }
   .price-line { grid-template-columns: 1fr 60px; }
-  .price-line input { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; }
+  .price-line .kamas-input-wrap { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; }
   .price-resource-formatted { grid-column: 1 / -1; grid-row: auto; justify-self: start; text-align: left; }
   .pinned-price-migration-notice { margin: 0 var(--space-3) var(--space-3); flex-direction: column; align-items: flex-start; }
 }

@@ -1,11 +1,11 @@
-export type ServerScopedPriceRecord = {
+type ServerScopedPriceRecord = {
   serverId: string;
   entryId: string;
   amountKamas: number;
   updatedAt: string;
 };
 
-export interface ServerScopedPriceStore {
+interface ServerScopedPriceStore {
   get(serverId: string, entryId: string): Promise<ServerScopedPriceRecord | undefined>;
   getMany(serverId: string, entryIds: string[]): Promise<Record<string, ServerScopedPriceRecord>>;
   save(serverId: string, entryId: string, amountKamas: number): Promise<ServerScopedPriceRecord>;

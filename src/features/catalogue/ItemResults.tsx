@@ -8,7 +8,7 @@ export function ItemResults({
   onSelect,
   loading,
   total,
-  isInitial,
+  totalPending,
   resultLimit,
   setResultLimit,
 }: {
@@ -17,7 +17,7 @@ export function ItemResults({
   onSelect: (id: string) => void;
   loading?: boolean;
   total: number;
-  isInitial?: boolean;
+  totalPending?: boolean;
   resultLimit: number;
   setResultLimit: (value: number) => void;
 }) {
@@ -34,11 +34,14 @@ export function ItemResults({
   return (
     <div>
       <div className="results-meta">
-        <span>
-          {isInitial
-            ? 'Premiers objets craftables'
-            : `${total} ${total === 1 ? 'objet trouvé' : 'objets trouvés'}`}
-        </span>
+        {totalPending ? (
+          <span className="results-meta-pending">
+            <span className="loading-spinner" aria-hidden="true" />
+            Calcul du nombre total…
+          </span>
+        ) : (
+          <span>{total} {total === 1 ? 'objet trouvé' : 'objets trouvés'}</span>
+        )}
         <label>
           Afficher :
           <select value={resultLimit} onChange={(event) => setResultLimit(Number(event.target.value))}>

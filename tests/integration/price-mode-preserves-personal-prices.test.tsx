@@ -16,12 +16,20 @@ vi.mock('../../src/data/catalogue-repository', () => ({
     stats: [],
   }),
   preloadCatalogueIndexes: vi.fn(),
+  whenCatalogueReady: vi.fn().mockResolvedValue(undefined),
   getManifest: vi.fn().mockReturnValue({
     sourceName: 'test',
     sourceVersion: '1',
     catalogueVersion: '1',
     publishedAt: new Date().toISOString(),
   }),
+}));
+
+vi.mock('../../src/data/servers-repository', () => ({
+  getServers: vi.fn().mockResolvedValue([
+    { id: 'mikhal', name: 'Mikhal', type: 'mono' },
+    { id: 'dakal', name: 'Dakal', type: 'mono' },
+  ]),
 }));
 
 import App from '../../src/app/App';
@@ -34,7 +42,7 @@ describe('switching price mode never alters personal prices', () => {
 
   it('keeps the personal resource price identical across repeated mode round trips', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
     const priceInput = await screen.findByPlaceholderText('Prix unitaire');
     fireEvent.change(priceInput, { target: { value: '1000' } });

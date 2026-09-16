@@ -13,11 +13,6 @@ describe('active server preference', () => {
     expect(getActiveServerId()).toBe('mikhal');
   });
 
-  it('rejects a serverId not present in the closed server list', () => {
-    expect(() => setActiveServerId('atlantis')).toThrow();
-    expect(getActiveServerId()).toBeUndefined();
-  });
-
   it('persists across a simulated reload (a fresh read from storage)', () => {
     setActiveServerId('dakal');
     // Simulate a reload: nothing but localStorage survives.
@@ -35,8 +30,8 @@ describe('active server preference', () => {
     getItemSpy.mockRestore();
   });
 
-  it('treats a stored serverId no longer in the closed server list as no preference, without fabricating one (FR-017)', () => {
+  it('does not validate the stored id against the server list — the list is now fetched from DofusDB, so ServerContext cross-checks it once loaded instead', () => {
     window.localStorage.setItem('craftcheck-active-server', 'atlantis');
-    expect(getActiveServerId()).toBeUndefined();
+    expect(getActiveServerId()).toBe('atlantis');
   });
 });

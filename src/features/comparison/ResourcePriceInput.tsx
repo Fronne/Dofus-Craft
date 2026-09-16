@@ -1,5 +1,6 @@
 import type { Resource } from '../../domain/types';
 import { formatKamas, formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
+import { formatRelativeTime } from '../../domain/time';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 
 export function ResourcePriceInput({
@@ -22,21 +23,18 @@ export function ResourcePriceInput({
         <ResourceDisplay resource={resource} />
       </span>
       <span className="price-resource-quantity">× {quantity}</span>
-      {updatedAt && <small>Dernière mise à jour : {new Date(updatedAt).toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })}</small>}
-      <input
-        inputMode="numeric"
-        aria-invalid={!valid}
-        value={formatKamasInput(value)}
-        onChange={(event) => onChange(normalizeKamasInput(event.target.value))}
-        placeholder="Prix unitaire"
-      />
-      {value && valid && <b className="price-resource-formatted">{formatKamas(Number(value))}</b>}
+      {updatedAt && <small>Dernière mise à jour : {formatRelativeTime(updatedAt)}</small>}
+      <span className="kamas-input-wrap">
+        <input
+          inputMode="numeric"
+          aria-invalid={!valid}
+          value={formatKamasInput(value)}
+          onChange={(event) => onChange(normalizeKamasInput(event.target.value))}
+          placeholder="Prix unitaire"
+        />
+        {value && <span className="kamas-input-suffix">kamas</span>}
+      </span>
+      {value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}
       {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
     </label>
   );

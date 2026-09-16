@@ -1,4 +1,5 @@
-import type { DofusDbItem, DofusDbItemSet, DofusDbItemTypeRecord, DofusDbPage, DofusDbRecipe } from './dofusdb-types';
+import type { DofusDbItem, DofusDbItemSet, DofusDbItemTypeRecord, DofusDbPage, DofusDbRecipe, DofusDbServer } from './dofusdb-types';
+import { stripDiacritics } from './text';
 
 const API_URL = 'https://api.dofusdb.fr';
 
@@ -13,11 +14,7 @@ const ACCENT_VARIANTS: Record<string, string> = {
 };
 
 export function normalizeSearchText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase('fr-FR')
-    .trim();
+  return stripDiacritics(value).toLocaleLowerCase('fr-FR').trim();
 }
 
 function escapeRegex(value: string): string {
@@ -84,6 +81,10 @@ function isItemType(value: unknown): value is DofusDbItemTypeRecord {
     (value.superTypeId === undefined || typeof value.superTypeId === 'number');
 }
 
+function isServer(value: unknown): value is DofusDbServer {
+  return isRecord(value) && typeof value.id === 'number';
+}
+
 async function request<T>(
   path: string,
   guard: (value: unknown) => value is T,
@@ -132,22 +133,6 @@ export async function searchDofusDbItems(
 export async function getDofusDbInitialItems(signal?: AbortSignal): Promise<DofusDbItem[]> {
   const page = await searchDofusDbItems('', undefined, 0, 100, signal, 'level');
   return page.data;
-}
-
-export async function searchDofusDbItemsByTypeIds(
-  query: string,
-  typeIds: number[],
-  skip = 0,
-  limit = 24,
-  signal?: AbortSignal,
-): Promise<DofusDbPage<DofusDbItem>> {
-  const data = await getDofusDbItemsByTypeIds(query, typeIds, signal);
-  return {
-    total: data.length,
-    limit,
-    skip,
-    data: data.slice(skip, skip + limit),
-  };
 }
 
 export async function getDofusDbItems(
@@ -238,6 +223,25 @@ export async function getDofusDbItemTypes(signal?: AbortSignal): Promise<DofusDb
     if (!page.data.length) break;
   } while (skip < total);
   return types;
+}
+
+export async function getDofusDbServers(signal?: AbortSignal): Promise<DofusDbServer[]> {
+  const limit = 100;
+  const servers: DofusDbServer[] = [];
+  let skip = 0;
+  let total: number;
+  do {
+    // No language filter: DofusDB tags some genuinely FR-playable permanent servers (e.g.
+    // Rafal, Tal Kasha) with language "en" for reasons that don't reflect who can play there.
+    const params = new URLSearchParams({ $limit: String(limit), $skip: String(skip), $sort: 'id' });
+    const page = await request(`/servers?${params.toString()}`, (value): value is DofusDbPage<DofusDbServer> =>
+      isPage(value, isServer), signal);
+    servers.push(...page.data);
+    total = page.total;
+    skip += page.data.length;
+    if (!page.data.length) break;
+  } while (skip < total);
+  return servers;
 }
 
 export async function getDofusDbRecipes(

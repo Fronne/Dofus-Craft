@@ -5,58 +5,36 @@ import { ResourcePriceInput } from '../../src/features/comparison/ResourcePriceI
 import { parseKamas } from '../../src/domain/kamas';
 
 describe('ItemDetail recipe resources', () => {
-  it('shows each resource image and quantity', () => {
-    const { container } = render(
-      <ItemDetail
-        detail={{
-          item: {
-            id: '1',
-            name: 'Amulette du Bouftou',
-            kind: 'Equipment',
-            categoryId: 'equipment-type-1',
-          },
-          recipe: {
-            id: 'recipe-1',
-            itemId: '1',
-            ingredients: [
-              { resourceId: '10', quantity: 10 },
-              { resourceId: '11', quantity: 5 },
-            ],
-          },
-          resources: [
-            { id: '10', name: 'Bois de Frêne', imageUrl: 'https://api.dofusdb.fr/img/items/10.png' },
-            { id: '11', name: 'Fer', imageUrl: 'https://api.dofusdb.fr/img/items/11.png' },
-          ],
-        }}
-      />,
-    );
-
-    expect(screen.getByText('Bois de Frêne × 10')).toBeInTheDocument();
-    expect(screen.getByText('Fer × 5')).toBeInTheDocument();
-    expect(container.querySelector('li img')).toHaveAttribute(
-      'src',
-      'https://api.dofusdb.fr/img/items/10.png',
-    );
-  });
-
-  it('shows DofusDB-provided item statistics before the recipe', () => {
+  it('shows DofusDB-provided item statistics', () => {
     render(
       <ItemDetail
         detail={{
           item: { id: '1', name: 'Trophée', kind: 'Equipment', categoryId: 'equipment-type-151' },
-          stats: [{ id: '125-0', label: '10 à 20 Vitalité' }],
+          stats: [{ id: '125-0', label: '10 à 20 Vitalité', positive: true }],
           recipe: { id: 'recipe-1', itemId: '1', ingredients: [{ resourceId: '10', quantity: 1 }] },
           resources: [{ id: '10', name: 'Fer' }],
         }}
       />,
     );
 
-    expect(screen.getAllByRole('heading', { name: 'Statistiques' }).at(-1)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
     expect(screen.getByText('10 à 20 Vitalité')).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { name: 'Recette' }).at(-1)).toBeInTheDocument();
   });
 
-  it('shows the panoplie below the item name and provenance after the recipe', () => {
+  it('shows a fallback message instead of a recipe list when the item has no recipe', () => {
+    render(
+      <ItemDetail
+        detail={{
+          item: { id: '1', name: 'Trophée', kind: 'Equipment', categoryId: 'equipment-type-151' },
+          resources: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Aucune recette disponible pour cet objet.')).toBeInTheDocument();
+  });
+
+  it('shows the panoplie below the item name', () => {
     render(
       <ItemDetail
         detail={{
@@ -75,14 +53,9 @@ describe('ItemDetail recipe resources', () => {
     expect(panoplie).toHaveTextContent('Panoplie : Panoplie du Strigide');
     expect(screen.getByText('Niveau : 200')).toBeInTheDocument();
     expect(screen.getByText('Catégorie : Amulette')).toBeInTheDocument();
-    const provenanceHeading = screen.getAllByRole('heading', { name: 'Informations DofusDB' }).at(-1)!;
-    const statsHeading = screen.getAllByRole('heading', { name: 'Statistiques' }).at(-1)!;
-    expect(provenanceHeading).toBeInTheDocument();
+    const statsHeading = screen.getAllByRole('heading', { name: 'Effets' }).at(-1)!;
     expect(panoplie.compareDocumentPosition(statsHeading))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.getAllByRole('heading', { name: 'Recette' }).at(-1)!.compareDocumentPosition(
-      provenanceHeading,
-    )).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('does not render a panoplie label when the item has no set relation', () => {
@@ -143,7 +116,10 @@ describe('ItemDetail recipe resources', () => {
     expect(container.querySelector('.price-resource img')).toHaveAttribute('height', '32');
   });
 
-  it('displays resource update dates without seconds', () => {
+  it('displays the resource update date as a relative time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-13T18:42:37.000Z'));
+
     render(
       <ResourcePriceInput
         resource={{ id: '10', name: 'Fer' }}
@@ -154,7 +130,8 @@ describe('ItemDetail recipe resources', () => {
       />,
     );
 
-    expect(screen.getByText(/Dernière mise à jour/)).toHaveTextContent(/16:42/);
-    expect(screen.getByText(/Dernière mise à jour/)).not.toHaveTextContent(/16:42:37/);
+    expect(screen.getByText(/Dernière mise à jour/)).toHaveTextContent('Dernière mise à jour : il y a 2 heures');
+
+    vi.useRealTimers();
   });
 });

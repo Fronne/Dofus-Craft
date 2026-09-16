@@ -1,4 +1,6 @@
 import type { Category } from '../../domain/types';
+import { Icon } from '../../components/Icon';
+import { CATEGORY_ICON_PATHS } from '../../components/CategoryIcon';
 
 export function CategoryFilter({
   categories,
@@ -20,7 +22,9 @@ return (
         aria-pressed={!value}
         onClick={() => onChange('')}
       >
-        <span className="category-icon-fallback" aria-hidden="true">ALL</span>
+        <span className="category-icon" aria-hidden="true">
+          <Icon name="grid" size={19} />
+        </span>
         <span>Tous les équipements</span>
       </button>
       {equipmentCategories.map((category) => (
@@ -32,10 +36,16 @@ return (
           onClick={() => onChange(category.id)}
         >
           <span className="category-icon" aria-hidden="true">
-            {category.iconUrl ? (
-              <img src={category.iconUrl} alt="" width="24" height="24" />
+            {CATEGORY_ICON_PATHS[category.id] ? (
+              <span
+                className="category-icon-glyph"
+                style={{
+                  WebkitMaskImage: `url(${CATEGORY_ICON_PATHS[category.id]})`,
+                  maskImage: `url(${CATEGORY_ICON_PATHS[category.id]})`,
+                }}
+              />
             ) : (
-              <span className="category-icon-fallback">{category.label.slice(0, 1)}</span>
+              <Icon name="package" size={19} />
             )}
           </span>
           <span>{category.label}</span>

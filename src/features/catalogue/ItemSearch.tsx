@@ -31,7 +31,7 @@ export function ItemSearch({
       <label className="search-primary">
         <span className="search-label">Rechercher un objet ou une panoplie</span>
         <span className="search-input-wrap">
-          <Icon name="search" size={20} className="search-input-icon" />
+          <Icon name="search" size={22} className="search-input-icon" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -42,37 +42,39 @@ export function ItemSearch({
       <fieldset className="filters-panel">
         <legend>Filtres</legend>
         <CategoryFilter categories={categories} value={category} onChange={setCategory} />
-        <div className="level-range">
-          <label>
-            Niveau min
-            <input
-              type="number"
-              min="1"
-              max="200"
-              inputMode="numeric"
-              value={levelMin}
-              onChange={(event) => setLevelMin(event.target.value)}
-              placeholder="Min"
-            />
-          </label>
-          <label>
-            Niveau max
-            <input
-              type="number"
-              min="1"
-              max="200"
-              inputMode="numeric"
-              value={levelMax}
-              onChange={(event) => setLevelMax(event.target.value)}
-              placeholder="Max"
-            />
-          </label>
+        <div className="level-filters">
+          <div className="level-range">
+            <label>
+              Niveau min
+              <input
+                type="number"
+                min="1"
+                max="200"
+                inputMode="numeric"
+                value={levelMin}
+                onChange={(event) => setLevelMin(event.target.value)}
+                placeholder="Min"
+              />
+            </label>
+            <label>
+              Niveau max
+              <input
+                type="number"
+                min="1"
+                max="200"
+                inputMode="numeric"
+                value={levelMax}
+                onChange={(event) => setLevelMax(event.target.value)}
+                placeholder="Max"
+              />
+            </label>
+          </div>
+          {hasActiveFilters && (
+            <button type="button" className="reset-filters" onClick={onReset}>
+              Réinitialiser les filtres
+            </button>
+          )}
         </div>
-        {hasActiveFilters && (
-          <button type="button" className="reset-filters" onClick={onReset}>
-            Réinitialiser les filtres
-          </button>
-        )}
       </fieldset>
     </div>
   );

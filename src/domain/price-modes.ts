@@ -1,6 +1,6 @@
 export type PriceMode = 'personal' | 'community';
 
-export type PriceModeOption = { id: PriceMode; label: string; description: string };
+type PriceModeOption = { id: PriceMode; label: string; description: string };
 
 export const priceModes: PriceModeOption[] = [
   {
@@ -12,13 +12,9 @@ export const priceModes: PriceModeOption[] = [
     id: 'community',
     label: 'Mode communautaire',
     description:
-      'Consulter les prix de la communauté et contribuer au partage des prix — bientôt disponible.',
+      'Consulter les prix communautaires et contribuer, de façon anonyme et après consentement, au partage des prix.',
   },
 ];
-
-export function listPriceModes(): PriceModeOption[] {
-  return priceModes;
-}
 
 export function isKnownPriceMode(value: string): value is PriceMode {
   return priceModes.some((mode) => mode.id === value);

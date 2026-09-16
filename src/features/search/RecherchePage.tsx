@@ -1,42 +1,80 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
-import { parseKamas } from '../../domain/kamas';
+import { formatKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
-import { ComparisonResult } from '../comparison/ComparisonResult';
+import { RecommendationBadge, SavingsNote, insufficientDataHint } from '../comparison/ComparisonResult';
 import { useResourcePrices } from '../comparison/useResourcePrices';
 import { useCatalogue } from '../catalogue/useCatalogue';
-import { PinnedItems } from '../catalogue/PinnedItems';
 import { usePinnedItems } from '../catalogue/usePinnedItems';
 import { useActiveServer } from '../../app/ServerContext';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
-import { PriceModeNotice } from '../comparison/PriceModeNotice';
 import type { PriceMode } from '../../domain/price-modes';
+import { CommunityPriceDisplay } from '../comparison/CommunityPriceDisplay';
+import { submitCommunityPrice } from '../../services/community-price-api';
+import { addLocalContribution } from '../../persistence/community-contributions';
 
-export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
+const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
+
+export function RecherchePage({ priceMode, shareConsent }: { priceMode: PriceMode; shareConsent: boolean }) {
   const { serverId } = useActiveServer();
-  const [searchParams] = useSearchParams();
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('');
-  const [levelMin, setLevelMin] = useState('');
-  const [levelMax, setLevelMax] = useState('');
-  const [resultLimit, setResultLimit] = useState(12);
-  const [selected, setSelected] = useState(() => searchParams.get('item') ?? '');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const updateParams = (patch: Record<string, string | undefined>) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined || value === '') next.delete(key);
+        else next.set(key, value);
+      }
+      return next;
+    }, { replace: true });
+  };
+  // Nav-link clicks land on the bare route (no query string), so a plain URL-only search
+  // context would be lost every time the user leaves Recherche and comes back. Restore it
+  // from sessionStorage in that case; an explicit deep link (e.g. ?item=X from Épinglés or
+  // Prix) is left untouched since the URL already carries intentional state.
+  useEffect(() => {
+    if (searchParams.toString()) return;
+    try {
+      const stored = window.sessionStorage.getItem(SEARCH_CONTEXT_STORAGE_KEY);
+      if (!stored) return;
+      const restored = new URLSearchParams(stored);
+      if ([...restored.keys()].length > 0) setSearchParams(restored, { replace: true });
+    } catch {
+      // sessionStorage unavailable (private browsing, etc.) — nothing to restore.
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(SEARCH_CONTEXT_STORAGE_KEY, searchParams.toString());
+    } catch {
+      // sessionStorage unavailable — the search context just won't survive navigation.
+    }
+  }, [searchParams]);
+  const query = searchParams.get('q') ?? '';
+  const category = searchParams.get('category') ?? '';
+  const levelMin = searchParams.get('levelMin') ?? '';
+  const levelMax = searchParams.get('levelMax') ?? '';
+  const resultLimit = Number(searchParams.get('limit')) || 12;
+  const selected = searchParams.get('item') ?? '';
+  const setQuery = (value: string) => updateParams({ q: value });
+  const setCategory = (value: string) => updateParams({ category: value });
+  const setLevelMin = (value: string) => updateParams({ levelMin: value });
+  const setLevelMax = (value: string) => updateParams({ levelMax: value });
+  const setResultLimit = (value: number) => updateParams({ limit: String(value) });
+  const setSelected = (id: string) => updateParams({ item: id });
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [market, setMarket] = useState('');
   const levelFilter = levelMin || levelMax ? `${levelMin}:${levelMax}` : '';
   const catalogue = useCatalogue(query, category, selected, levelFilter, resultLimit);
   const pinned = usePinnedItems();
   const resetFilters = () => {
-    setQuery('');
-    setCategory('');
-    setLevelMin('');
-    setLevelMax('');
+    updateParams({ q: undefined, category: undefined, levelMin: undefined, levelMax: undefined });
   };
   const selectedItem = catalogue.items.find((item) => item.id === selected) ??
     pinned.pinnedItems.find((entry) => entry.item.id === selected)?.item;
@@ -48,7 +86,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     }
   }, [catalogue.items, selected, selectedItem, pinned.pinnedItems]);
   useEffect(() => {
-    if (!serverId || !selected || !pinned.isPinned(selected)) {
+    if (!serverId || !selected) {
       setMarket('');
       return;
     }
@@ -59,7 +97,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     return () => {
       cancelled = true;
     };
-  }, [serverId, selected, pinned.pinnedItems]);
+  }, [serverId, selected]);
   useEffect(() => {
     setInputs({});
   }, [serverId]);
@@ -85,17 +123,15 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     }
   });
 
+  // FR-008/US3: the craft-cost comparison MUST use only the personal price (`merged`, `market`,
+  // both sourced from useResourcePrices/pinnedItemPrices above) — never a community price. Do
+  // not read `CommunityPriceDisplay`/`getCommunityPrice` into these inputs.
   const result = detail?.recipe
     ? compare(detail.recipe, merged, parseKamas(market))
     : undefined;
 
   return (
     <>
-      <header className="page-header">
-        <h1>Recherche</h1>
-        <p>Comparez vos recettes avec des prix clairs et réutilisables.</p>
-      </header>
-      <PriceModeNotice priceMode={priceMode} />
       <section className="panel">
         <ItemSearch
           query={query}
@@ -109,11 +145,6 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           onReset={resetFilters}
           categories={catalogue.categories}
         />
-        <PinnedItems
-          items={pinned.pinnedItems.map((entry) => entry.item)}
-          onSelect={setSelected}
-          onUnpin={pinned.unpin}
-        />
         {catalogue.error && <p className="warning">{catalogue.error}</p>}
         <ItemResults
           items={catalogue.items}
@@ -121,13 +152,38 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           onSelect={setSelected}
           loading={catalogue.loading}
           total={catalogue.total}
-          isInitial={!query.trim() && !category && !levelMin && !levelMax}
+          totalPending={!catalogue.catalogueWarm && !query.trim() && !category && !levelMin && !levelMax}
           resultLimit={resultLimit}
           setResultLimit={setResultLimit}
         />
       </section>
       {catalogue.detailLoading && <p className="empty">Chargement des détails…</p>}
       {catalogue.detailError && <p className="warning">{catalogue.detailError}</p>}
+      {detail?.recipe && result && (
+        <section className="panel market-price-panel">
+          <label htmlFor="market-price-input" className="market-price-label">Prix HDV</label>
+          <div className="market-price-row">
+            <MarketPriceInput
+              value={market}
+              onChange={(value) => {
+                setMarket(value);
+                if (selectedItem && serverId) {
+                  const parsed = parseKamas(value);
+                  if (parsed !== undefined) void pinnedItemPrices.save(serverId, selectedItem.id, parsed);
+                }
+              }}
+            />
+            <div className="market-price-summary">
+              <RecommendationBadge recommendation={result.recommendation} hint={insufficientDataHint(result)} />
+              <p>
+                Coût de craft : <strong>{formatKamas(result.knownCraftCostKamas)}</strong>
+                {result.craftCostStatus === 'partial' && ' (partiel)'}
+              </p>
+              <SavingsNote result={result} />
+            </div>
+          </div>
+        </section>
+      )}
       <div className="grid">
         <ItemDetail
           detail={detail}
@@ -138,50 +194,62 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                 pinned.unpin(selectedItem.id);
               } else {
                 pinned.pin(selectedItem);
-                const parsedMarket = parseKamas(market);
-                if (serverId && parsedMarket !== undefined) {
-                  void pinnedItemPrices.save(serverId, selectedItem.id, parsedMarket);
-                }
               }
             }
             : undefined}
         />
         {detail?.recipe && (
           <section className="card">
-            <h2>Analyse de rentabilité</h2>
-            <ComparisonResult result={result} />
-            <h3 className="detail-subheading">Ressources nécessaires</h3>
+            <h2>Prix des ressources</h2>
             {detail.recipe.ingredients.map((ingredient) => {
               const resource = detail.resources.find((item) => item.id === ingredient.resourceId);
               const value =
                 inputs[ingredient.resourceId] ??
                 data[ingredient.resourceId]?.unitPriceKamas?.toString() ??
                 '';
+              const personalPrice = parseKamas(value);
               return (
-                <ResourcePriceInput
-                  key={ingredient.resourceId}
-                  resource={resource ?? { id: ingredient.resourceId, name: ingredient.resourceId }}
-                  quantity={ingredient.quantity}
-                  value={value}
-                  updatedAt={data[ingredient.resourceId]?.updatedAt}
-                  onChange={(nextValue) => {
-                    setInputs((current) => ({ ...current, [ingredient.resourceId]: nextValue }));
-                    const price = parseKamas(nextValue);
-                    if (price !== undefined) void save(ingredient.resourceId, price);
-                  }}
-                />
+                <Fragment key={ingredient.resourceId}>
+                  <ResourcePriceInput
+                    resource={resource ?? { id: ingredient.resourceId, name: ingredient.resourceId }}
+                    quantity={ingredient.quantity}
+                    value={value}
+                    updatedAt={data[ingredient.resourceId]?.updatedAt}
+                    onChange={(nextValue) => {
+                      setInputs((current) => ({ ...current, [ingredient.resourceId]: nextValue }));
+                      const price = parseKamas(nextValue);
+                      if (price !== undefined) void save(ingredient.resourceId, price);
+                    }}
+                  />
+                  {priceMode === 'community' && serverId && (
+                    <div className="community-price-section">
+                      <CommunityPriceDisplay resourceId={ingredient.resourceId} serverId={serverId} />
+                      {shareConsent ? (
+                        <button
+                          type="button"
+                          className="community-contribute-button"
+                          disabled={personalPrice === undefined}
+                          onClick={() => {
+                            if (personalPrice === undefined) return;
+                            void submitCommunityPrice(ingredient.resourceId, serverId, personalPrice).then((submitted) => {
+                              if (submitted) {
+                                addLocalContribution({ id: submitted.id, resourceId: ingredient.resourceId, serverId });
+                              }
+                            });
+                          }}
+                        >
+                          Contribuer ce prix à la communauté
+                        </button>
+                      ) : (
+                        <p className="muted">
+                          Activez le partage communautaire dans les Paramètres pour contribuer ce prix.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </Fragment>
               );
             })}
-            <MarketPriceInput
-              value={market}
-              onChange={(value) => {
-                setMarket(value);
-                if (selectedItem && serverId && pinned.isPinned(selectedItem.id)) {
-                  const parsed = parseKamas(value);
-                  if (parsed !== undefined) void pinnedItemPrices.save(serverId, selectedItem.id, parsed);
-                }
-              }}
-            />
             {error && <p className="warning">{error}</p>}
           </section>
         )}

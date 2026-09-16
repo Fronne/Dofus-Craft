@@ -1,0 +1,14 @@
+name = "dofus-craft-community-price-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-16"
+workers_dev = true
+preview_urls = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dofus-craft-community-prices"
+database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
+
+# COMMUNITY_API_KEY is a secret, not declared here — set it with:
+#   wrangler secret put COMMUNITY_API_KEY --config worker/wrangler.toml
+# It must match VITE_COMMUNITY_API_KEY in the frontend's .env.local.

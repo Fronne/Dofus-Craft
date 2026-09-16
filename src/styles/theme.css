@@ -3,8 +3,8 @@
   color: #edf2f7;
   background: #0b1018;
   font-synthesis: none;
+  color-scheme: dark;
   --bg: #0b1018;
-  --bg-raised: #111927;
   --panel: rgba(19, 29, 44, .88);
   --panel-strong: #172236;
   --panel-soft: #202d42;
@@ -43,10 +43,7 @@
   --gold-soft: color-mix(in srgb, var(--gold) 13%, transparent);
   --border-strong: color-mix(in srgb, var(--gold) 55%, transparent);
 
-  --blue: #65a8d9;
-  --teal: #65c2b4;
   --danger: #f38b8b;
-  --danger-soft: rgba(243, 139, 139, .14);
   --success: #4fbf74;
   --success-soft: rgba(79, 191, 116, .14);
   --warning: #e2b04f;
@@ -58,10 +55,15 @@
   --panel-gradient: var(--panel);
   --input-bg: rgba(7, 13, 23, .55);
   --button-bg: rgba(255, 255, 255, .035);
-  --icon-bg: rgba(101, 168, 217, .14);
   --image-bg: rgba(255, 255, 255, .06);
   --inner-bg: rgba(7, 13, 23, .22);
-  --result-gradient: var(--panel);
+
+  /* Equipment-slot swatch (category icons): matches the real Dofus equipment panel — dark
+     indigo slot, periwinkle glyph — rather than the app's own accent palette, so it doesn't
+     move with --accent-* presets, only with light/dark. */
+  --slot-bg: #332f4e;
+  --slot-border: #4b4570;
+  --slot-glyph: #a39cd9;
 
   /* Spacing scale (4px base). Prefer these over ad hoc rem values in new/edited rules. */
   --space-1: .25rem;
@@ -71,7 +73,6 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  --space-8: 4rem;
 
   /* Corner radius scale — subtle, not "pill" everywhere. */
   --radius-sm: .5rem;
@@ -81,7 +82,6 @@
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
   --transition-fast: 120ms ease;
-  --transition-base: 180ms ease;
 }
 
 :root[data-accent="red"]    { --gold: var(--accent-red-dark);    --gold-bright: var(--accent-red-bright-dark); }
@@ -92,8 +92,8 @@
 :root[data-theme="light"] {
   color: #253246;
   background: #eef1f5;
+  color-scheme: light;
   --bg: #eef1f5;
-  --bg-raised: #e5e9ef;
   --panel: rgba(255, 255, 255, .92);
   --panel-strong: #ffffff;
   --panel-soft: #e5eaf1;
@@ -102,10 +102,7 @@
   --text-faint: #8491a2;
   --gold: var(--accent-blue-light);
   --gold-bright: var(--accent-blue-bright-light);
-  --blue: #367cae;
-  --teal: #217d78;
   --danger: #b94b4b;
-  --danger-soft: rgba(185, 75, 75, .1);
   --success: #2f8f4e;
   --success-soft: rgba(47, 143, 78, .1);
   --warning: #a3760f;
@@ -117,10 +114,11 @@
   --panel-gradient: var(--panel);
   --input-bg: rgba(232, 237, 244, .78);
   --button-bg: rgba(39, 62, 90, .045);
-  --icon-bg: rgba(54, 124, 174, .11);
   --image-bg: rgba(39, 62, 90, .07);
   --inner-bg: rgba(224, 230, 238, .48);
-  --result-gradient: var(--panel);
+  --slot-bg: #e7e3f6;
+  --slot-border: #c7bfe8;
+  --slot-glyph: #5b4f9c;
 }
 
 :root[data-theme="light"][data-accent="red"]    { --gold: var(--accent-red-light);    --gold-bright: var(--accent-red-bright-light); }

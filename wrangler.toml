@@ -1,0 +1,9 @@
+# Static hosting for the Dofus Craft frontend (Cloudflare Workers static assets — the currently
+# recommended replacement for Cloudflare Pages). Separate from worker/wrangler.toml, which is the
+# community price sharing API (specs/004-community-price-sharing).
+name = "dofus-craft"
+compatibility_date = "2026-09-16"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

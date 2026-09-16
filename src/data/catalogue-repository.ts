@@ -1,8 +1,9 @@
 import manifest from './catalogue-manifest.json';
 import { cached, peekCached } from './catalogue-cache';
-import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
+import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat } from '../domain/types';
+import { CHARACTERISTIC_ASSET_BY_ID } from '../domain/characteristic-icons';
 
 export const getManifest = () => ({
   ...manifest,
@@ -19,29 +20,39 @@ type CatalogueItemIndex = {
   items: Awaited<ReturnType<typeof getDofusDbItems>>;
 };
 
-function getInitialCatalogueItems(signal?: AbortSignal): Promise<CatalogueItemIndex> {
+function getInitialCatalogueItems(): Promise<CatalogueItemIndex> {
+  const index = peekCached<CatalogueItemIndex>('catalogue-item-index');
+  if (index) return Promise.resolve(index);
   return cached('catalogue-initial-items', async () => ({
-    items: await getDofusDbInitialItems(signal),
+    items: await getDofusDbInitialItems(),
   }));
 }
 
-function getCatalogueItemIndex(signal?: AbortSignal): Promise<CatalogueItemIndex> {
+function getCatalogueItemIndex(): Promise<CatalogueItemIndex> {
   return cached('catalogue-item-index', async () => ({
-    items: await getDofusDbItems('', signal),
+    items: await getDofusDbItems(''),
   }));
 }
 
-function getCatalogueItemsForSearch(query: string, signal?: AbortSignal): Promise<CatalogueItemIndex> {
+function getCatalogueItemsForSearch(query: string): Promise<CatalogueItemIndex> {
   const index = peekCached<CatalogueItemIndex>('catalogue-item-index');
   if (index) return Promise.resolve(index);
   return cached(`catalogue-query:${normalizeSearchText(query)}`, async () => ({
-    items: await getDofusDbItems(query, signal),
+    items: await getDofusDbItems(query),
   }));
 }
 
-function getItemSetIndex(signal?: AbortSignal): Promise<ItemSetIndex> {
+function getCatalogueItemsForCategory(query: string, categoryId: string, typeIds: number[]): Promise<CatalogueItemIndex> {
+  const index = peekCached<CatalogueItemIndex>('catalogue-item-index');
+  if (index) return Promise.resolve(index);
+  return cached(`catalogue-category:${categoryId}:${normalizeSearchText(query)}`, async () => ({
+    items: await getDofusDbItemsByTypeIds(query, typeIds),
+  }));
+}
+
+function getItemSetIndex(): Promise<ItemSetIndex> {
   return cached('item-set-index', async () => {
-    const sets = await getDofusDbItemSets('', signal);
+    const sets = await getDofusDbItemSets('');
     const itemSetIdsByItemId = new Map<number, Set<number>>();
     sets.forEach((itemSet) => {
       itemSet.items?.forEach((item) => {
@@ -54,9 +65,15 @@ function getItemSetIndex(signal?: AbortSignal): Promise<ItemSetIndex> {
   });
 }
 
-export function preloadCatalogueIndexes(signal?: AbortSignal): void {
-  void getCatalogueItemIndex(signal);
-  void getItemSetIndex(signal);
+export function preloadCatalogueIndexes(): void {
+  void getCatalogueItemIndex();
+  void getItemSetIndex();
+}
+
+/** Resolves once the full catalogue (all craftable equipment) has finished loading in the
+ * background, so callers can tell a capped preview count apart from the real total. */
+export function whenCatalogueReady(): Promise<void> {
+  return getCatalogueItemIndex().then(() => undefined);
 }
 
 export async function searchItems(
@@ -64,21 +81,23 @@ export async function searchItems(
   _categoryId = '',
   skip = 0,
   limit = 24,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
   levelFilter = '',
 ) {
-  const categories = await getCategories(signal);
+  const categories = await getCategories();
   const category = categories.find((candidate) => candidate.id === _categoryId);
   if (_categoryId && !category) return { total: 0, limit, skip, data: [] };
   const queryTokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
   const itemSetIndexPromise = query.trim()
-    ? getItemSetIndex(signal)
+    ? getItemSetIndex()
     : Promise.resolve(undefined);
-  const catalogueIndexPromise = !query.trim() && !_categoryId && !levelFilter
-    ? getInitialCatalogueItems(signal)
-    : query.trim()
-      ? getCatalogueItemsForSearch(query, signal)
-      : getCatalogueItemIndex(signal);
+  const catalogueIndexPromise = category
+    ? getCatalogueItemsForCategory(query, category.id, category.typeIds)
+    : !query.trim() && !levelFilter
+      ? getInitialCatalogueItems()
+      : query.trim()
+        ? getCatalogueItemsForSearch(query)
+        : getCatalogueItemIndex();
   const [catalogueIndex, itemSetIndex] = await Promise.all([
     catalogueIndexPromise,
     itemSetIndexPromise,
@@ -97,7 +116,7 @@ export async function searchItems(
       const indexedItem = catalogueIndex.items.find((candidate) => candidate.id === item.id);
       return indexedItem
         ? Promise.resolve(indexedItem)
-        : cached(`item:${item.id}`, () => getDofusDbItem(String(item.id), signal));
+        : cached(`item:${item.id}`, () => getDofusDbItem(String(item.id)));
     }),
   );
   const allItems = [...new Map([...nameItems, ...hydratedSetItems].map((item) => [item.id, item])).values()];
@@ -157,11 +176,11 @@ function itemCategoryMatches(item: Parameters<typeof getDofusDbItemKind>[0], cat
 
 export async function getItemDetail(id: string, signal?: AbortSignal) {
   const [item, recipes] = await Promise.all([
-    cached(`item:${id}`, () => getDofusDbItem(id, signal)),
-    cached(`recipes:${id}`, () => getDofusDbRecipes(id, signal)),
+    cached(`item:${id}`, () => getDofusDbItem(id)),
+    cached(`recipes:${id}`, () => getDofusDbRecipes(id)),
   ]);
   const itemSet = typeof item.itemSetId === 'number' && item.itemSetId > 0
-    ? await cached(`item-set:${item.itemSetId}`, () => getDofusDbItemSet(item.itemSetId!, signal))
+    ? await cached(`item-set:${item.itemSetId}`, () => getDofusDbItemSet(item.itemSetId!))
     : undefined;
   const recipeData = recipes[0];
   const stats = await mapItemStats(item, signal);
@@ -176,9 +195,9 @@ export async function getItemDetail(id: string, signal?: AbortSignal) {
   };
 }
 
-export async function getResourceDetails(ids: string[], signal?: AbortSignal) {
+export async function getResourceDetails(ids: string[]) {
   const items = await Promise.all(
-    ids.map((id) => cached(`item:${id}`, () => getDofusDbItem(id, signal))),
+    ids.map((id) => cached(`item:${id}`, () => getDofusDbItem(id))),
   );
   return items.map(mapDofusDbResource);
 }
@@ -195,10 +214,18 @@ async function mapItemStats(
     signal,
   );
   const descriptions = new Map(metadata.map((effect) => [effect.id, effect.description?.fr]));
-  return effects.map((effect, index) => ({
-    id: `${effect.effectId}-${index}`,
-    label: formatEffectDescription(descriptions.get(effect.effectId!), effect.from!, effect.to!),
-  }));
+  const characteristics = new Map(metadata.map((effect) => [effect.id, effect.characteristic]));
+  return effects
+    .map((effect, index) => {
+      const characteristicId = characteristics.get(effect.effectId!);
+      return {
+        id: `${effect.effectId}-${index}`,
+        label: formatEffectDescription(descriptions.get(effect.effectId!), effect.from!, effect.to!),
+        icon: characteristicId !== undefined ? CHARACTERISTIC_ASSET_BY_ID[characteristicId] : undefined,
+        positive: effect.from! >= 0 && effect.to! >= 0,
+      };
+    })
+    .sort((a, b) => Number(!a.positive) - Number(!b.positive));
 }
 
 function formatEffectDescription(template: string | undefined, from: number, to: number): string {
@@ -231,7 +258,7 @@ function getDisplayedEffectValues(from: number, to: number): {
   return { minimum: from, maximum: to, fixed: false };
 }
 
-export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
-  const types = await cached('item-types', () => getDofusDbItemTypes(signal));
+export async function getCategories(): Promise<Category[]> {
+  const types = await cached('item-types', () => getDofusDbItemTypes());
   return mapDofusDbCategories(types);
 }

@@ -32,6 +32,13 @@ recommandation vérifiable manuellement.
    l'option la plus rentable, l'écart en kamas et le pourcentage pertinent.
 3. **Given** le coût de craft est égal au prix HDV, **When** le calcul est affiché, **Then**
    l'application indique qu'aucune option n'offre d'économie plutôt que de recommander un choix.
+4. **Given** le joueur vient de saisir ou modifier le prix HDV, **When** le résultat se met à jour,
+   **Then** la recommandation, le coût de craft et l'économie réalisée apparaissent immédiatement à
+   proximité du champ de saisie, sans action de défilement supplémentaire pour les consulter.
+5. **Given** une recommandation définitive (fabriquer ou acheter est plus rentable), **When** le
+   joueur consulte le résultat, **Then** celui-ci est visuellement distingué d'un résultat non
+   conclusif (égalité ou données insuffisantes), de façon à identifier immédiatement s'il s'agit
+   d'une recommandation exploitable ou non.
 
 ---
 
@@ -94,6 +101,9 @@ masquée.
   ne conclut pas sur la rentabilité.
 - Les calculs d'écart et de pourcentage gèrent un prix HDV nul ou absent sans division par zéro ni
   pourcentage trompeur.
+- Lorsque le résultat n'est pas conclusif faute de données (prix de ressource ou prix HDV manquant),
+  le détail de ce qui manque reste consultable par le joueur sur ordinateur comme sur mobile/tactile,
+  et pas uniquement via une interaction impossible à reproduire au doigt (ex. survol souris seul).
 
 ## Requirements *(mandatory)*
 
@@ -120,11 +130,18 @@ masquée.
   de chaque ressource par son prix unitaire enregistré, puis en additionnant les montants.
 - **FR-010**: Lorsque tous les prix nécessaires et le prix HDV sont renseignés, le système MUST
   comparer les deux montants et indiquer clairement s'il est plus rentable de fabriquer,
-  d'acheter, ou si les deux options sont équivalentes.
+  d'acheter, ou si les deux options sont équivalentes. Une recommandation définitive (fabriquer ou
+  acheter) MUST être visuellement distinguée d'un résultat non conclusif (égalité ou données
+  insuffisantes).
 - **FR-011**: Le système MUST afficher l'écart en kamas et, lorsque le calcul est défini, le
   pourcentage d'économie ou de rentabilité avec son point de comparaison explicite.
 - **FR-012**: Le système MUST signaler les données manquantes, incertaines ou indisponibles et
-  MUST NOT présenter une recommandation définitive fondée sur un coût incomplet.
+  MUST NOT présenter une recommandation définitive fondée sur un coût incomplet. Le détail de ce
+  qui manque MUST rester consultable par le joueur sur ordinateur comme sur mobile/tactile, que ce
+  signalement soit permanent ou accessible à la demande.
+- **FR-016**: Le système MUST afficher le résultat de la comparaison (recommandation, coût de
+  craft, économie réalisée) à proximité immédiate du champ de saisie du prix HDV, sans nécessiter
+  de défilement supplémentaire pour le consulter.
 - **FR-013**: Le système MUST identifier la source et la version des données d'objets et de
   recettes affichées lorsque ces informations sont disponibles.
 - **FR-014**: Le système MUST offrir une expérience utilisable sur écrans de bureau et mobiles,

@@ -17,16 +17,18 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
   return (
     <>
       <section className="home-hero">
-        <span className="eyebrow">Bienvenue</span>
-        <h1>Analysez vos crafts en un coup d'œil</h1>
-        <p>
-          Comparez le coût de fabrication d'un objet à son prix à l'hôtel de vente et sachez
-          immédiatement si le craft est rentable.
-        </p>
-        <Link to={ROUTES.search} className="btn btn-primary home-hero-cta">
-          <Icon name="search" size={18} />
-          Rechercher un objet
-        </Link>
+        <div className="home-hero-content">
+          <span className="eyebrow">Bienvenue</span>
+          <h1>Analysez vos crafts en un coup d'œil</h1>
+          <p>
+            Comparez le coût de fabrication d'un objet à son prix à l'hôtel de vente et sachez
+            immédiatement si le craft est rentable.
+          </p>
+          <Link to={ROUTES.search} className="btn btn-primary home-hero-cta">
+            <Icon name="search" size={18} />
+            Rechercher un objet
+          </Link>
+        </div>
       </section>
 
       <div className="stat-tile-row">
@@ -50,11 +52,6 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
       <section className="panel home-pinned-preview">
         <div className="page-section-heading">
           <h2>Épinglés récents</h2>
-          {pinnedItems.length > 0 && (
-            <Link to={ROUTES.pinned} className="btn btn-secondary btn-small">
-              Voir tout
-            </Link>
-          )}
         </div>
         {recentPinned.length === 0 ? (
           <p className="empty">
@@ -83,6 +80,13 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
                 </span>
               </Link>
             ))}
+          </div>
+        )}
+        {pinnedItems.length > 0 && (
+          <div className="home-pinned-preview-footer">
+            <Link to={ROUTES.pinned} className="btn btn-secondary btn-small">
+              Voir tout
+            </Link>
           </div>
         )}
       </section>

@@ -111,6 +111,46 @@ it('uses a targeted first search while the global catalogue index is warming up'
   expect(requests.some((request) => request.includes('hasRecipe=true') && !request.includes('name.fr%5B%24regex%5D'))).toBe(false);
 });
 
+it('fetches only the selected category instead of the whole catalogue when no search query is given', async () => {
+  const requests: string[] = [];
+  vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+    requests.push(input);
+    if (input.includes('/item-types?')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        total: 1,
+        limit: 100,
+        skip: 0,
+        data: [{ id: 1, name: { fr: 'Amulette' }, superType: { id: 1, name: { fr: 'Amulette' } } }],
+      }), { status: 200 }));
+    }
+    if (input.includes('/item-sets?')) {
+      return Promise.resolve(new Response(JSON.stringify({ total: 0, limit: 50, skip: 0, data: [] }), { status: 200 }));
+    }
+    if (input.includes('/items?') && input.includes('typeId=1')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        total: 1,
+        limit: 100,
+        skip: 0,
+        data: [{
+          id: 2425,
+          level: 20,
+          name: { fr: 'Amulette du Bouftou' },
+          type: { id: 1, superType: { id: 1 } },
+          hasRecipe: true,
+        }],
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response(JSON.stringify({ total: 0, limit: 100, skip: 0, data: [] }), { status: 200 }));
+  }));
+
+  await expect(searchItems('', 'equipment-type-1', 0, 12)).resolves.toMatchObject({
+    total: 1,
+    data: [{ id: '2425', name: 'Amulette du Bouftou' }],
+  });
+  expect(requests.some((request) => request.includes('/items?') && request.includes('typeId=1'))).toBe(true);
+  expect(requests.some((request) => request.includes('/items?') && !request.includes('typeId='))).toBe(false);
+});
+
 it('sorts by level then name before applying the result limit', async () => {
   vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
     if (input.includes('/item-types?')) {

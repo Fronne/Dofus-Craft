@@ -5,9 +5,9 @@ import {
   getDofusDbItemTypes,
   getDofusDbItems,
   getDofusDbItemSets,
+  getDofusDbItemsByTypeIds,
   normalizeSearchText,
   searchDofusDbItems,
-  searchDofusDbItemsByTypeIds,
 } from '../../src/services/dofusdb-api';
 
 describe('DofusDB API service', () => {
@@ -109,9 +109,8 @@ describe('DofusDB API service', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const page = await searchDofusDbItemsByTypeIds('', [1, 2], 0, 24);
-    expect(page.total).toBe(2);
-    expect(page.data.map((item) => item.id)).toEqual([1, 3]);
+    const items = await getDofusDbItemsByTypeIds('', [1, 2]);
+    expect(items.map((item) => item.id)).toEqual([1, 3]);
   });
 
   it('loads paginated recipe-bearing items without requesting each type separately', async () => {

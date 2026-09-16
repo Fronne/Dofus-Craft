@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
-import { useActiveServer } from './ServerContext';
 import { ROUTES } from './router';
 import { Icon } from '../components/Icon';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
@@ -14,6 +13,7 @@ import type { AccentColorId } from '../domain/accent-colors';
 import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-preference';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
+import { getShareConsent, setShareConsent } from '../persistence/community-consent-preference';
 
 const NAV_ITEMS = [
   { to: ROUTES.home, label: 'Accueil', icon: 'home' as const, end: false },
@@ -24,7 +24,6 @@ const NAV_ITEMS = [
 ];
 
 export function AppShell() {
-  const { serverId, servers } = useActiveServer();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const stored = window.localStorage.getItem('craftcheck-theme');
     if (stored === 'light' || stored === 'dark') return stored;
@@ -35,6 +34,7 @@ export function AppShell() {
   });
   const [accentColor, setAccentColor] = useState<AccentColorId>(() => getAccentColorId());
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
+  const [shareConsent, setShareConsentState] = useState<boolean>(() => getShareConsent());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -47,8 +47,9 @@ export function AppShell() {
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
-
-  const activeServer = servers.find((server) => server.id === serverId);
+  useEffect(() => {
+    setShareConsent(shareConsent);
+  }, [shareConsent]);
 
   return (
     <div className="app-shell">
@@ -59,6 +60,7 @@ export function AppShell() {
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
         </div>
+        <ServerSwitcher />
         <ul className="app-nav-list">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
@@ -73,37 +75,28 @@ export function AppShell() {
             </li>
           ))}
         </ul>
+        <div className="app-nav-footer">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={theme === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'}
+            aria-pressed={theme === 'light'}
+            onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+          </button>
+          <span className="app-nav-version">v{__APP_VERSION__}</span>
+        </div>
       </nav>
       <div className="app-shell-main">
-        <header className="app-topbar">
-          <div className="app-topbar-server">
-            <ServerSwitcher />
-            {activeServer && (
-              <span className="app-server-badge">
-                Prix du serveur <strong>{activeServer.name}</strong>
-              </span>
-            )}
-          </div>
-          <div className="app-topbar-actions">
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={theme === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'}
-              aria-pressed={theme === 'light'}
-              onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
-            >
-              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-            </button>
-            <NavLink to={ROUTES.settings} className="icon-button" aria-label="Ouvrir les paramètres">
-              <Icon name="settings" size={18} />
-            </NavLink>
-          </div>
-        </header>
         <PinnedPriceMigrationNotice />
         <main className="app-page">
           <Routes>
             <Route path={ROUTES.home} element={<AccueilPage priceMode={priceMode} />} />
-            <Route path={ROUTES.search} element={<RecherchePage priceMode={priceMode} />} />
+            <Route
+              path={ROUTES.search}
+              element={<RecherchePage priceMode={priceMode} shareConsent={shareConsent} />}
+            />
             <Route path={ROUTES.pinned} element={<EpinglesPage />} />
             <Route path={ROUTES.prices} element={<PricesPage />} />
             <Route
@@ -116,6 +109,8 @@ export function AppShell() {
                   setAccentColor={setAccentColor}
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
+                  shareConsent={shareConsent}
+                  setShareConsent={setShareConsentState}
                 />
               }
             />

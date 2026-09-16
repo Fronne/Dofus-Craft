@@ -1,5 +1,11 @@
 import type { Category, CatalogueItemKind, Ingredient, Item, Recipe, Resource } from '../domain/types';
-import type { DofusDbItem, DofusDbItemTypeRecord, DofusDbRecipe } from './dofusdb-types';
+import type { Server } from '../domain/servers';
+import type { DofusDbItem, DofusDbItemTypeRecord, DofusDbRecipe, DofusDbServer } from './dofusdb-types';
+import { stripDiacritics } from './text';
+
+/** Permanent servers use gameTypeId 0. Other values are Dofus Retro (2), short-lived event
+ * servers like Tournois/Speed Rush (3), and other non-standard entries (4, seen on "Ombre"). */
+const PERMANENT_SERVER_GAME_TYPE_ID = 0;
 
 const RESOURCE_SUPER_TYPE_ID = 9;
 const CRAFTCHECK_EQUIPMENT_SUPER_TYPE_IDS = new Set([1, 2, 3, 4, 5, 7, 10, 11, 13]);
@@ -16,18 +22,6 @@ const CATEGORY_SORT_ORDER = new Map([
   [151, 9],
   [217, 10],
 ]);
-const CATEGORY_ICON_URLS: Record<string, string> = {
-  'equipment-type-1': 'https://api.dofusdb.fr/img/items/1016.png',
-  'equipment-type-2': 'https://api.dofusdb.fr/img/items/6007.png',
-  'equipment-type-3': 'https://api.dofusdb.fr/img/items/9011.png',
-  'equipment-type-4': 'https://api.dofusdb.fr/img/items/10030.png',
-  'equipment-type-5': 'https://api.dofusdb.fr/img/items/11027.png',
-  'equipment-type-7': 'https://api.dofusdb.fr/img/items/82274.png',
-  'equipment-type-10': 'https://api.dofusdb.fr/img/items/16378.png',
-  'equipment-type-11': 'https://api.dofusdb.fr/img/items/17016.png',
-  'equipment-type-151': 'https://api.dofusdb.fr/img/items/151002.png',
-  'equipment-type-217': 'https://api.dofusdb.fr/img/items/217032.png',
-};
 
 function superTypeId(item: DofusDbItem | DofusDbItemTypeRecord): number | undefined {
   if (isDofusDbItem(item)) return item.type?.superType?.id ?? item.type?.superTypeId;
@@ -72,15 +66,22 @@ function isEquipment(item: DofusDbItem | DofusDbItemTypeRecord): boolean {
   return superId !== undefined && CRAFTCHECK_EQUIPMENT_SUPER_TYPE_IDS.has(superId);
 }
 
+/** DofusDB files Trophées (151) and Prysmaradites (217) under the same super type (13, shared
+ * with Dofus eggs, which CraftCheck excludes — see isEquipment above) but gives that super type
+ * itself a composite name ("Dofus / Trophée / Prysmaradite"). The two item types are in-game
+ * equivalents for CraftCheck's purposes, so they're folded into a single "Trophée" category
+ * instead of the generic per-super-type grouping used for everything else. */
+const TROPHY_CATEGORY_ID = 'equipment-type-151';
+
 function equipmentCategoryId(item: DofusDbItem | DofusDbItemTypeRecord): string {
   const superId = superTypeId(item);
-  const itemTypeId = typeId(item);
-  return `equipment-type-${superId === 13 ? itemTypeId : superId}`;
+  if (superId === 13) return TROPHY_CATEGORY_ID;
+  return `equipment-type-${superId}`;
 }
 
 function categoryLabel(type: DofusDbItemTypeRecord): string | undefined {
   const superId = superTypeId(type);
-  if (superId === 13) return type.name?.fr;
+  if (superId === 13) return 'Trophée';
   return type.superType?.name?.fr;
 }
 
@@ -104,7 +105,6 @@ export function mapDofusDbCategories(types: DofusDbItemTypeRecord[]): Category[]
       kind: 'Equipment',
       sortOrder: CATEGORY_SORT_ORDER.get(type.id) ?? groups.size + 1,
       typeIds: [type.id],
-      iconUrl: CATEGORY_ICON_URLS[categoryId],
     });
   }
   return [...groups.values()].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -156,4 +156,31 @@ export function mapDofusDbRecipe(recipe: DofusDbRecipe, ingredients: DofusDbItem
     throw new Error(`Les ingrédients de la recette DofusDB ${recipe.id} sont incomplets.`);
   }
   return { id: String(recipe.id), itemId: String(recipe.resultId), ingredients: mappedIngredients };
+}
+
+function isFlaggedServerName(name: DofusDbServer['name']): boolean {
+  if (!name) return false;
+  return Object.values(name).some((value) => typeof value === 'string' && value.trim().startsWith('[!]'));
+}
+
+function slugifyServerName(name: string): string {
+  return stripDiacritics(name)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** Keeps only permanent servers: DofusDB also lists Dofus Retro, short-lived event servers
+ * (Speed Rush, Tournois) and other non-standard entries under distinct gameTypeIds, and flags a
+ * couple of special/inactive ones with a "[!]" prefix on their non-French names. */
+export function mapDofusDbServers(servers: DofusDbServer[]): Server[] {
+  return servers
+    .filter((server) => server.gameTypeId === PERMANENT_SERVER_GAME_TYPE_ID && !isFlaggedServerName(server.name))
+    .map((server): Server | undefined => {
+      const name = server.name?.fr?.trim();
+      return name ? { id: slugifyServerName(name), name, type: server.monoAccount ? 'mono' : 'multi' } : undefined;
+    })
+    .filter((server): server is Server => server !== undefined)
+    .sort((left, right) => left.name.localeCompare(right.name, 'fr'));
 }

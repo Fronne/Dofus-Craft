@@ -54,4 +54,18 @@ describe('pinned item market price persistence', () => {
     expect(await pinnedItemPrices.get('dakal', 'item-1')).toBeUndefined();
     expect(await pinnedItemPrices.get('mikhal', 'item-2')).toMatchObject({ marketPriceKamas: 100 });
   });
+
+  it('lists every saved item price for a server, with no notion of pin state at this layer', async () => {
+    await pinnedItemPrices.save('mikhal', 'item-1', 500000);
+    await pinnedItemPrices.save('mikhal', 'item-2', 100);
+    await pinnedItemPrices.save('dakal', 'item-3', 42);
+
+    const rows = await pinnedItemPrices.listAllForServer('mikhal');
+
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ itemId: 'item-1', marketPriceKamas: 500000 }),
+      expect.objectContaining({ itemId: 'item-2', marketPriceKamas: 100 }),
+    ]));
+  });
 });

@@ -23,24 +23,29 @@ test('switches to community mode and back without ever losing the personal price
   await expect(page.getByPlaceholder('Prix unitaire').first()).toHaveValue('1 000');
 });
 
-test('never sends any price-related network request while community mode is active', async ({ page }) => {
+// Community price consultation/contribution is real (specs/004-community-price-sharing) — see
+// tests/e2e/community-price-sharing.spec.ts for that behavior. This test only covers what
+// still holds from 003: switching to community mode never sends a *personal*-price-related
+// network request (personal prices stay in IndexedDB, never over the network) while entering one.
+test('never sends a personal-price-related network request while community mode is active', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
 
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('button', { name: /^Mode communautaire/ }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
-  await expect(page.getByText('ne sont pas encore disponibles')).toBeVisible();
 
-  const priceRequests: string[] = [];
+  const personalPriceRequests: string[] = [];
   page.on('request', (request) => {
     const url = request.url();
-    if (/price|prix|kamas/i.test(url)) priceRequests.push(url);
+    if (request.method() === 'POST' && /community-price/.test(url)) personalPriceRequests.push(url);
   });
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await priceInput.fill('1234');
   await expect(priceInput).toHaveValue('1 234');
 
-  expect(priceRequests).toHaveLength(0);
+  // Filling a personal price alone never contributes it — that requires explicit consent and a
+  // separate "Contribuer" action (FR-004, US2).
+  expect(personalPriceRequests).toHaveLength(0);
 });

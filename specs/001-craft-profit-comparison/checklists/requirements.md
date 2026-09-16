@@ -33,3 +33,11 @@
 
 - Validation passed on 2026-09-13. The first release assumes one local player profile; account
   synchronization and automatic HDV-price retrieval remain explicitly out of scope.
+- Re-validated on 2026-09-16 after resyncing the spec with UI changes made directly during a chat
+  session (result placement next to the HDV field, visual distinction between a definitive and an
+  inconclusive recommendation, missing-data detail requirement). All checklist items still pass;
+  no new [NEEDS CLARIFICATION] markers were needed since the added requirements describe existing,
+  already-shipped behavior rather than open decisions. One gap was found while resyncing: the
+  current implementation exposes the missing-data detail only via mouse hover, which does not
+  satisfy the new FR-012 touch-accessibility clause — flagged to the user as a follow-up fix, not
+  blocking this spec update.

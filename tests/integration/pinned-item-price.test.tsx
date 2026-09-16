@@ -1,5 +1,5 @@
 import { IDBFactory } from 'fake-indexeddb';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/data/catalogue-repository', () => ({
@@ -16,6 +16,7 @@ vi.mock('../../src/data/catalogue-repository', () => ({
     stats: [],
   }),
   preloadCatalogueIndexes: vi.fn(),
+  whenCatalogueReady: vi.fn().mockResolvedValue(undefined),
   getManifest: vi.fn().mockReturnValue({
     sourceName: 'test',
     sourceVersion: '1',
@@ -24,7 +25,15 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   }),
 }));
 
+vi.mock('../../src/data/servers-repository', () => ({
+  getServers: vi.fn().mockResolvedValue([
+    { id: 'mikhal', name: 'Mikhal', type: 'mono' },
+    { id: 'dakal', name: 'Dakal', type: 'mono' },
+  ]),
+}));
+
 import App from '../../src/app/App';
+import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
 
 describe('pinned item market price per server', () => {
   beforeEach(() => {
@@ -38,29 +47,60 @@ describe('pinned item market price per server', () => {
 
   it('keeps the item pinned and isolates its market price when the active server changes', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
 
-    const marketInput = screen.getByLabelText('Prix HDV observé');
+    const marketInput = screen.getByLabelText('Prix HDV');
     expect(marketInput).toHaveValue('');
 
     fireEvent.change(marketInput, { target: { value: '500000' } });
     await waitFor(() => expect(marketInput).toHaveValue('500 000'));
 
-    fireEvent.change(screen.getByLabelText('Serveur actif'), { target: { value: 'dakal' } });
+    fireEvent.click(screen.getByRole('button', { name: /Serveur actif/i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Dakal' }));
 
-    const pinnedItemsPanel = screen.getByRole('region', { name: 'Items épinglés' });
-    expect(within(pinnedItemsPanel).getByText('Épée Boueuse')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText('Prix HDV observé')).toHaveValue(''));
-
-    fireEvent.change(screen.getByLabelText('Prix HDV observé'), { target: { value: '750000' } });
-    await waitFor(() => expect(screen.getByLabelText('Prix HDV observé')).toHaveValue('750 000'));
-
-    fireEvent.change(screen.getByLabelText('Serveur actif'), { target: { value: 'mikhal' } });
-    await waitFor(() => expect(screen.getByLabelText('Prix HDV observé')).toHaveValue('500 000'));
     expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue(''));
+
+    fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '750000' } });
+    await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('750 000'));
+
+    fireEvent.click(screen.getByRole('button', { name: /Serveur actif/i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Mikhal' }));
+    await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
+    expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument();
+  });
+
+  it('keeps the recorded market price after the item is unpinned, so the Prix page can still show it', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '500000' } });
+    await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Désépingler' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
+
+    expect(await pinnedItemPrices.get('mikhal', 'item-1')).toMatchObject({ marketPriceKamas: 500000 });
+  });
+
+  it('lets the user record a market price for an item that is not pinned', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+
+    const marketInput = await screen.findByLabelText('Prix HDV');
+    expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument();
+
+    fireEvent.change(marketInput, { target: { value: '500000' } });
+    await waitFor(() => expect(marketInput).toHaveValue('500 000'));
+
+    expect(await pinnedItemPrices.get('mikhal', 'item-1')).toMatchObject({ marketPriceKamas: 500000 });
   });
 });

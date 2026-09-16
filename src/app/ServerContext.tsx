@@ -1,20 +1,41 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import { listServers } from '../domain/servers';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Server } from '../domain/servers';
 import type { ServerId } from '../domain/types';
 import { getActiveServerId, setActiveServerId } from '../persistence/server-preference';
+import { getServers } from '../data/servers-repository';
 
 type ServerContextValue = {
   serverId: ServerId | undefined;
   hasSelectedServer: boolean;
   servers: Server[];
+  loadingServers: boolean;
   selectServer: (serverId: ServerId) => void;
 };
 
 const ServerContext = createContext<ServerContextValue | undefined>(undefined);
 
 export function ServerProvider({ children }: { children: ReactNode }) {
+  const [servers, setServers] = useState<Server[]>([]);
+  const [loadingServers, setLoadingServers] = useState(true);
   const [serverId, setServerId] = useState<ServerId | undefined>(() => getActiveServerId());
+
+  useEffect(() => {
+    let cancelled = false;
+    getServers()
+      .then((fetched) => {
+        if (cancelled) return;
+        setServers(fetched);
+        // The stored server may no longer exist (renamed or merged since it was picked) —
+        // only trust it once it's confirmed to be part of the real, current server list.
+        setServerId((current) => (current && fetched.some((server) => server.id === current) ? current : undefined));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingServers(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const selectServer = (nextServerId: ServerId) => {
     setActiveServerId(nextServerId);
@@ -26,7 +47,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
       value={{
         serverId,
         hasSelectedServer: serverId !== undefined,
-        servers: listServers(),
+        servers,
+        loadingServers,
         selectServer,
       }}
     >

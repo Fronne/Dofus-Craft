@@ -6,12 +6,20 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   searchItems: vi.fn().mockResolvedValue({ data: [], total: 0 }),
   getItemDetail: vi.fn(),
   preloadCatalogueIndexes: vi.fn(),
+  whenCatalogueReady: vi.fn().mockResolvedValue(undefined),
   getManifest: vi.fn().mockReturnValue({
     sourceName: 'test',
     sourceVersion: '1',
     catalogueVersion: '1',
     publishedAt: new Date().toISOString(),
   }),
+}));
+
+vi.mock('../../src/data/servers-repository', () => ({
+  getServers: vi.fn().mockResolvedValue([
+    { id: 'mikhal', name: 'Mikhal', type: 'mono' },
+    { id: 'dakal', name: 'Dakal', type: 'mono' },
+  ]),
 }));
 
 import App from '../../src/app/App';
@@ -28,24 +36,27 @@ describe('price mode settings selector', () => {
 
   it('presents both modes with their explanation and identifies personal as active by default', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
     const personalOption = await screen.findByRole('button', { name: /mode personnel/i });
     const communityOption = screen.getByRole('button', { name: /mode communautaire/i });
 
     expect(personalOption).toHaveTextContent('Utiliser uniquement mes prix');
-    expect(communityOption).toHaveTextContent('Consulter les prix de la communauté');
+    expect(communityOption).toHaveTextContent('Consulter les prix communautaires');
     expect(personalOption).toHaveAttribute('aria-pressed', 'true');
     expect(communityOption).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('makes the community mode the identified active mode once selected', async () => {
+  it('lets the player select community mode, which becomes active (specs/004-community-price-sharing)', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
-    fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
+    const communityOption = await screen.findByRole('button', { name: /mode communautaire/i });
+    expect(communityOption).not.toBeDisabled();
+
+    fireEvent.click(communityOption);
 
     expect(screen.getByRole('button', { name: /mode communautaire/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /mode personnel/i })).toHaveAttribute('aria-pressed', 'false');
@@ -53,7 +64,7 @@ describe('price mode settings selector', () => {
 
   it('never exposes more than the two modes', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
     await screen.findByRole('button', { name: /mode personnel/i });
@@ -62,7 +73,7 @@ describe('price mode settings selector', () => {
 
   it('resolves to personal mode by default and never blocks access to the rest of the application', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
     expect(await screen.findByRole('button', { name: /^Mode personnel/i })).toHaveAttribute('aria-pressed', 'true');
