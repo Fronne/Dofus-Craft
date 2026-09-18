@@ -1,11 +1,9 @@
-import { useState, type CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import { Icon } from '../../components/Icon';
 import { accentColors } from '../../domain/accent-colors';
 import type { AccentColorId } from '../../domain/accent-colors';
 import { priceModes } from '../../domain/price-modes';
 import type { PriceMode } from '../../domain/price-modes';
-import { listLocalContributions, clearLocalContributions } from '../../persistence/community-contributions';
-import { withdrawCommunityContribution } from '../../services/community-price-api';
 
 export function ParametresPage({
   theme,
@@ -14,8 +12,6 @@ export function ParametresPage({
   setAccentColor,
   priceMode,
   setPriceMode,
-  shareConsent,
-  setShareConsent,
 }: {
   theme: 'dark' | 'light';
   setTheme: (value: 'dark' | 'light') => void;
@@ -23,31 +19,7 @@ export function ParametresPage({
   setAccentColor: (value: AccentColorId) => void;
   priceMode: PriceMode;
   setPriceMode: (value: PriceMode) => void;
-  shareConsent: boolean;
-  setShareConsent: (value: boolean) => void;
 }) {
-  const [contributions, setContributions] = useState(() => listLocalContributions());
-  const [withdrawing, setWithdrawing] = useState(false);
-  const [withdrawError, setWithdrawError] = useState(false);
-
-  async function handleWithdrawAll() {
-    const confirmed = window.confirm(
-      'Retirer définitivement toutes vos contributions déjà envoyées à la communauté ? Cette action est irréversible.',
-    );
-    if (!confirmed) return;
-    setWithdrawing(true);
-    setWithdrawError(false);
-    const results = await Promise.all(
-      contributions.map((entry) => withdrawCommunityContribution(entry.id)),
-    );
-    setWithdrawing(false);
-    if (results.every(Boolean)) {
-      clearLocalContributions();
-      setContributions([]);
-    } else {
-      setWithdrawError(true);
-    }
-  }
   return (
     <>
       <header className="page-header">
@@ -106,82 +78,36 @@ export function ParametresPage({
       <section className="panel settings-section">
         <h2>Gestion des prix</h2>
         <p className="settings-section-description">
-          Le mode actuellement actif est facilement identifiable ci-dessous.
+          Le mode actif est mis en évidence ci-dessous. Le mode communautaire arrive bientôt et
+          n'est pas encore sélectionnable.
         </p>
         <div className="settings-price-mode-list">
           {priceModes.map((mode) => (
             <button
               key={mode.id}
               type="button"
-              className={
-                priceMode === mode.id ? 'price-mode-option selected' : 'price-mode-option'
-              }
+              className={[
+                'price-mode-option',
+                priceMode === mode.id ? 'selected' : '',
+                mode.comingSoon ? 'price-mode-option-disabled' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               aria-pressed={priceMode === mode.id}
+              disabled={mode.comingSoon}
               onClick={() => setPriceMode(mode.id)}
             >
-              <span className="price-mode-option-label">{mode.label}</span>
+              <span className="price-mode-option-label">
+                {mode.label}
+                {mode.comingSoon && (
+                  <span className="price-mode-option-badge">Bientôt disponible</span>
+                )}
+              </span>
               <span className="price-mode-option-description">{mode.description}</span>
             </button>
           ))}
         </div>
       </section>
-
-      {priceMode === 'community' && (
-        <section className="panel settings-section">
-          <h2>Partage communautaire</h2>
-          <p className="settings-section-description">
-            Donnez votre consentement pour contribuer, de façon anonyme, vos prix personnels à la
-            communauté. Ce choix est distinct du mode de gestion des prix et n'active aucun envoi
-            tant qu'il n'est pas donné.
-          </p>
-          <div className="settings-choice-row">
-            <button
-              type="button"
-              className={shareConsent ? 'settings-choice selected' : 'settings-choice'}
-              aria-pressed={shareConsent}
-              onClick={() => setShareConsent(true)}
-            >
-              <Icon name="check" size={18} />
-              <span>Partager mes prix</span>
-            </button>
-            <button
-              type="button"
-              className={!shareConsent ? 'settings-choice selected' : 'settings-choice'}
-              aria-pressed={!shareConsent}
-              onClick={() => setShareConsent(false)}
-            >
-              <Icon name="close" size={18} />
-              <span>Ne pas partager</span>
-            </button>
-          </div>
-          {shareConsent && (
-            <p className="settings-section-confirmation">
-              Partage actif : vos prix personnels peuvent désormais être envoyés anonymement.
-            </p>
-          )}
-          {contributions.length > 0 && (
-            <div className="settings-withdraw-contributions">
-              <button
-                type="button"
-                className="settings-choice"
-                disabled={withdrawing}
-                onClick={() => void handleWithdrawAll()}
-              >
-                <Icon name="close" size={18} />
-                <span>
-                  Retirer mes {contributions.length}{' '}
-                  contribution{contributions.length > 1 ? 's' : ''} déjà envoyées
-                </span>
-              </button>
-              {withdrawError && (
-                <p className="warning">
-                  Le retrait a échoué pour au moins une contribution. Réessayez plus tard.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
     </>
   );
 }

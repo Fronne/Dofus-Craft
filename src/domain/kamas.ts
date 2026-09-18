@@ -1,3 +1,11 @@
+// Glyphe "kamas" officiel du client Dofus 3 (Unity), extrait de
+// StreamingAssets/aa/StandaloneWindows64/spriteassets_assets_2x.bundle (sprite "kama", variante
+// haute résolution, dorée) et copié dans public/kamas-icon.png — c'est le même symbole que le jeu
+// affiche à côté des montants de kamas dans son interface. Bump ICON_ASSET_VERSION si ce fichier
+// est remplacé (voir CharacteristicIcon.tsx pour le même besoin de cache-busting).
+const ICON_ASSET_VERSION = 1;
+export const KAMAS_ICON_URL = `/kamas-icon.png?v=${ICON_ASSET_VERSION}`;
+
 export function normalizeKamasInput(value: string): string {
   return value.replace(/\s/g, '');
 }

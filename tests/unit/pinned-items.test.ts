@@ -33,4 +33,25 @@ describe('pinned items storage', () => {
 
     expect(loadPinnedItems()).toEqual([{ item }]);
   });
+
+  // 005-pinned-item-collections
+  it('loads a stored entry with no collectionName field exactly as before this feature (FR-005)', () => {
+    window.localStorage.setItem('craftcheck-pinned-items', JSON.stringify([{ item }]));
+
+    expect(loadPinnedItems()).toEqual([{ item }]);
+  });
+
+  it('persists and reloads a valid collectionName', () => {
+    savePinnedItems([{ item, collectionName: 'PvP' }]);
+
+    expect(loadPinnedItems()).toEqual([{ item, collectionName: 'PvP' }]);
+  });
+
+  it('normalizes a blank or whitespace-only stored collectionName to "Sans collection" (absent)', () => {
+    window.localStorage.setItem('craftcheck-pinned-items', JSON.stringify([
+      { item, collectionName: '   ' },
+    ]));
+
+    expect(loadPinnedItems()).toEqual([{ item }]);
+  });
 });

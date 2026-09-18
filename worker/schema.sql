@@ -15,9 +15,21 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   resource_id TEXT NOT NULL,
   server_id TEXT NOT NULL,
   amount_kamas INTEGER NOT NULL CHECK (amount_kamas >= 0),
+  -- Anonymous per-device identifier (revision 5, FR-010/FR-021/FR-022): lets contributions from the
+  -- same device be recognized as such, never a player identity. Empty for rows inserted before this
+  -- revision (see migrations/0001_add_device_id.sql for the already-existing production database).
+  device_id TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
 -- Every read is scoped to a single (resource_id, server_id) pair (FR-001/FR-003).
 CREATE INDEX IF NOT EXISTS idx_community_price_contributions_lookup
   ON community_price_contributions (resource_id, server_id, created_at);
+
+-- specs/006-anonymous-visit-count: anonymous daily presence signal, one row per device per day.
+-- The composite primary key is the only deduplication mechanism (no application-level logic).
+CREATE TABLE IF NOT EXISTS app_visits (
+  device_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  PRIMARY KEY (device_id, day)
+);

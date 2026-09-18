@@ -18,7 +18,8 @@ export type IconName =
   | 'trending-down'
   | 'info'
   | 'level'
-  | 'package';
+  | 'package'
+  | 'edit';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
   search: {
@@ -102,6 +103,10 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
   package: {
     children:
       '<path d="M12 3 4 7v10l8 4 8-4V7z"/><path d="M4 7l8 4 8-4"/><line x1="12" y1="11" x2="12" y2="21"/>',
+  },
+  edit: {
+    children:
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   },
 };
 

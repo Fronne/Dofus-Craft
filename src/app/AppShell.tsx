@@ -13,7 +13,7 @@ import type { AccentColorId } from '../domain/accent-colors';
 import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-preference';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
-import { getShareConsent, setShareConsent } from '../persistence/community-consent-preference';
+import { recordVisit } from '../services/visit-api';
 
 const NAV_ITEMS = [
   { to: ROUTES.home, label: 'Accueil', icon: 'home' as const, end: false },
@@ -34,7 +34,6 @@ export function AppShell() {
   });
   const [accentColor, setAccentColor] = useState<AccentColorId>(() => getAccentColorId());
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
-  const [shareConsent, setShareConsentState] = useState<boolean>(() => getShareConsent());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -48,8 +47,8 @@ export function AppShell() {
     setPriceMode(priceMode);
   }, [priceMode]);
   useEffect(() => {
-    setShareConsent(shareConsent);
-  }, [shareConsent]);
+    void recordVisit();
+  }, []);
 
   return (
     <div className="app-shell">
@@ -95,7 +94,7 @@ export function AppShell() {
             <Route path={ROUTES.home} element={<AccueilPage priceMode={priceMode} />} />
             <Route
               path={ROUTES.search}
-              element={<RecherchePage priceMode={priceMode} shareConsent={shareConsent} />}
+              element={<RecherchePage priceMode={priceMode} />}
             />
             <Route path={ROUTES.pinned} element={<EpinglesPage />} />
             <Route path={ROUTES.prices} element={<PricesPage />} />
@@ -109,8 +108,6 @@ export function AppShell() {
                   setAccentColor={setAccentColor}
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
-                  shareConsent={shareConsent}
-                  setShareConsent={setShareConsentState}
                 />
               }
             />

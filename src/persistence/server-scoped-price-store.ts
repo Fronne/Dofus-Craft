@@ -15,14 +15,20 @@ interface ServerScopedPriceStore {
 }
 
 const DB_NAME = 'dofus-craft';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /**
  * Every server-scoped store must be registered here so a single IndexedDB version upgrade
  * creates them all together. Adding a future server-scoped data type only requires appending
- * its store name to this list (FR-013).
+ * its store name to this list (FR-013). `community-mode-prices-by-server` is a physically
+ * separate store from `resource-prices-by-server` on purpose: it backs the Mode communautaire
+ * carnet, which spec.md FR-005 requires to never read from or write to the Mode personnel carnet.
  */
-const REGISTERED_STORES = ['resource-prices-by-server', 'pinned-item-prices-by-server'];
+const REGISTERED_STORES = [
+  'resource-prices-by-server',
+  'pinned-item-prices-by-server',
+  'community-mode-prices-by-server',
+];
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

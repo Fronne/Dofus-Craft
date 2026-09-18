@@ -63,7 +63,7 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
               <Link
                 key={entry.item.id}
                 to={`${ROUTES.search}?item=${entry.item.id}`}
-                className="pinned-card pinned-card-main"
+                className="pinned-preview-card"
               >
                 {entry.item.imageUrl ? (
                   <img src={entry.item.imageUrl} alt="" width="40" height="40" />

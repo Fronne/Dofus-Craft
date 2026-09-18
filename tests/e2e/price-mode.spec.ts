@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
+// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
+test.describe.skip('price mode switching', () => {
+
 test('switches to community mode and back without ever losing the personal price', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
@@ -48,4 +52,6 @@ test('never sends a personal-price-related network request while community mode 
   // Filling a personal price alone never contributes it — that requires explicit consent and a
   // separate "Contribuer" action (FR-004, US2).
   expect(personalPriceRequests).toHaveLength(0);
+});
+
 });

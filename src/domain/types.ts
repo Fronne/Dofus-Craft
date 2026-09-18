@@ -2,4 +2,3 @@ export type Category={id:string;label:string;sortOrder:number;kind:'Equipment'|'
 export type ServerId=string;
 export type PinnedItemPrice={itemId:string;marketPriceKamas:number;updatedAt:string};
 export type CommunityPrice={resourceId:string;serverId:string;medianAmountKamas:number;sampleSize:number};
-export type ShareConsent={given:boolean};

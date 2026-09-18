@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  getCommunityPrice,
-  submitCommunityPrice,
-  withdrawCommunityContribution,
-} from '../../src/services/community-price-api';
+import { getCommunityPrice, submitCommunityPrice } from '../../src/services/community-price-api';
 
 describe('community price API service (Cloudflare Worker client)', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -40,7 +36,9 @@ describe('community price API service (Cloudflare Worker client)', () => {
   });
 
   describe('submitCommunityPrice', () => {
-    it('sends only resourceId/serverId/amountKamas, never any identifying data', async () => {
+    beforeEach(() => window.localStorage.clear());
+
+    it('sends resourceId/serverId/amountKamas plus an anonymous deviceId, never any personally identifying data (revision 5)', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       vi.stubGlobal('fetch', fetchMock);
 
@@ -48,34 +46,27 @@ describe('community price API service (Cloudflare Worker client)', () => {
 
       const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
       const body = JSON.parse(options.body as string);
-      expect(body).toEqual({ resourceId: 'r1', serverId: 's1', amountKamas: 1000 });
+      expect(Object.keys(body).sort()).toEqual(['amountKamas', 'deviceId', 'resourceId', 'serverId']);
+      expect(body).toMatchObject({ resourceId: 'r1', serverId: 's1', amountKamas: 1000 });
+      expect(typeof body.deviceId).toBe('string');
+      expect(body.deviceId.length).toBeGreaterThan(0);
+    });
+
+    it('reuses the same deviceId across successive submissions from the same device', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await submitCommunityPrice('r1', 's1', 1000);
+      await submitCommunityPrice('r2', 's1', 2000);
+
+      const bodies = fetchMock.mock.calls.map(([, options]) => JSON.parse((options as RequestInit).body as string));
+      expect(bodies[1].deviceId).toBe(bodies[0].deviceId);
     });
 
     it('resolves undefined rather than throwing on failure', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
 
       await expect(submitCommunityPrice('r1', 's1', 1000)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('withdrawCommunityContribution', () => {
-    it('resolves true on a successful deletion', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
-
-      await expect(withdrawCommunityContribution('contribution-1')).resolves.toBe(true);
-    });
-
-    it('is idempotent: resolves true again for an already-removed id', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
-
-      await expect(withdrawCommunityContribution('contribution-1')).resolves.toBe(true);
-      await expect(withdrawCommunityContribution('contribution-1')).resolves.toBe(true);
-    });
-
-    it('resolves false rather than throwing on failure', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-
-      await expect(withdrawCommunityContribution('contribution-1')).resolves.toBe(false);
     });
   });
 });

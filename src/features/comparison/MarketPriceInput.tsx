@@ -1,4 +1,4 @@
-import { formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
+import { KAMAS_ICON_URL, formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
 
 export function MarketPriceInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const valid = isValidKamas(value);
@@ -18,7 +18,7 @@ export function MarketPriceInput({ value, onChange }: { value: string; onChange:
           onChange={(event) => onChange(normalizeKamasInput(event.target.value))}
           placeholder="Prix en kamas"
         />
-        {value && <span className="kamas-input-suffix">kamas</span>}
+        {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
       </span>
       {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
     </div>

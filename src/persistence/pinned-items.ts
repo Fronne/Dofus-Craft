@@ -2,6 +2,10 @@ import type { Item } from '../domain/types';
 
 export type PinnedItem = {
   item: Item;
+  // 005-pinned-item-collections FR-005/FR-008: absent means "Sans collection" — the state of every
+  // item pinned before this feature existed, and normalized to this same state below whenever the
+  // stored value would otherwise be blank.
+  collectionName?: string;
 };
 
 const STORAGE_KEY = 'craftcheck-pinned-items';
@@ -31,10 +35,22 @@ function readRawEntries(): unknown[] {
   }
 }
 
+// 005-pinned-item-collections: a blank/whitespace-only or non-string stored value is never kept as
+// a collection name — it normalizes to `undefined` ("Sans collection"), the same as an entry
+// stored before this field existed.
+function normalizeCollectionName(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
+}
+
 export function loadPinnedItems(): PinnedItem[] {
   return readRawEntries()
     .filter(isRawPinnedEntry)
-    .map((entry) => ({ item: entry.item }));
+    .map((entry) => {
+      const collectionName = normalizeCollectionName((entry as { collectionName?: unknown }).collectionName);
+      return collectionName ? { item: entry.item, collectionName } : { item: entry.item };
+    });
 }
 
 export function savePinnedItems(items: PinnedItem[]): void {

@@ -17,7 +17,6 @@ async function mockCommunityBackend(
     if (onContribute) await onContribute(route);
     else await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'e2e-contribution-1' }) });
   });
-  await page.route('**/community-price/*', (route) => route.fulfill({ status: 204, body: '' }));
 }
 
 async function openStrigideInCommunityMode(page: Page) {
@@ -33,75 +32,96 @@ async function openStrigideInCommunityMode(page: Page) {
   await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible({ timeout: 30_000 });
 }
 
-test('shows a real community price, or an explicit empty state (US1)', async ({ page }) => {
+// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
+// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
+test.describe.skip('community price sharing', () => {
+
+test('pre-fills the resource price field with the community median, directly editable (US1)', async ({ page }) => {
   await mockCommunityBackend(page, {
     medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5 },
   });
   await openStrigideInCommunityMode(page);
 
-  await expect(page.getByText(/4 200.*kamas/)).toBeVisible();
-  await expect(page.getByText(/médiane sur 5 contributions/)).toBeVisible();
+  const priceInput = page.getByPlaceholder('Prix unitaire').first();
+  await expect(priceInput).toHaveValue('4 200');
+  await expect(page.getByText(/5 contributions/)).toBeVisible();
+
+  await priceInput.fill('4500');
+  await expect(priceInput).toHaveValue('4 500');
 });
 
-test('shows an explicit "pas encore de données" state rather than a fabricated price (US1)', async ({ page }) => {
+test('leaves the field empty and directly fillable when no community price exists (US1)', async ({ page }) => {
   await mockCommunityBackend(page);
-  await openStrigideInCommunityMode(page);
-
-  await expect(page.getByText('Aucun prix communautaire pour cette ressource sur ce serveur pour l’instant.').first()).toBeVisible();
-});
-
-test('contributes a price only after explicit consent, sending only resourceId/serverId/amountKamas (US2)', async ({ page }) => {
-  let contributedBody: unknown;
-  await mockCommunityBackend(page, {
-    onContribute: async (route) => {
-      contributedBody = route.request().postDataJSON();
-      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'e2e-contribution-1' }) });
-    },
-  });
   await openStrigideInCommunityMode(page);
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
-  await priceInput.fill('1000');
-  await expect(page.getByText('Activez le partage communautaire dans les Paramètres pour contribuer ce prix.').first())
-    .toBeVisible();
-
-  await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
-  await page.getByRole('button', { name: 'Partager mes prix' }).click();
-  await expect(page.getByText('Partage actif')).toBeVisible();
-
-  await page.getByRole('link', { name: 'Recherche' }).click();
-  await expect(priceInput).toHaveValue('1 000');
-  await page.getByRole('button', { name: 'Contribuer ce prix à la communauté' }).first().click();
-
-  await expect.poll(() => contributedBody).toMatchObject({ amountKamas: 1000 });
-  expect(Object.keys(contributedBody as object).sort()).toEqual(['amountKamas', 'resourceId', 'serverId']);
+  await expect(priceInput).toHaveValue('');
+  await expect(priceInput).toBeEditable();
 });
 
-test('always uses the personal price for the craft-cost calculation, never the community price (US3)', async ({ page }) => {
+test('the Mode communautaire carnet never depends on the Mode personnel carnet (US2)', async ({ page }) => {
   await mockCommunityBackend(page, {
-    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 999999, sampleSize: 2 },
+    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 2 },
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Mikhal' }).click();
+
+  const search = page.getByLabel('Rechercher un objet');
+  await search.fill('Amulette du Strigide');
+  await page.getByRole('button', { name: /Amulette du Strigide/ }).click();
+  await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible({ timeout: 30_000 });
+
+  const priceInput = page.getByPlaceholder('Prix unitaire').first();
+  await priceInput.fill('1000');
+  await expect(page.getByText(/Coût de craft/)).toContainText('1 000');
+
+  await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
+  await page.getByRole('button', { name: /^Mode communautaire/ }).click();
+  await page.getByRole('link', { name: 'Recherche' }).click();
+
+  await expect(priceInput).toHaveValue('5 000');
+  await expect(page.getByText(/Coût de craft/)).not.toContainText('1 000');
+
+  await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
+  await page.getByRole('button', { name: /^Mode personnel/ }).click();
+  await page.getByRole('link', { name: 'Recherche' }).click();
+
+  await expect(priceInput).toHaveValue('1 000');
+});
+
+test('confirming an edit to a resource price field sends exactly one contribution, sending only resourceId/serverId/amountKamas, then refreshes the field (US1/US3)', async ({ page }) => {
+  const contributedBodies: unknown[] = [];
+  let medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5 };
+  await page.route('**/community-price?*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(medianRow) }),
+  );
+  await page.route('**/community-price', async (route) => {
+    contributedBodies.push(route.request().postDataJSON());
+    medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 6 };
+    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'e2e-contribution-1' }) });
   });
   await openStrigideInCommunityMode(page);
 
-  await page.getByPlaceholder('Prix unitaire').first().fill('1000');
-
-  await expect(page.getByText(/Coût de craft/)).not.toContainText('999 999');
-});
-
-test('retracting consent blocks further contributions and can withdraw contributions already sent (US4)', async ({ page }) => {
-  await mockCommunityBackend(page);
-  await openStrigideInCommunityMode(page);
-
+  // No manual or bulk sharing action exists anywhere in the app (révision 4 removes it).
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
-  await page.getByRole('button', { name: 'Partager mes prix' }).click();
-  await page.getByRole('button', { name: 'Ne pas partager' }).click();
-
+  await expect(page.getByRole('button', { name: /Partager tous mes prix/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'Recherche' }).click();
-  await page.getByPlaceholder('Prix unitaire').first().fill('1000');
-  await expect(page.getByRole('button', { name: 'Contribuer ce prix à la communauté' })).toHaveCount(0);
+
+  const priceInput = page.getByPlaceholder('Prix unitaire').first();
+  await expect(priceInput).toHaveValue('4 200');
+  await expect(page.getByText(/5 contributions/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
+  await priceInput.fill('4500');
+  await priceInput.blur();
+
+  await expect.poll(() => contributedBodies.length).toBe(1);
+  expect(Object.keys(contributedBodies[0] as object).sort()).toEqual(['amountKamas', 'resourceId', 'serverId']);
+  await expect(priceInput).toHaveValue('4 200');
+  await expect(page.getByText(/6 contributions/)).toBeVisible();
 });
 
-test('shows the last known community price as stale, rather than breaking, when the backend becomes unavailable (US5)', async ({ page }) => {
+test('shows the last known community price as stale, rather than breaking, when the backend becomes unavailable (US4)', async ({ page }) => {
   let failNext = false;
   await page.route('**/community-price?*', (route) => {
     if (failNext) return route.abort();
@@ -112,15 +132,19 @@ test('shows the last known community price as stale, rather than breaking, when 
     });
   });
   await openStrigideInCommunityMode(page);
-  await expect(page.getByText(/1 500.*kamas/)).toBeVisible();
+  const priceInput = page.getByPlaceholder('Prix unitaire').first();
+  await expect(priceInput).toHaveValue('1 500');
 
   failNext = true;
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
 
   await expect(page.getByText(/peut-être daté/).first()).toBeVisible({ timeout: 15_000 });
-  // The personal price field remains fully usable throughout.
-  const priceInput = page.getByPlaceholder('Prix unitaire').first();
+  // The carnet already holds the value from the earlier successful fetch — the field, driven by
+  // that carnet (not by the now-unavailable live fetch), remains fully usable throughout.
+  await expect(priceInput).toHaveValue('1 500');
   await priceInput.fill('1000');
   await expect(priceInput).toHaveValue('1 000');
+});
+
 });

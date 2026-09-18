@@ -14,12 +14,19 @@ describe('price mode preference', () => {
   });
 
   it('persists a valid choice across a simulated reload', () => {
-    setPriceMode('community');
-    expect(getPriceMode()).toBe('community');
+    setPriceMode('personal');
+    expect(getPriceMode()).toBe('personal');
   });
 
   it('rejects an unknown price mode', () => {
     expect(() => setPriceMode('offline' as never)).toThrow();
+  });
+
+  // Mode communautaire temporairement désactivé (src/domain/price-modes.ts,
+  // COMMUNITY_MODE_ENABLED) : 'community' n'est plus un mode connu tant qu'il ne l'est pas.
+  it.skip('persists community mode once it is re-enabled', () => {
+    setPriceMode('community');
+    expect(getPriceMode()).toBe('community');
   });
 
   it('treats an unavailable localStorage as no preference, defaulting to personal, without throwing', () => {

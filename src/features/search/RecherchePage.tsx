@@ -1,8 +1,8 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { ResourcePrice } from '../../domain/types';
+import type { Resource, ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
-import { formatKamas, parseKamas } from '../../domain/kamas';
+import { formatKamas, isValidKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
@@ -10,18 +10,79 @@ import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
 import { RecommendationBadge, SavingsNote, insufficientDataHint } from '../comparison/ComparisonResult';
 import { useResourcePrices } from '../comparison/useResourcePrices';
+import { useCommunityPrice } from '../comparison/useCommunityPrice';
 import { useCatalogue } from '../catalogue/useCatalogue';
 import { usePinnedItems } from '../catalogue/usePinnedItems';
 import { useActiveServer } from '../../app/ServerContext';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
+import { prices } from '../../persistence/indexeddb-resource-price-repository';
+import { communityModePrices } from '../../persistence/indexeddb-community-mode-price-repository';
 import type { PriceMode } from '../../domain/price-modes';
-import { CommunityPriceDisplay } from '../comparison/CommunityPriceDisplay';
-import { submitCommunityPrice } from '../../services/community-price-api';
-import { addLocalContribution } from '../../persistence/community-contributions';
 
 const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
 
-export function RecherchePage({ priceMode, shareConsent }: { priceMode: PriceMode; shareConsent: boolean }) {
+// FR-001/FR-004/FR-006: in Mode communautaire, a resource with no entry yet in the community-mode
+// carnet is pre-filled from the community median (once, guarded by `prefilled`) and immediately
+// saved via `onPrefill` — after that, `hasCarnetEntry` becomes true and this never fires again for
+// that resource, so a later refresh of `useCommunityPrice` can never overwrite it. `useCommunityPrice`
+// is only ever mounted here (a dedicated key={resourceId} instance per ingredient), never in Mode
+// personnel, so no community network call happens outside Mode communautaire (FR-015).
+function CommunityResourcePriceRow({
+  resource,
+  quantity,
+  serverId,
+  value,
+  hasCarnetEntry,
+  updatedAt,
+  onChange,
+  onPrefill,
+}: {
+  resource: Resource;
+  quantity: number;
+  serverId: string;
+  value: string;
+  hasCarnetEntry: boolean;
+  updatedAt?: string;
+  onChange: (value: string) => void;
+  onPrefill: (price: number) => void;
+}) {
+  const [communityState, commit] = useCommunityPrice(resource.id, serverId);
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current || hasCarnetEntry || communityState.kind !== 'found') return;
+    prefilled.current = true;
+    onPrefill(communityState.price.medianAmountKamas);
+  }, [communityState, hasCarnetEntry, onPrefill]);
+
+  const communityMeta = communityState.kind === 'found'
+    ? { sampleSize: communityState.price.sampleSize, stale: communityState.stale }
+    : undefined;
+
+  // FR-017/FR-018/FR-019: called on blur, only once the player has actually changed the value
+  // (ResourcePriceInput's own onCommit guard) — submits it as a new contribution, then, on
+  // success, overwrites the carnet with the recalculated median so the field durably reflects it
+  // across remounts (research.md, révision 4, "Écrire la médiane recalculée dans le carnet").
+  async function handleCommit(rawValue: string) {
+    if (!isValidKamas(rawValue)) return;
+    const refreshed = await commit(Number(rawValue));
+    if (refreshed?.kind === 'found') onChange(String(refreshed.price.medianAmountKamas));
+  }
+
+  return (
+    <ResourcePriceInput
+      resource={resource}
+      quantity={quantity}
+      value={value}
+      updatedAt={updatedAt}
+      communityMeta={communityMeta}
+      lockWhenFilled
+      onChange={onChange}
+      onCommit={handleCommit}
+    />
+  );
+}
+
+export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   const [searchParams, setSearchParams] = useSearchParams();
   const updateParams = (patch: Record<string, string | undefined>) => {
@@ -107,7 +168,13 @@ export function RecherchePage({ priceMode, shareConsent }: { priceMode: PriceMod
       ? { item: selectedItem, category: catalogue.categories.find((candidate) => candidate.id === selectedItem.categoryId), resources: [] }
       : undefined;
   const ids = detail?.recipe?.ingredients.map((ingredient) => ingredient.resourceId) ?? [];
-  const { data, save, error } = useResourcePrices(serverId, ids);
+  // FR-005: the craft-cost comparison below MUST read exclusively from the carnet of the active
+  // mode — the personal `prices` repository in Mode personnel (unchanged), the physically separate
+  // `communityModePrices` repository in Mode communautaire — and MUST NOT fall back to or merge
+  // with the other one. Switching `priceMode` swaps which repository `useResourcePrices` reads
+  // and writes; `market` (HDV price, `pinnedItemPrices`) is item-level and untouched by this
+  // revision (spec.md Assumptions), never drawn into this branching.
+  const { data, save, error } = useResourcePrices(serverId, ids, priceMode === 'community' ? communityModePrices : prices);
   const merged: Record<string, ResourcePrice> = {};
 
   ids.forEach((id) => {
@@ -123,9 +190,6 @@ export function RecherchePage({ priceMode, shareConsent }: { priceMode: PriceMod
     }
   });
 
-  // FR-008/US3: the craft-cost comparison MUST use only the personal price (`merged`, `market`,
-  // both sourced from useResourcePrices/pinnedItemPrices above) — never a community price. Do
-  // not read `CommunityPriceDisplay`/`getCommunityPrice` into these inputs.
   const result = detail?.recipe
     ? compare(detail.recipe, merged, parseKamas(market))
     : undefined;
@@ -202,51 +266,42 @@ export function RecherchePage({ priceMode, shareConsent }: { priceMode: PriceMod
           <section className="card">
             <h2>Prix des ressources</h2>
             {detail.recipe.ingredients.map((ingredient) => {
-              const resource = detail.resources.find((item) => item.id === ingredient.resourceId);
+              const resource = detail.resources.find((item) => item.id === ingredient.resourceId) ??
+                { id: ingredient.resourceId, name: ingredient.resourceId };
               const value =
                 inputs[ingredient.resourceId] ??
                 data[ingredient.resourceId]?.unitPriceKamas?.toString() ??
                 '';
-              const personalPrice = parseKamas(value);
+              const onChange = (nextValue: string) => {
+                setInputs((current) => ({ ...current, [ingredient.resourceId]: nextValue }));
+                const price = parseKamas(nextValue);
+                if (price !== undefined) void save(ingredient.resourceId, price);
+              };
+              if (priceMode === 'community' && serverId) {
+                return (
+                  <Fragment key={ingredient.resourceId}>
+                    <CommunityResourcePriceRow
+                      resource={resource}
+                      quantity={ingredient.quantity}
+                      serverId={serverId}
+                      value={value}
+                      hasCarnetEntry={data[ingredient.resourceId] !== undefined || inputs[ingredient.resourceId] !== undefined}
+                      updatedAt={data[ingredient.resourceId]?.updatedAt}
+                      onChange={onChange}
+                      onPrefill={(price) => void save(ingredient.resourceId, price)}
+                    />
+                  </Fragment>
+                );
+              }
               return (
                 <Fragment key={ingredient.resourceId}>
                   <ResourcePriceInput
-                    resource={resource ?? { id: ingredient.resourceId, name: ingredient.resourceId }}
+                    resource={resource}
                     quantity={ingredient.quantity}
                     value={value}
                     updatedAt={data[ingredient.resourceId]?.updatedAt}
-                    onChange={(nextValue) => {
-                      setInputs((current) => ({ ...current, [ingredient.resourceId]: nextValue }));
-                      const price = parseKamas(nextValue);
-                      if (price !== undefined) void save(ingredient.resourceId, price);
-                    }}
+                    onChange={onChange}
                   />
-                  {priceMode === 'community' && serverId && (
-                    <div className="community-price-section">
-                      <CommunityPriceDisplay resourceId={ingredient.resourceId} serverId={serverId} />
-                      {shareConsent ? (
-                        <button
-                          type="button"
-                          className="community-contribute-button"
-                          disabled={personalPrice === undefined}
-                          onClick={() => {
-                            if (personalPrice === undefined) return;
-                            void submitCommunityPrice(ingredient.resourceId, serverId, personalPrice).then((submitted) => {
-                              if (submitted) {
-                                addLocalContribution({ id: submitted.id, resourceId: ingredient.resourceId, serverId });
-                              }
-                            });
-                          }}
-                        >
-                          Contribuer ce prix à la communauté
-                        </button>
-                      ) : (
-                        <p className="muted">
-                          Activez le partage communautaire dans les Paramètres pour contribuer ce prix.
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </Fragment>
               );
             })}

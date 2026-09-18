@@ -104,6 +104,13 @@ masquée.
 - Lorsque le résultat n'est pas conclusif faute de données (prix de ressource ou prix HDV manquant),
   le détail de ce qui manque reste consultable par le joueur sur ordinateur comme sur mobile/tactile,
   et pas uniquement via une interaction impossible à reproduire au doigt (ex. survol souris seul).
+- Depuis 004-community-price-sharing (révision 3) : cette User Story 2 décrit le comportement du
+  Mode personnel, où un prix de ressource déjà enregistré reste toujours directement modifiable,
+  sans bouton ni étape intermédiaire. En Mode communautaire uniquement (concept introduit par
+  003-community-price-mode, postérieur à cette spécification), un champ dont le carnet Mode
+  communautaire contient déjà une valeur est en revanche protégé en lecture seule par défaut, avec
+  un bouton dédié pour le déverrouiller explicitement — voir 004-community-price-sharing (FR-016)
+  pour ce comportement, qui ne s'applique pas ici.
 
 ## Requirements *(mandatory)*
 

@@ -5,12 +5,12 @@ export interface Env {
   COMMUNITY_API_KEY: string;
 }
 
-// 90 rolling days (FR-011).
+// 90 rolling days (FR-013).
 const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
 };
 
@@ -39,7 +39,7 @@ async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
 
   const median = computeCommunityMedian(results.map((row) => row.amount_kamas));
   // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
-  // FR-010's outlier filtering) remains.
+  // FR-012's outlier filtering) remains.
   if (!median) return json(null, 404);
 
   return json({
@@ -50,7 +50,7 @@ async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
   });
 }
 
-type ContributionPayload = { resourceId: string; serverId: string; amountKamas: number };
+type ContributionPayload = { resourceId: string; serverId: string; amountKamas: number; deviceId: string };
 
 function isContributionPayload(value: unknown): value is ContributionPayload {
   if (typeof value !== 'object' || value === null) return false;
@@ -58,7 +58,9 @@ function isContributionPayload(value: unknown): value is ContributionPayload {
   return typeof record.resourceId === 'string' &&
     typeof record.serverId === 'string' &&
     typeof record.amountKamas === 'number' &&
-    record.amountKamas >= 0;
+    record.amountKamas >= 0 &&
+    typeof record.deviceId === 'string' &&
+    record.deviceId.length > 0;
 }
 
 async function handlePostContribution(request: Request, env: Env): Promise<Response> {
@@ -71,22 +73,46 @@ async function handlePostContribution(request: Request, env: Env): Promise<Respo
   if (!isContributionPayload(body)) {
     return json({ error: 'resourceId, serverId and a non-negative amountKamas are required' }, 400);
   }
-  const { resourceId, serverId, amountKamas } = body;
+  const { resourceId, serverId, amountKamas, deviceId } = body;
 
-  // FR-007: only resourceId/serverId/amountKamas are ever persisted — no player, device or IP
-  // identifier exists anywhere in this schema or this handler.
+  // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted. deviceId
+  // is an anonymous, client-generated identifier that only lets contributions from the same device
+  // be recognized as such — never a player identity.
   const id = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES (?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas)).run();
+    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id) VALUES (?, ?, ?, ?, ?)`,
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId).run();
 
   return json({ id }, 201);
 }
 
-async function handleDeleteContribution(id: string, env: Env): Promise<Response> {
-  // FR-012: knowing `id` is the only proof of ownership required; deleting an already-removed
-  // (or never-existing) id is not an error — this stays idempotent by construction.
-  await env.DB.prepare(`DELETE FROM community_price_contributions WHERE id = ?`).bind(id).run();
+type VisitPayload = { deviceId: string };
+
+function isVisitPayload(value: unknown): value is VisitPayload {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.deviceId === 'string' && record.deviceId.length > 0;
+}
+
+// specs/006-anonymous-visit-count: anonymous daily presence signal, sent on every app load
+// regardless of price mode (amends specs/004-community-price-sharing FR-015). The day is computed
+// here, never trusted from the client, so it can't be skewed by a wrong device clock/timezone.
+async function handlePostVisit(request: Request, env: Env): Promise<Response> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'Invalid JSON body' }, 400);
+  }
+  if (!isVisitPayload(body)) {
+    return json({ error: 'deviceId is required' }, 400);
+  }
+
+  const day = new Date().toISOString().slice(0, 10);
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO app_visits (device_id, day) VALUES (?, ?)`,
+  ).bind(body.deviceId, day).run();
+
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
 
@@ -96,24 +122,23 @@ export default {
 
     const url = new URL(request.url);
 
-    // Reading a community price carries no consent requirement (US1 is available regardless of
-    // ShareConsent) — anonymous read access is intentional and matches the client contract.
+    // Reading a community price never requires the write-side app key — anonymous read access is
+    // intentional and matches the client contract.
     if (request.method === 'GET' && url.pathname === '/community-price') {
       return handleGetCommunityPrice(url, env);
     }
 
-    // Writes (contribute / withdraw) require the shared app key, a light deterrent against
-    // requests from outside this app — never a player identity (FR-007 still holds: the key is
-    // the same for every player, it identifies the app, not a person).
+    // Writes (contribute) require the shared app key, a light deterrent against requests from
+    // outside this app — never a player identity (FR-010 still holds: the key is the same for
+    // every player, it identifies the app, not a person).
     if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, 401);
 
     if (request.method === 'POST' && url.pathname === '/community-price') {
       return handlePostContribution(request, env);
     }
 
-    const deleteMatch = /^\/community-price\/([^/]+)$/.exec(url.pathname);
-    if (request.method === 'DELETE' && deleteMatch) {
-      return handleDeleteContribution(deleteMatch[1], env);
+    if (request.method === 'POST' && url.pathname === '/visit') {
+      return handlePostVisit(request, env);
     }
 
     return json({ error: 'Not found' }, 404);

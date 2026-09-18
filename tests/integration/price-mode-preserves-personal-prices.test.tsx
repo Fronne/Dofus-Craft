@@ -1,6 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prices } from '../../src/persistence/indexeddb-resource-price-repository';
+import type { CommunityPriceLookup } from '../../src/services/community-price-api';
+
+const getCommunityPrice = vi.fn<(resourceId: string, serverId: string) => Promise<CommunityPriceLookup>>();
+
+vi.mock('../../src/services/community-price-api', () => ({
+  getCommunityPrice: (resourceId: string, serverId: string) => getCommunityPrice(resourceId, serverId),
+  submitCommunityPrice: vi.fn(),
+}));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([
@@ -34,12 +42,22 @@ vi.mock('../../src/data/servers-repository', () => ({
 
 import App from '../../src/app/App';
 
-describe('switching price mode never alters personal prices', () => {
-  beforeEach(() => window.localStorage.clear());
+// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
+// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
+describe.skip('switching price mode never alters personal prices', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    getCommunityPrice.mockResolvedValue({ status: 'not-found' });
+  });
   afterEach(() => {
     document.body.innerHTML = '';
+    vi.unstubAllGlobals();
   });
 
+  // specs/004-community-price-sharing (révision) FR-005: Mode communautaire reads/writes a
+  // physically separate carnet, so it no longer shows the Mode personnel price at all — this test
+  // now checks the guarantee that still matters: the Mode personnel carnet itself is never
+  // altered by visiting Mode communautaire, however many times the player round-trips.
   it('keeps the personal resource price identical across repeated mode round trips', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
@@ -59,7 +77,7 @@ describe('switching price mode never alters personal prices', () => {
       fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
 
       fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
-      await waitFor(() => expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('1 000'));
+      await waitFor(() => expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue(''));
 
       fireEvent.click(screen.getByRole('link', { name: 'Paramètres' }));
       fireEvent.click(await screen.findByRole('button', { name: /mode personnel/i }));
