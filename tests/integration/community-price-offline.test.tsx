@@ -46,9 +46,7 @@ async function enterCommunityMode() {
   fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
 }
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-describe.skip('Mode communautaire resilience when the community service is unavailable (US5)', () => {
+describe('Mode communautaire resilience when the community service is unavailable (US5)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();

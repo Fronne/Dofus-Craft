@@ -48,6 +48,7 @@ export type DofusDbItemEffect = {
 export type DofusDbEffect = {
   id: number;
   characteristic?: number;
+  elementId?: number;
   useDice?: boolean;
   forceMinMax?: boolean;
   description?: DofusDbLocalizedText;

@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-test.describe.skip('price mode switching', () => {
+test.describe('price mode switching', () => {
 
+// specs/004-community-price-sharing FR-005: the two carnets are physically separate, so a
+// personal price is never carried over into Mode communautaire — that guarantee, together with
+// the real (mocked-backend) community carnet round trip, is covered by
+// tests/e2e/community-price-sharing.spec.ts ("the Mode communautaire carnet never depends on the
+// Mode personnel carnet"). This test only checks the part that's still specific to Mode personnel
+// itself: its own price survives an unrelated round trip through Mode communautaire and a reload.
 test('switches to community mode and back without ever losing the personal price', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
@@ -16,10 +20,8 @@ test('switches to community mode and back without ever losing the personal price
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('button', { name: /^Mode communautaire/ }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
-  await expect(page.getByPlaceholder('Prix unitaire').first()).toHaveValue('1 000');
 
   await page.reload();
-  await expect(page.getByPlaceholder('Prix unitaire').first()).toHaveValue('1 000');
 
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('button', { name: /^Mode personnel/ }).click();

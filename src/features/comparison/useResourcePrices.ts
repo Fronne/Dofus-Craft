@@ -28,5 +28,13 @@ export function useResourcePrices(
       setError('Impossible d’enregistrer ce prix.');
     }
   }
-  return { data, save, error };
+  async function remove(id: string) {
+    if (!serverId) return;
+    await repository.remove(serverId, id);
+    setData((current) => {
+      const { [id]: _removed, ...rest } = current;
+      return rest;
+    });
+  }
+  return { data, save, remove, error };
 }

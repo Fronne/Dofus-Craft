@@ -32,9 +32,7 @@ async function openStrigideInCommunityMode(page: Page) {
   await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible({ timeout: 30_000 });
 }
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-test.describe.skip('community price sharing', () => {
+test.describe('community price sharing', () => {
 
 test('pre-fills the resource price field with the community median, directly editable (US1)', async ({ page }) => {
   await mockCommunityBackend(page, {
@@ -44,8 +42,11 @@ test('pre-fills the resource price field with the community median, directly edi
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await expect(priceInput).toHaveValue('4 200');
-  await expect(page.getByText(/5 contributions/)).toBeVisible();
+  await expect(page.getByText(/5 contributions/).first()).toBeVisible();
 
+  // Once pre-filled, the field locks (lockWhenFilled) to guard against an accidental keystroke —
+  // "Modifier ce prix" unlocks it, same convention as the confirmed-edit test below.
+  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('4500');
   await expect(priceInput).toHaveValue('4 500');
 });
@@ -73,14 +74,13 @@ test('the Mode communautaire carnet never depends on the Mode personnel carnet (
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await priceInput.fill('1000');
-  await expect(page.getByText(/Coût de craft/)).toContainText('1 000');
+  await expect(priceInput).toHaveValue('1 000');
 
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('button', { name: /^Mode communautaire/ }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
 
   await expect(priceInput).toHaveValue('5 000');
-  await expect(page.getByText(/Coût de craft/)).not.toContainText('1 000');
 
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('button', { name: /^Mode personnel/ }).click();
@@ -109,16 +109,21 @@ test('confirming an edit to a resource price field sends exactly one contributio
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await expect(priceInput).toHaveValue('4 200');
-  await expect(page.getByText(/5 contributions/)).toBeVisible();
+  await expect(page.getByText(/5 contributions/).first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('4500');
   await priceInput.blur();
 
   await expect.poll(() => contributedBodies.length).toBe(1);
-  expect(Object.keys(contributedBodies[0] as object).sort()).toEqual(['amountKamas', 'resourceId', 'serverId']);
-  await expect(priceInput).toHaveValue('4 200');
-  await expect(page.getByText(/6 contributions/)).toBeVisible();
+  // specs/004 révision 5, FR-010: an anonymous per-device identifier (never player-identifying) is
+  // sent alongside the contribution.
+  expect(Object.keys(contributedBodies[0] as object).sort()).toEqual(['amountKamas', 'deviceId', 'resourceId', 'serverId']);
+  // specs/004 FR-018 (amendée) / specs/007 FR-012: a successful commit never overwrites the field
+  // with the recalculated median — it keeps showing exactly what the player typed. Only the
+  // contribution count (from the refreshed median lookup) updates.
+  await expect(priceInput).toHaveValue('4 500');
+  await expect(page.getByText(/6 contributions/).first()).toBeVisible();
 });
 
 test('shows the last known community price as stale, rather than breaking, when the backend becomes unavailable (US4)', async ({ page }) => {
@@ -143,6 +148,7 @@ test('shows the last known community price as stale, rather than breaking, when 
   // The carnet already holds the value from the earlier successful fetch — the field, driven by
   // that carnet (not by the now-unavailable live fetch), remains fully usable throughout.
   await expect(priceInput).toHaveValue('1 500');
+  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('1000');
   await expect(priceInput).toHaveValue('1 000');
 });

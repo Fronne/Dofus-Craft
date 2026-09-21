@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- same device be recognized as such, never a player identity. Empty for rows inserted before this
   -- revision (see migrations/0001_add_device_id.sql for the already-existing production database).
   device_id TEXT NOT NULL DEFAULT '',
+  -- Outlier tracking (specs/007-outlier-confirmation, FR-009): the community median the server knew
+  -- for this resource/server just before inserting this row, and the resulting deviation in percent.
+  -- Both NULL exactly when no median existed yet at submission time (FR-008) — never a fabricated
+  -- comparison. Never read by GET /community-price nor by computeCommunityMedian (FR-010): a
+  -- moderator queries `WHERE deviation_percent > 25` directly against this table (see research.md).
+  median_at_submission_kamas INTEGER,
+  deviation_percent REAL,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 

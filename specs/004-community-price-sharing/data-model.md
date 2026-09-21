@@ -86,13 +86,14 @@ store existant.
 3. Garde anti-écrasement : une fois qu'une entrée existe pour une ressource (issue de 1 ou 2), un
    rafraîchissement *automatique et non sollicité* (chargement de page, minuteur de 5 minutes) ne
    déclenche jamais une réécriture de cette entrée (FR-006).
-4. *(Depuis la révision 4)* Réécriture volontaire après un envoi réussi : quand la transmission
-   d'une modification (transition 2 de `CommunityPriceContribution` ci-dessus) réussit, la médiane
-   recalculée renvoyée par le serveur remplace la valeur brute tout juste saisie par le joueur
-   (FR-018) — cette réécriture n'est pas soumise à la garde de la transition 3, puisqu'elle découle
-   directement de l'action que le joueur vient lui-même de terminer sur ce champ, pas d'un
-   rafraîchissement en arrière-plan (voir research.md, révision 4, « Écrire la médiane recalculée
-   dans le carnet, au-delà de la garde anti-écrasement »).
+4. *(Révision 4, amendée révision 6)* Après un envoi réussi (transition 2 de
+   `CommunityPriceContribution` ci-dessus), le carnet conserve la valeur brute que le joueur vient
+   lui-même de saisir (FR-018, amendée) — elle n'est plus remplacée par la médiane recalculée renvoyée
+   par le serveur. Cette médiane recalculée continue d'être demandée et sert à mettre à jour le nombre
+   de contributions affiché (FR-019) et le `CommunityPriceMedian` en cache (specs/007), mais n'est plus
+   écrite dans ce carnet à la place de la valeur du joueur. *(Historique : entre les révisions 4 et 6,
+   cette réécriture avait lieu volontairement au-delà de la garde de la transition 3 — voir
+   research.md, révision 4 — ce choix est celui que la révision 6 est revenue corriger.)*
 
 **Explicitement absent** : aucune référence vers le carnet Mode personnel ni inversement — les deux
 structures ne partagent ni store, ni clé, ni logique de fusion.

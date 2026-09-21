@@ -10,7 +10,21 @@ type ItemDetailData = {
   resources: Resource[];
   stats?: ItemStat[];
   panoplieName?: string;
+  isWeapon?: boolean;
 };
+
+function StatList({ stats }: { stats: ItemStat[] }) {
+  return (
+    <ul>
+      {stats.map((stat) => (
+        <li key={stat.id} className={stat.positive ? 'stat-positive' : 'stat-negative'}>
+          {stat.icon && <CharacteristicIcon asset={stat.icon} size={26} />}
+          {stat.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function ItemDetail({
   detail,
@@ -25,7 +39,7 @@ export function ItemDetail({
     return <section className="card"><p>Sélectionnez un objet pour voir ses détails.</p></section>;
   }
 
-  const { item, category, recipe, stats = [], panoplieName } = detail;
+  const { item, category, recipe, stats = [], panoplieName, isWeapon } = detail;
 
   return (
     <section className="card item-detail-card">
@@ -50,21 +64,31 @@ export function ItemDetail({
           Catégorie : <CategoryIcon categoryId={category.id} size={18} /> {category.label}
         </p>
       )}
-      <section className="item-stats" aria-labelledby="item-stats-heading">
-        <h3 id="item-stats-heading">Effets</h3>
-        {stats.length ? (
-          <ul>
-            {stats.map((stat) => (
-              <li key={stat.id} className={stat.positive ? 'stat-positive' : 'stat-negative'}>
-                {stat.icon && <CharacteristicIcon asset={stat.icon} size={26} />}
-                {stat.label}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">Aucune statistique fournie par DofusDB pour cet objet.</p>
-        )}
-      </section>
+      {isWeapon ? (
+        <>
+          {stats.some((stat) => stat.isWeaponEffect) && (
+            <section className="item-stats" aria-labelledby="weapon-stats-heading">
+              <h3 id="weapon-stats-heading">Effets de l'arme</h3>
+              <StatList stats={stats.filter((stat) => stat.isWeaponEffect)} />
+            </section>
+          )}
+          {stats.some((stat) => !stat.isWeaponEffect) && (
+            <section className="item-stats" aria-labelledby="item-stats-heading">
+              <h3 id="item-stats-heading">Effets</h3>
+              <StatList stats={stats.filter((stat) => !stat.isWeaponEffect)} />
+            </section>
+          )}
+        </>
+      ) : (
+        <section className="item-stats" aria-labelledby="item-stats-heading">
+          <h3 id="item-stats-heading">Effets</h3>
+          {stats.length ? (
+            <StatList stats={stats} />
+          ) : (
+            <p className="muted">Aucune statistique fournie par DofusDB pour cet objet.</p>
+          )}
+        </section>
+      )}
       {!recipe && <p>Aucune recette disponible pour cet objet.</p>}
     </section>
   );

@@ -16,7 +16,8 @@
     "worker:deploy": "wrangler deploy --config worker/wrangler.toml",
     "worker:db:init": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/schema.sql --remote",
     "worker:db:migrate-device-id": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0001_add_device_id.sql --remote",
-    "worker:db:migrate-visits": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0002_add_app_visits.sql --remote"
+    "worker:db:migrate-visits": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0002_add_app_visits.sql --remote",
+    "worker:db:migrate-outlier-tracking": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0003_add_outlier_tracking.sql --remote"
   },
   "dependencies": {
     "react": "^19.3.0",

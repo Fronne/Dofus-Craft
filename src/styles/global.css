@@ -486,7 +486,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 .card h2, .card h3 { color: var(--text); line-height: 1.2; }
 .card h2 { margin: var(--space-4) 0 var(--space-3); font-size: 1.3rem; letter-spacing: -.02em; text-align: center; }
-.card h3 { margin-top: var(--space-5); padding-bottom: .45rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.card h3 { margin-top: var(--space-3); padding-bottom: .3rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .card p, .card li { font-size: .96rem; }
 .item-category { display: flex; align-items: center; gap: .3rem; }
 .category-icon-inline {
@@ -502,10 +502,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .card > img { display: block; max-width: 128px; max-height: 128px; object-fit: contain; margin: auto; }
 .image-fallback { display: grid; place-items: center; min-height: 128px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--text-muted); font-weight: 700; text-align: center; padding: var(--space-4); }
-.item-stats { margin-top: var(--space-4); padding: 0 .9rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--inner-bg); }
+.item-stats { margin-top: var(--space-3); padding: 0 .8rem .6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--inner-bg); }
 .item-set-name { margin: .45rem 0 .65rem; color: var(--text-muted); font-size: .9rem; font-weight: 600; text-align: center; }
-.item-stats ul { display: flex; flex-direction: column; gap: .4rem; margin: .5rem 0 0; padding-left: 0; list-style: none; }
-.item-stats li { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
+.item-stats ul { display: flex; flex-direction: column; gap: .3rem; margin: .35rem 0 0; padding-left: 0; list-style: none; }
+.item-stats li { display: flex; align-items: center; gap: .4rem; font-weight: 700; }
 .item-stats li.stat-positive { color: var(--success); }
 .item-stats li.stat-negative { color: var(--danger); }
 .characteristic-icon { flex: 0 0 auto; object-fit: contain; }
@@ -513,6 +513,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 /* ---------- Price list ---------- */
 
 .price-line {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 90px minmax(130px, 150px);
   align-items: center;
@@ -525,10 +526,48 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .price-resource { display: contents; }
 .price-resource .resource-display { grid-column: 1; }
 .price-resource-quantity { grid-column: 2; white-space: nowrap; color: var(--text-muted); font-size: .9rem; }
-.price-line small { grid-column: 1 / 3; grid-row: 2; margin-top: 0; }
+.price-line small { position: relative; grid-column: 1 / 3; grid-row: 2; margin-top: 0; width: fit-content; }
 .price-line .kamas-input-wrap { grid-column: 3; grid-row: 1; width: 100%; justify-self: end; }
 .price-resource-formatted { grid-column: 3; grid-row: 2; justify-self: end; text-align: right; color: var(--success); font-size: .85rem; font-weight: 700; }
 .price-line em { grid-column: 1 / -1; }
+
+/* specs/008-stale-resource-highlight: flags a row whose price hasn't been updated in a while.
+   Only the "Dernière mise à jour" text itself switches color (user feedback 2026-09-21: coloring
+   the whole row was too much — the signal must stay on that text line only). */
+.price-line--stale small { color: var(--warning); font-weight: 600; }
+.price-line--expired small { color: var(--danger); font-weight: 600; }
+
+/* specs/008-stale-resource-highlight, US3: styled to match the app rather than the browser's
+   default `title` tooltip — same panel/border/shadow language as the rest of the UI. Mouse-hover
+   only, on the "Dernière mise à jour" text itself (user feedback 2026-09-21: not the whole row,
+   and no keyboard-focus trigger) — .price-line small carries the position:relative for it. */
+.price-age-tooltip {
+  position: absolute;
+  bottom: calc(100% + var(--space-3));
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 340px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+  pointer-events: none;
+}
+.price-line small:hover .price-age-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 
 .market { margin: var(--space-4) 0; }
 .market-price-label { display: block; margin: 0 0 .5rem; font-size: .88rem; font-weight: 700; color: var(--text-muted); }
@@ -779,6 +818,43 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
+}
+
+/* specs/007-outlier-confirmation: blocking confirmation shown when a player-entered community
+   price deviates too far from the known median (FR-004/FR-005). The confirm action is styled as a
+   plain, secondary button rather than a primary one — this is a deliberate, re-checked choice, not
+   the reflex click a prominent button would invite. */
+.outlier-confirm-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  max-width: 24rem;
+  background: var(--panel-strong);
+  color: var(--text);
+}
+.outlier-confirm-dialog::backdrop {
+  background: rgba(9, 13, 20, .55);
+}
+.outlier-confirm-dialog p { margin: 0 0 var(--space-3); }
+.outlier-confirm-dialog-question { color: var(--text-muted); font-size: .9rem; }
+.outlier-confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.outlier-confirm-dialog-actions button {
+  min-height: 36px;
+  padding: .4rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.outlier-confirm-dialog-confirm {
+  border-color: var(--warning-soft);
+  color: var(--danger);
 }
 
 /* ---------- Home page ---------- */

@@ -1,14 +1,11 @@
 export type PriceMode = 'personal' | 'community';
 
-// Temporairement désactivé à la demande du joueur : le Mode communautaire n'est pas encore
-// terminé. Le bouton reste visible (grisé, avec un badge "Bientôt disponible") pour que les
-// joueurs sachent que le mode existe et arrivera bientôt, mais il n'est pas sélectionnable tant
-// que ce flag est à `false`. Repasser à `true` pour le réactiver — c'est le seul interrupteur à
-// changer, toute la fonctionnalité (persistance, collections, etc.) reste intacte derrière lui.
-// Tant qu'il est à `false`, `isKnownPriceMode` continue de rejeter 'community' : un joueur déjà en
-// Mode communautaire avant cette désactivation repasse automatiquement en mode personnel à la
-// prochaine lecture (`getPriceMode`), sans code supplémentaire dédié à cette bascule.
-const COMMUNITY_MODE_ENABLED = false;
+// Interrupteur unique pour le Mode communautaire (specs/003/004/007). Repasser à `false` le
+// désactiverait sans rien retirer : le bouton resterait visible, grisé, avec un badge "Bientôt
+// disponible", et `isKnownPriceMode` rejetterait à nouveau 'community' — un joueur déjà en Mode
+// communautaire à ce moment-là repasserait automatiquement en mode personnel à la prochaine
+// lecture (`getPriceMode`), sans code supplémentaire dédié à cette bascule.
+const COMMUNITY_MODE_ENABLED = true;
 
 type PriceModeOption = { id: PriceMode; label: string; description: string; comingSoon?: boolean };
 

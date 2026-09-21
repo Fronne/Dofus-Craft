@@ -1,9 +1,9 @@
 import manifest from './catalogue-manifest.json';
 import { cached, peekCached } from './catalogue-cache';
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
-import { getDofusDbItemKind, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
+import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat } from '../domain/types';
-import { CHARACTERISTIC_ASSET_BY_ID } from '../domain/characteristic-icons';
+import { CHARACTERISTIC_ASSET_BY_ID, ELEMENT_ASSET_BY_ID } from '../domain/characteristic-icons';
 
 export const getManifest = () => ({
   ...manifest,
@@ -184,7 +184,8 @@ export async function getItemDetail(id: string, signal?: AbortSignal) {
     : undefined;
   const recipeData = recipes[0];
   const stats = await mapItemStats(item, signal);
-  if (!recipeData) return { stats, resources: [], panoplieName: itemSet?.name?.fr };
+  const weapon = isWeapon(item);
+  if (!recipeData) return { stats, resources: [], panoplieName: itemSet?.name?.fr, isWeapon: weapon };
   const ingredientItems = recipeData.ingredients ?? [];
   const recipe = mapDofusDbRecipe(recipeData, ingredientItems);
   return {
@@ -192,6 +193,7 @@ export async function getItemDetail(id: string, signal?: AbortSignal) {
     recipe,
     resources: ingredientItems.map(mapDofusDbResource),
     panoplieName: itemSet?.name?.fr,
+    isWeapon: weapon,
   };
 }
 
@@ -215,14 +217,24 @@ async function mapItemStats(
   );
   const descriptions = new Map(metadata.map((effect) => [effect.id, effect.description?.fr]));
   const characteristics = new Map(metadata.map((effect) => [effect.id, effect.characteristic]));
+  const elements = new Map(metadata.map((effect) => [effect.id, effect.elementId]));
   return effects
     .map((effect, index) => {
       const characteristicId = characteristics.get(effect.effectId!);
+      const elementId = elements.get(effect.effectId!);
+      // Damage/steal effects report characteristic 0, which coincides with the
+      // real "Points de vie" characteristic id: use their element instead. Some of them (e.g.
+      // "dommages/vol du meilleur/pire élément") have no fixed element (elementId -1) and use the
+      // generic "Dommage" icon in the game's own tooltip instead of an elemental one.
+      const icon = characteristicId === 0 && elementId !== undefined
+        ? (elementId === -1 ? (effect.category === 2 ? CHARACTERISTIC_ASSET_BY_ID[16] : undefined) : ELEMENT_ASSET_BY_ID[elementId])
+        : characteristicId !== undefined ? CHARACTERISTIC_ASSET_BY_ID[characteristicId] : undefined;
       return {
         id: `${effect.effectId}-${index}`,
         label: formatEffectDescription(descriptions.get(effect.effectId!), effect.from!, effect.to!),
-        icon: characteristicId !== undefined ? CHARACTERISTIC_ASSET_BY_ID[characteristicId] : undefined,
+        icon,
         positive: effect.from! >= 0 && effect.to! >= 0,
+        isWeaponEffect: effect.category === 2,
       };
     })
     .sort((a, b) => Number(!a.positive) - Number(!b.positive));

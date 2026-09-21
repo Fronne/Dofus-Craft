@@ -31,3 +31,19 @@ test('keeps a pinned item shared across servers while its market price stays per
   await expect(page.getByRole('button', { name: 'Désépingler', exact: true })).toBeVisible();
   await expect(page.getByLabel('Prix HDV')).toHaveValue('750 000');
 });
+
+test('erasing an already-saved market price leaves the field empty for good, even after a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Mikhal' }).click();
+  await page.getByRole('button', { name: 'Épingler' }).click();
+
+  const marketInput = page.getByLabel('Prix HDV');
+  await marketInput.fill('3500');
+  await expect(marketInput).toHaveValue('3 500');
+
+  await marketInput.fill('');
+  await expect(marketInput).toHaveValue('');
+
+  await page.reload();
+  await expect(page.getByLabel('Prix HDV')).toHaveValue('');
+});

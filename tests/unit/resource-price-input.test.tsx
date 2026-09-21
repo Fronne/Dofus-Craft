@@ -13,7 +13,7 @@ function ControlledResourcePriceInput({
   onCommit,
 }: {
   initialValue?: string;
-  onCommit?: (value: string) => void;
+  onCommit?: (value: string) => Promise<'accepted' | 'rejected' | void>;
 }) {
   const [value, setValue] = useState(initialValue);
   return (
@@ -97,6 +97,105 @@ describe('ResourcePriceInput lockWhenFilled (Mode communautaire)', () => {
     // Only once the player is done (blur) does it lock, protecting the value just entered.
     fireEvent.blur(input);
     expect(screen.getByPlaceholderText('Prix unitaire')).toHaveAttribute('readonly');
+  });
+});
+
+// specs/008-stale-resource-highlight: US1 — the row is flagged orange/red once its price is old.
+describe('ResourcePriceInput price age highlighting', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  it('applies no age class when the price was updated less than 3 days ago', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(1)} onChange={vi.fn()} />);
+
+    const label = screen.getByPlaceholderText('Prix unitaire').closest('label');
+    expect(label).not.toHaveClass('price-line--stale');
+    expect(label).not.toHaveClass('price-line--expired');
+  });
+
+  it('applies price-line--stale when the price is between 3 and 7 days old', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(4)} onChange={vi.fn()} />);
+
+    expect(screen.getByPlaceholderText('Prix unitaire').closest('label')).toHaveClass('price-line--stale');
+  });
+
+  it('applies price-line--expired when the price is 7 days old or more', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(8)} onChange={vi.fn()} />);
+
+    expect(screen.getByPlaceholderText('Prix unitaire').closest('label')).toHaveClass('price-line--expired');
+  });
+
+  it('applies no age class when there is no known price, even with communityMeta set', () => {
+    render(
+      <ResourcePriceInput
+        resource={resource}
+        quantity={1}
+        value=""
+        communityMeta={{ sampleSize: 3, stale: false }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const label = screen.getByPlaceholderText('Prix unitaire').closest('label');
+    expect(label).not.toHaveClass('price-line--stale');
+    expect(label).not.toHaveClass('price-line--expired');
+  });
+
+  it('keeps the network-staleness label visible alongside the age-based class, without one hiding the other', () => {
+    render(
+      <ResourcePriceInput
+        resource={resource}
+        quantity={1}
+        value="500"
+        updatedAt={daysAgo(10)}
+        communityMeta={{ sampleSize: 2, stale: true }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByPlaceholderText('Prix unitaire').closest('label')).toHaveClass('price-line--expired');
+    expect(screen.getByText(/peut-être daté/)).toBeInTheDocument();
+  });
+});
+
+// specs/008-stale-resource-highlight: US3 — hovering a row with an old price explains that it may
+// no longer match the in-game price.
+describe('ResourcePriceInput price age tooltip', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  it('renders no explanatory tooltip when the price is fresh (< 3 days)', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(1)} onChange={vi.fn()} />);
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('renders no explanatory tooltip when there is no known price', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="" onChange={vi.fn()} />);
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('renders an explanatory tooltip when the price is stale (3-7 days)', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(4)} onChange={vi.fn()} />);
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      "Prix ancien, peut différer du prix actuel en jeu.",
+    );
+  });
+
+  it('renders an explanatory tooltip when the price is expired (>= 7 days)', () => {
+    render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(10)} onChange={vi.fn()} />);
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      "Prix ancien, peut différer du prix actuel en jeu.",
+    );
   });
 });
 

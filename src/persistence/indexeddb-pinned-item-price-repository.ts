@@ -5,6 +5,7 @@ interface PinnedItemPriceRepository {
   get(serverId: string, itemId: string): Promise<PinnedItemPrice | undefined>;
   getMany(serverId: string, itemIds: string[]): Promise<Record<string, PinnedItemPrice>>;
   save(serverId: string, itemId: string, marketPriceKamas: number): Promise<PinnedItemPrice>;
+  remove(serverId: string, itemId: string): Promise<void>;
   removeAllForItem(itemId: string): Promise<void>;
   listAllForServer(serverId: string): Promise<PinnedItemPrice[]>;
 }
@@ -27,6 +28,9 @@ export const pinnedItemPrices: PinnedItemPriceRepository = {
   async save(serverId, itemId, marketPriceKamas) {
     const record = await store.save(serverId, itemId, marketPriceKamas);
     return { itemId, marketPriceKamas: record.amountKamas, updatedAt: record.updatedAt };
+  },
+  async remove(serverId, itemId) {
+    await store.remove(serverId, itemId);
   },
   async removeAllForItem(itemId) {
     await store.removeAllForEntry(itemId);

@@ -32,6 +32,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
+import { prices } from '../../src/persistence/indexeddb-resource-price-repository';
 
 describe('comparison screen', () => {
   beforeEach(() => window.localStorage.clear());
@@ -44,13 +45,30 @@ describe('comparison screen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
     const priceInput = await screen.findByPlaceholderText('Prix unitaire');
+    // Non-digit characters are filtered out as they're typed, so an all-letters entry never lands
+    // in the field at all — it stays as empty as if nothing had been typed.
     fireEvent.change(priceInput, { target: { value: 'abc' } });
-    expect(priceInput).toHaveValue('abc');
-    expect(priceInput).toHaveAttribute('aria-invalid', 'true');
+    expect(priceInput).toHaveValue('');
+    expect(priceInput).toHaveAttribute('aria-invalid', 'false');
 
     fireEvent.click(screen.getByRole('button', { name: /Serveur actif/i }));
     fireEvent.click(screen.getByRole('option', { name: 'Dakal' }));
 
     await waitFor(() => expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue(''));
+  });
+
+  it('only lets digits reach the field, silently dropping every other character typed', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+
+    const priceInput = await screen.findByPlaceholderText('Prix unitaire');
+    fireEvent.change(priceInput, { target: { value: '1a2b0c0' } });
+    expect(priceInput).toHaveValue('1 200');
+
+    // Persistence (and "dernière mise à jour") only happens once the field is blurred, not on
+    // every keystroke.
+    fireEvent.blur(priceInput);
+
+    await waitFor(async () => expect(await prices.get('mikhal', 'resource-1')).toMatchObject({ unitPriceKamas: 1200 }));
   });
 });

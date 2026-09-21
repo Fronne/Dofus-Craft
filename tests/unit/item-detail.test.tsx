@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ItemDetail } from '../../src/features/catalogue/ItemDetail';
 import { ResourcePriceInput } from '../../src/features/comparison/ResourcePriceInput';
 import { parseKamas } from '../../src/domain/kamas';
+
+afterEach(cleanup);
 
 describe('ItemDetail recipe resources', () => {
   it('shows DofusDB-provided item statistics', () => {
@@ -10,7 +12,7 @@ describe('ItemDetail recipe resources', () => {
       <ItemDetail
         detail={{
           item: { id: '1', name: 'Trophée', kind: 'Equipment', categoryId: 'equipment-type-151' },
-          stats: [{ id: '125-0', label: '10 à 20 Vitalité', positive: true }],
+          stats: [{ id: '125-0', label: '10 à 20 Vitalité', positive: true, isWeaponEffect: false }],
           recipe: { id: 'recipe-1', itemId: '1', ingredients: [{ resourceId: '10', quantity: 1 }] },
           resources: [{ id: '10', name: 'Fer' }],
         }}
@@ -19,6 +21,118 @@ describe('ItemDetail recipe resources', () => {
 
     expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
     expect(screen.getByText('10 à 20 Vitalité')).toBeInTheDocument();
+  });
+
+  it('does not show a weapon-specific info block for a non-weapon item', () => {
+    const { container } = render(
+      <ItemDetail
+        detail={{
+          item: { id: '19994', name: 'Amulette du Strigide', kind: 'Equipment', categoryId: 'equipment-type-1' },
+          resources: [],
+        }}
+      />,
+    );
+
+    expect(container.querySelector('.weapon-info')).not.toBeInTheDocument();
+  });
+
+  it('splits a weapon\'s effects between "Effets de l\'arme" and "Effets"', () => {
+    render(
+      <ItemDetail
+        detail={{
+          item: { id: '30949', name: 'Masse Étacée', kind: 'Equipment', categoryId: 'equipment-type-2' },
+          stats: [
+            { id: '96-0', label: '16 à 20 dommages Eau', positive: true, isWeaponEffect: true },
+            { id: '125-0', label: '394 Vitalité', positive: true, isWeaponEffect: false },
+          ],
+          resources: [],
+          isWeapon: true,
+        }}
+      />,
+    );
+
+    const weaponEffectsHeading = screen.getByRole('heading', { name: "Effets de l'arme" });
+    const effectsHeading = screen.getByRole('heading', { name: 'Effets' });
+    const weaponEffectLine = screen.getByText('16 à 20 dommages Eau');
+    const otherEffectLine = screen.getByText('394 Vitalité');
+
+    expect(weaponEffectsHeading).toBeInTheDocument();
+    expect(effectsHeading).toBeInTheDocument();
+    expect(weaponEffectsHeading.compareDocumentPosition(weaponEffectLine))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(effectsHeading.compareDocumentPosition(otherEffectLine))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(weaponEffectLine.compareDocumentPosition(effectsHeading))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('keeps a single "Effets" section listing everything for a non-weapon item', () => {
+    render(
+      <ItemDetail
+        detail={{
+          item: { id: '1', name: 'Trophée', kind: 'Equipment', categoryId: 'equipment-type-151' },
+          stats: [
+            { id: '96-0', label: 'Effet marqué comme arme par erreur', positive: true, isWeaponEffect: true },
+            { id: '125-0', label: '10 à 20 Vitalité', positive: true, isWeaponEffect: false },
+          ],
+          resources: [],
+        }}
+      />,
+    );
+
+    expect(screen.getAllByRole('heading', { name: /Effets/ })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
+    expect(screen.getByText('Effet marqué comme arme par erreur')).toBeInTheDocument();
+    expect(screen.getByText('10 à 20 Vitalité')).toBeInTheDocument();
+  });
+
+  it('hides a weapon\'s effect section when it would be empty', () => {
+    const { rerender } = render(
+      <ItemDetail
+        detail={{
+          item: { id: '30949', name: 'Masse Étacée', kind: 'Equipment', categoryId: 'equipment-type-2' },
+          stats: [{ id: '96-0', label: '16 à 20 dommages Eau', positive: true, isWeaponEffect: true }],
+          resources: [],
+          isWeapon: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: "Effets de l'arme" })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Effets' })).not.toBeInTheDocument();
+
+    rerender(
+      <ItemDetail
+        detail={{
+          item: { id: '30949', name: 'Masse Étacée', kind: 'Equipment', categoryId: 'equipment-type-2' },
+          stats: [{ id: '125-0', label: '394 Vitalité', positive: true, isWeaponEffect: false }],
+          resources: [],
+          isWeapon: true,
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: "Effets de l'arme" })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
+  });
+
+  it('does not repeat the category label inside the Effets section (already shown above as "Catégorie : ...")', () => {
+    render(
+      <ItemDetail
+        detail={{
+          item: { id: '30949', name: 'Masse Étacée', kind: 'Equipment', categoryId: 'equipment-type-2' },
+          category: { id: 'equipment-type-2', label: 'Arme', kind: 'Equipment', sortOrder: 1, typeIds: [7] },
+          stats: [{ id: '125-0', label: '394 Vitalité', positive: true, isWeaponEffect: false }],
+          resources: [],
+          isWeapon: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Catégorie : Arme')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
+    expect(screen.getByText('394 Vitalité')).toBeInTheDocument();
+    expect(screen.queryByText('Arme', { selector: 'li' })).not.toBeInTheDocument();
   });
 
   it('shows a fallback message instead of a recipe list when the item has no recipe', () => {

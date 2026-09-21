@@ -4,7 +4,8 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft (révision 5 ; FR-015 amendée par specs/006-anonymous-visit-count)
+**Status**: Draft (révision 6 ; FR-015 amendée par specs/006-anonymous-visit-count, FR-018 amendée par
+révision 6 ci-dessous)
 
 **Input**: User description: "En Mode communautaire, retirer le choix explicite de partager ou non
 ses prix personnels : le partage devient la valeur par défaut de ce mode. Décisions actées au fil
@@ -48,6 +49,18 @@ pendant que cette révision est développée (voir 004-community-price-sharing, 
 l'application) ; cela ne change rien au contenu de cette spécification, qui décrit le comportement du
 Mode communautaire indépendamment de cet interrupteur temporaire. »"
 
+Révision 6 : constat du joueur — « quand quelqu'un modifie le prix d'une ressource c'est pour mettre
+le prix exact qu'il voit en jeu [...] son prix est le vrai prix qui va servir au calcul du prix de
+l'item ». Jusqu'ici (FR-018), une transmission réussie réaffichait la médiane communautaire
+recalculée à la place de la valeur saisie, ce qui pouvait faire disparaître le prix que le joueur
+venait tout juste de constater en jeu. Décidé avec le joueur : après une transmission réussie, le
+champ continue d'afficher la valeur que le joueur a lui-même saisie — elle reste la source de vérité
+utilisée pour son propre calcul de craft — au lieu d'être remplacée par la médiane recalculée. La
+médiane communautaire continue de servir au préremplissage initial (FR-016, absence de valeur locale)
+et, depuis specs/007-outlier-confirmation, à la détection d'écart déclenchant une confirmation ; elle
+ne sert plus jamais à écraser une valeur déjà saisie par le joueur, y compris juste après sa propre
+transmission."
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Prix communautaire pré-rempli, directement modifiable (Priority: P1)
@@ -59,9 +72,10 @@ pré-remplissage ou d'une saisie précédente du joueur — le champ est protég
 défaut, pour éviter une modification accidentelle ; un bouton dédié le déverrouille explicitement
 pour le corriger. Dès que le joueur a terminé sa saisie (perte du focus) après avoir modifié la
 valeur, celle-ci est automatiquement transmise à la communauté comme une nouvelle contribution pour
-cette ressource ; le champ affiche alors la médiane communautaire recalculée à partir de cette
-nouvelle contribution (qui peut différer légèrement de la valeur saisie), le nombre de contributions
-affiché augmente d'une unité, et le champ se reverrouille. Quand aucun prix communautaire n'existe
+cette ressource ; le champ continue d'afficher la valeur que le joueur vient lui-même de saisir
+(depuis la révision 6, elle n'est plus remplacée par la médiane communautaire recalculée, qui peut
+différer légèrement), le nombre de contributions affiché augmente d'une unité, et le champ se
+reverrouille. Quand aucun prix communautaire n'existe
 et qu'aucune valeur n'est encore enregistrée, le champ reste vide et directement saisissable, sans
 aucun verrou, comme c'est déjà le cas aujourd'hui — et comme en Mode personnel.
 
@@ -79,8 +93,8 @@ encore enregistré dans le carnet Mode communautaire, ouvrir cette ressource en 
 affiche un champ pré-rempli avec la médiane communautaire, verrouillé en lecture seule ; cliquer
 sur le bouton de modification, corriger la valeur puis quitter le champ (perte du focus) met
 immédiatement à jour le coût de craft affiché, transmet la nouvelle valeur comme contribution,
-réaffiche la médiane communautaire à jour, incrémente le nombre de contributions affiché, et
-reverrouille automatiquement le champ.
+continue d'afficher cette valeur saisie (révision 6), incrémente le nombre de contributions affiché,
+et reverrouille automatiquement le champ.
 
 **Acceptance Scenarios**:
 
@@ -108,8 +122,9 @@ reverrouille automatiquement le champ.
    **Then** cette valeur n'est jamais silencieusement écrasée par le rafraîchissement.
 6. **Given** le joueur vient de modifier un prix de ressource en Mode communautaire et quitte le
    champ (perte du focus), **When** la transmission de cette valeur à la communauté réussit,
-   **Then** le champ affiche la médiane communautaire recalculée incluant cette nouvelle
-   contribution, et le nombre de contributions affiché pour cette ressource augmente d'une unité.
+   **Then** le champ continue d'afficher la valeur que le joueur a saisie (elle n'est pas remplacée
+   par la médiane communautaire recalculée, révision 6), et le nombre de contributions affiché pour
+   cette ressource augmente d'une unité.
 7. **Given** le joueur vient de modifier un prix de ressource en Mode communautaire et quitte le
    champ, **When** la transmission de cette valeur échoue (ex. service indisponible), **Then** la
    valeur saisie par le joueur reste affichée et conservée dans son carnet Mode communautaire, le
@@ -379,10 +394,13 @@ d'appareil, distinct de celui d'un autre appareil, sans qu'aucune n'inclue de do
   ressource (perte de focus du champ après une valeur modifiée), le système MUST transmettre cette
   valeur à la communauté comme une nouvelle contribution pour cette ressource et le serveur actif,
   sans étape de confirmation supplémentaire ni bouton dédié.
-- **FR-018**: Lorsque la transmission d'un prix modifié réussit, le système MUST récupérer et
-  afficher dans le champ le prix communautaire (médiane) recalculé incluant cette nouvelle
-  contribution, y compris lorsque cette médiane diffère de la valeur brute que le joueur vient de
-  saisir.
+- **FR-018** *(amendée révision 6)*: Lorsque la transmission d'un prix modifié réussit, le système
+  MUST continuer d'afficher dans le champ la valeur que le joueur a lui-même saisie, et NE DOIT PAS la
+  remplacer par le prix communautaire (médiane) recalculé, y compris lorsque cette médiane diffère de
+  la valeur saisie. La médiane recalculée continue d'être demandée et intégrée au calcul communautaire
+  global (incrément du nombre de contributions, FR-019) mais ne pilote plus l'affichage du champ que
+  le joueur vient de renseigner ; elle ne sert qu'au préremplissage initial (FR-016, absence de valeur
+  locale) et à la détection d'écart de specs/007-outlier-confirmation.
 - **FR-019**: Lorsque la transmission d'un prix modifié réussit, le système MUST incrémenter d'une
   unité le nombre de contributions affiché pour cette ressource (FR-007), sans nécessiter de
   rechargement manuel de la page.

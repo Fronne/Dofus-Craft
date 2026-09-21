@@ -63,7 +63,11 @@ describe('pinned items page shows craft cost and market price', () => {
     expect(within(card).getByText(/HDV :/)).toHaveTextContent('HDV : Non renseigné');
 
     fireEvent.click(screen.getByRole('link', { name: /Recherche/ }));
-    fireEvent.change(await screen.findByPlaceholderText('Prix unitaire'), { target: { value: '1000' } });
+    const resourcePriceInput = await screen.findByPlaceholderText('Prix unitaire');
+    fireEvent.change(resourcePriceInput, { target: { value: '1000' } });
+    // Persistence only happens on blur (real navigation blurs the field the same way, since
+    // focus moves to the clicked link) — not on every keystroke.
+    fireEvent.blur(resourcePriceInput);
     fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '500000' } });
     await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
 

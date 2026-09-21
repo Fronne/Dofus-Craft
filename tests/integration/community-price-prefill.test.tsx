@@ -48,9 +48,7 @@ async function enterCommunityMode() {
   fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
 }
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-describe.skip('community price prefill in Mode communautaire (specs/004-community-price-sharing US1)', () => {
+describe('community price prefill in Mode communautaire (specs/004-community-price-sharing US1)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
@@ -98,6 +96,7 @@ describe.skip('community price prefill in Mode communautaire (specs/004-communit
       status: 'found',
       price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
     });
+    submitCommunityPrice.mockResolvedValue({ id: 'contribution-1' });
 
     const { unmount } = render(<App />);
     await enterCommunityMode();
@@ -107,6 +106,13 @@ describe.skip('community price prefill in Mode communautaire (specs/004-communit
 
     fireEvent.change(input, { target: { value: '7000' } });
     await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('7 000'));
+
+    // 7000 vs. the 5000 median deviates by 40% (> specs/007's 25% threshold), so blurring gates
+    // the commit behind the outlier confirmation dialog — accept it so the edit actually persists
+    // to the community-mode carnet (via `onPersist`) before the remount below.
+    fireEvent.blur(input);
+    fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer quand même' }));
+    await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 7000));
 
     unmount();
     document.body.innerHTML = '';
@@ -150,10 +156,14 @@ describe.skip('community price prefill in Mode communautaire (specs/004-communit
     expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('5 000');
   });
 
-  // specs/004-community-price-sharing (révision 4): FR-017/FR-018/FR-019 — confirming an edit
-  // (perte de focus après changement) submits it, then refreshes the field with the recalculated
-  // median and contribution count returned by the backend.
-  it('submits a confirmed edit, then refreshes the field with the recalculated median and contribution count (FR-017/FR-018/FR-019)', async () => {
+  // specs/004-community-price-sharing (révision 4, amendée par specs/007 FR-012) : confirming an
+  // edit (perte de focus après changement) submits it and refreshes the community metadata
+  // (contribution count), but — since the field must never be overwritten with a recalculated
+  // value the player didn't type — it keeps displaying exactly what the player entered. The typed
+  // value (6000) stays within specs/007's 25% outlier threshold of the 5000 median, so no
+  // confirmation dialog gets in the way here (that gate is covered separately by
+  // outlier-threshold/community-price-outlier unit tests and OutlierConfirmDialog's own tests).
+  it('submits a confirmed edit, keeps the field at the typed value, and refreshes the contribution count (FR-017/FR-018/FR-019)', async () => {
     getCommunityPrice.mockResolvedValueOnce({
       status: 'found',
       price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
@@ -171,16 +181,16 @@ describe.skip('community price prefill in Mode communautaire (specs/004-communit
     // updated median/sampleSize including this new contribution.
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 6000, sampleSize: 4 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5500, sampleSize: 4 },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
-    fireEvent.change(input, { target: { value: '7000' } });
+    fireEvent.change(input, { target: { value: '6000' } });
     fireEvent.blur(input);
 
-    await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 7000));
-    await waitFor(() => expect(input).toHaveValue('6 000'));
-    expect(screen.getByText(/4 contributions/)).toBeInTheDocument();
+    await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 6000));
+    await waitFor(() => expect(screen.getByText(/4 contributions/)).toBeInTheDocument());
+    expect(input).toHaveValue('6 000');
   });
 
   // FR-020: a failed submission never loses the player's typed value, and never triggers a
@@ -200,11 +210,11 @@ describe.skip('community price prefill in Mode communautaire (specs/004-communit
     const callsBeforeCommit = getCommunityPrice.mock.calls.length;
 
     fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
-    fireEvent.change(input, { target: { value: '7000' } });
+    fireEvent.change(input, { target: { value: '6000' } });
     fireEvent.blur(input);
 
-    await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 7000));
-    expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('7 000');
+    await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 6000));
+    expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('6 000');
     expect(getCommunityPrice.mock.calls.length).toBe(callsBeforeCommit);
   });
 });

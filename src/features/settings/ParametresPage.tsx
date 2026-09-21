@@ -78,8 +78,7 @@ export function ParametresPage({
       <section className="panel settings-section">
         <h2>Gestion des prix</h2>
         <p className="settings-section-description">
-          Le mode actif est mis en évidence ci-dessous. Le mode communautaire arrive bientôt et
-          n'est pas encore sélectionnable.
+          Le mode actif est mis en évidence ci-dessous.
         </p>
         <div className="settings-price-mode-list">
           {priceModes.map((mode) => (

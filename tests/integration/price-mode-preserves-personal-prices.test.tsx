@@ -42,9 +42,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 
 import App from '../../src/app/App';
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-describe.skip('switching price mode never alters personal prices', () => {
+describe('switching price mode never alters personal prices', () => {
   beforeEach(() => {
     window.localStorage.clear();
     getCommunityPrice.mockResolvedValue({ status: 'not-found' });
@@ -64,6 +62,9 @@ describe.skip('switching price mode never alters personal prices', () => {
 
     const priceInput = await screen.findByPlaceholderText('Prix unitaire');
     fireEvent.change(priceInput, { target: { value: '1000' } });
+    // Persistence only happens once the field is blurred, same convention as
+    // comparison-screen.test.tsx.
+    fireEvent.blur(priceInput);
 
     await waitFor(async () => {
       expect(await prices.get('mikhal', 'resource-1')).toMatchObject({ unitPriceKamas: 1000 });

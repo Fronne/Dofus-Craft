@@ -8,6 +8,7 @@ import { stripDiacritics } from './text';
 const PERMANENT_SERVER_GAME_TYPE_ID = 0;
 
 const RESOURCE_SUPER_TYPE_ID = 9;
+export const WEAPON_SUPER_TYPE_ID = 2;
 const CRAFTCHECK_EQUIPMENT_SUPER_TYPE_IDS = new Set([1, 2, 3, 4, 5, 7, 10, 11, 13]);
 const CRAFTCHECK_EQUIPMENT_TYPE_IDS = new Set([151, 217]);
 const CATEGORY_SORT_ORDER = new Map([
@@ -26,6 +27,10 @@ const CATEGORY_SORT_ORDER = new Map([
 function superTypeId(item: DofusDbItem | DofusDbItemTypeRecord): number | undefined {
   if (isDofusDbItem(item)) return item.type?.superType?.id ?? item.type?.superTypeId;
   return item.superType?.id ?? item.superTypeId;
+}
+
+export function isWeapon(item: DofusDbItem): boolean {
+  return superTypeId(item) === WEAPON_SUPER_TYPE_ID;
 }
 
 function superTypePositions(item: DofusDbItem | DofusDbItemTypeRecord): number[] | undefined {

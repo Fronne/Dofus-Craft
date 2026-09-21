@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Resource } from '../../domain/types';
 import { KAMAS_ICON_URL, formatKamas, formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
+import { classifyPriceAge } from '../../domain/price-age';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { Icon } from '../../components/Icon';
 
@@ -13,6 +14,7 @@ export function ResourcePriceInput({
   communityMeta,
   lockWhenFilled,
   onChange,
+  onBlur,
   onCommit,
 }: {
   resource: Resource;
@@ -28,10 +30,20 @@ export function ResourcePriceInput({
   // accidental keystroke. Mode personnel is unaffected (prop omitted there).
   lockWhenFilled?: boolean;
   onChange: (value: string) => void;
+  // Called on every blur with the field's current value, regardless of `lockWhenFilled` — the
+  // caller decides whether the value actually changed (e.g. against its own persisted copy)
+  // before writing it anywhere. Persistence is deferred to this callback rather than `onChange`
+  // precisely so that "dernière mise à jour" only moves once the player is done typing, not on
+  // every keystroke.
+  onBlur?: (value: string) => void;
   // FR-017/FR-020: called on blur, only when `lockWhenFilled` is set and the value actually
   // changed since the field was last unlocked — never on a no-op blur (edit button clicked, then
   // blurred again without typing anything). Mode personnel is unaffected (prop omitted there).
-  onCommit?: (value: string) => void;
+  // specs/007-outlier-confirmation, FR-007: may resolve to 'rejected' (e.g. the player canceled an
+  // outlier confirmation) — in that case the field reverts to its pre-edit value below, using the
+  // same `lastCommittedValueRef` already tracked for the FR-020 no-op guard. A caller that returns
+  // `void` (none today besides the outlier-aware one) keeps today's behavior: never reverted.
+  onCommit?: (value: string) => Promise<'accepted' | 'rejected' | void>;
 }) {
   const valid = isValidKamas(value);
   const communityLabel = communityMeta
@@ -41,8 +53,19 @@ export function ResourcePriceInput({
   const locked = Boolean(lockWhenFilled) && Boolean(value) && !editing;
   const inputRef = useRef<HTMLInputElement>(null);
   const lastCommittedValueRef = useRef(value);
+  // specs/008-stale-resource-highlight: 'unknown' and 'fresh' add no class — only a price that has
+  // actually gone stale/expired gets flagged (FR-004/FR-005).
+  const priceAge = classifyPriceAge(updatedAt);
+  const priceAgeClass =
+    priceAge === 'stale' ? ' price-line--stale' : priceAge === 'expired' ? ' price-line--expired' : '';
+  // FR-010/FR-011: same 'stale'/'expired' condition as the coloring above, so the tooltip never
+  // appears without the visual cue that motivates it (or vice versa).
+  const priceAgeTooltip =
+    priceAge === 'stale' || priceAge === 'expired'
+      ? 'Prix ancien, peut différer du prix actuel en jeu.'
+      : undefined;
   return (
-    <label className="price-line">
+    <label className={`price-line${priceAgeClass}`}>
       <span className="price-resource">
         <ResourceDisplay resource={resource} />
       </span>
@@ -52,6 +75,11 @@ export function ResourcePriceInput({
           {updatedAt && `Dernière mise à jour : ${formatRelativeTime(updatedAt)}`}
           {updatedAt && communityLabel && ' · '}
           {communityLabel}
+          {priceAgeTooltip && (
+            <span className="price-age-tooltip" role="tooltip">
+              {priceAgeTooltip}
+            </span>
+          )}
         </small>
       )}
       <span className="kamas-input-wrap">
@@ -74,9 +102,17 @@ export function ResourcePriceInput({
             onChange(normalizeKamasInput(event.target.value));
           }}
           onBlur={() => {
+            onBlur?.(value);
             if (!lockWhenFilled) return;
             setEditing(false);
-            if (value !== lastCommittedValueRef.current) onCommit?.(value);
+            if (value === lastCommittedValueRef.current) return;
+            const previousValue = lastCommittedValueRef.current;
+            const result = onCommit?.(value);
+            if (result) {
+              void result.then((outcome) => {
+                if (outcome === 'rejected') onChange(previousValue);
+              });
+            }
           }}
           placeholder="Prix unitaire"
           readOnly={locked}

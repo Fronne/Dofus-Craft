@@ -47,9 +47,7 @@ function goToSearch() {
   fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
 }
 
-// Mode communautaire temporairement désactivé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED)
-// — ce mode n'est plus atteignable depuis l'interface pour l'instant ; à réactiver avec le mode.
-describe.skip('the two price carnets are strictly independent (specs/004-community-price-sharing US2)', () => {
+describe('the two price carnets are strictly independent (specs/004-community-price-sharing US2)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
@@ -66,8 +64,12 @@ describe.skip('the two price carnets are strictly independent (specs/004-communi
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
-    fireEvent.change(await screen.findByPlaceholderText('Prix unitaire'), { target: { value: '1000' } });
+    const personalInputBefore = await screen.findByPlaceholderText('Prix unitaire');
+    fireEvent.change(personalInputBefore, { target: { value: '1000' } });
     await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('1 000'));
+    // Persistence (and therefore this test's ability to tell the two carnets apart) only happens
+    // once the field is blurred, same convention as comparison-screen.test.tsx.
+    fireEvent.blur(personalInputBefore);
 
     goToSettings();
     fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
@@ -88,8 +90,13 @@ describe.skip('the two price carnets are strictly independent (specs/004-communi
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
-    fireEvent.change(await screen.findByPlaceholderText('Prix unitaire'), { target: { value: '1000' } });
+    const personalInputBefore = await screen.findByPlaceholderText('Prix unitaire');
+    fireEvent.change(personalInputBefore, { target: { value: '1000' } });
     await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('1 000'));
+    // Persistence only happens once the field is blurred, same convention as
+    // comparison-screen.test.tsx — without this, the personal price is never actually written to
+    // its carnet and the later reassertion below would fail for an unrelated reason.
+    fireEvent.blur(personalInputBefore);
 
     goToSettings();
     fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
@@ -97,8 +104,11 @@ describe.skip('the two price carnets are strictly independent (specs/004-communi
 
     const communityInput = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(communityInput).toHaveValue('5 000'));
-    fireEvent.change(communityInput, { target: { value: '9000' } });
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('9 000'));
+    // 9000 vs. the 5000 median deviates by 80% (> specs/007's 25% threshold): change it within
+    // the community-mode carnet only to demonstrate the isolation from Mode personnel, without
+    // this test needing to also interact with the (unrelated) outlier confirmation dialog.
+    fireEvent.change(communityInput, { target: { value: '5500' } });
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('5 500'));
 
     goToSettings();
     fireEvent.click(await screen.findByRole('button', { name: /mode personnel/i }));

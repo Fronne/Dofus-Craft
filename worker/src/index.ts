@@ -1,4 +1,5 @@
 import { computeCommunityMedian } from './median';
+import { resolveOutlierFields } from './outlier';
 
 export interface Env {
   DB: D1Database;
@@ -26,18 +27,29 @@ function isAuthorized(request: Request, env: Env): boolean {
   return header === `Bearer ${env.COMMUNITY_API_KEY}`;
 }
 
-async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
-  const resourceId = url.searchParams.get('resourceId');
-  const serverId = url.searchParams.get('serverId');
-  if (!resourceId || !serverId) return json({ error: 'resourceId and serverId are required' }, 400);
-
+// specs/007-outlier-confirmation: extracted so handlePostContribution can independently compute
+// the median just before inserting a new contribution (FR-009), reusing the exact same query and
+// aggregation as a plain read — never a separately-maintained calculation.
+async function fetchCurrentMedian(
+  env: Env,
+  resourceId: string,
+  serverId: string,
+): Promise<{ medianAmountKamas: number; sampleSize: number } | undefined> {
   const since = new Date(Date.now() - RETENTION_MS).toISOString();
   const { results } = await env.DB.prepare(
     `SELECT amount_kamas FROM community_price_contributions
      WHERE resource_id = ? AND server_id = ? AND created_at >= ?`,
   ).bind(resourceId, serverId, since).all<{ amount_kamas: number }>();
 
-  const median = computeCommunityMedian(results.map((row) => row.amount_kamas));
+  return computeCommunityMedian(results.map((row) => row.amount_kamas));
+}
+
+async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
+  const resourceId = url.searchParams.get('resourceId');
+  const serverId = url.searchParams.get('serverId');
+  if (!resourceId || !serverId) return json({ error: 'resourceId and serverId are required' }, 400);
+
+  const median = await fetchCurrentMedian(env, resourceId, serverId);
   // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
   // FR-012's outlier filtering) remains.
   if (!median) return json(null, 404);
@@ -78,10 +90,17 @@ async function handlePostContribution(request: Request, env: Env): Promise<Respo
   // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted. deviceId
   // is an anonymous, client-generated identifier that only lets contributions from the same device
   // be recognized as such — never a player identity.
+  // specs/007-outlier-confirmation, FR-009: independently (never trusting the client) resolve the
+  // median this contribution is being compared against, and the resulting deviation, before the
+  // insert — this is what makes the outlier trace (deviation_percent > 25) queryable later, without
+  // affecting the median computation itself (FR-010).
+  const currentMedian = await fetchCurrentMedian(env, resourceId, serverId);
+  const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, currentMedian);
+
   const id = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id) VALUES (?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId).run();
+    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent).run();
 
   return json({ id }, 201);
 }

@@ -103,4 +103,15 @@ describe('pinned item market price per server', () => {
 
     expect(await pinnedItemPrices.get('mikhal', 'item-1')).toMatchObject({ marketPriceKamas: 500000 });
   });
+
+  it('only lets digits reach the market price field, silently dropping every other character typed', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+
+    const marketInput = await screen.findByLabelText('Prix HDV');
+    fireEvent.change(marketInput, { target: { value: '30°00' } });
+    expect(marketInput).toHaveValue('3 000');
+
+    await waitFor(async () => expect(await pinnedItemPrices.get('mikhal', 'item-1')).toMatchObject({ marketPriceKamas: 3000 }));
+  });
 });

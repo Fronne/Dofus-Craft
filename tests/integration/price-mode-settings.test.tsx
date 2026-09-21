@@ -34,10 +34,10 @@ describe('price mode settings selector', () => {
     document.body.innerHTML = '';
   });
 
-  // Mode communautaire temporairement désactivé (src/domain/price-modes.ts,
-  // COMMUNITY_MODE_ENABLED) : le bouton reste visible mais grisé, avec un badge "Bientôt
-  // disponible", plutôt que d'être masqué — le mode personnel reste le seul actif/sélectionnable.
-  it('presents personal mode as active and community mode as disabled with a "coming soon" badge', async () => {
+  // Mode communautaire activé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED) : les deux
+  // boutons sont sélectionnables, le mode personnel restant celui actif par défaut (aucun choix
+  // enregistré) jusqu'à ce que le joueur bascule explicitement.
+  it('presents personal mode as active by default and community mode as selectable', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
@@ -48,12 +48,12 @@ describe('price mode settings selector', () => {
     expect(personalOption).not.toBeDisabled();
 
     const communityOption = screen.getByRole('button', { name: /mode communautaire/i });
-    expect(communityOption).toBeDisabled();
-    expect(communityOption).toHaveTextContent('Bientôt disponible');
+    expect(communityOption).not.toBeDisabled();
+    expect(communityOption).not.toHaveTextContent('Bientôt disponible');
     expect(communityOption).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('never activates community mode when its disabled button is clicked', async () => {
+  it('activates community mode when its button is clicked', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
@@ -61,11 +61,11 @@ describe('price mode settings selector', () => {
     const communityOption = await screen.findByRole('button', { name: /mode communautaire/i });
     fireEvent.click(communityOption);
 
-    expect(screen.getByRole('button', { name: /mode personnel/i })).toHaveAttribute('aria-pressed', 'true');
-    expect(communityOption).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /mode personnel/i })).toHaveAttribute('aria-pressed', 'false');
+    expect(communityOption).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('exposes exactly the two known modes, one active and one coming soon', async () => {
+  it('exposes exactly the two known modes, both active/selectable', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();

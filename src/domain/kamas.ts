@@ -7,7 +7,7 @@ const ICON_ASSET_VERSION = 1;
 export const KAMAS_ICON_URL = `/kamas-icon.png?v=${ICON_ASSET_VERSION}`;
 
 export function normalizeKamasInput(value: string): string {
-  return value.replace(/\s/g, '');
+  return value.replace(/\D/g, '');
 }
 
 export function formatKamasInput(value: string): string {

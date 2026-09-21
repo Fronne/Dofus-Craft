@@ -69,3 +69,17 @@ export const CHARACTERISTIC_ASSET_BY_ID: Record<number, string> = {
   141: "tx_spellsRes",
   142: "tx_weaponRes",
 };
+
+// DofusDB damage/steal effects (e.g. "dommages Eau", "vol Air") all report
+// `characteristic: 0`, which collides with the real characteristic id 0
+// ("Points de vie") and made those lines show the PV heart icon instead of
+// their element. Their actual element lives in `elementId` instead, and each
+// element maps to the stat historically associated with it in Dofus (Terre =
+// Force, Feu = Intelligence, Eau = Chance, Air = Agilite, Neutre = Neutre).
+export const ELEMENT_ASSET_BY_ID: Record<number, string> = {
+  0: "tx_neutral",
+  1: "tx_strength",
+  2: "tx_intelligence",
+  3: "tx_chance",
+  4: "tx_agility",
+};

@@ -439,6 +439,119 @@ it('cleans technical effect markers and collapses binary PA, PM, PO and invocati
     });
 });
 
+it('flags weapon damage/steal effects as isWeaponEffect and other bonuses as not', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+    if (input.includes('/items/16002')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        id: 16002,
+        name: { fr: 'Arme de test' },
+        level: 200,
+        effects: [
+          { effectId: 96, from: 16, to: 20, category: 2, elementId: 3 },
+          { effectId: 125, from: 351, to: 400, category: 0, characteristic: 11 },
+        ],
+      }), { status: 200 }));
+    }
+    if (input.includes('/effects?')) {
+      const id = Number(new URL(input).searchParams.get('id'));
+      const descriptions: Record<number, string> = {
+        96: '#1{{~1~2 à }}#2 dommages Eau',
+        125: '#1{{~1~2 à }}#2 Vitalité',
+      };
+      return Promise.resolve(new Response(JSON.stringify({
+        total: 1,
+        limit: 1,
+        skip: 0,
+        data: [{ id, description: { fr: descriptions[id] } }],
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response(JSON.stringify({
+      total: 0,
+      limit: 100,
+      skip: 0,
+      data: [],
+    }), { status: 200 }));
+  }));
+
+  await expect(getItemDetail('16002')).resolves.toMatchObject({
+    stats: [
+      { label: '16 à 20 dommages Eau', isWeaponEffect: true },
+      { label: '351 à 400 Vitalité', isWeaponEffect: false },
+    ],
+  });
+});
+
+it('shows the generic "Dommage" icon for a "dommages/vol du meilleur élément" effect (no fixed element)', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+    if (input.includes('/items/16003')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        id: 16003,
+        name: { fr: 'Crocobur' },
+        level: 200,
+        effects: [{ effectId: 2822, from: 41, to: 60, category: 2, elementId: -1 }],
+      }), { status: 200 }));
+    }
+    if (input.includes('/effects?')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        total: 1,
+        limit: 1,
+        skip: 0,
+        data: [{ id: 2822, characteristic: 0, elementId: -1, description: { fr: '#1{{~1~2 à }}#2 dommages du meilleur élément' } }],
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response(JSON.stringify({
+      total: 0,
+      limit: 100,
+      skip: 0,
+      data: [],
+    }), { status: 200 }));
+  }));
+
+  await expect(getItemDetail('16003')).resolves.toMatchObject({
+    stats: [{ label: '41 à 60 dommages du meilleur élément', icon: 'tx_damage', isWeaponEffect: true }],
+  });
+});
+
+it('flags an item as a weapon based on its DofusDB super-type', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+    if (input.includes('/items/30949')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        id: 30949,
+        name: { fr: 'Masse Étacée' },
+        type: { id: 7, superType: { id: 2 } },
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response(JSON.stringify({
+      total: 0,
+      limit: 100,
+      skip: 0,
+      data: [],
+    }), { status: 200 }));
+  }));
+
+  await expect(getItemDetail('30949')).resolves.toMatchObject({ isWeapon: true });
+});
+
+it('does not flag a non-weapon item as a weapon', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+    if (input.includes('/items/19994')) {
+      return Promise.resolve(new Response(JSON.stringify({
+        id: 19994,
+        name: { fr: 'Amulette du Strigide' },
+        type: { id: 1, superType: { id: 1 } },
+      }), { status: 200 }));
+    }
+    return Promise.resolve(new Response(JSON.stringify({
+      total: 0,
+      limit: 100,
+      skip: 0,
+      data: [],
+    }), { status: 200 }));
+  }));
+
+  await expect(getItemDetail('19994')).resolves.toMatchObject({ isWeapon: false });
+});
+
 it('finds craftable equipment through its DofusDB item set relation', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
       if (input.includes('/items/14094')) {

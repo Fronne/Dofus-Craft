@@ -22,9 +22,7 @@ describe('price mode preference', () => {
     expect(() => setPriceMode('offline' as never)).toThrow();
   });
 
-  // Mode communautaire temporairement désactivé (src/domain/price-modes.ts,
-  // COMMUNITY_MODE_ENABLED) : 'community' n'est plus un mode connu tant qu'il ne l'est pas.
-  it.skip('persists community mode once it is re-enabled', () => {
+  it('persists community mode', () => {
     setPriceMode('community');
     expect(getPriceMode()).toBe('community');
   });
