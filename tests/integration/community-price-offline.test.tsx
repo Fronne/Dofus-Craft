@@ -87,7 +87,7 @@ describe('Mode communautaire resilience when the community service is unavailabl
 
     // Simulate leaving and reopening this resource later in the same session, after the service
     // has turned unavailable and with the carnet still holding no confirmed entry (a fresh app
-    // instance, but the same sessionStorage cache and the same fake IndexedDB backing this test).
+    // instance, but the same localStorage cache and the same fake IndexedDB backing this test).
     unmount();
     document.body.innerHTML = '';
     globalThis.indexedDB = new IDBFactory();

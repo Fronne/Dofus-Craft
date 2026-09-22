@@ -21,7 +21,11 @@ export function ItemResults({
   resultLimit: number;
   setResultLimit: (value: number) => void;
 }) {
-  if (loading) return <SkeletonCard count={resultLimit > 12 ? 12 : resultLimit} />;
+  // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
+  // display yet (first visit, no cache) — once a list is already on screen, a background
+  // revalidation must never replace it with a skeleton (that would also discard the user's scroll
+  // position for no reason).
+  if (loading && !items.length) return <SkeletonCard count={resultLimit > 12 ? 12 : resultLimit} />;
   if (!items.length) {
     return (
       <EmptyState

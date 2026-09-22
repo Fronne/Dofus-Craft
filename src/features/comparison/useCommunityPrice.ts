@@ -17,11 +17,13 @@ function cacheKey(resourceId: string, serverId: string) {
   return `craftcheck-community-price:${serverId}:${resourceId}`;
 }
 
-// US5: the last community price successfully fetched this session, kept in sessionStorage so a
-// later failure can still show it (marked stale) instead of an empty/broken state.
+// US5 / specs/010-search-instant-cache (research.md §2): the last community price successfully
+// fetched, kept in localStorage (not just sessionStorage — this must also survive closing and
+// reopening the tab, not only a same-tab reload) both as a fallback after a failed refetch and,
+// since specs/010, read first at mount so it displays instantly instead of a "loading" flash.
 function readCache(resourceId: string, serverId: string): CommunityPrice | undefined {
   try {
-    const raw = window.sessionStorage.getItem(cacheKey(resourceId, serverId));
+    const raw = window.localStorage.getItem(cacheKey(resourceId, serverId));
     if (!raw) return undefined;
     const parsed = JSON.parse(raw) as Partial<CommunityPrice>;
     if (typeof parsed.medianAmountKamas !== 'number' || typeof parsed.sampleSize !== 'number') {
@@ -35,9 +37,9 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
 
 function writeCache(resourceId: string, serverId: string, price: CommunityPrice) {
   try {
-    window.sessionStorage.setItem(cacheKey(resourceId, serverId), JSON.stringify(price));
+    window.localStorage.setItem(cacheKey(resourceId, serverId), JSON.stringify(price));
   } catch {
-    // sessionStorage unavailable — the community price just won't survive a temporary outage.
+    // localStorage unavailable — the community price just won't survive a temporary outage.
   }
 }
 
@@ -68,7 +70,11 @@ export function useCommunityPrice(
 
   useEffect(() => {
     let cancelled = false;
-    setState({ kind: 'loading' });
+    // specs/010-search-instant-cache, FR-001/T010: show a cache hit immediately (marked `stale`)
+    // instead of `loading` — the network refresh below still runs right away and will replace it
+    // with `stale: false` on success.
+    const cached = readCache(resourceId, serverId);
+    setState(cached ? { kind: 'found', price: cached, stale: true } : { kind: 'loading' });
 
     async function run() {
       const next = await fetchState();

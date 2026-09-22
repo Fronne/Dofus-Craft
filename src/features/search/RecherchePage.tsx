@@ -5,6 +5,7 @@ import { compare } from '../../domain/craft-comparison';
 import { formatKamas, isValidKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults } from '../catalogue/ItemResults';
+import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
@@ -35,6 +36,7 @@ function CommunityResourcePriceRow({
   serverId,
   value,
   hasCarnetEntry,
+  pricesLoaded,
   updatedAt,
   onChange,
   onPersist,
@@ -45,6 +47,12 @@ function CommunityResourcePriceRow({
   serverId: string;
   value: string;
   hasCarnetEntry: boolean;
+  // specs/010-search-instant-cache, FR-006 (specs/004): true once the carnet's own read for the
+  // current server/ids has actually settled. Gates the prefill below so "no entry yet" (still
+  // loading) can never be mistaken for "confirmed empty" — without this, a remount race could let
+  // a cache-first community median win against the carnet's own (still in-flight) load and
+  // overwrite an already-persisted price.
+  pricesLoaded: boolean;
   updatedAt?: string;
   onChange: (value: string) => void;
   // Writes the confirmed value to the local carnet (updating "dernière mise à jour" /
@@ -59,10 +67,10 @@ function CommunityResourcePriceRow({
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
   const prefilled = useRef(false);
   useEffect(() => {
-    if (prefilled.current || hasCarnetEntry || communityState.kind !== 'found') return;
+    if (prefilled.current || !pricesLoaded || hasCarnetEntry || communityState.kind !== 'found') return;
     prefilled.current = true;
     onPrefill(communityState.price.medianAmountKamas);
-  }, [communityState, hasCarnetEntry, onPrefill]);
+  }, [communityState, hasCarnetEntry, pricesLoaded, onPrefill]);
 
   const communityMeta = communityState.kind === 'found'
     ? { sampleSize: communityState.price.sampleSize, stale: communityState.stale }
@@ -208,7 +216,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   // with the other one. Switching `priceMode` swaps which repository `useResourcePrices` reads
   // and writes; `market` (HDV price, `pinnedItemPrices`) is item-level and untouched by this
   // revision (spec.md Assumptions), never drawn into this branching.
-  const { data, save, remove, error } = useResourcePrices(serverId, ids, priceMode === 'community' ? communityModePrices : prices);
+  const { data, save, remove, error, loaded: pricesLoaded } = useResourcePrices(serverId, ids, priceMode === 'community' ? communityModePrices : prices);
   const merged: Record<string, ResourcePrice> = {};
 
   ids.forEach((id) => {
@@ -242,6 +250,11 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           setLevelMax={setLevelMax}
           onReset={resetFilters}
           categories={catalogue.categories}
+        />
+        <SyncStatusIndicator
+          isRevalidating={catalogue.isRevalidating}
+          offline={catalogue.offline}
+          lastSyncedAt={catalogue.lastSyncedAt}
         />
         {catalogue.error && <p className="warning">{catalogue.error}</p>}
         <ItemResults
@@ -337,6 +350,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                       serverId={serverId}
                       value={value}
                       hasCarnetEntry={data[ingredient.resourceId] !== undefined || inputs[ingredient.resourceId] !== undefined}
+                      pricesLoaded={pricesLoaded}
                       updatedAt={data[ingredient.resourceId]?.updatedAt}
                       onChange={onChange}
                       onPersist={(price) => void save(ingredient.resourceId, price)}

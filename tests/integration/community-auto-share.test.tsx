@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
 
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([
@@ -63,6 +64,11 @@ function isPost(url: string, init?: RequestInit) {
 describe('auto-sharing a resource price on commit (specs/004-community-price-sharing US1/US3)', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // specs/010-search-instant-cache: the community-mode carnet now correctly wins over a fresh
+    // prefill once it holds an entry (FR-006 of specs/004) — each `it()` below must start from an
+    // empty carnet for resource-1/mikhal rather than inheriting a previous test's committed price,
+    // matching the reset already done in community-price-offline.test.tsx / community-price-prefill.test.tsx.
+    globalThis.indexedDB = new IDBFactory();
   });
 
   afterEach(() => {

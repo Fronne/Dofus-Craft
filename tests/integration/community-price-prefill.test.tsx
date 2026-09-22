@@ -153,7 +153,11 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
 
     await waitFor(() => expect(getCommunityPrice.mock.calls.length).toBeGreaterThan(callsBeforeRefresh));
-    expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('5 000');
+    // specs/010-search-instant-cache: the remounted row's own carnet reload (useResourcePrices) and
+    // the community median refresh are two independent async operations that no longer share a
+    // synchronous "reset to empty" checkpoint — give the carnet reload room to resolve too, instead
+    // of asserting on it just because the median call count already ticked up.
+    await waitFor(() => expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('5 000'));
   });
 
   // specs/004-community-price-sharing (révision 4, amendée par specs/007 FR-012) : confirming an
