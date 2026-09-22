@@ -2,9 +2,10 @@ import { formatRelativeTime } from '../domain/time';
 
 // specs/010-search-instant-cache: discreet, non-blocking signal of how fresh the data currently on
 // screen is. `isRevalidating` always wins over `offline` (FR-012) — a fresh revalidation attempt is
-// in progress even if a previous one had failed. When both are false, nothing is rendered except a
-// minimal, hoverable marker carrying the last successful sync time when known (FR-013) — kept out
-// of the way rather than shown as running text, per the "discret" requirement in spec.md.
+// in progress even if a previous one had failed. Once everything is settled and online, nothing is
+// rendered at all (FR-013's "last sync time" affordance was dropped: a lone dot sitting in empty
+// space below the category filters read as a stray UI element, not as information — see the
+// screenshot feedback that prompted this).
 export function SyncStatusIndicator({
   isRevalidating,
   offline,
@@ -28,14 +29,6 @@ export function SyncStatusIndicator({
         Données hors ligne
         {lastSyncedAt && ` — dernière mise à jour : ${formatRelativeTime(lastSyncedAt)}`}
       </span>
-    );
-  }
-  if (lastSyncedAt) {
-    return (
-      <span
-        className="sync-status sync-status-idle"
-        title={`Dernière synchronisation : ${formatRelativeTime(lastSyncedAt)}`}
-      />
     );
   }
   return null;

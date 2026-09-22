@@ -12,11 +12,11 @@ describe('SyncStatusIndicator', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('keeps the last sync time consultable via a title attribute when idle and online', () => {
-    render(<SyncStatusIndicator isRevalidating={false} offline={false} lastSyncedAt={new Date().toISOString()} />);
-    expect(screen.queryByText('Mise à jour…')).not.toBeInTheDocument();
-    expect(screen.queryByText(/hors ligne/i)).not.toBeInTheDocument();
-    expect(document.querySelector('.sync-status-idle')).toHaveAttribute('title', expect.stringContaining('Dernière synchronisation'));
+  it('renders nothing visible when idle and online, even with a known last sync time', () => {
+    const { container } = render(
+      <SyncStatusIndicator isRevalidating={false} offline={false} lastSyncedAt={new Date().toISOString()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('shows "Mise à jour…" while revalidating, even if a previous attempt had failed', () => {

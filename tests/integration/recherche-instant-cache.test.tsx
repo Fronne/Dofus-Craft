@@ -163,7 +163,7 @@ describe('affichage instantané du cache local sur la page Recherche (specs/010-
     unmount();
   });
 
-  it('shows a discreet "Mise à jour…" indicator while revalidating, then a consultable last-sync time once it settles (US4)', async () => {
+  it('shows a discreet "Mise à jour…" indicator while revalidating, then nothing once it settles (US4)', async () => {
     let resolveSearch!: (value: typeof SEARCH_PAGE_V1) => void;
     getCategories.mockResolvedValue(CATEGORIES);
     searchItems.mockReturnValue(new Promise((resolve) => { resolveSearch = resolve; }));
@@ -183,10 +183,9 @@ describe('affichage instantané du cache local sur la page Recherche (specs/010-
     resolveSearch(SEARCH_PAGE_V1);
 
     await waitFor(() => expect(screen.queryByText('Mise à jour…')).not.toBeInTheDocument());
-    expect(document.querySelector('.sync-status-idle')).toHaveAttribute(
-      'title',
-      expect.stringContaining('Dernière synchronisation'),
-    );
+    // Once settled and online, the indicator disappears entirely rather than leaving a lone
+    // marker on screen — see SyncStatusIndicator.tsx for why the FR-013 affordance was dropped.
+    expect(document.querySelector('.sync-status')).not.toBeInTheDocument();
 
     unmount();
   });
