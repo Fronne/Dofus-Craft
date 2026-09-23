@@ -17,7 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isCommunityPriceRow(
   value: unknown,
-): value is { resourceId: string; serverId: string; medianAmountKamas: number; sampleSize: number } {
+): value is { resourceId: string; serverId: string; medianAmountKamas: number; sampleSize: number; lastContributionAt?: string } {
   return isRecord(value) &&
     typeof value.resourceId === 'string' &&
     typeof value.serverId === 'string' &&

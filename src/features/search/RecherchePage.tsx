@@ -113,7 +113,7 @@ function CommunityResourcePriceRow({
         resource={resource}
         quantity={quantity}
         value={value}
-        updatedAt={updatedAt}
+        updatedAt={communityState.kind === 'found' && communityState.price.lastContributionAt ? communityState.price.lastContributionAt : updatedAt}
         communityMeta={communityMeta}
         lockWhenFilled
         onChange={onChange}

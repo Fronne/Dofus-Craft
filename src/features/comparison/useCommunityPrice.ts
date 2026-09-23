@@ -29,7 +29,13 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
     if (typeof parsed.medianAmountKamas !== 'number' || typeof parsed.sampleSize !== 'number') {
       return undefined;
     }
-    return { resourceId, serverId, medianAmountKamas: parsed.medianAmountKamas, sampleSize: parsed.sampleSize };
+    return {
+      resourceId,
+      serverId,
+      medianAmountKamas: parsed.medianAmountKamas,
+      sampleSize: parsed.sampleSize,
+      lastContributionAt: typeof parsed.lastContributionAt === 'string' ? parsed.lastContributionAt : undefined,
+    };
   } catch {
     return undefined;
   }

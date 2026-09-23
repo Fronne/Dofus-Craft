@@ -34,14 +34,18 @@ async function fetchCurrentMedian(
   env: Env,
   resourceId: string,
   serverId: string,
-): Promise<{ medianAmountKamas: number; sampleSize: number } | undefined> {
+): Promise<{ medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined> {
   const since = new Date(Date.now() - RETENTION_MS).toISOString();
   const { results } = await env.DB.prepare(
-    `SELECT amount_kamas FROM community_price_contributions
+    `SELECT amount_kamas, created_at FROM community_price_contributions
      WHERE resource_id = ? AND server_id = ? AND created_at >= ?`,
-  ).bind(resourceId, serverId, since).all<{ amount_kamas: number }>();
+  ).bind(resourceId, serverId, since).all<{ amount_kamas: number; created_at: string }>();
 
-  return computeCommunityMedian(results.map((row) => row.amount_kamas));
+  const median = computeCommunityMedian(results.map((row) => row.amount_kamas));
+  if (!median) return undefined;
+  // "Dernière mise à jour" shown to players = created_at of the most recent contribution.
+  const lastContributionAt = results.reduce((latest, row) => (row.created_at > latest ? row.created_at : latest), '');
+  return { ...median, lastContributionAt };
 }
 
 async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
@@ -59,6 +63,7 @@ async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
     serverId,
     medianAmountKamas: median.medianAmountKamas,
     sampleSize: median.sampleSize,
+    lastContributionAt: median.lastContributionAt,
   });
 }
 
