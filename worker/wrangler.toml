@@ -9,6 +9,11 @@ binding = "DB"
 database_name = "dofus-craft-community-prices"
 database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 
+# Every Monday at 03:00 UTC: removes contributions older than 90 days (worker/src/retention.ts,
+# FR-013). Weekly is plenty: expired rows are already ignored at read time in between.
+[triggers]
+crons = ["0 3 * * MON"]
+
 # At most 60 contributions per minute from one IP (worker/src/index.ts). A player filling a whole
 # recipe stays far below; a script flooding the median does not.
 [[ratelimits]]

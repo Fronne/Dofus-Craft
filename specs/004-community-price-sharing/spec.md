@@ -544,3 +544,5 @@ Suite à une revue de l'application :
 - **FR-025** : une contribution au-delà de 2 000 000 000 kamas est refusée.
 - **FR-026** : les contributions sont limitées à 60 par minute depuis une même adresse IP. L'adresse
   sert uniquement de clé au limiteur et n'est jamais stockée (FR-010 inchangé).
+- **FR-013 (amendé)** : les contributions de plus de 90 jours sont supprimées de la base une fois
+  par semaine, et non plus seulement ignorées à la lecture.

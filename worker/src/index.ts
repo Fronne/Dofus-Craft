@@ -1,4 +1,5 @@
 import { summarizeContributions } from './median';
+import { purgeExpiredContributions, retentionCutoff } from './retention';
 import { resolveOutlierFields } from './outlier';
 
 export interface Env {
@@ -11,9 +12,6 @@ export interface Env {
 // Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
 // or an abusive request, and would never be a real price.
 const MAX_AMOUNT_KAMAS = 2_000_000_000;
-
-// 90 rolling days (FR-013).
-const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -41,7 +39,7 @@ async function fetchCurrentMedian(
   resourceId: string,
   serverId: string,
 ): Promise<{ medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined> {
-  const since = new Date(Date.now() - RETENTION_MS).toISOString();
+  const since = retentionCutoff();
   const { results } = await env.DB.prepare(
     `SELECT amount_kamas, created_at, device_id FROM community_price_contributions
      WHERE resource_id = ? AND server_id = ? AND created_at >= ?`,
@@ -180,5 +178,10 @@ export default {
     }
 
     return json({ error: 'Not found' }, 404);
+  },
+
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const removed = await purgeExpiredContributions(env.DB);
+    console.log(`Retention: ${removed} contribution(s) older than 90 days removed`);
   },
 };
