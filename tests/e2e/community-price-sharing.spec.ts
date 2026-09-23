@@ -26,10 +26,12 @@ async function openStrigideInCommunityMode(page: Page) {
   await page.getByRole('button', { name: /^Mode communautaire/ }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
 
-  const search = page.getByLabel('Rechercher un objet');
+  const search = page.getByPlaceholder('Rechercher un objet ou une panoplie...');
   await search.fill('Amulette du Strigide');
   await page.getByRole('button', { name: /Amulette du Strigide/ }).click();
-  await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible({ timeout: 30_000 });
+  // The page starts on its first result, which already shows "Prix des ressources": wait for the
+  // clicked item's own card instead, or the steps below would act on the previous item's recipe.
+  await expect(page.getByRole('heading', { name: 'Amulette du Strigide' })).toBeVisible({ timeout: 30_000 });
 }
 
 test.describe('community price sharing', () => {
@@ -67,10 +69,12 @@ test('the Mode communautaire carnet never depends on the Mode personnel carnet (
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
 
-  const search = page.getByLabel('Rechercher un objet');
+  const search = page.getByPlaceholder('Rechercher un objet ou une panoplie...');
   await search.fill('Amulette du Strigide');
   await page.getByRole('button', { name: /Amulette du Strigide/ }).click();
-  await expect(page.getByRole('heading', { name: 'Prix des ressources' })).toBeVisible({ timeout: 30_000 });
+  // The page starts on its first result: wait for the clicked item's own card, or the price below
+  // would be typed into the previous item's recipe.
+  await expect(page.getByRole('heading', { name: 'Amulette du Strigide' })).toBeVisible({ timeout: 30_000 });
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await priceInput.fill('1000');

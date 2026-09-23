@@ -136,3 +136,9 @@ un appareil différent : une ligne distincte apparaît, avec un identifiant diff
   cette possibilité.
 - Les modalités techniques exactes (route du Worker, structure de la table) sont hors périmètre de
   cette spécification et seront définies lors du plan d'implémentation (`/speckit-plan`).
+
+## Révision (2026-09-23)
+
+- Aucune visite n'est enregistrée depuis le serveur de développement ni depuis les tests de bout en
+  bout. Ils pointaient vers la base de production et chaque session de test comptait comme un nouvel
+  appareil, ce qui faussait le comptage (environ 2 300 appareils pour un groupe de 10 à 20 joueurs).

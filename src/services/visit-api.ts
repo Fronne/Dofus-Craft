@@ -8,6 +8,9 @@ const API_KEY = import.meta.env.VITE_COMMUNITY_API_KEY;
 // throws and never returns anything callers need to check — a failure here must never be visible
 // to the player (FR-007).
 export async function recordVisit(): Promise<void> {
+  // The dev server (and the Playwright suite running on it) points at the production Worker via
+  // .env.local: each fresh browser context would otherwise count as a new production visitor.
+  if (import.meta.env.MODE === 'development') return;
   const deviceId = getOrCreateVisitDeviceId();
   try {
     await fetch(`${API_URL}/visit`, {

@@ -6,7 +6,8 @@ import { Icon } from '../../components/Icon';
 import { ROUTES } from '../../app/router';
 import { useActiveServer } from '../../app/ServerContext';
 import { getItemDetail } from '../../data/catalogue-repository';
-import { prices } from '../../persistence/indexeddb-resource-price-repository';
+import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
+import type { PriceMode } from '../../domain/price-modes';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
 import { compare } from '../../domain/craft-comparison';
 import { formatKamas } from '../../domain/kamas';
@@ -180,7 +181,7 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
   );
 }
 
-export function EpinglesPage() {
+export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
   const { pinnedItems, unpin, listCollectionNames, createCollection, assignCollection, renameCollection, deleteCollection } = usePinnedItems();
   const navigate = useNavigate();
   const { serverId } = useActiveServer();
@@ -209,7 +210,7 @@ export function EpinglesPage() {
       const allResourceIds = [...new Set(
         details.flatMap((detail) => detail.recipe?.ingredients.map((ingredient) => ingredient.resourceId) ?? []),
       )];
-      const resourcePrices = await prices.getMany(serverId, allResourceIds);
+      const resourcePrices = await resourcePricesFor(priceMode).getMany(serverId, allResourceIds);
       if (cancelled) return;
       const next: Record<string, PinnedPriceSummary> = {};
       ids.forEach((id, index) => {
@@ -228,7 +229,7 @@ export function EpinglesPage() {
     return () => {
       cancelled = true;
     };
-  }, [serverId, pinnedItemIds]);
+  }, [serverId, pinnedItemIds, priceMode]);
 
   return (
     <>

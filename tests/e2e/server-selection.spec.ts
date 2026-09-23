@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { activeServerButton, switchServer } from './helpers';
 
 test('blocks the app then remembers and allows changing the active server', async ({ page }) => {
   await page.goto('/');
@@ -9,13 +10,12 @@ test('blocks the app then remembers and allows changing the active server', asyn
   await page.getByRole('button', { name: 'Mikhal' }).click();
 
   await expect(page.getByRole('heading', { name: 'Choisissez votre serveur' })).toHaveCount(0);
-  await expect(page.getByLabel('Serveur actif')).toHaveValue('mikhal');
+  await expect(activeServerButton(page)).toContainText('Mikhal');
 
   await page.reload();
 
   await expect(page.getByRole('heading', { name: 'Choisissez votre serveur' })).toHaveCount(0);
-  await expect(page.getByLabel('Serveur actif')).toHaveValue('mikhal');
+  await expect(activeServerButton(page)).toContainText('Mikhal');
 
-  await page.getByLabel('Serveur actif').selectOption('dakal');
-  await expect(page.getByLabel('Serveur actif')).toHaveValue('dakal');
+  await switchServer(page, 'Dakal');
 });

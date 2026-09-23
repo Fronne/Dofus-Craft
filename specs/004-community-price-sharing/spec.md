@@ -528,3 +528,19 @@ d'appareil, distinct de celui d'un autre appareil, sans qu'aucune n'inclue de do
   la génération, la transmission et le stockage de l'identifiant, pas son exploitation. La génération
   technique de cet identifiant (ex. UUID aléatoire, mécanisme de stockage local) est un détail
   d'implémentation laissé au plan (`/speckit-plan`).
+
+## Révision 7 (2026-09-23)
+
+Suite à une revue de l'application :
+
+- **FR-023 (amendé)** : le calcul du prix communautaire ne garde que la contribution la plus récente
+  de chaque appareil. Un joueur qui corrige son prix plusieurs fois ne compte qu'une fois, avec sa
+  dernière valeur, dans la médiane et dans le nombre de contributions affiché. Les contributions sans
+  identifiant d'appareil (antérieures à la révision 5) comptent chacune pour une. L'identifiant
+  d'appareil n'est toujours jamais affiché.
+- **FR-024** : la réponse du prix communautaire inclut la date de la contribution la plus récente
+  parmi celles retenues dans la médiane (jamais une contribution écartée comme aberrante). C'est
+  cette date qu'affiche « Dernière mise à jour » en Mode communautaire.
+- **FR-025** : une contribution au-delà de 2 000 000 000 kamas est refusée.
+- **FR-026** : les contributions sont limitées à 60 par minute depuis une même adresse IP. L'adresse
+  sert uniquement de clé au limiteur et n'est jamais stockée (FR-010 inchangé).

@@ -48,15 +48,12 @@ export function useCatalogue(query: string, categoryId: string, selectedId: stri
   // changes. `catalogueWarm` stays a dependency so the delayed refetch below can still fire once
   // the background full catalogue load finishes, matching the pre-existing "silent refetch once
   // warm" behavior (see whenCatalogueReady's docstring in catalogue-repository.ts).
-  const [debouncedSearchKey, setDebouncedSearchKey] = useState(
-    () => `search:${query}:${categoryId}:${levelFilter}:${resultLimit}`,
-  );
+  const currentSearchKey = `search:${query}:${categoryId}:${levelFilter}:${resultLimit}`;
+  const [debouncedSearchKey, setDebouncedSearchKey] = useState(currentSearchKey);
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearchKey(`search:${query}:${categoryId}:${levelFilter}:${resultLimit}`);
-    }, 250);
+    const timer = window.setTimeout(() => setDebouncedSearchKey(currentSearchKey), 250);
     return () => window.clearTimeout(timer);
-  }, [query, categoryId, levelFilter, resultLimit]);
+  }, [currentSearchKey]);
 
   const searchState = useStaleWhileRevalidate<SearchPage>({
     key: debouncedSearchKey,
@@ -81,6 +78,9 @@ export function useCatalogue(query: string, categoryId: string, selectedId: stri
     items: searchState.data?.data ?? [],
     total: searchState.data?.total ?? 0,
     loading: searchState.loading,
+    // False while the displayed results still belong to a previous search (debounce pending or
+    // still loading): "the selected item isn't among the results" means nothing until then.
+    resultsMatchQuery: debouncedSearchKey === currentSearchKey && !searchState.loading,
     error: blockingErrorMessage(searchState.data !== undefined, searchState.error, 'Impossible de charger les objets.'),
     detail: detailState.data,
     detailLoading: detailState.loading,

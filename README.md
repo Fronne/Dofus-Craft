@@ -2,7 +2,7 @@
 
 Une application web conçue pour les joueurs de Dofus qui veulent optimiser la rentabilité de leurs crafts. Comparez le coût de fabrication d'un objet à son prix à l'hôtel des ventes et décidez rapidement s'il est plus intéressant de fabriquer ou d'acheter.
 
-**Status**: ✅ Production-ready  
+**Public**: petit groupe fermé de joueurs  
 **Version**: 0.1.0  
 **Type**: React + TypeScript + Vite
 
@@ -30,10 +30,10 @@ Une application web conçue pour les joueurs de Dofus qui veulent optimiser la r
 - Historique des prix avec dates de dernière mise à jour
 
 ### 4. **Partage Communautaire** (Community Prices)
-- Partagez vos prix collectés avec la communauté
-- Consultez les prix médians proposés par la communauté
-- Système de consentement pour protéger votre vie privée
-- Les prix communautaires comblent les lacunes de vos données personnelles
+- En Mode communautaire, les prix saisis sont partagés automatiquement et anonymement
+- Chaque ressource est pré-remplie avec le prix médian du groupe (une contribution par appareil)
+- « Dernière mise à jour » indique la date de la dernière contribution retenue
+- Le Mode personnel ne partage rien : les prix restent sur l'appareil
 
 ### 5. **Multi-serveur**
 - Basculez entre les différents serveurs Dofus
@@ -101,11 +101,13 @@ cd worker && npm install && cd ..
 # Démarrer le serveur dev Vite
 npm run dev
 
-# Dans un autre terminal, démarrer la worker locale
-npm run worker:dev
-
 # L'app est disponible à http://localhost:5173
 ```
+
+Le serveur de dev lit `.env.local`, qui pointe vers le Worker de **production** : les prix
+communautaires affichés et les contributions envoyées en dev sont réels. Seul le comptage des
+visites est coupé en dev. Pour travailler sur une base locale, lancer `npm run worker:dev` et faire
+pointer `VITE_COMMUNITY_API_URL` vers l'URL qu'il affiche.
 
 ### Build & Déploiement
 
@@ -120,7 +122,10 @@ npm run format
 # Build production
 npm run build
 
-# Déployer la worker Cloudflare
+# Déployer le front (Cloudflare Workers, assets statiques de dist/)
+npx wrangler deploy
+
+# Déployer le Worker des prix communautaires
 npm run worker:deploy
 ```
 
@@ -132,7 +137,7 @@ npm run worker:deploy
 # Tests unitaires + intégration
 npm run test
 
-# Tests e2e (Playwright)
+# Tests e2e (Playwright) : serveur dédié sur le port 5174, API communautaire coupée
 npm run test:e2e
 
 # Voir les résultats
@@ -219,23 +224,23 @@ L'app récupère le catalogue complet depuis [DofusDB API](https://dofusdb.fr/ap
 - **Schéma**: Table `contributions` + calcul médiane temps réel
 
 ### Flux
-1. Utilisateur partage ses prix (opt-in, consentement explicite)
+1. En Mode communautaire, chaque prix saisi est envoyé automatiquement
 2. Worker reçoit et valide les contributions
 3. Calcul de la médiane par (serveur, item_id, ressource_id)
 4. Frontend récupère les prix médians via API REST
 
 ### Confidentialité
-- Aucun lien entre contributeur et contribution (anonyme)
-- Consent withdrawal possible (oublier les contributions)
-- Données stockées que si opt-in explicite
+- Aucun lien entre contributeur et joueur : seul un identifiant d'appareil aléatoire est stocké
+- Rien n'est envoyé en Mode personnel
+- Contributions limitées à 60 par minute et par IP (IP jamais stockée), montant plafonné à 2 milliards
 
 ---
 
 ## 🔐 Sécurité & Confidentialité
 
 ✅ **Données locales**: Tout est stocké localement (IndexedDB)  
-✅ **Consentement opt-in**: Partage communautaire activé manuellement  
-✅ **Pas de tracking**: Aucun analytics, no telemetry  
+✅ **Partage choisi**: le partage n'a lieu qu'en Mode communautaire, choisi dans Paramètres  
+✅ **Comptage anonyme**: une visite par appareil et par jour, sans donnée identifiante  
 ✅ **Pas de compte**: Aucune authentification requise  
 ✅ **HTTPS**: Worker Cloudflare sécurisé par défaut  
 

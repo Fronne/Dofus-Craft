@@ -19,8 +19,8 @@ export const priceModes: PriceModeOption[] = [
     id: 'community',
     label: 'Mode communautaire',
     description: COMMUNITY_MODE_ENABLED
-      ? 'Consulter les prix communautaires et contribuer, de façon anonyme et après consentement, au partage des prix.'
-      : 'Vous pourrez bientôt consulter les prix communautaires et contribuer, de façon anonyme et après consentement, au partage des prix.',
+      ? 'Consulter les prix communautaires. Les prix que vous saisissez sont partagés automatiquement et anonymement.'
+      : 'Vous pourrez bientôt consulter les prix communautaires et partager anonymement les vôtres.',
     comingSoon: !COMMUNITY_MODE_ENABLED,
   },
 ];

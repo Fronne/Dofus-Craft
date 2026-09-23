@@ -6,7 +6,7 @@ import { formatKamas } from '../../src/domain/kamas';
 // jest-dom normalizes the received text's whitespace (collapsing the narrow no-break space
 // Intl.NumberFormat uses as a thousands separator into a plain space) but not the expected
 // string, so the expectation needs the same normalization to compare equal.
-const normalizeSpaces = (value: string) => value.replace(/ /g, ' ');
+const normalizeSpaces = (value: string) => value.replace(/\u202f/g, ' ');
 
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([

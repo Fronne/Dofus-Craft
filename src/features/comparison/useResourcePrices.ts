@@ -65,7 +65,8 @@ export function useResourcePrices(
     if (!serverId) return;
     await repository.remove(serverId, id);
     setData((current) => {
-      const { [id]: _removed, ...rest } = current;
+      const rest = { ...current };
+      delete rest[id];
       return rest;
     });
   }

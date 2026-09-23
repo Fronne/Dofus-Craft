@@ -253,3 +253,12 @@ suite :
    si des données techniques identifiantes s'avéraient nécessaires à l'infrastructure retenue, et
    effet du retrait d'un futur consentement de partage sur des contributions déjà envoyées avant ce
    retrait.
+
+## Révision (2026-09-23)
+
+- Les pages Prix et Épinglés suivent le mode actif, comme la page Recherche : en Mode communautaire,
+  elles lisent le carnet du Mode communautaire ; en Mode personnel, le carnet personnel. Les trois
+  pages affichent donc toujours les mêmes prix de ressources pour un même mode.
+- Le consentement explicite distinct décrit ci-dessus a été retiré par specs/004 (partage automatique
+  en Mode communautaire). La description du Mode communautaire dans Paramètres le dit désormais
+  clairement : « Les prix que vous saisissez sont partagés automatiquement et anonymement. »

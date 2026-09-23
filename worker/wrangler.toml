@@ -9,6 +9,16 @@ binding = "DB"
 database_name = "dofus-craft-community-prices"
 database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 
+# At most 60 contributions per minute from one IP (worker/src/index.ts). A player filling a whole
+# recipe stays far below; a script flooding the median does not.
+[[ratelimits]]
+name = "CONTRIBUTION_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 60
+
 # COMMUNITY_API_KEY is a secret, not declared here — set it with:
 #   wrangler secret put COMMUNITY_API_KEY --config worker/wrangler.toml
 # It must match VITE_COMMUNITY_API_KEY in the frontend's .env.local.

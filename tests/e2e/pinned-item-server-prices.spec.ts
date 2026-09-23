@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { activeServerButton, switchServer } from './helpers';
 
 test('keeps a pinned item shared across servers while its market price stays per-server', async ({ page }) => {
   await page.goto('/');
@@ -11,23 +12,23 @@ test('keeps a pinned item shared across servers while its market price stays per
   await marketInput.fill('500000');
   await expect(marketInput).toHaveValue('500 000');
 
-  await page.getByLabel('Serveur actif').selectOption('dakal');
+  await switchServer(page, 'Dakal');
   await expect(page.getByRole('button', { name: 'Désépingler', exact: true })).toBeVisible();
   await expect(page.getByLabel('Prix HDV')).toHaveValue('');
 
   await page.getByLabel('Prix HDV').fill('750000');
   await expect(page.getByLabel('Prix HDV')).toHaveValue('750 000');
 
-  await page.getByLabel('Serveur actif').selectOption('mikhal');
+  await switchServer(page, 'Mikhal');
   await expect(page.getByLabel('Prix HDV')).toHaveValue('500 000');
   await expect(page.getByRole('button', { name: 'Désépingler', exact: true })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByLabel('Serveur actif')).toHaveValue('mikhal');
+  await expect(activeServerButton(page)).toContainText('Mikhal');
   await expect(page.getByRole('button', { name: 'Désépingler', exact: true })).toBeVisible();
   await expect(page.getByLabel('Prix HDV')).toHaveValue('500 000');
 
-  await page.getByLabel('Serveur actif').selectOption('dakal');
+  await switchServer(page, 'Dakal');
   await expect(page.getByRole('button', { name: 'Désépingler', exact: true })).toBeVisible();
   await expect(page.getByLabel('Prix HDV')).toHaveValue('750 000');
 });
@@ -43,6 +44,15 @@ test('erasing an already-saved market price leaves the field empty for good, eve
 
   await marketInput.fill('');
   await expect(marketInput).toHaveValue('');
+  // Each keystroke is written to IndexedDB asynchronously: wait for the removal to land before
+  // reloading, as a real player would never reload within a few milliseconds of typing.
+  await expect.poll(() => page.evaluate(() => new Promise<number>((resolve) => {
+    const request = indexedDB.open('dofus-craft');
+    request.onsuccess = () => {
+      const count = request.result.transaction('pinned-item-prices-by-server').objectStore('pinned-item-prices-by-server').count();
+      count.onsuccess = () => resolve(count.result);
+    };
+  }))).toBe(0);
 
   await page.reload();
   await expect(page.getByLabel('Prix HDV')).toHaveValue('');

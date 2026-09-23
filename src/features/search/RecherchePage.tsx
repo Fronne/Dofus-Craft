@@ -18,8 +18,7 @@ import { useCatalogue } from '../catalogue/useCatalogue';
 import { usePinnedItems } from '../catalogue/usePinnedItems';
 import { useActiveServer } from '../../app/ServerContext';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
-import { prices } from '../../persistence/indexeddb-resource-price-repository';
-import { communityModePrices } from '../../persistence/indexeddb-community-mode-price-repository';
+import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
 import { Icon } from '../../components/Icon';
 import { GuidedTour } from '../onboarding/GuidedTour';
@@ -196,6 +195,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
       if (!stored) return;
       const restored = new URLSearchParams(stored);
       if ([...restored.keys()].length > 0) {
+        // Recorded as the intended params right away, so effects running in this same commit
+        // (the auto-select below) see the restored item instead of the still-empty URL.
+        pendingParamsRef.current = restored;
         setSearchParams(restored, { replace: true });
         setQueryDraft(restored.get('q') ?? '');
       }
@@ -232,12 +234,16 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const selectedItem = catalogue.items.find((item) => item.id === selected) ??
     pinned.pinnedItems.find((entry) => entry.item.id === selected)?.item;
   useEffect(() => {
+    // A navigation already carrying an item is in flight (e.g. the search context restored when
+    // coming back to this page): wait for it, or the first cached result would replace the item
+    // the player was looking at — whichever navigation resolved last used to win.
+    if (!selected && pendingParamsRef.current?.get('item')) return;
     if (!selected && catalogue.items[0]) setSelected(catalogue.items[0].id);
-    if (selected && catalogue.items.length > 0 && !selectedItem &&
+    if (selected && catalogue.resultsMatchQuery && catalogue.items.length > 0 && !selectedItem &&
       !pinned.pinnedItems.some((entry) => entry.item.id === selected)) {
       setSelected(catalogue.items[0].id);
     }
-  }, [catalogue.items, selected, selectedItem, pinned.pinnedItems]);
+  }, [catalogue.items, catalogue.resultsMatchQuery, selected, selectedItem, pinned.pinnedItems]);
   useEffect(() => {
     if (!serverId || !selected) {
       setMarket('');
@@ -266,7 +272,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   // with the other one. Switching `priceMode` swaps which repository `useResourcePrices` reads
   // and writes; `market` (HDV price, `pinnedItemPrices`) is item-level and untouched by this
   // revision (spec.md Assumptions), never drawn into this branching.
-  const { data, save, remove, error, loaded: pricesLoaded } = useResourcePrices(serverId, ids, priceMode === 'community' ? communityModePrices : prices);
+  const { data, save, remove, error, loaded: pricesLoaded } = useResourcePrices(serverId, ids, resourcePricesFor(priceMode));
   const merged: Record<string, ResourcePrice> = {};
 
   ids.forEach((id) => {

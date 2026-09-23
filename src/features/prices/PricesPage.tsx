@@ -5,7 +5,8 @@ import { ROUTES } from '../../app/router';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
-import { prices } from '../../persistence/indexeddb-resource-price-repository';
+import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
+import type { PriceMode } from '../../domain/price-modes';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
 import { getResourceDetails } from '../../data/catalogue-repository';
 import { normalizeSearchText } from '../../services/dofusdb-api';
@@ -16,7 +17,7 @@ type PriceRow = { resource: Resource; unitPriceKamas: number };
 
 const DISPLAY_LIMIT_OPTIONS = [10, 25, 50, 100];
 
-export function PricesPage() {
+export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   const navigate = useNavigate();
   const [itemRows, setItemRows] = useState<PriceRow[]>([]);
@@ -69,7 +70,7 @@ export function PricesPage() {
     }
     let cancelled = false;
     setLoadingResources(true);
-    prices.listAllForServer(serverId).then(async (entries) => {
+    resourcePricesFor(priceMode).listAllForServer(serverId).then(async (entries) => {
       if (!entries.length) {
         if (!cancelled) {
           setResourceRows([]);
@@ -92,7 +93,7 @@ export function PricesPage() {
     return () => {
       cancelled = true;
     };
-  }, [serverId]);
+  }, [serverId, priceMode]);
 
   const normalizedItemQuery = normalizeSearchText(itemQuery);
   const filteredItems = normalizedItemQuery
@@ -109,12 +110,15 @@ export function PricesPage() {
     <>
       <header className="page-header">
         <h1>Prix</h1>
-        <p>Retrouvez en un coup d'œil les prix personnels déjà enregistrés sur ce serveur.</p>
+        <p>
+          Retrouvez en un coup d'œil les prix déjà enregistrés sur ce serveur
+          {priceMode === 'community' ? ' en Mode communautaire' : ' en Mode personnel'}.
+        </p>
       </header>
 
       <div className="prices-grid">
         <section className="panel">
-          <h2>Items</h2>
+          <h2>Objets</h2>
           <div className="search-input-wrap prices-search">
             <Icon name="search" size={18} className="search-input-icon" />
             <input

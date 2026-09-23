@@ -1,10 +1,16 @@
-import { computeCommunityMedian } from './median';
+import { summarizeContributions } from './median';
 import { resolveOutlierFields } from './outlier';
 
 export interface Env {
   DB: D1Database;
   COMMUNITY_API_KEY: string;
+  // Optional so local runs without the binding keep working (see wrangler.toml [[ratelimits]]).
+  CONTRIBUTION_LIMITER?: RateLimit;
 }
+
+// Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
+// or an abusive request, and would never be a real price.
+const MAX_AMOUNT_KAMAS = 2_000_000_000;
 
 // 90 rolling days (FR-013).
 const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
@@ -37,15 +43,15 @@ async function fetchCurrentMedian(
 ): Promise<{ medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined> {
   const since = new Date(Date.now() - RETENTION_MS).toISOString();
   const { results } = await env.DB.prepare(
-    `SELECT amount_kamas, created_at FROM community_price_contributions
+    `SELECT amount_kamas, created_at, device_id FROM community_price_contributions
      WHERE resource_id = ? AND server_id = ? AND created_at >= ?`,
-  ).bind(resourceId, serverId, since).all<{ amount_kamas: number; created_at: string }>();
+  ).bind(resourceId, serverId, since).all<{ amount_kamas: number; created_at: string; device_id: string }>();
 
-  const median = computeCommunityMedian(results.map((row) => row.amount_kamas));
-  if (!median) return undefined;
-  // "Dernière mise à jour" shown to players = created_at of the most recent contribution.
-  const lastContributionAt = results.reduce((latest, row) => (row.created_at > latest ? row.created_at : latest), '');
-  return { ...median, lastContributionAt };
+  return summarizeContributions(results.map((row) => ({
+    amountKamas: row.amount_kamas,
+    createdAt: row.created_at,
+    deviceId: row.device_id,
+  })));
 }
 
 async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
@@ -76,6 +82,7 @@ function isContributionPayload(value: unknown): value is ContributionPayload {
     typeof record.serverId === 'string' &&
     typeof record.amountKamas === 'number' &&
     record.amountKamas >= 0 &&
+    record.amountKamas <= MAX_AMOUNT_KAMAS &&
     typeof record.deviceId === 'string' &&
     record.deviceId.length > 0;
 }
@@ -88,7 +95,7 @@ async function handlePostContribution(request: Request, env: Env): Promise<Respo
     return json({ error: 'Invalid JSON body' }, 400);
   }
   if (!isContributionPayload(body)) {
-    return json({ error: 'resourceId, serverId and a non-negative amountKamas are required' }, 400);
+    return json({ error: `resourceId, serverId and an amountKamas between 0 and ${MAX_AMOUNT_KAMAS} are required` }, 400);
   }
   const { resourceId, serverId, amountKamas, deviceId } = body;
 
@@ -158,6 +165,13 @@ export default {
     if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, 401);
 
     if (request.method === 'POST' && url.pathname === '/community-price') {
+      // Throttles contributions per client IP. The IP is only used as the limiter's in-memory key,
+      // never stored (FR-010): the API key is public in the app bundle, so this is what stops a
+      // script from flooding the median.
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      if (env.CONTRIBUTION_LIMITER && !(await env.CONTRIBUTION_LIMITER.limit({ key: ip })).success) {
+        return json({ error: 'Too many contributions, try again in a minute' }, 429);
+      }
       return handlePostContribution(request, env);
     }
 

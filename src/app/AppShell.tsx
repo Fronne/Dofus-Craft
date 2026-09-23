@@ -96,8 +96,8 @@ export function AppShell() {
               path={ROUTES.search}
               element={<RecherchePage priceMode={priceMode} />}
             />
-            <Route path={ROUTES.pinned} element={<EpinglesPage />} />
-            <Route path={ROUTES.prices} element={<PricesPage />} />
+            <Route path={ROUTES.pinned} element={<EpinglesPage priceMode={priceMode} />} />
+            <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
             <Route
               path={ROUTES.settings}
               element={
