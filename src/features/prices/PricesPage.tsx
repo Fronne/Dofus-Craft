@@ -212,7 +212,7 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
               <ul className="price-overview-list">
                 {visibleResourceRows.map((row) => (
                   <li key={row.resource.id} className="price-overview-row">
-                    <ResourceDisplay resource={row.resource} />
+                    <ResourceDisplay resource={row.resource} copyable />
                     <b>{formatKamas(row.unitPriceKamas)}</b>
                   </li>
                 ))}

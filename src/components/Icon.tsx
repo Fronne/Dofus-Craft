@@ -19,7 +19,8 @@ export type IconName =
   | 'info'
   | 'level'
   | 'package'
-  | 'edit';
+  | 'edit'
+  | 'copy';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
   search: {
@@ -107,6 +108,10 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
   edit: {
     children:
       '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  },
+  copy: {
+    children:
+      '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
   },
 };
 

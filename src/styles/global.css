@@ -486,6 +486,52 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
    .resource-display for its overview rows and wasn't part of this request. */
 .price-line .resource-display img, .price-line .resource-image-fallback { flex: 0 0 36px; width: 36px; height: 36px; }
 .resource-display > span:last-child { min-width: 0; }
+.resource-name-copy {
+  position: relative;
+  display: inline;
+  margin: 0 -5px;
+  padding: 1px 5px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  line-height: inherit;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.resource-name-copy:hover, .resource-name-copy:focus-visible { background: var(--gold-soft); }
+.resource-name-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.resource-name-copy-icon { margin-left: .3rem; vertical-align: -2px; opacity: 0; color: var(--text-muted); transition: opacity .15s ease; }
+.resource-name-copy:hover .resource-name-copy-icon,
+.resource-name-copy:focus-visible .resource-name-copy-icon,
+.resource-name-copy.is-copied .resource-name-copy-icon { opacity: 1; }
+.resource-name-copy.is-copied .resource-name-copy-icon { color: var(--gold); }
+/* Floats above the name, styled like the app's other tooltips, so the row never changes height. */
+.resource-name-copied {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 5;
+  padding: .2rem .55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.resource-name-copy.is-copied .resource-name-copied { opacity: 1; transform: translate(-50%, 0); }
+.resource-name-copied:empty { display: none; }
 
 .card h2, .card h3 { color: var(--text); line-height: 1.2; }
 .card h2 { margin: var(--space-4) 0 var(--space-3); font-size: 1.3rem; letter-spacing: -.02em; text-align: center; }

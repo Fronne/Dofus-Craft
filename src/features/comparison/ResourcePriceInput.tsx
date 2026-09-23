@@ -67,7 +67,7 @@ export function ResourcePriceInput({
   return (
     <label className={`price-line${priceAgeClass}`}>
       <span className="price-resource">
-        <ResourceDisplay resource={resource} />
+        <ResourceDisplay resource={resource} copyable />
       </span>
       <span className="price-resource-quantity">× {quantity}</span>
       {(updatedAt || communityLabel) && (
