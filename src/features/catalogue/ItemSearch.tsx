@@ -27,7 +27,7 @@ export function ItemSearch({
 }) {
   const hasActiveFilters = Boolean(query || category || levelMin || levelMax);
   return (
-    <div className="search">
+    <div className="search" data-tour="search">
       <label className="search-primary">
         <span className="search-label">Rechercher un objet ou une panoplie</span>
         <span className="search-input-wrap">

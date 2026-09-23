@@ -1007,3 +1007,54 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .price-resource-formatted { grid-column: 1 / -1; grid-row: auto; justify-self: start; text-align: left; }
   .pinned-price-migration-notice { margin: 0 var(--space-3) var(--space-3); flex-direction: column; align-items: flex-start; }
 }
+
+/* specs/011-search-onboarding: help button + guided tour of the Recherche page. */
+.search-panel { position: relative; }
+.search-help-button { position: absolute; top: var(--space-4); right: var(--space-4); }
+
+.guided-tour {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+}
+.guided-tour::backdrop { background: transparent; }
+.guided-tour-dim { position: fixed; inset: 0; background: rgba(9, 13, 20, .6); }
+.guided-tour-cutout {
+  position: fixed;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 100vmax rgba(9, 13, 20, .6);
+  outline: 2px solid var(--gold);
+  pointer-events: none;
+}
+.guided-tour-bubble {
+  position: fixed;
+  width: min(360px, calc(100vw - 32px));
+  padding: var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-sm);
+}
+.guided-tour-bubble--centered { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.guided-tour-bubble--docked { top: auto; bottom: 16px; left: 16px; right: 16px; width: auto; transform: none; }
+.guided-tour-bubble h2 { margin: 0 0 var(--space-2); font-size: 1.05rem; }
+.guided-tour-bubble p { margin: 0 0 var(--space-3); font-size: .92rem; line-height: 1.45; color: var(--text-muted); }
+.guided-tour-bubble .guided-tour-progress { margin: 0 0 var(--space-1); font-size: .78rem; font-weight: 700; color: var(--gold); }
+.guided-tour-bubble .guided-tour-hint { font-style: italic; }
+.guided-tour-points { margin: 0 0 var(--space-3); padding-left: 1.1rem; display: grid; gap: .3rem; font-size: .9rem; color: var(--text-muted); }
+.guided-tour-points strong { color: var(--text); }
+.guided-tour-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.guided-tour-actions .btn { min-height: 40px; padding: .5rem .8rem; font-size: .9rem; }
+/* Leaves room for the sticky mobile header when a tour step scrolls its area to the top. */
+[data-tour] { scroll-margin-top: 80px; }
+.guided-tour-skip { margin-right: auto; background: transparent; color: var(--text-muted); }
+.guided-tour-skip:hover { color: var(--text); }

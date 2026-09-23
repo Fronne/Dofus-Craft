@@ -42,7 +42,7 @@ export function ItemDetail({
   const { item, category, recipe, stats = [], panoplieName, isWeapon } = detail;
 
   return (
-    <section className="card item-detail-card">
+    <section className="card item-detail-card" data-tour="item-detail">
       {onTogglePin && (
         <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} onClick={onTogglePin}>
           <Icon name={isPinned ? 'pin-filled' : 'pin'} size={18} />

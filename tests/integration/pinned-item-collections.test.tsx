@@ -172,6 +172,9 @@ async function createCollectionForItem(itemName: string, collectionName: string)
 describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-item-collections US1)', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // specs/011-search-onboarding: these tests go through the Recherche page but aren't about its
+    // guided tour, which would otherwise open on top of it.
+    window.localStorage.setItem('craftcheck-search-tour-seen', '1');
     globalThis.indexedDB = new IDBFactory();
     // BrowserRouter reads from `window.location`, which otherwise carries over the previous test's
     // ending route (e.g. "/epingles") into this one's fresh `render(<App />)`.
@@ -281,6 +284,7 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
 describe('renaming or deleting a collection from its group heading (specs/005-pinned-item-collections US3)', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.localStorage.setItem('craftcheck-search-tour-seen', '1');
     globalThis.indexedDB = new IDBFactory();
     window.history.pushState({}, '', '/');
   });

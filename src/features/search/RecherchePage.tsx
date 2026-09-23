@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Resource, ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
@@ -21,6 +21,10 @@ import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-
 import { prices } from '../../persistence/indexeddb-resource-price-repository';
 import { communityModePrices } from '../../persistence/indexeddb-community-mode-price-repository';
 import type { PriceMode } from '../../domain/price-modes';
+import { Icon } from '../../components/Icon';
+import { GuidedTour } from '../onboarding/GuidedTour';
+import { searchTourSteps } from '../onboarding/search-tour-steps';
+import { hasSeenSearchTour, markSearchTourSeen } from '../../persistence/search-tour-preference';
 
 const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
 
@@ -127,6 +131,11 @@ function CommunityResourcePriceRow({
 export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   const [searchParams, setSearchParams] = useSearchParams();
+  // specs/011-search-onboarding: the guided tour starts on its own until it has been finished or
+  // dismissed once on this device (FR-001), and the help button reopens it at step 1 (FR-007).
+  // Leaving the page mid-tour unmounts it without marking it seen (research.md §5).
+  const [tourOpen, setTourOpen] = useState(() => !hasSeenSearchTour());
+  const tourSteps = useMemo(() => searchTourSteps(priceMode), [priceMode]);
   // react-router-dom's `navigate()` (which `setSearchParams` calls under the hood) is async — it
   // goes through the data router's own navigation queue, so `window.location.search` isn't
   // guaranteed to reflect a call's effect by the time a *second* call happens right after it.
@@ -279,7 +288,16 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
 
   return (
     <>
-      <section className="panel">
+      <section className="panel search-panel">
+        <button
+          type="button"
+          className="icon-button search-help-button"
+          aria-label="Comment fonctionne cette page ?"
+          title="Comment fonctionne cette page ?"
+          onClick={() => setTourOpen(true)}
+        >
+          <Icon name="info" size={18} />
+        </button>
         <ItemSearch
           query={query}
           setQuery={setQuery}
@@ -329,7 +347,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                 }
               }}
             />
-            <div className="market-price-summary">
+            <div className="market-price-summary" data-tour="recommendation">
               <RecommendationBadge recommendation={result.recommendation} hint={insufficientDataHint(result)} />
               <p>
                 Coût de craft : <strong>{formatKamas(result.knownCraftCostKamas)}</strong>
@@ -355,7 +373,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
             : undefined}
         />
         {detail?.recipe && (
-          <section className="card">
+          <section className="card" data-tour="resource-prices">
             <h2>Prix des ressources</h2>
             {detail.recipe.ingredients.map((ingredient) => {
               const resource = detail.resources.find((item) => item.id === ingredient.resourceId) ??
@@ -417,6 +435,15 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           </section>
         )}
       </div>
+      {tourOpen && (
+        <GuidedTour
+          steps={tourSteps}
+          onClose={() => {
+            markSearchTourSeen();
+            setTourOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

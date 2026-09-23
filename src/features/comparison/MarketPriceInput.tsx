@@ -3,7 +3,7 @@ import { KAMAS_ICON_URL, formatKamasInput, isValidKamas, normalizeKamasInput } f
 export function MarketPriceInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const valid = isValidKamas(value);
   return (
-    <div className="market">
+    <div className="market" data-tour="market-price">
       {/* The "Prix HDV" label lives in RecherchePage, above this input and the profitability
           summary shown next to it, so both can be vertically centered against the input itself
           instead of against the label+input block. It still targets #market-price-input via
