@@ -50,6 +50,8 @@ function goToSearch() {
 describe('the two price carnets are strictly independent (specs/004-community-price-sharing US2)', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // These scenarios are about Mode personnel, no longer the default for a new player.
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
     globalThis.indexedDB = new IDBFactory();
     getCommunityPrice.mockReset();
     getCommunityPrice.mockResolvedValue({ status: 'not-found' });

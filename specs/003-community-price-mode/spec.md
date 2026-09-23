@@ -262,3 +262,15 @@ suite :
 - Le consentement explicite distinct décrit ci-dessus a été retiré par specs/004 (partage automatique
   en Mode communautaire). La description du Mode communautaire dans Paramètres le dit désormais
   clairement : « Les prix que vous saisissez sont partagés automatiquement et anonymement. »
+
+## Révision (2026-09-24) : Mode communautaire par défaut
+
+- Un joueur qui n'a encore jamais fait de choix sur cet appareil démarre en **Mode communautaire**
+  (remplace l'hypothèse « mode par défaut = mode personnel » ci-dessus). Il en va de même quand le
+  stockage local est vidé ou indisponible. Tant que le Mode communautaire est désactivé
+  (`COMMUNITY_MODE_ENABLED`), le défaut reste le Mode personnel.
+- Un joueur qui a déjà ouvert l'application garde le mode enregistré sur son appareil : le
+  changement ne concerne que les nouveaux appareils.
+- Conséquence assumée : un nouveau joueur partage ses prix sans avoir choisi le mode lui-même. Le
+  public est un petit groupe fermé, et la dernière étape de la visite guidée de la page Recherche
+  (specs/011) lui indique qu'il est en Mode communautaire et où le changer.

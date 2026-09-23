@@ -45,6 +45,8 @@ import App from '../../src/app/App';
 describe('switching price mode never alters personal prices', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // These scenarios are about Mode personnel, no longer the default for a new player.
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
     getCommunityPrice.mockResolvedValue({ status: 'not-found' });
   });
   afterEach(() => {

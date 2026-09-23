@@ -4,12 +4,17 @@ import { getPriceMode, setPriceMode } from '../../src/persistence/price-mode-pre
 describe('price mode preference', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it('defaults to personal mode when nothing is stored', () => {
-    expect(getPriceMode()).toBe('personal');
+  it('defaults to community mode for a new player (nothing stored)', () => {
+    expect(getPriceMode()).toBe('community');
   });
 
-  it('defaults to personal mode when the stored value is invalid', () => {
+  it('defaults to community mode when the stored value is invalid', () => {
     window.localStorage.setItem('craftcheck-price-mode', 'nonsense');
+    expect(getPriceMode()).toBe('community');
+  });
+
+  it('keeps an existing player on the mode they already have', () => {
+    setPriceMode('personal');
     expect(getPriceMode()).toBe('personal');
   });
 
@@ -27,13 +32,13 @@ describe('price mode preference', () => {
     expect(getPriceMode()).toBe('community');
   });
 
-  it('treats an unavailable localStorage as no preference, defaulting to personal, without throwing', () => {
+  it('treats an unavailable localStorage as no preference, defaulting to community, without throwing', () => {
     const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('SecurityError: storage is disabled');
     });
 
     expect(() => getPriceMode()).not.toThrow();
-    expect(getPriceMode()).toBe('personal');
+    expect(getPriceMode()).toBe('community');
 
     getItemSpy.mockRestore();
   });

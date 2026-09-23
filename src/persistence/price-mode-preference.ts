@@ -2,7 +2,9 @@ import { isKnownPriceMode } from '../domain/price-modes';
 import type { PriceMode } from '../domain/price-modes';
 
 const STORAGE_KEY = 'craftcheck-price-mode';
-const DEFAULT_PRICE_MODE: PriceMode = 'personal';
+// specs/003-community-price-mode (révision 2026-09-24): a new player starts in Mode communautaire.
+// Falls back to Mode personnel while the community mode is switched off (price-modes.ts).
+const DEFAULT_PRICE_MODE: PriceMode = isKnownPriceMode('community') ? 'community' : 'personal';
 
 export function getPriceMode(): PriceMode {
   let stored: string | null;

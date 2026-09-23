@@ -35,7 +35,11 @@ import App from '../../src/app/App';
 import { prices } from '../../src/persistence/indexeddb-resource-price-repository';
 
 describe('comparison screen', () => {
-  beforeEach(() => window.localStorage.clear());
+  beforeEach(() => {
+    window.localStorage.clear();
+    // Mode personnel, no longer the default for a new player.
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
+  });
   afterEach(() => {
     document.body.innerHTML = '';
   });

@@ -19,9 +19,17 @@ export default defineConfig({
     // specs/011-search-onboarding: the Recherche page's guided tour opens on a first visit and, as a
     // modal, would block every other test's clicks. Marked as seen up front; a test about the tour
     // itself can clear it.
+    // specs/003 (révision 2026-09-24): a new player now starts in Mode communautaire; these tests
+    // were written from Mode personnel and switch to the community mode themselves when needed.
     storageState: {
       cookies: [],
-      origins: [{ origin: `http://127.0.0.1:${PORT}`, localStorage: [{ name: 'craftcheck-search-tour-seen', value: '1' }] }],
+      origins: [{
+        origin: `http://127.0.0.1:${PORT}`,
+        localStorage: [
+          { name: 'craftcheck-search-tour-seen', value: '1' },
+          { name: 'craftcheck-price-mode', value: 'personal' },
+        ],
+      }],
     },
   },
   projects: [

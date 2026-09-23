@@ -35,30 +35,32 @@ describe('price mode settings selector', () => {
   });
 
   // Mode communautaire activé (src/domain/price-modes.ts, COMMUNITY_MODE_ENABLED) : les deux
-  // boutons sont sélectionnables, le mode personnel restant celui actif par défaut (aucun choix
-  // enregistré) jusqu'à ce que le joueur bascule explicitement.
-  it('presents personal mode as active by default and community mode as selectable', async () => {
+  // boutons sont sélectionnables, le Mode communautaire étant celui actif par défaut pour un nouveau
+  // joueur (specs/003, révision 2026-09-24) jusqu'à ce qu'il bascule explicitement.
+  it('presents community mode as active by default and personal mode as selectable', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
     const personalOption = await screen.findByRole('button', { name: /mode personnel/i });
     expect(personalOption).toHaveTextContent('Utiliser uniquement mes prix');
-    expect(personalOption).toHaveAttribute('aria-pressed', 'true');
+    expect(personalOption).toHaveAttribute('aria-pressed', 'false');
     expect(personalOption).not.toBeDisabled();
 
     const communityOption = screen.getByRole('button', { name: /mode communautaire/i });
     expect(communityOption).not.toBeDisabled();
     expect(communityOption).not.toHaveTextContent('Bientôt disponible');
-    expect(communityOption).toHaveAttribute('aria-pressed', 'false');
+    expect(communityOption).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('activates community mode when its button is clicked', async () => {
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
     const communityOption = await screen.findByRole('button', { name: /mode communautaire/i });
+    expect(communityOption).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(communityOption);
 
     expect(screen.getByRole('button', { name: /mode personnel/i })).toHaveAttribute('aria-pressed', 'false');
@@ -74,12 +76,12 @@ describe('price mode settings selector', () => {
     expect(screen.getAllByRole('button', { name: /mode (personnel|communautaire)/i })).toHaveLength(2);
   });
 
-  it('resolves to personal mode by default and never blocks access to the rest of the application', async () => {
+  it('resolves to community mode by default and never blocks access to the rest of the application', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();
 
-    expect(await screen.findByRole('button', { name: /^Mode personnel/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('button', { name: /^Mode communautaire/i })).toHaveAttribute('aria-pressed', 'true');
 
     // Navigating away from Paramètres and back to the search workspace remains unrestricted.
     fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));

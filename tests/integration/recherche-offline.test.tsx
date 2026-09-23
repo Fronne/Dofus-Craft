@@ -51,6 +51,8 @@ async function selectServerAndGoToSearch() {
 describe('résilience hors ligne sur la page Recherche (specs/010-search-instant-cache, US2)', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // These scenarios are about Mode personnel, no longer the default for a new player.
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
     globalThis.indexedDB = new IDBFactory();
     getCategories.mockReset();
     searchItems.mockReset();
