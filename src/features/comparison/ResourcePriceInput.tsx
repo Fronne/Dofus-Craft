@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { Resource } from '../../domain/types';
 import { KAMAS_ICON_URL, formatKamas, formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
@@ -52,6 +52,10 @@ export function ResourcePriceInput({
   const [editing, setEditing] = useState(false);
   const locked = Boolean(lockWhenFilled) && Boolean(value) && !editing;
   const inputRef = useRef<HTMLInputElement>(null);
+  // The label must point at the price input explicitly: it also contains the copyable resource
+  // name, a <button>, which would otherwise become the label's control (first labelable
+  // descendant) — clicking the row would then focus that button instead of the price field.
+  const inputId = useId();
   const lastCommittedValueRef = useRef(value);
   // specs/008-stale-resource-highlight: 'unknown' and 'fresh' add no class — only a price that has
   // actually gone stale/expired gets flagged (FR-004/FR-005).
@@ -65,7 +69,7 @@ export function ResourcePriceInput({
       ? 'Prix ancien, peut différer du prix actuel en jeu.'
       : undefined;
   return (
-    <label className={`price-line${priceAgeClass}`}>
+    <label className={`price-line${priceAgeClass}`} htmlFor={inputId}>
       <span className="price-resource">
         <ResourceDisplay resource={resource} copyable />
       </span>
@@ -84,6 +88,7 @@ export function ResourcePriceInput({
       )}
       <span className="kamas-input-wrap">
         <input
+          id={inputId}
           ref={inputRef}
           inputMode="numeric"
           aria-invalid={!valid}

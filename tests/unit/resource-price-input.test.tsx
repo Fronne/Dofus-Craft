@@ -254,3 +254,19 @@ describe('ResourcePriceInput onCommit (Mode communautaire)', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 });
+
+describe('ResourcePriceInput label (regression: copyable resource name)', () => {
+  it('labels the price input, not the copy button placed inside the same row', () => {
+    render(
+      <ResourcePriceInput
+        resource={{ id: '8308', name: 'Peau de Gloot' }}
+        quantity={3}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+    const input = screen.getByPlaceholderText('Prix unitaire');
+    const label = input.closest('label') as HTMLLabelElement;
+    expect(label.control).toBe(input);
+  });
+});
