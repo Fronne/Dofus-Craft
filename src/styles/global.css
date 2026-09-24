@@ -1167,11 +1167,11 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 .player-counters {
   position: fixed;
+  top: 16px;
   right: 16px;
-  bottom: 16px;
   z-index: 9;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   align-items: flex-end;
   gap: 12px;
 }
@@ -1213,10 +1213,11 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .dungeon-counter-panel {
   position: absolute;
-  /* Above the other counters' portraits stacked over this one. */
+  /* Opens to the left of its portrait, top-aligned with it, so the other portraits stacked below
+     stay visible and clickable. */
   z-index: 1;
-  right: 0;
-  bottom: calc(100% + 12px);
+  top: 0;
+  right: calc(100% + 12px);
   display: grid;
   gap: var(--space-3);
   width: min(320px, calc(100vw - 32px));
@@ -1249,8 +1250,18 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .dungeon-counter-resource img { flex: 0 0 28px; }
 
-/* Above the mobile bottom tab bar (classic bar ~64px; the "Nouveau" floating bar sits 10px up). */
+/* specs/013 FR-016 (révisé): the portraits must never hide page content or buttons (e.g. the search
+   panel's help button, in its top-right corner). Where the page is wide enough to be centered with
+   room to spare, they sit in that margin; below that, the page keeps a right gutter for them. */
+@media (min-width: 961px) and (max-width: 1600px) {
+  .app-shell:has(.player-counters) .app-page { padding-right: 96px; }
+}
+/* On mobile the top of the screen is the server switcher's bar: the portraits line up in a row at
+   its right end, smaller, instead of stacking over the page. */
 @media (max-width: 960px) {
-  .player-counters { right: 12px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
-  .dungeon-counter-trigger { width: 48px; height: 48px; }
+  .player-counters { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 11; flex-direction: row; gap: 10px; }
+  /* No room to its left on a phone: with the portraits in a row, opening below hides none of them. */
+  .dungeon-counter-panel { top: calc(100% + 12px); right: 0; }
+  .dungeon-counter-trigger { width: 40px; height: 40px; }
+  .dungeon-counter-badge { top: -6px; right: -8px; min-width: 20px; height: 20px; font-size: .66rem; line-height: 16px; }
 }

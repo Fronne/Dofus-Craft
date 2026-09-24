@@ -27,6 +27,7 @@
 - Q: Ajouter un autre compteur ? → A: Oui : « 150 tentatives de FM sur l'Amulette du Strigide » pour
   Nicomoux, Sadida homme, sur le même modèle (chiffre en dur dans le code).
 - Q: Placement des deux portraits ? → A: L'un au-dessus de l'autre, en bas à droite.
+- Q (révision 2026-09-24) : Placement des portraits ? → A: En haut à droite, à la place du bas à droite.
 - Q: Classe de Nicomoux ? → A: Pandawa (homme), à la place du Sadida initialement demandé.
 - Q: Affichage du compteur du Féca ? → A: « 150+ » (au moins 150), dans la bulle et le badge.
 
@@ -40,8 +41,11 @@ Les exigences ci-dessous s'appliquent à chaque compteur. Compteurs actuels :
 - **FR-015**: Chaque compteur MUST avoir son propre portrait, son propre libellé (« Compteur de
   donjons de Le-Lanceurdeglyphe », « Compteur de tentatives de FM de Nicomoux ») et sa propre bulle ;
   une seule bulle est ouverte à la fois.
-- **FR-016**: Les portraits MUST être empilés verticalement en bas à droite, au-dessus de la barre
-  d'onglets sur mobile.
+- **FR-016** *(révisé 2026-09-24)*: Les portraits MUST être placés en haut à droite : empilés
+  verticalement sur ordinateur, dans une marge réservée à droite de la page pour ne masquer aucun
+  bouton (notamment l'aide du panneau de recherche) ; alignés en ligne à droite de la barre du
+  sélecteur de serveur sur mobile. La fiche d'un compteur s'ouvre à gauche de son portrait
+  sur ordinateur (sans masquer les autres portraits), et sous la rangée de portraits sur mobile.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -148,5 +152,5 @@ bulle et le badge affichent le nouveau chiffre.
 - Un seul compteur, sans historique ; il change rarement, à la demande du propriétaire.
 - La ressource est « Parangon de puissance » (DofusDB, id 21189), retenue par le propriétaire même si
   DofusDB la classe en objet de quête ; le compteur n'est relié à aucun calcul de prix.
-- Le portrait apparaît en bas à droite sur ordinateur, et au-dessus de la barre d'onglets sur
-  mobile.
+- Le portrait apparaît en haut à droite sur ordinateur, et dans la barre du haut (à droite du
+  sélecteur de serveur) sur mobile.

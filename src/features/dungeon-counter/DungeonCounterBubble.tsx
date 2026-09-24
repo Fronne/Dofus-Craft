@@ -68,7 +68,7 @@ export function DungeonCounterBubble({ counter }: { counter: PlayerCounter }) {
   );
 }
 
-// The portraits stack up from the bottom-right corner, oldest counter at the bottom. No counter
+// The portraits stack down from the top-right corner, oldest counter at the top. No counter
 // known (first visit while the service is down) means no bubbles at all (FR-004).
 export function PlayerCounters() {
   const counters = usePlayerCounters();
