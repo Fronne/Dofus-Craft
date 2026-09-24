@@ -13,7 +13,7 @@ disable-model-invocation: false
 
 ## Checklist Purpose: "Unit Tests for English"
 
-**CRITICAL CONCEPT**: Checklists are **UNIT TESTS FOR REQUIREMENTS WRITING** - they validate the quality, clarity, and completeness of requirements in a given domain.
+Checklists are unit tests for requirements writing: they validate the quality, clarity, and completeness of the requirements in a given domain, not the behavior of the implementation.
 
 **NOT for verification/testing**:
 
@@ -47,7 +47,7 @@ disable-model-invocation: false
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+Take the user input above into account; it may be empty.
 
 ## Pre-Execution Checks
 

@@ -17,7 +17,7 @@ disable-model-invocation: false
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+Take the user input above into account; it may be empty.
 
 ## Pre-Execution Checks
 
@@ -140,7 +140,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 ## Task Generation Rules
 
-**CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
+Organize tasks by user story, so that each story can be implemented and tested on its own.
 
 **Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
 
