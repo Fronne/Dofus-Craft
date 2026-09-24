@@ -1,0 +1,57 @@
+import { isPlayerCounter, type PlayerCounter, type PlayerCounterInput } from '../src/domain/player-counter';
+
+// specs/014-admin-counters (contracts/player-counters-api.md): same-origin calls to the
+// dofus-craft-admin API; the Cloudflare Access session cookie rides along. Never throws.
+export type AdminResult<T> =
+  | { status: 'ok'; value: T }
+  | { status: 'invalid'; field: string; error: string }
+  | { status: 'forbidden' }
+  | { status: 'not-found' }
+  | { status: 'unavailable' };
+
+async function call<T>(method: string, path: string, body: unknown, read: (payload: unknown) => T | undefined): Promise<AdminResult<T>> {
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, {
+      method,
+      credentials: 'same-origin',
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (response.status === 403) return { status: 'forbidden' };
+  if (response.status === 404) return { status: 'not-found' };
+  if (response.status === 204) return { status: 'ok', value: undefined as T };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (response.status === 400) {
+    const record = (payload ?? {}) as Record<string, unknown>;
+    return { status: 'invalid', field: String(record.field ?? ''), error: String(record.error ?? 'Valeur invalide.') };
+  }
+  if (!response.ok) return { status: 'unavailable' };
+  const value = read(payload);
+  return value === undefined ? { status: 'unavailable' } : { status: 'ok', value };
+}
+
+const asCounter = (payload: unknown) => (isPlayerCounter(payload) ? payload : undefined);
+
+export const adminApi = {
+  me: () => call('GET', '/me', undefined, (payload) => {
+    const email = (payload as Record<string, unknown> | null)?.email;
+    return typeof email === 'string' ? email : undefined;
+  }),
+  list: () => call('GET', '/counters', undefined, (payload) =>
+    (Array.isArray(payload) && payload.every(isPlayerCounter) ? payload : undefined)),
+  create: (input: PlayerCounterInput) => call('POST', '/counters', input, asCounter),
+  update: (id: string, patch: Partial<PlayerCounterInput>) =>
+    call('PATCH', `/counters/${encodeURIComponent(id)}`, patch, asCounter),
+  remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
+};
+
+export type { PlayerCounter };

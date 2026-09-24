@@ -130,6 +130,23 @@ export async function searchDofusDbItems(
     isPage(value, isItem), signal);
 }
 
+// specs/014-admin-counters: picks the item a player counter is about (a resource, an equipment, a
+// quest item…), so unlike searchDofusDbItems it searches the whole catalogue, craftable or not.
+export type DofusDbItemChoice = { itemId: number; name: string; icon: string };
+
+export async function searchDofusDbItemsByName(query: string, signal?: AbortSignal): Promise<DofusDbItemChoice[]> {
+  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  const longest = [...tokens].sort((left, right) => right.length - left.length)[0];
+  if (!longest) return [];
+  const params = new URLSearchParams({ $limit: '10', $sort: 'name.fr' });
+  params.set('name.fr[$regex]', toAccentInsensitiveRegex(longest));
+  const page = await request(`/items?${params.toString()}`, (value): value is DofusDbPage<DofusDbItem> =>
+    isPage(value, isItem), signal);
+  return page.data
+    .filter((item) => item.name?.fr && item.img && !item.img.endsWith('/undefined.png'))
+    .map((item) => ({ itemId: item.id, name: item.name!.fr!, icon: item.img! }));
+}
+
 export async function getDofusDbInitialItems(signal?: AbortSignal): Promise<DofusDbItem[]> {
   const page = await searchDofusDbItems('', undefined, 0, 100, signal, 'level');
   return page.data;

@@ -1,5 +1,6 @@
 import { summarizeContributions } from './median';
 import { purgeExpiredContributions, retentionCutoff } from './retention';
+import { readPlayerCounters } from './player-counters';
 import { resolveOutlierFields } from './outlier';
 
 export interface Env {
@@ -155,6 +156,11 @@ export default {
     // intentional and matches the client contract.
     if (request.method === 'GET' && url.pathname === '/community-price') {
       return handleGetCommunityPrice(url, env);
+    }
+
+    // specs/014-admin-counters: the humorous player counters, readable by everyone.
+    if (request.method === 'GET' && url.pathname === '/player-counters') {
+      return json(await readPlayerCounters(env.DB));
     }
 
     // Writes (contribute) require the shared app key, a light deterrent against requests from

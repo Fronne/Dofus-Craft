@@ -1,0 +1,30 @@
+# specs/014-admin-counters: the administration page and its API. The whole Worker is protected by
+# Cloudflare Access (Workers & Pages > dofus-craft-admin > Access): only the owner's e-mail can sign
+# in. The API also re-checks the Access token itself (src/access.ts).
+name = "dofus-craft-admin"
+main = "src/index.ts"
+compatibility_date = "2026-09-16"
+workers_dev = true
+preview_urls = false
+
+[assets]
+directory = "../dist-admin"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# Same database as the community price Worker (worker/wrangler.toml).
+[[d1_databases]]
+binding = "DB"
+database_name = "dofus-craft-community-prices"
+database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
+
+# Filled in once Access is enabled (Zero Trust > Access > Applications > this app).
+# TEAM_DOMAIN: https://<team-name>.cloudflareaccess.com ; POLICY_AUD: the application's AUD tag.
+[vars]
+TEAM_DOMAIN = ""
+POLICY_AUD = ""
+
+# OWNER_EMAIL is a secret (a personal address, never committed):
+#   npx wrangler secret put OWNER_EMAIL --config admin-worker/wrangler.toml
+# Until TEAM_DOMAIN, POLICY_AUD and OWNER_EMAIL are all set, every /api/* request is refused.

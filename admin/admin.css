@@ -1,0 +1,70 @@
+/* specs/014-admin-counters: the administration page, on top of the site's own styles. */
+.admin-page { max-width: 960px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-7); }
+.admin-header p { margin: .25rem 0 0; }
+.admin-section { display: grid; gap: var(--space-4); }
+.admin-section h2 { margin: 0; }
+.admin-counters { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: var(--space-3); }
+.admin-counter {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+}
+.admin-counter p { margin: 0; }
+.admin-counter-who { display: flex; align-items: center; gap: var(--space-3); }
+.admin-counter-who img { border-radius: 50%; object-fit: cover; object-position: top; background: var(--image-bg); }
+.admin-counter-who > div { flex: 1 1 auto; min-width: 0; }
+.admin-counter-player { font-weight: 800; overflow-wrap: break-word; }
+.admin-counter-meta { color: var(--text-muted); font-size: .82rem; }
+.admin-counter-current { color: var(--gold-bright); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.admin-counter-target { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: .88rem; }
+/* The single column may shrink below a long player name (which then ends with an ellipsis). */
+.admin-counter { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.admin-counter-edit { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-2) var(--space-3); }
+.admin-counter-edit input:not([type="checkbox"]) { width: 100%; min-width: 0; min-height: 40px; }
+.admin-counter-edit .admin-checkbox { grid-column: 1 / -1; }
+.admin-checkbox { display: inline-flex; align-items: center; gap: var(--space-2); font-size: .88rem; color: var(--text-muted); cursor: pointer; }
+.admin-checkbox input { width: 18px; height: 18px; min-height: 0; }
+.admin-counter-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.admin-danger:hover { border-color: var(--danger); color: var(--danger); background: transparent; }
+.admin-message { margin: 0; color: var(--success); font-size: .88rem; font-weight: 650; }
+.admin-message--error { color: var(--danger); }
+
+.admin-new-counter { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.admin-new-counter h3 { margin: 0; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); align-items: end; }
+.admin-form-grid label, .admin-target label { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-form-grid input:not([type="checkbox"]):not([type="radio"]), .admin-form-grid select, .admin-target input { width: 100%; min-width: 0; }
+/* The checkbox rows keep their box next to their text, even inside the grid of labelled fields. */
+.admin-form-grid .admin-checkbox { display: inline-flex; align-self: center; }
+.admin-sex { display: flex; gap: var(--space-3); align-items: center; margin: 0; padding: 0; border: 0; font-size: .9rem; }
+.admin-sex legend { float: left; margin-right: var(--space-2); font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-sex label { display: inline-flex; align-items: center; gap: .3rem; }
+.admin-portrait-preview { display: grid; place-items: center; width: 64px; height: 64px; border: 1px dashed var(--border); border-radius: 50%; color: var(--text-faint); font-size: .62rem; text-align: center; }
+.admin-portrait-preview img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; object-position: top; }
+.admin-target { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2); }
+.admin-target label { flex: 1 1 260px; }
+.admin-target-chosen { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-weight: 700; }
+.admin-target-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.admin-target-results button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: .45rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--button-bg);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.admin-target-results button.selected { border-color: var(--gold); background: var(--gold-soft); }
+
+@media (max-width: 480px) {
+  .admin-counter-current { font-size: 1.2rem; }
+  .admin-counter-player { font-size: .9rem; }
+  .admin-counter-who img { width: 40px; height: 40px; }
+}

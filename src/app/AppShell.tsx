@@ -14,6 +14,7 @@ import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
+import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
 import type { DesignId } from '../domain/designs';
 import { applyDesign, getDesignId, setDesignId } from '../persistence/design-preference';
 
@@ -123,6 +124,7 @@ export function AppShell() {
           </Routes>
         </main>
       </div>
+      <PlayerCounters />
     </div>
   );
 }

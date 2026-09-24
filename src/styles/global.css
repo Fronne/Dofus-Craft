@@ -1104,3 +1104,93 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 [data-tour] { scroll-margin-top: 80px; }
 .guided-tour-skip { margin-right: auto; background: transparent; color: var(--text-muted); }
 .guided-tour-skip:hover { color: var(--text); }
+
+/* ---------- Dungeon drop counter bubble (specs/013-dungeon-drop-counter) ---------- */
+
+.player-counters {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 9;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 12px;
+}
+.dungeon-counter { position: relative; }
+.dungeon-counter-trigger {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  overflow: visible;
+}
+.dungeon-counter-trigger img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: top; }
+.dungeon-counter-trigger:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.dungeon-counter-trigger[aria-expanded="true"] { border-color: var(--gold); }
+.dungeon-counter-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 2px solid var(--panel-strong);
+  border-radius: var(--radius-pill);
+  background: var(--gold);
+  color: #0b1018;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+.dungeon-counter-panel {
+  position: absolute;
+  /* Above the other counters' portraits stacked over this one. */
+  z-index: 1;
+  right: 0;
+  bottom: calc(100% + 12px);
+  display: grid;
+  gap: var(--space-3);
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+.dungeon-counter-panel p { margin: 0; }
+.dungeon-counter-header { display: flex; align-items: center; gap: var(--space-3); }
+.dungeon-counter-avatar { flex: 0 0 44px; border-radius: 50%; object-fit: cover; object-position: top; background: var(--image-bg); }
+.dungeon-counter-who { flex: 1 1 auto; min-width: 0; }
+.dungeon-counter-name { overflow: hidden; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
+.dungeon-counter-class { color: var(--text-muted); font-size: .8rem; }
+.dungeon-counter-close { flex: 0 0 auto; width: 32px; height: 32px; }
+.dungeon-counter-value { display: flex; align-items: baseline; gap: var(--space-2); }
+.dungeon-counter-value strong { color: var(--gold-bright); font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.dungeon-counter-value span { color: var(--text-muted); font-weight: 700; }
+.dungeon-counter-resource {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+  font-weight: 700;
+  font-size: .9rem;
+}
+.dungeon-counter-resource img { flex: 0 0 28px; }
+
+/* Above the mobile bottom tab bar (classic bar ~64px; the "Nouveau" floating bar sits 10px up). */
+@media (max-width: 960px) {
+  .player-counters { right: 12px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); gap: 10px; }
+  .dungeon-counter-trigger { width: 48px; height: 48px; }
+}

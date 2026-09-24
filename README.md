@@ -236,6 +236,28 @@ L'app récupère le catalogue complet depuis [DofusDB API](https://dofusdb.fr/ap
 
 ---
 
+## 🛠️ Administration des compteurs (specs/014-admin-counters)
+
+Les bulles de compteurs (en bas à droite du site) se gèrent depuis une page d'administration
+séparée, servie par le Worker `dofus-craft-admin` (`admin/` pour la page, `admin-worker/` pour le
+Worker). Le site public n'y fait aucun lien : gardez son adresse en favori.
+
+- **Protection** : Cloudflare Access protège tout le Worker (connexion par code reçu par e-mail,
+  seule l'adresse du propriétaire est autorisée). L'API revérifie en plus le jeton Access et
+  l'adresse à chaque appel ; tant que la configuration est incomplète, elle refuse tout.
+- **Mise en place** (une fois, dans cet ordre) :
+  1. `npm run worker:db:migrate-player-counters` puis `npm run worker:deploy` ;
+  2. `npm run admin:build && npm run admin:deploy` ;
+  3. tableau de bord Cloudflare → Workers & Pages → `dofus-craft-admin` → **Access** →
+     « Protect this Worker behind Access », production, autoriser votre adresse e-mail ; dans
+     Zero Trust → Access → Applications, régler la durée de session (1 mois) et noter l'**AUD tag**
+     et le **domaine d'équipe** ;
+  4. renseigner `TEAM_DOMAIN` et `POLICY_AUD` dans `admin-worker/wrangler.toml`, puis
+     `npx wrangler secret put OWNER_EMAIL --config admin-worker/wrangler.toml` et
+     `npm run admin:deploy` ;
+  5. `npm run build && npx wrangler deploy` (site public).
+- **Développement** : `npm run admin:dev` (page seule, API à simuler).
+
 ## 🔐 Sécurité & Confidentialité
 
 ✅ **Données locales**: Tout est stocké localement (IndexedDB)  

@@ -40,3 +40,24 @@ CREATE TABLE IF NOT EXISTS app_visits (
   day TEXT NOT NULL,
   PRIMARY KEY (device_id, day)
 );
+
+-- specs/014-admin-counters: humorous per-player counters (see migrations/0004_add_player_counters.sql
+-- for the initial rows). Read publicly by GET /player-counters, edited only by the dofus-craft-admin
+-- Worker behind Cloudflare Access. Nothing about the visitors who read them is stored.
+CREATE TABLE IF NOT EXISTS player_counters (
+  id TEXT PRIMARY KEY,
+  player TEXT NOT NULL,
+  breed_id INTEGER NOT NULL,
+  sex TEXT NOT NULL CHECK (sex IN ('m', 'f')),
+  count INTEGER NOT NULL CHECK (count >= 0),
+  at_least INTEGER NOT NULL DEFAULT 0 CHECK (at_least IN (0, 1)),
+  unit_one TEXT NOT NULL,
+  unit_many TEXT NOT NULL,
+  target_item_id INTEGER NOT NULL,
+  target_name TEXT NOT NULL,
+  target_icon TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_player_counters_created_at ON player_counters (created_at);
