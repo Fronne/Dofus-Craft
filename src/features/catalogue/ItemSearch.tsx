@@ -1,5 +1,6 @@
 import type { Category } from '../../domain/types';
 import { CategoryFilter } from './CategoryFilter';
+import { LevelRangeSlider } from './LevelRangeSlider';
 import { Icon } from '../../components/Icon';
 
 export function ItemSearch({
@@ -43,32 +44,10 @@ export function ItemSearch({
         <legend>Filtres</legend>
         <CategoryFilter categories={categories} value={category} onChange={setCategory} />
         <div className="level-filters">
-          <div className="level-range">
-            <label>
-              Niveau min
-              <input
-                type="number"
-                min="1"
-                max="200"
-                inputMode="numeric"
-                value={levelMin}
-                onChange={(event) => setLevelMin(event.target.value)}
-                placeholder="Min"
-              />
-            </label>
-            <label>
-              Niveau max
-              <input
-                type="number"
-                min="1"
-                max="200"
-                inputMode="numeric"
-                value={levelMax}
-                onChange={(event) => setLevelMax(event.target.value)}
-                placeholder="Max"
-              />
-            </label>
-          </div>
+          <fieldset className="level-filter">
+            <legend>Niveau</legend>
+            <LevelRangeSlider levelMin={levelMin} setLevelMin={setLevelMin} levelMax={levelMax} setLevelMax={setLevelMax} />
+          </fieldset>
           {hasActiveFilters && (
             <button type="button" className="reset-filters" onClick={onReset}>
               Réinitialiser les filtres

@@ -223,8 +223,63 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .filters-panel legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .level-filters { display: flex; flex-direction: column; gap: .75rem; }
-.level-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-.level-range input { width: 100%; box-sizing: border-box; }
+.level-filter { min-width: 0; border: 0; padding: 0; margin: 0; }
+.filters-panel .level-filter legend { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 0 0 .35rem; color: var(--text); font-size: .82rem; font-weight: 700; }
+.level-slider { position: relative; display: grid; gap: .35rem; padding-top: .1rem; }
+/* The current range sits on the legend's line, at the right. */
+.level-slider-value { position: absolute; top: -1.75rem; right: 0; color: var(--gold-bright); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.level-slider-track { position: relative; height: 28px; }
+.level-slider-track::before,
+.level-slider-fill { content: ''; position: absolute; top: 50%; height: 6px; border-radius: 999px; transform: translateY(-50%); }
+.level-slider-track::before { left: 0; right: 0; background: var(--border); }
+.level-slider-fill { background: var(--gold); }
+/* Both inputs span the whole track; only their handles catch the pointer, so each can be grabbed. */
+.level-slider-track input[type='range'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+}
+.level-slider-track input.level-slider-on-top { z-index: 1; }
+.level-slider-track input[type='range']::-webkit-slider-runnable-track { background: none; border: 0; }
+.level-slider-track input[type='range']::-moz-range-track { background: none; border: 0; }
+.level-slider-track input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  cursor: grab;
+  pointer-events: auto;
+}
+.level-slider-track input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  cursor: grab;
+  pointer-events: auto;
+}
+/* The focus cue lives on the handle only: beats the whole-field halo the "Nouveau" design gives every
+   input on focus (design-modern.css), which would draw a pill around the track. */
+:root .level-slider-track input[type='range']:focus,
+:root .level-slider-track input[type='range']:focus-visible { border: 0; box-shadow: none; outline: none; }
+.level-slider-track input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--gold-soft); }
+.level-slider-track input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--gold-soft); }
+.level-slider-bounds { display: flex; justify-content: space-between; color: var(--text-faint); font-size: .75rem; font-weight: 650; }
 .reset-filters {
   align-self: flex-start;
   min-height: 38px;
@@ -1046,7 +1101,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .prices-grid { grid-template-columns: 1fr; gap: var(--space-3); }
   .category-icons { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
   .category-icons button { flex: 0 0 auto; min-height: 44px; }
-  .level-range { grid-template-columns: 1fr 1fr; }
   .results-meta { align-items: flex-start; flex-direction: column; gap: .5rem; }
   .results { grid-template-columns: 1fr; gap: .55rem; }
   .results button, .skeleton-card { min-height: 58px; }
