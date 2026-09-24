@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import { Icon } from '../../components/Icon';
 import { accentColors } from '../../domain/accent-colors';
 import type { AccentColorId } from '../../domain/accent-colors';
+import { designs } from '../../domain/designs';
+import type { DesignId } from '../../domain/designs';
 import { priceModes } from '../../domain/price-modes';
 import type { PriceMode } from '../../domain/price-modes';
 
@@ -12,6 +14,8 @@ export function ParametresPage({
   setAccentColor,
   priceMode,
   setPriceMode,
+  design,
+  setDesign,
 }: {
   theme: 'dark' | 'light';
   setTheme: (value: 'dark' | 'light') => void;
@@ -19,6 +23,8 @@ export function ParametresPage({
   setAccentColor: (value: AccentColorId) => void;
   priceMode: PriceMode;
   setPriceMode: (value: PriceMode) => void;
+  design: DesignId;
+  setDesign: (value: DesignId) => void;
 }) {
   return (
     <>
@@ -26,6 +32,26 @@ export function ParametresPage({
         <h1>Paramètres</h1>
         <p>Personnalisez l'apparence et la gestion de vos prix.</p>
       </header>
+
+      <section className="panel settings-section">
+        <h2>Design</h2>
+        <p className="settings-section-description">
+          Essayez le nouveau design, ou revenez au design classique à tout moment.
+        </p>
+        <div className="settings-choice-row">
+          {designs.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={design === option.id ? 'settings-choice selected' : 'settings-choice'}
+              aria-pressed={design === option.id}
+              onClick={() => setDesign(option.id)}
+            >
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="panel settings-section">
         <h2>Thème</h2>

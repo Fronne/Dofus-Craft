@@ -35,8 +35,10 @@ test('shows aligned resource images and formats price input', async ({ page }) =
   for (let index = 1; index < await images.count(); index += 1) {
     const image = await images.nth(index).boundingBox();
     expect(image).not.toBeNull();
-    expect(image?.width).toBe(firstImage?.width);
-    expect(image?.height).toBe(firstImage?.height);
+    // Within a hundredth of a pixel: cards may still be finishing their entrance animation
+    // (specs/012 "Nouveau" design), which makes measured sizes differ by sub-pixel amounts.
+    expect(image?.width).toBeCloseTo(firstImage?.width ?? 0, 2);
+    expect(image?.height).toBeCloseTo(firstImage?.height ?? 0, 2);
   }
 
   const price = rows.first().locator('input');

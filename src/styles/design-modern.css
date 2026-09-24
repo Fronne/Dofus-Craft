@@ -1,0 +1,239 @@
+/* specs/012-modern-design: the "Nouveau" design (« Moderne épuré »), chosen in Paramètres.
+   Every rule below is scoped under :root[data-design="modern"] (checked by
+   tests/unit/design-modern-css-scope.test.ts), so the classic design is untouched when the
+   attribute is absent. Keeping or dropping this design is a single-file change.
+   Never override --slot-* or --image-bg here: game-derived elements keep the game's colors. */
+
+/* Declares the "Inter Variable" font only; nothing is downloaded until a rule below uses it. */
+@import '@fontsource-variable/inter';
+
+/* ---------- Tokens ---------- */
+
+:root[data-design="modern"] {
+  font-family: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  --bg: #0a0f17;
+  --panel-strong: #141d2c;
+  --panel-soft: #1c2739;
+  --border: rgba(148, 171, 201, .11);
+  --radius-sm: .625rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.375rem;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .18), 0 10px 28px -12px rgba(0, 0, 0, .45);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, .18), 0 18px 40px -14px rgba(0, 0, 0, .55);
+  --shadow: 0 24px 60px -18px rgba(0, 0, 0, .6);
+  --panel-gradient: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 40%), var(--panel-strong);
+  --input-bg: rgba(5, 9, 16, .45);
+  --transition-fast: 180ms cubic-bezier(.2, .7, .3, 1);
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
+}
+
+:root[data-design="modern"][data-theme="light"] {
+  --bg: #f3f5f9;
+  --panel-strong: #ffffff;
+  --panel-soft: #eef1f6;
+  --border: rgba(45, 67, 94, .09);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04), 0 10px 28px -14px rgba(15, 23, 42, .14);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, .05), 0 18px 40px -16px rgba(15, 23, 42, .2);
+  --shadow: 0 24px 60px -20px rgba(15, 23, 42, .25);
+  --panel-gradient: var(--panel-strong);
+  --input-bg: #f5f7fb;
+}
+
+/* The gradient sits on the root, not on <body>: body is only one viewport tall (html, body
+   { height: 100% }), so a fixed gradient there left a hard edge on the plain root background
+   once the page was scrolled. */
+:root[data-design="modern"] {
+  background:
+    radial-gradient(60rem 40rem at 0% -10%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 70%),
+    radial-gradient(50rem 30rem at 100% 0%, color-mix(in srgb, var(--gold-bright) 7%, transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root[data-design="modern"] body { background: transparent; }
+
+/* ---------- Typography ---------- */
+
+:root[data-design="modern"] h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 760; letter-spacing: -.035em; }
+:root[data-design="modern"] h2 { font-weight: 700; letter-spacing: -.02em; }
+:root[data-design="modern"] .page-header { margin-bottom: var(--space-6); }
+:root[data-design="modern"] .page-header p { font-size: 1.02rem; line-height: 1.6; }
+:root[data-design="modern"] .eyebrow { letter-spacing: .12em; font-weight: 700; }
+
+/* ---------- Panels and cards ---------- */
+
+:root[data-design="modern"] .panel,
+:root[data-design="modern"] .card,
+:root[data-design="modern"] .result {
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  animation: modern-rise 280ms cubic-bezier(.2, .7, .3, 1) both;
+}
+
+/* Section titles inside cards read left-aligned like every other card title; the item card keeps
+   its centered name under the image. */
+:root[data-design="modern"] .card:not(.item-detail-card) h2 { margin-top: 0; font-size: 1.2rem; text-align: left; }
+
+/* Prices line up digit by digit. */
+:root[data-design="modern"] input,
+:root[data-design="modern"] .price-resource-formatted,
+:root[data-design="modern"] .price-overview-row b,
+:root[data-design="modern"] .market-price-summary strong,
+:root[data-design="modern"] .pinned-card-prices,
+:root[data-design="modern"] .stat-tile-value { font-variant-numeric: tabular-nums; }
+
+/* ---------- Search page ---------- */
+
+/* Keeps the search title clear of the help button in the panel's top-right corner. */
+:root[data-design="modern"] .search-panel .search-label { padding-right: 44px; }
+:root[data-design="modern"] .category-icons button { border-radius: var(--radius-pill); padding-right: .95rem; }
+:root[data-design="modern"] .results button img { border-radius: 10px; }
+/* The verdict becomes a tinted inset instead of a column separated by a rule. */
+:root[data-design="modern"] .market-price-summary {
+  padding: var(--space-4) var(--space-5);
+  border-left: 0;
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+}
+:root[data-design="modern"] .market-price-summary .badge { align-self: flex-start; padding: .3rem .7rem; font-size: .88rem; }
+/* The HDV panel stays compact: it is read at a glance, between the search and the recipe. */
+:root[data-design="modern"] .market-price-panel { padding-top: var(--space-5); padding-bottom: var(--space-5); }
+:root[data-design="modern"] .market-price-panel .market-price-label { margin-bottom: .4rem; }
+/* Badge and craft cost share a line when there is room; the savings sentence, when present,
+   always gets its own line below them. */
+:root[data-design="modern"] .market-price-panel .market-price-summary {
+  flex: 1 1 320px;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+  gap: .3rem var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+:root[data-design="modern"] .market-price-panel .market-price-summary > :nth-child(3) { flex-basis: 100%; }
+:root[data-design="modern"] .price-line { padding: var(--space-3) 0; }
+
+/* ---------- Home and pinned items ---------- */
+
+:root[data-design="modern"] .stat-tile {
+  background: color-mix(in srgb, var(--panel-strong) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+:root[data-design="modern"] .pinned-card,
+:root[data-design="modern"] .pinned-preview-card { border-radius: var(--radius-md); background: var(--panel-strong); }
+:root[data-design="modern"] .pinned-card:hover,
+:root[data-design="modern"] .pinned-preview-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* ---------- Navigation ---------- */
+
+/* Desktop: the sidebar floats as its own card, set off from the page by a margin, a surface
+   color, a border and a soft shadow. Kept inside min-width so none of it (height, margin) leaks
+   into the mobile bottom tab bar. */
+@media (min-width: 961px) {
+  :root[data-design="modern"] .app-nav {
+    top: 12px;
+    height: calc(100vh - 24px);
+    margin: 12px 0 12px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--panel-strong);
+    box-shadow: var(--shadow-sm);
+  }
+}
+:root[data-design="modern"] .app-nav-brand-mark {
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  color: #0b1018;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--gold) 70%, transparent);
+}
+:root[data-design="modern"] .app-nav-link { border-left: 0; font-weight: 600; }
+:root[data-design="modern"] .app-nav-link:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+:root[data-design="modern"] .app-nav-link.active {
+  background: var(--gold-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+/* ---------- Buttons and fields ---------- */
+
+:root[data-design="modern"] .btn,
+:root[data-design="modern"] .settings-choice { font-weight: 650; }
+:root[data-design="modern"] .btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--gold) 80%, transparent);
+}
+:root[data-design="modern"] .btn:hover,
+:root[data-design="modern"] .icon-button:hover,
+:root[data-design="modern"] .settings-choice:hover { transform: translateY(-1px); }
+:root[data-design="modern"] .settings-choice.selected {
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--gold) 80%, transparent);
+}
+:root[data-design="modern"] input,
+:root[data-design="modern"] select {
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+:root[data-design="modern"] input:focus,
+:root[data-design="modern"] select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px var(--gold-soft);
+  outline: none;
+}
+
+/* ---------- Search results ---------- */
+
+:root[data-design="modern"] .results button { border-radius: var(--radius-md); }
+:root[data-design="modern"] .results button:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+:root[data-design="modern"] .results button.selected {
+  box-shadow: inset 0 0 0 1px var(--gold), 0 10px 26px -14px color-mix(in srgb, var(--gold) 70%, transparent);
+}
+
+/* ---------- Dialogs and bubbles ---------- */
+
+:root[data-design="modern"] .guided-tour-bubble,
+:root[data-design="modern"] .outlier-confirm-dialog {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+:root[data-design="modern"] .guided-tour-cutout { border-radius: var(--radius-lg); }
+
+/* ---------- Small screens: keep the classic spacing there ---------- */
+
+@media (max-width: 960px) {
+  /* The bottom tab bar needs its own background. Never add a backdrop-filter to .app-nav: it
+     would become the containing block of the server switcher, which is fixed to the top of the
+     viewport on small screens, and drop it onto the tab bar. */
+  /* A floating tab bar, inset from the screen edges. */
+  :root[data-design="modern"] .app-nav {
+    inset: auto 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+    padding: .35rem;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--panel-strong);
+    box-shadow: var(--shadow);
+  }
+  :root[data-design="modern"] .app-nav-link { border-radius: 16px; }
+  :root[data-design="modern"] .app-nav-link.active { box-shadow: none; }
+  :root[data-design="modern"] .app-page { padding-bottom: calc(64px + 20px + var(--space-4)); }
+  /* The server switcher floats as a pill at the top instead of a full-width bar. */
+  :root[data-design="modern"] .server-switcher { background: transparent; border-bottom: 0; }
+  :root[data-design="modern"] .server-switcher-trigger {
+    background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-design="modern"] .panel,
+  :root[data-design="modern"] .card,
+  :root[data-design="modern"] .result { padding: var(--space-4); border-radius: var(--radius-md); }
+  :root[data-design="modern"] .page-header { margin-bottom: var(--space-5); }
+  :root[data-design="modern"] .market-price-summary { padding: var(--space-4); border-top: 0; }
+}
+
+/* ---------- Motion (neutralized by prefers-reduced-motion in theme.css) ---------- */
+
+@keyframes modern-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}

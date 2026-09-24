@@ -14,6 +14,8 @@ import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
+import type { DesignId } from '../domain/designs';
+import { applyDesign, getDesignId, setDesignId } from '../persistence/design-preference';
 
 const NAV_ITEMS = [
   { to: ROUTES.home, label: 'Accueil', icon: 'home' as const, end: false },
@@ -34,6 +36,7 @@ export function AppShell() {
   });
   const [accentColor, setAccentColor] = useState<AccentColorId>(() => getAccentColorId());
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
+  const [design, setDesign] = useState<DesignId>(() => getDesignId());
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -46,6 +49,10 @@ export function AppShell() {
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
+  useEffect(() => {
+    applyDesign(design);
+    setDesignId(design);
+  }, [design]);
   useEffect(() => {
     void recordVisit();
   }, []);
@@ -108,6 +115,8 @@ export function AppShell() {
                   setAccentColor={setAccentColor}
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
+                  design={design}
+                  setDesign={setDesign}
                 />
               }
             />
