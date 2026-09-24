@@ -41,18 +41,27 @@ describe('réglage Design (specs/012-modern-design)', () => {
     delete root().dataset.design;
   });
 
-  it('offers Classique and Nouveau, Classique being active by default (FR-001, FR-004)', async () => {
+  it('offers Classique and Nouveau, Nouveau being active by default (FR-001, FR-004)', async () => {
     await openSettings();
-    expect(await screen.findByRole('button', { name: 'Classique' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Nouveau' })).toHaveAttribute('aria-pressed', 'false');
-    expect(root().hasAttribute('data-design')).toBe(false);
+    expect(await screen.findByRole('button', { name: 'Nouveau' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Classique' })).toHaveAttribute('aria-pressed', 'false');
+    expect(root().dataset.design).toBe('modern');
+    expect(window.localStorage.getItem('craftcheck-design-choice')).toBeNull();
+  });
+
+  it('ignores a design saved under the former key, which may not have been a real choice', async () => {
+    window.localStorage.setItem('craftcheck-design', 'classic');
+    await openSettings();
+    expect(await screen.findByRole('button', { name: 'Nouveau' })).toHaveAttribute('aria-pressed', 'true');
+    expect(root().dataset.design).toBe('modern');
   });
 
   it('switches to the new design immediately and remembers it (US1, FR-002)', async () => {
+    window.localStorage.setItem('craftcheck-design-choice', 'classic');
     await openSettings();
     fireEvent.click(await screen.findByRole('button', { name: 'Nouveau' }));
     expect(root().dataset.design).toBe('modern');
-    expect(window.localStorage.getItem('craftcheck-design')).toBe('modern');
+    expect(window.localStorage.getItem('craftcheck-design-choice')).toBe('modern');
     expect(screen.getByRole('button', { name: 'Nouveau' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -61,11 +70,11 @@ describe('réglage Design (specs/012-modern-design)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Nouveau' }));
     fireEvent.click(screen.getByRole('button', { name: 'Classique' }));
     expect(root().hasAttribute('data-design')).toBe(false);
-    expect(window.localStorage.getItem('craftcheck-design')).toBe('classic');
+    expect(window.localStorage.getItem('craftcheck-design-choice')).toBe('classic');
   });
 
   it('applies a remembered design before the app renders, as main.tsx does (US2, FR-003)', () => {
-    window.localStorage.setItem('craftcheck-design', 'modern');
+    window.localStorage.setItem('craftcheck-design-choice', 'modern');
     applyDesign(getDesignId());
     expect(root().dataset.design).toBe('modern');
   });

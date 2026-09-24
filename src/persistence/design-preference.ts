@@ -1,9 +1,11 @@
 import { isKnownDesignId } from '../domain/designs';
 import type { DesignId } from '../domain/designs';
 
-const STORAGE_KEY = 'craftcheck-design';
-// FR-004: a new device, cleared or unavailable storage all get the current (classic) design.
-const DEFAULT_DESIGN_ID: DesignId = 'classic';
+// Renamed on 2026-09-24 when « Nouveau » became the default: the old key also held « Classique »
+// values saved without the player ever choosing, so every device starts over on the new default.
+const STORAGE_KEY = 'craftcheck-design-choice';
+// FR-004 (révision 2026-09-24): a new device, cleared or unavailable storage all get the modern design.
+const DEFAULT_DESIGN_ID: DesignId = 'modern';
 
 export function getDesignId(): DesignId {
   let stored: string | null;

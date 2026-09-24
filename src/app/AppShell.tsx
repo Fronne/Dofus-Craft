@@ -37,7 +37,12 @@ export function AppShell() {
   });
   const [accentColor, setAccentColor] = useState<AccentColorId>(() => getAccentColorId());
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
-  const [design, setDesign] = useState<DesignId>(() => getDesignId());
+  const [design, setDesignState] = useState<DesignId>(() => getDesignId());
+  // Saved only on the player's own choice, so the default can change without being frozen in.
+  const chooseDesign = (designId: DesignId) => {
+    setDesignState(designId);
+    setDesignId(designId);
+  };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -52,7 +57,6 @@ export function AppShell() {
   }, [priceMode]);
   useEffect(() => {
     applyDesign(design);
-    setDesignId(design);
   }, [design]);
   useEffect(() => {
     void recordVisit();
@@ -117,7 +121,7 @@ export function AppShell() {
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
                   design={design}
-                  setDesign={setDesign}
+                  setDesign={chooseDesign}
                 />
               }
             />

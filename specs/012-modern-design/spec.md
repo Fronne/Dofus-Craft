@@ -57,7 +57,7 @@ visuellement identique à ce qu'elle était avant cette fonctionnalité.
 
 ### Edge Cases
 
-- Stockage local indisponible ou vidé : le design « Classique » s'applique, sans erreur.
+- Stockage local indisponible ou vidé : le design « Nouveau » s'applique, sans erreur.
 - Écran de choix du serveur (avant tout accès à Paramètres) : il suit le design mémorisé sur
   l'appareil.
 - Éléments qui reproduisent le jeu (icônes de catégorie, cases et fonds d'icônes d'objets et de
@@ -80,7 +80,10 @@ visuellement identique à ce qu'elle était avant cette fonctionnalité.
   l'application lors des visites suivantes, sans apparition visible de l'autre design au
   chargement.
 - **FR-004**: Sans choix mémorisé (nouvel appareil, stockage vidé ou indisponible), le design
-  « Classique » MUST s'appliquer.
+  « Nouveau » MUST s'appliquer (révision 2026-09-24 ; auparavant « Classique »). Seul un clic du
+  joueur dans Paramètres mémorise un design. Les choix enregistrés avant cette révision sont
+  ignorés (ils pouvaient avoir été enregistrés sans choix réel) : tous les appareils repartent sur
+  « Nouveau ».
 - **FR-005**: Le design « Classique » MUST rester visuellement identique au design actuel.
 - **FR-006**: Le design « Nouveau » MUST couvrir toutes les pages et éléments de l'application :
   navigation, choix du serveur, Accueil, Recherche (y compris la visite guidée et la confirmation
@@ -123,8 +126,8 @@ visuellement identique à ce qu'elle était avant cette fonctionnalité.
 
 ## Assumptions
 
-- Le design « Classique » est le défaut, y compris pour les autres joueurs : seuls ceux qui
-  choisissent « Nouveau » le voient, le temps de décider.
+- Le design « Nouveau » est le défaut (révision 2026-09-24), y compris pour les autres joueurs :
+  « Classique » reste disponible en un clic dans Paramètres, le temps de décider.
 - Le réglage est visible par tous les joueurs dans Paramètres pendant la période d'essai.
 - Une fois la décision prise, une évolution séparée supprimera le design non retenu et le réglage
   « Design » ; elle est hors du périmètre de cette spécification.

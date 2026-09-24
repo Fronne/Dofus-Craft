@@ -8,20 +8,20 @@ describe('design preference (specs/012-modern-design)', () => {
     delete document.documentElement.dataset.design;
   });
 
-  it('defaults to the classic design when nothing is stored (FR-004)', () => {
-    expect(getDesignId()).toBe('classic');
+  it('defaults to the modern design when nothing is stored (FR-004)', () => {
+    expect(getDesignId()).toBe('modern');
   });
 
-  it('defaults to the classic design for an unknown value', () => {
-    window.localStorage.setItem('craftcheck-design', 'retro');
-    expect(getDesignId()).toBe('classic');
+  it('defaults to the modern design for an unknown value', () => {
+    window.localStorage.setItem('craftcheck-design-choice', 'retro');
+    expect(getDesignId()).toBe('modern');
   });
 
-  it('defaults to the classic design when localStorage is unavailable, without throwing', () => {
+  it('defaults to the modern design when localStorage is unavailable, without throwing', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    expect(getDesignId()).toBe('classic');
+    expect(getDesignId()).toBe('modern');
   });
 
   it('remembers the chosen design', () => {
