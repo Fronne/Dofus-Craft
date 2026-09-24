@@ -1132,7 +1132,9 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   cursor: pointer;
   overflow: visible;
 }
-.dungeon-counter-trigger img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: top; }
+/* Pinned to the round frame: portraits are taller than wide (Huppermage especially), and a
+   percentage height alone doesn't hold in this grid, so the image would spill below the circle. */
+.dungeon-counter-trigger img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: center 75%; }
 .dungeon-counter-trigger:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .dungeon-counter-trigger[aria-expanded="true"] { border-color: var(--gold); }
 .dungeon-counter-badge {
@@ -1169,7 +1171,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .dungeon-counter-panel p { margin: 0; }
 .dungeon-counter-header { display: flex; align-items: center; gap: var(--space-3); }
-.dungeon-counter-avatar { flex: 0 0 44px; border-radius: 50%; object-fit: cover; object-position: top; background: var(--image-bg); }
+.dungeon-counter-avatar { flex: 0 0 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: center 75%; background: var(--image-bg); }
 .dungeon-counter-who { flex: 1 1 auto; min-width: 0; }
 .dungeon-counter-name { overflow: hidden; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
 .dungeon-counter-class { color: var(--text-muted); font-size: .8rem; }
