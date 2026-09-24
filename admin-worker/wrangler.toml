@@ -22,8 +22,8 @@ database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 # Filled in once Access is enabled (Zero Trust > Access > Applications > this app).
 # TEAM_DOMAIN: https://<team-name>.cloudflareaccess.com ; POLICY_AUD: the application's AUD tag.
 [vars]
-TEAM_DOMAIN = ""
-POLICY_AUD = ""
+TEAM_DOMAIN = "https://autumn-mouse-e57d.cloudflareaccess.com"
+POLICY_AUD = "559b66f2f253603d28cafa5bcd874c70609e3df91dccf2882b00af82b77f4cb5"
 
 # OWNER_EMAIL is a secret (a personal address, never committed):
 #   npx wrangler secret put OWNER_EMAIL --config admin-worker/wrangler.toml
