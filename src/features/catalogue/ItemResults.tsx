@@ -1,7 +1,11 @@
+import { useRef } from 'react';
 import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
+
+// How many more results each « Afficher plus » click reveals (also the initial page size).
+export const RESULTS_PAGE_SIZE = 12;
 
 export function ItemResults({
   items,
@@ -28,13 +32,14 @@ export function ItemResults({
   offline?: boolean;
   lastSyncedAt?: string;
 }) {
+  const resultsTopRef = useRef<HTMLDivElement>(null);
   const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
   // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
   // display yet (first visit, no cache) — once a list is already on screen, a background
   // revalidation must never replace it with a skeleton (that would also discard the user's scroll
   // position for no reason).
   // With no results bar to host it, the sync status sits on its own line above the placeholder.
-  if (loading && !items.length) return <>{syncStatus}<SkeletonCard count={resultLimit > 12 ? 12 : resultLimit} /></>;
+  if (loading && !items.length) return <>{syncStatus}<SkeletonCard count={Math.min(resultLimit, RESULTS_PAGE_SIZE)} /></>;
   if (!items.length) {
     return (
       <>
@@ -47,9 +52,19 @@ export function ItemResults({
       </>
     );
   }
+  // While the total is still being computed it isn't reliable yet, so a full page is the only hint
+  // that more results may exist.
+  const hasMore = totalPending ? items.length >= resultLimit : items.length < total;
+  const canCollapse = resultLimit > RESULTS_PAGE_SIZE;
+  // Back to one page, then bring the top of the results into view — otherwise the page, now much
+  // shorter, leaves the player further down (on the item detail) with no sign of what happened.
+  const collapse = () => {
+    setResultLimit(RESULTS_PAGE_SIZE);
+    resultsTopRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  };
   return (
     <div>
-      <div className="results-meta">
+      <div className="results-meta" ref={resultsTopRef}>
         {/* While the catalogue is revalidating or the total count is still being computed, a single
             "Mise à jour…" takes the count's spot; the offline notice sits next to the count instead. */}
         {isRevalidating || totalPending ? (
@@ -60,15 +75,6 @@ export function ItemResults({
             {syncStatus}
           </span>
         )}
-        <label>
-          Afficher :
-          <select value={resultLimit} onChange={(event) => setResultLimit(Number(event.target.value))}>
-            <option value={12}>12</option>
-            <option value={24}>24</option>
-            <option value={48}>48</option>
-            <option value={96}>96</option>
-          </select>
-        </label>
       </div>
       <div className="results" aria-label="Résultats de recherche">
         {items.map((item) => (
@@ -85,6 +91,28 @@ export function ItemResults({
           </button>
         ))}
       </div>
+      {(hasMore || canCollapse) && (
+        <div className="results-more">
+          <div className="results-more-actions">
+            {hasMore && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-small"
+                disabled={isRevalidating}
+                onClick={() => setResultLimit(resultLimit + RESULTS_PAGE_SIZE)}
+              >
+                Afficher {RESULTS_PAGE_SIZE} de plus
+              </button>
+            )}
+            {canCollapse && (
+              <button type="button" className="results-collapse" onClick={collapse}>
+                Réduire
+              </button>
+            )}
+          </div>
+          {!totalPending && <span className="results-more-count">{items.length} sur {total}</span>}
+        </div>
+      )}
     </div>
   );
 }

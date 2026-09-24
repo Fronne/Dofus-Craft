@@ -288,10 +288,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 /* ---------- Results ---------- */
 
 .results-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); color: var(--text-muted); font-size: .88rem; font-weight: 700; }
-.results-meta label { display: inline-flex; align-items: center; gap: .45rem; }
-.results-meta select { min-height: 38px; padding: .45rem .65rem; }
 .results-meta-count { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
 .results-meta .sync-status { font-size: inherit; font-weight: inherit; }
+.results-more { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-top: var(--space-5); }
+.results-more-count { color: var(--text-muted); font-size: .82rem; font-weight: 650; }
+.results-more-actions { display: flex; align-items: center; gap: var(--space-4); }
+.results-collapse { background: none; border: 0; padding: .4rem .25rem; color: var(--text-muted); font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer; }
+.results-collapse:hover { color: var(--gold-bright); text-decoration: underline; }
 
 .loading-spinner {
   display: inline-block;

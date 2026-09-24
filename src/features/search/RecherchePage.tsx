@@ -4,7 +4,7 @@ import type { Resource, ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
 import { formatKamas, isValidKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
-import { ItemResults } from '../catalogue/ItemResults';
+import { ItemResults, RESULTS_PAGE_SIZE } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
@@ -181,7 +181,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const [query, setQueryDraft] = useState(() => searchParams.get('q') ?? '');
   const setQuery = (value: string) => {
     setQueryDraft(value);
-    updateParams({ q: value });
+    updateParams({ q: value, limit: undefined });
   };
   // Nav-link clicks land on the bare route (no query string), so a plain URL-only search
   // context would be lost every time the user leaves Recherche and comes back. Restore it
@@ -214,11 +214,13 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const category = searchParams.get('category') ?? '';
   const levelMin = searchParams.get('levelMin') ?? '';
   const levelMax = searchParams.get('levelMax') ?? '';
-  const resultLimit = Number(searchParams.get('limit')) || 12;
+  const resultLimit = Number(searchParams.get('limit')) || RESULTS_PAGE_SIZE;
   const selected = searchParams.get('item') ?? '';
-  const setCategory = (value: string) => updateParams({ category: value });
-  const setLevelMin = (value: string) => updateParams({ levelMin: value });
-  const setLevelMax = (value: string) => updateParams({ levelMax: value });
+  // A new search starts back at one page of results rather than keeping however many « Afficher
+  // plus » clicks the previous one had.
+  const setCategory = (value: string) => updateParams({ category: value, limit: undefined });
+  const setLevelMin = (value: string) => updateParams({ levelMin: value, limit: undefined });
+  const setLevelMax = (value: string) => updateParams({ levelMax: value, limit: undefined });
   const setResultLimit = (value: number) => updateParams({ limit: String(value) });
   const setSelected = (id: string) => updateParams({ item: id });
   const [inputs, setInputs] = useState<Record<string, string>>({});
@@ -228,7 +230,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const pinned = usePinnedItems();
   const resetFilters = () => {
     setQueryDraft('');
-    updateParams({ q: undefined, category: undefined, levelMin: undefined, levelMax: undefined });
+    updateParams({ q: undefined, category: undefined, levelMin: undefined, levelMax: undefined, limit: undefined });
   };
   const selectedItem = catalogue.items.find((item) => item.id === selected) ??
     pinned.pinnedItems.find((entry) => entry.item.id === selected)?.item;
