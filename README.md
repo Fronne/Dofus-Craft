@@ -6,6 +6,8 @@ calcule le coût de craft et donne la réponse.
 
 Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix entre eux.
 
+**👉 [Ouvrir le site](https://dofus-craft.dofus-craft.workers.dev)**
+
 > Projet personnel, non affilié à Ankama Games. Données d'objets : [DofusDB](https://dofusdb.fr).
 
 ## Fonctionnalités
