@@ -38,7 +38,7 @@ describe('comparison screen', () => {
   beforeEach(() => {
     window.localStorage.clear();
     // Mode personnel, no longer the default for a new player.
-    window.localStorage.setItem('craftcheck-price-mode', 'personal');
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
   });
   afterEach(() => {
     document.body.innerHTML = '';

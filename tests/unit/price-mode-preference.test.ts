@@ -9,7 +9,12 @@ describe('price mode preference', () => {
   });
 
   it('defaults to community mode when the stored value is invalid', () => {
-    window.localStorage.setItem('craftcheck-price-mode', 'nonsense');
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'nonsense');
+    expect(getPriceMode()).toBe('community');
+  });
+
+  it('moves a device that saved Mode personnel under the former key to Mode communautaire, once', () => {
+    window.localStorage.setItem('craftcheck-price-mode', 'personal');
     expect(getPriceMode()).toBe('community');
   });
 

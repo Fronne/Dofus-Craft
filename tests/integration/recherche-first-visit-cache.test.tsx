@@ -56,7 +56,7 @@ describe('premier accès sans cache local (specs/010-search-instant-cache, US3)'
   beforeEach(() => {
     window.localStorage.clear();
     // These scenarios are about Mode personnel, no longer the default for a new player.
-    window.localStorage.setItem('craftcheck-price-mode', 'personal');
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
     globalThis.indexedDB = new IDBFactory();
     getCategories.mockReset();
     searchItems.mockReset();

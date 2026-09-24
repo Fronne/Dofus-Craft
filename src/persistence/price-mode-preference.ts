@@ -1,7 +1,10 @@
 import { isKnownPriceMode } from '../domain/price-modes';
 import type { PriceMode } from '../domain/price-modes';
 
-const STORAGE_KEY = 'craftcheck-price-mode';
+// Renamed on 2026-09-24 (specs/003, révision « bascule des joueurs existants »): every device that
+// already had a mode saved under the old key starts over in Mode communautaire once; a choice made
+// after that is kept as usual. The personal carnet itself is untouched and still there to switch back to.
+const STORAGE_KEY = 'craftcheck-price-mode-choice';
 // specs/003-community-price-mode (révision 2026-09-24): a new player starts in Mode communautaire.
 // Falls back to Mode personnel while the community mode is switched off (price-modes.ts).
 const DEFAULT_PRICE_MODE: PriceMode = isKnownPriceMode('community') ? 'community' : 'personal';

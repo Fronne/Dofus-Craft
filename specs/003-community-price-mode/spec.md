@@ -274,3 +274,13 @@ suite :
 - Conséquence assumée : un nouveau joueur partage ses prix sans avoir choisi le mode lui-même. Le
   public est un petit groupe fermé, et la dernière étape de la visite guidée de la page Recherche
   (specs/011) lui indique qu'il est en Mode communautaire et où le changer.
+
+## Révision (2026-09-24, suite) : bascule des joueurs existants
+
+- Remplace le deuxième point de la révision précédente : les joueurs qui avaient déjà un mode
+  enregistré sur leur appareil repassent eux aussi en **Mode communautaire**, une seule fois, à leur
+  prochaine ouverture de l'application.
+- Un choix fait après cette bascule (y compris revenir au Mode personnel dans Paramètres) est
+  conservé comme d'habitude.
+- Le carnet personnel n'est ni effacé ni modifié : revenir au Mode personnel retrouve les prix
+  saisis auparavant.

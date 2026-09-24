@@ -65,7 +65,7 @@ describe('affichage instantané du cache local sur la page Recherche (specs/010-
   beforeEach(() => {
     window.localStorage.clear();
     // These scenarios are about Mode personnel, no longer the default for a new player.
-    window.localStorage.setItem('craftcheck-price-mode', 'personal');
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
     globalThis.indexedDB = new IDBFactory();
     getCategories.mockReset();
     searchItems.mockReset();

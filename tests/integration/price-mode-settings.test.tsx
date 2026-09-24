@@ -54,7 +54,7 @@ describe('price mode settings selector', () => {
   });
 
   it('activates community mode when its button is clicked', async () => {
-    window.localStorage.setItem('craftcheck-price-mode', 'personal');
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     goToSettings();

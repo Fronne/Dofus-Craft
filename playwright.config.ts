@@ -27,7 +27,7 @@ export default defineConfig({
         origin: `http://127.0.0.1:${PORT}`,
         localStorage: [
           { name: 'craftcheck-search-tour-seen', value: '1' },
-          { name: 'craftcheck-price-mode', value: 'personal' },
+          { name: 'craftcheck-price-mode-choice', value: 'personal' },
         ],
       }],
     },
