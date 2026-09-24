@@ -290,7 +290,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .results-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); color: var(--text-muted); font-size: .88rem; font-weight: 700; }
 .results-meta label { display: inline-flex; align-items: center; gap: .45rem; }
 .results-meta select { min-height: 38px; padding: .45rem .65rem; }
-.results-meta-pending { display: inline-flex; align-items: center; gap: .5rem; }
+.results-meta-count { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.results-meta .sync-status { font-size: inherit; font-weight: inherit; }
 
 .loading-spinner {
   display: inline-block;

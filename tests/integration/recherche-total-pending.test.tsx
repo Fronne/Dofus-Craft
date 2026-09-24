@@ -42,16 +42,19 @@ describe('Recherche results total while the catalogue warms up', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
     await screen.findByText('Épée Boueuse');
-    expect(screen.getByText('Calcul du nombre total…')).toBeInTheDocument();
+    expect(screen.getByText('Mise à jour…')).toBeInTheDocument();
     expect(screen.queryByText('21 objets trouvés')).not.toBeInTheDocument();
 
     resolveCatalogueReady();
     await waitFor(() => expect(screen.getByText('21 objets trouvés')).toBeInTheDocument());
-    expect(screen.queryByText('Calcul du nombre total…')).not.toBeInTheDocument();
 
     // The catalogue becoming ready also triggers useCatalogue's debounced (250ms) search
     // effect to refetch. Let that timer fire here, inside the test's own jsdom environment,
     // instead of leaking a setState-after-teardown into whichever test runs next.
+    // That refetch briefly shows "Mise à jour…" in the count's spot again; once it settles, only the
+    // total remains.
     await new Promise((resolve) => setTimeout(resolve, 350));
+    await waitFor(() => expect(screen.queryByText('Mise à jour…')).not.toBeInTheDocument());
+    expect(screen.getByText('21 objets trouvés')).toBeInTheDocument();
   });
 });

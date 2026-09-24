@@ -5,7 +5,6 @@ import { compare } from '../../domain/craft-comparison';
 import { formatKamas, isValidKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults } from '../catalogue/ItemResults';
-import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
@@ -316,11 +315,6 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           onReset={resetFilters}
           categories={catalogue.categories}
         />
-        <SyncStatusIndicator
-          isRevalidating={catalogue.isRevalidating}
-          offline={catalogue.offline}
-          lastSyncedAt={catalogue.lastSyncedAt}
-        />
         {catalogue.error && <p className="warning">{catalogue.error}</p>}
         <ItemResults
           items={catalogue.items}
@@ -331,6 +325,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           totalPending={!catalogue.catalogueWarm && !query.trim() && !category && !levelMin && !levelMax}
           resultLimit={resultLimit}
           setResultLimit={setResultLimit}
+          isRevalidating={catalogue.isRevalidating}
+          offline={catalogue.offline}
+          lastSyncedAt={catalogue.lastSyncedAt}
         />
       </section>
       {catalogue.detailLoading && <p className="empty">Chargement des détails…</p>}

@@ -1,6 +1,7 @@
 import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
+import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
 
 export function ItemResults({
   items,
@@ -11,6 +12,9 @@ export function ItemResults({
   totalPending,
   resultLimit,
   setResultLimit,
+  isRevalidating = false,
+  offline = false,
+  lastSyncedAt,
 }: {
   items: Item[];
   selected?: string;
@@ -20,31 +24,41 @@ export function ItemResults({
   totalPending?: boolean;
   resultLimit: number;
   setResultLimit: (value: number) => void;
+  isRevalidating?: boolean;
+  offline?: boolean;
+  lastSyncedAt?: string;
 }) {
+  const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
   // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
   // display yet (first visit, no cache) — once a list is already on screen, a background
   // revalidation must never replace it with a skeleton (that would also discard the user's scroll
   // position for no reason).
-  if (loading && !items.length) return <SkeletonCard count={resultLimit > 12 ? 12 : resultLimit} />;
+  // With no results bar to host it, the sync status sits on its own line above the placeholder.
+  if (loading && !items.length) return <>{syncStatus}<SkeletonCard count={resultLimit > 12 ? 12 : resultLimit} /></>;
   if (!items.length) {
     return (
+      <>
+      {syncStatus}
       <EmptyState
         icon="search"
         title="Aucun objet ne correspond à votre recherche"
         description="Essayez d'élargir vos filtres ou de vérifier l'orthographe de votre recherche."
       />
+      </>
     );
   }
   return (
     <div>
       <div className="results-meta">
-        {totalPending ? (
-          <span className="results-meta-pending">
-            <span className="loading-spinner" aria-hidden="true" />
-            Calcul du nombre total…
-          </span>
+        {/* While the catalogue is revalidating or the total count is still being computed, a single
+            "Mise à jour…" takes the count's spot; the offline notice sits next to the count instead. */}
+        {isRevalidating || totalPending ? (
+          <SyncStatusIndicator isRevalidating offline={false} />
         ) : (
-          <span>{total} {total === 1 ? 'objet trouvé' : 'objets trouvés'}</span>
+          <span className="results-meta-count">
+            <span>{total} {total === 1 ? 'objet trouvé' : 'objets trouvés'}</span>
+            {syncStatus}
+          </span>
         )}
         <label>
           Afficher :
