@@ -125,8 +125,8 @@ async function pinItemByName(name: string) {
   const search = screen.getByLabelText(/Rechercher un objet/);
   fireEvent.change(search, { target: { value: name } });
   fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Épingler' }));
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+  fireEvent.click(await screen.findByRole('button', { name: 'Suivre' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
 }
 
 // jsdom has no full DataTransfer implementation — a minimal stand-in with the two methods
@@ -160,9 +160,9 @@ function dropCardOnGroup(cardText: string, groupHeadingName: string) {
 // assign one on this page) are two separate steps now — this helper does both for convenience, and
 // is safe to call again with a name that already exists (the underlying operation dedupes).
 async function createCollectionForItem(itemName: string, collectionName: string) {
-  fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle collection' }));
-  fireEvent.change(screen.getByLabelText('Nom de la nouvelle collection'), { target: { value: collectionName } });
-  fireEvent.click(screen.getByRole('button', { name: 'Créer la collection' }));
+  fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle liste' }));
+  fireEvent.change(screen.getByLabelText('Nom de la nouvelle liste'), { target: { value: collectionName } });
+  fireEvent.click(screen.getByRole('button', { name: 'Créer la liste' }));
   await screen.findByRole('heading', { name: collectionName });
   dropCardOnGroup(itemName, collectionName);
 }
@@ -189,28 +189,28 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
-    fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle collection' }));
-    fireEvent.change(screen.getByLabelText('Nom de la nouvelle collection'), { target: { value: 'Vide pour l\'instant' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Créer la collection' }));
+    fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle liste' }));
+    fireEvent.change(screen.getByLabelText('Nom de la nouvelle liste'), { target: { value: 'Vide pour l\'instant' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer la liste' }));
 
     const group = (await screen.findByRole('heading', { name: "Vide pour l'instant" })).closest('.pinned-collection') as HTMLElement;
-    expect(within(group).getByText('Aucun objet dans cette collection pour le moment.')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Nom de la nouvelle collection')).not.toBeInTheDocument();
+    expect(within(group).getByText('Aucun objet dans cette liste pour le moment.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Nom de la nouvelle liste')).not.toBeInTheDocument();
   });
 
   it('moves a card into another collection by dragging it there (drag-and-drop)', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
     // Create the "PvP" collection without assigning anything to it yet, so the item starts out in
     // "Sans collection" and this test can exercise the drag itself moving it across.
-    fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle collection' }));
-    fireEvent.change(screen.getByLabelText('Nom de la nouvelle collection'), { target: { value: 'PvP' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Créer la collection' }));
+    fireEvent.click(await screen.findByRole('button', { name: '+ Nouvelle liste' }));
+    fireEvent.change(screen.getByLabelText('Nom de la nouvelle liste'), { target: { value: 'PvP' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer la liste' }));
     await screen.findByRole('heading', { name: 'PvP' });
 
     dropCardOnGroup('Épée Boueuse', 'PvP');
@@ -221,7 +221,7 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
     });
     // "Sans collection" had exactly one item, which just moved out — unlike a named collection, it
     // has no existence of its own and disappears entirely once empty (data-model.md).
-    expect(screen.queryByRole('heading', { name: 'Sans collection' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Sans liste' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Épée Boueuse')).toHaveLength(1);
   });
 
@@ -231,9 +231,9 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
     await pinItemByName('Épée Boueuse');
     await pinItemByName('Amulette du Wa Wabbit');
 
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
-    expect(await screen.findByRole('heading', { name: 'Sans collection' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Sans liste' })).toBeInTheDocument();
     expect(screen.queryAllByRole('heading', { level: 2 })).toHaveLength(1);
   });
 
@@ -242,13 +242,13 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
     await pinItemByName('Amulette du Wa Wabbit');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
     await createCollectionForItem('Épée Boueuse', 'PvP');
 
     const pvpHeading = await screen.findByRole('heading', { name: 'PvP' });
     expect(within(pvpHeading.closest('.pinned-collection') as HTMLElement).getByText('Épée Boueuse')).toBeInTheDocument();
-    expect(within(screen.getByRole('heading', { name: 'Sans collection' }).closest('.pinned-collection') as HTMLElement).getByText('Amulette du Wa Wabbit')).toBeInTheDocument();
+    expect(within(screen.getByRole('heading', { name: 'Sans liste' }).closest('.pinned-collection') as HTMLElement).getByText('Amulette du Wa Wabbit')).toBeInTheDocument();
 
     dropCardOnGroup('Amulette du Wa Wabbit', 'PvP');
 
@@ -263,7 +263,7 @@ describe('grouping pinned items by collection on EpinglesPage (specs/005-pinned-
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
     await createCollectionForItem('Épée Boueuse', 'PvP');
     await screen.findByRole('heading', { name: 'PvP' });
@@ -298,14 +298,14 @@ describe('renaming or deleting a collection from its group heading (specs/005-pi
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
     await pinItemByName('Amulette du Wa Wabbit');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     await createCollectionForItem('Épée Boueuse', 'PvP');
     await screen.findByRole('heading', { name: 'PvP' });
     dropCardOnGroup('Amulette du Wa Wabbit', 'PvP');
     await waitFor(() => expect(within(screen.getByRole('heading', { name: 'PvP' }).closest('.pinned-collection') as HTMLElement).getByText('Amulette du Wa Wabbit')).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Renommer la collection PvP' }));
-    fireEvent.change(screen.getByLabelText('Renommer la collection PvP'), { target: { value: 'Arène' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Renommer la liste PvP' }));
+    fireEvent.change(screen.getByLabelText('Renommer la liste PvP'), { target: { value: 'Arène' } });
     fireEvent.click(screen.getByRole('button', { name: 'Valider le renommage' }));
 
     const renamed = (await screen.findByRole('heading', { name: 'Arène' })).closest('.pinned-collection') as HTMLElement;
@@ -319,14 +319,14 @@ describe('renaming or deleting a collection from its group heading (specs/005-pi
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
     await pinItemByName('Amulette du Wa Wabbit');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     await createCollectionForItem('Épée Boueuse', 'PvP');
     await screen.findByRole('heading', { name: 'PvP' });
     await createCollectionForItem('Amulette du Wa Wabbit', 'Arène');
     await screen.findByRole('heading', { name: 'Arène' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Renommer la collection Arène' }));
-    fireEvent.change(screen.getByLabelText('Renommer la collection Arène'), { target: { value: 'PvP' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Renommer la liste Arène' }));
+    fireEvent.change(screen.getByLabelText('Renommer la liste Arène'), { target: { value: 'PvP' } });
     fireEvent.click(screen.getByRole('button', { name: 'Valider le renommage' }));
 
     await waitFor(() => expect(screen.queryAllByRole('heading', { level: 2, name: /PvP|Arène/ })).toHaveLength(1));
@@ -339,15 +339,15 @@ describe('renaming or deleting a collection from its group heading (specs/005-pi
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await pinItemByName('Épée Boueuse');
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     await createCollectionForItem('Épée Boueuse', 'PvP');
     await screen.findByRole('heading', { name: 'PvP' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Supprimer la collection PvP' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer la liste PvP' }));
 
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'PvP' })).not.toBeInTheDocument());
-    const ungrouped = screen.getByRole('heading', { name: 'Sans collection' }).closest('.pinned-collection') as HTMLElement;
+    const ungrouped = screen.getByRole('heading', { name: 'Sans liste' }).closest('.pinned-collection') as HTMLElement;
     expect(within(ungrouped).getByText('Épée Boueuse')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Désépingler Épée Boueuse' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ne plus suivre Épée Boueuse' })).toBeInTheDocument();
   });
 });

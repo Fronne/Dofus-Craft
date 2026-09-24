@@ -49,9 +49,9 @@ describe('pinned item market price per server', () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
 
     const marketInput = screen.getByLabelText('Prix HDV');
     expect(marketInput).toHaveValue('');
@@ -62,7 +62,7 @@ describe('pinned item market price per server', () => {
     fireEvent.click(screen.getByRole('button', { name: /Serveur actif/i }));
     fireEvent.click(screen.getByRole('option', { name: 'Dakal' }));
 
-    expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue(''));
 
     fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '750000' } });
@@ -71,22 +71,22 @@ describe('pinned item market price per server', () => {
     fireEvent.click(screen.getByRole('button', { name: /Serveur actif/i }));
     fireEvent.click(screen.getByRole('option', { name: 'Mikhal' }));
     await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
-    expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument();
   });
 
   it('keeps the recorded market price after the item is unpinned, so the Prix page can still show it', async () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '500000' } });
     await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Désépingler' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Ne plus suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument());
 
     expect(await pinnedItemPrices.get('mikhal', 'item-1')).toMatchObject({ marketPriceKamas: 500000 });
   });
@@ -96,7 +96,7 @@ describe('pinned item market price per server', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
     const marketInput = await screen.findByLabelText('Prix HDV');
-    expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument();
 
     fireEvent.change(marketInput, { target: { value: '500000' } });
     await waitFor(() => expect(marketInput).toHaveValue('500 000'));

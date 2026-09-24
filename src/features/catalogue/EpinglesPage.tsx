@@ -70,7 +70,7 @@ function CollectionHeading({
   const [draft, setDraft] = useState(name ?? '');
 
   if (!name) {
-    return <h2 className="pinned-collection-title">Sans collection</h2>;
+    return <h2 className="pinned-collection-title">Sans liste</h2>;
   }
 
   if (renaming) {
@@ -88,7 +88,7 @@ function CollectionHeading({
           type="text"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          aria-label={`Renommer la collection ${name}`}
+          aria-label={`Renommer la liste ${name}`}
           autoFocus
         />
         <button type="submit" className="icon-button" aria-label="Valider le renommage">
@@ -115,7 +115,7 @@ function CollectionHeading({
       <button
         type="button"
         className="icon-button"
-        aria-label={`Renommer la collection ${name}`}
+        aria-label={`Renommer la liste ${name}`}
         onClick={() => {
           setDraft(name);
           setRenaming(true);
@@ -123,7 +123,7 @@ function CollectionHeading({
       >
         <Icon name="edit" size={14} />
       </button>
-      <button type="button" className="icon-button" aria-label={`Supprimer la collection ${name}`} onClick={onDelete}>
+      <button type="button" className="icon-button" aria-label={`Supprimer la liste ${name}`} onClick={onDelete}>
         <Icon name="close" size={14} />
       </button>
     </h2>
@@ -153,17 +153,17 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
           type="text"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Nom de la collection"
-          aria-label="Nom de la nouvelle collection"
+          placeholder="Nom de la liste"
+          aria-label="Nom de la nouvelle liste"
           autoFocus
         />
-        <button type="submit" className="icon-button" aria-label="Créer la collection">
+        <button type="submit" className="icon-button" aria-label="Créer la liste">
           <Icon name="check" size={16} />
         </button>
         <button
           type="button"
           className="icon-button"
-          aria-label="Annuler la création de collection"
+          aria-label="Annuler la création de liste"
           onClick={() => {
             setCreating(false);
             setDraft('');
@@ -177,7 +177,7 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
 
   return (
     <button type="button" className="settings-choice new-collection-button" onClick={() => setCreating(true)}>
-      + Nouvelle collection
+      + Nouvelle liste
     </button>
   );
 }
@@ -253,7 +253,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
   return (
     <>
       <header className="page-header">
-        <h1>Épinglés</h1>
+        <h1>Suivis</h1>
         <p>Retrouvez rapidement vos objets suivis, sans refaire de recherche.</p>
       </header>
       {pinnedItems.length > 0 && (
@@ -263,9 +263,9 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
       )}
       {pinnedItems.length === 0 ? (
         <EmptyState
-          icon="pin"
-          title="Aucun objet épinglé"
-          description="Épinglez un objet depuis la recherche pour le retrouver ici, quel que soit le serveur actif."
+          icon="bookmark"
+          title="Aucun objet suivi"
+          description="Suivez un objet depuis la recherche pour le retrouver ici, quel que soit le serveur actif."
         />
       ) : (
         groupByCollection(pinnedItems, listCollectionNames()).map((group) => {
@@ -294,9 +294,9 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
               }}
             >
             {group.items.length === 0 ? (
-              <p className="pinned-collection-empty muted">Aucun objet dans cette collection pour le moment.</p>
+              <p className="pinned-collection-empty muted">Aucun objet dans cette liste pour le moment.</p>
             ) : (
-            <div className="pinned-grid" aria-label={`Objets épinglés — ${group.name ?? 'Sans collection'}`}>
+            <div className="pinned-grid" aria-label={`Objets suivis — ${group.name ?? 'Sans liste'}`}>
               {group.items.map((entry) => {
                 const summary = summaries[entry.item.id];
                 return (
@@ -304,7 +304,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                   className={`pinned-card${draggedItemId === entry.item.id ? ' pinned-card-dragging' : ''}`}
                   key={entry.item.id}
                   draggable
-                  aria-label={`${entry.item.name} — glisser-déposer sur une autre collection pour le déplacer (actuellement : ${group.name ?? 'Sans collection'})`}
+                  aria-label={`${entry.item.name} — glisser-déposer sur une autre liste pour le déplacer (actuellement : ${group.name ?? 'Sans liste'})`}
                   onDragStart={(event) => {
                     setDraggedItemId(entry.item.id);
                     event.dataTransfer.setData('text/plain', entry.item.id);
@@ -338,7 +338,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                     <button
                       type="button"
                       className="icon-button pinned-card-remove"
-                      aria-label={`Désépingler ${entry.item.name}`}
+                      aria-label={`Ne plus suivre ${entry.item.name}`}
                       onClick={() => unpin(entry.item.id)}
                     >
                       <Icon name="close" size={16} />

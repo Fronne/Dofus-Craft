@@ -25,7 +25,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
     la médiane demande confirmation avant d'être enregistrée.
   - *Mode personnel* : les prix restent sur l'appareil, rien n'est envoyé.
 - **Prix périmés signalés** : les ressources dont le prix date trop sont mises en évidence.
-- **Objets épinglés** : épingler des objets et les ranger en collections pour les suivre.
+- **Objets suivis** : suivre des objets et les ranger en listes.
 - **Compteurs de joueurs** : des bulles humoristiques en bas à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
 - **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)

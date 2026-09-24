@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { formatKamas } from '../../src/domain/kamas';
 import type { CommunityPriceLookup } from '../../src/services/community-price-api';
 
-const normalizeSpaces = (value: string) => value.replace(/ /g, ' ');
+const normalizeSpaces = (value: string) => value.replace(/\u202f/g, ' ');
 
 const getCommunityPrice = vi.fn<(resourceId: string, serverId: string) => Promise<CommunityPriceLookup>>();
 
@@ -62,11 +62,11 @@ describe('pinned items page in Mode communautaire', () => {
     fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
     fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     const card = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
     await waitFor(() => expect(within(card).getByText(/Craft :/)).toHaveTextContent('Craft : Non renseigné'));
 
@@ -76,7 +76,7 @@ describe('pinned items page in Mode communautaire', () => {
       price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
     });
     fireEvent.click(screen.getByRole('link', { name: 'Paramètres' }));
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
 
     const updatedCard = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
     await waitFor(() =>

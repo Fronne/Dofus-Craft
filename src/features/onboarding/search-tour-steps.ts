@@ -54,7 +54,7 @@ export function searchTourSteps(priceMode: PriceMode): TourStep[] {
       target: 'item-detail',
       title: 'La fiche de l\'objet',
       body: 'Les caractéristiques de l\'objet.',
-      points: [{ term: 'Épingler', text: 'pour le garder sous la main' }],
+      points: [{ term: 'Suivre', text: 'pour le garder sous la main' }],
       absentHint: NEEDS_ITEM,
     },
     {

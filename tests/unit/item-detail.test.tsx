@@ -195,12 +195,12 @@ describe('ItemDetail recipe resources', () => {
       <ItemDetail detail={detail} onTogglePin={onTogglePin} />,
     );
 
-    expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
+    expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Suivre' }));
     expect(onTogglePin).toHaveBeenCalledOnce();
 
     rerender(<ItemDetail detail={detail} isPinned onTogglePin={onTogglePin} />);
-    expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument();
   });
 
   it('shows the resource image in the price input and keeps formatted values numeric', () => {

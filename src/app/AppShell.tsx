@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { ROUTES } from './router';
 import { Icon } from '../components/Icon';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
@@ -21,7 +21,7 @@ import { applyDesign, getDesignId, setDesignId } from '../persistence/design-pre
 const NAV_ITEMS = [
   { to: ROUTES.home, label: 'Accueil', icon: 'home' as const, end: false },
   { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true },
-  { to: ROUTES.pinned, label: 'Épinglés', icon: 'pin' as const, end: false },
+  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
   { to: ROUTES.prices, label: 'Prix', icon: 'coins' as const, end: false },
   { to: ROUTES.settings, label: 'Paramètres', icon: 'settings' as const, end: false },
 ];
@@ -109,6 +109,8 @@ export function AppShell() {
               element={<RecherchePage priceMode={priceMode} />}
             />
             <Route path={ROUTES.pinned} element={<EpinglesPage priceMode={priceMode} />} />
+            {/* Former address of the Suivis page, kept so existing bookmarks still land on it. */}
+            <Route path={ROUTES.legacyPinned} element={<Navigate to={ROUTES.pinned} replace />} />
             <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
             <Route
               path={ROUTES.settings}

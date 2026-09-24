@@ -1,7 +1,7 @@
 export type IconName =
   | 'search'
-  | 'pin'
-  | 'pin-filled'
+  | 'bookmark'
+  | 'bookmark-filled'
   | 'settings'
   | 'sun'
   | 'moon'
@@ -27,10 +27,10 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
     children:
       '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   },
-  pin: {
+  bookmark: {
     children: '<path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-4-6 4V4.5a1 1 0 0 1 1-1z"/>',
   },
-  'pin-filled': {
+  'bookmark-filled': {
     filled: true,
     children: '<path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-4-6 4V4.5a1 1 0 0 1 1-1z"/>',
   },

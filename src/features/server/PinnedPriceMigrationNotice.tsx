@@ -10,7 +10,7 @@ export function PinnedPriceMigrationNotice() {
   return (
     <div role="status" className="pinned-price-migration-notice">
       <p>
-        Vos anciens prix HDV enregistrés pour vos items épinglés ont été abandonnés lors de cette
+        Vos anciens prix HDV enregistrés pour vos objets suivis ont été abandonnés lors de cette
         mise à jour : ils doivent désormais être ressaisis pour chaque serveur.
       </p>
       <button type="button" onClick={() => setDismissed(true)}>

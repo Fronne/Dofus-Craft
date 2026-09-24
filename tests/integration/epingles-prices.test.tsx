@@ -53,11 +53,11 @@ describe('pinned items page shows craft cost and market price', () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Épingler' })).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Épingler' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Désépingler' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     const card = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
     await waitFor(() => expect(within(card).getByText(/Craft :/)).toHaveTextContent('Craft : Non renseigné'));
     expect(within(card).getByText(/HDV :/)).toHaveTextContent('HDV : Non renseigné');
@@ -71,7 +71,7 @@ describe('pinned items page shows craft cost and market price', () => {
     fireEvent.change(screen.getByLabelText('Prix HDV'), { target: { value: '500000' } });
     await waitFor(() => expect(screen.getByLabelText('Prix HDV')).toHaveValue('500 000'));
 
-    fireEvent.click(screen.getByRole('link', { name: /Épinglés/ }));
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
     const updatedCard = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
     await waitFor(() =>
       expect(within(updatedCard).getByText(/Craft :/)).toHaveTextContent(normalizeSpaces(`Craft : ${formatKamas(2000)}`)),

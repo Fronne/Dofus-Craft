@@ -1,7 +1,8 @@
 export const ROUTES = {
   home: '/accueil',
   search: '/',
-  pinned: '/epingles',
+  pinned: '/suivis',
+  legacyPinned: '/epingles',
   prices: '/prix',
   settings: '/parametres',
 } as const;

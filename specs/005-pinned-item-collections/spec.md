@@ -14,6 +14,22 @@ l'affichage par nom de collection avec un groupe distinct « Sans collection » 
 objets déjà épinglés avant cette fonctionnalité doivent y apparaître automatiquement, sans perte ni
 action requise du joueur.
 
+## Terminologie affichée (révision 2026-09-24)
+
+Les termes de cette spec sont les termes de conception d'origine. Dans l'interface, ils sont
+désormais affichés ainsi, sans aucun changement de comportement ni de données stockées :
+
+| Terme de la spec | Libellé affiché |
+|---|---|
+| page Épinglés | page **Suivis** (adresse `/suivis`, l'ancienne `/epingles` y redirige) |
+| Épingler / Désépingler | **Suivre** / **Ne plus suivre** |
+| objet épinglé | objet **suivi** |
+| collection | **liste** (« + Nouvelle liste », « Renommer la liste … », « Supprimer la liste … ») |
+| « Sans collection » | « **Sans liste** » |
+
+Raison : « collection » évoque dans Dofus les panoplies ou les objets qu'on collectionne, et
+« épinglé » ne disait pas ce que fait la page (surveiller le coût de craft et le prix HDV).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Organiser ses objets épinglés en collections nommées (Priority: P1)

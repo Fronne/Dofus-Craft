@@ -38,8 +38,8 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
           value={activeServer?.name ?? '—'}
         />
         <StatTile
-          icon="pin"
-          label="Objets épinglés"
+          icon="bookmark"
+          label="Objets suivis"
           value={String(pinnedItems.length)}
         />
         <StatTile
@@ -51,14 +51,14 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
 
       <section className="panel home-pinned-preview">
         <div className="page-section-heading">
-          <h2>Épinglés récents</h2>
+          <h2>Suivis récents</h2>
         </div>
         {recentPinned.length === 0 ? (
           <p className="empty">
-            Épinglez un objet depuis la recherche pour le retrouver ici.
+            Suivez un objet depuis la recherche pour le retrouver ici.
           </p>
         ) : (
-          <div className="pinned-grid" aria-label="Épinglés récents">
+          <div className="pinned-grid" aria-label="Suivis récents">
             {recentPinned.map((entry) => (
               <Link
                 key={entry.item.id}

@@ -45,8 +45,8 @@ export function ItemDetail({
     <section className="card item-detail-card" data-tour="item-detail">
       {onTogglePin && (
         <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} onClick={onTogglePin}>
-          <Icon name={isPinned ? 'pin-filled' : 'pin'} size={18} />
-          {isPinned ? 'Désépingler' : 'Épingler'}
+          <Icon name={isPinned ? 'bookmark-filled' : 'bookmark'} size={18} />
+          {isPinned ? 'Ne plus suivre' : 'Suivre'}
         </button>
       )}
       {item.imageUrl ? (
