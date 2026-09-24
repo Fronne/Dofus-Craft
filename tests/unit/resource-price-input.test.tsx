@@ -243,6 +243,25 @@ describe('ResourcePriceInput onCommit (Mode communautaire)', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
+  it('does not call onCommit when a price that arrived after mount (carnet load, community prefill) is focused then blurred without editing', () => {
+    // The row mounts empty, then its price shows up from outside — the player never typed it.
+    // Double-clicking the row focuses the locked field; blurring it must not count as an edit.
+    const onCommit = vi.fn();
+    const { rerender } = render(
+      <ResourcePriceInput resource={resource} quantity={1} value="" lockWhenFilled onChange={vi.fn()} onCommit={onCommit} />,
+    );
+    rerender(
+      <ResourcePriceInput resource={resource} quantity={1} value="548" lockWhenFilled onChange={vi.fn()} onCommit={onCommit} />,
+    );
+
+    const input = screen.getByPlaceholderText('Prix unitaire');
+    fireEvent.doubleClick(input);
+    fireEvent.focus(input);
+    fireEvent.blur(input);
+
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it('never calls onCommit when lockWhenFilled is not set, even if a value changes and the field is blurred', () => {
     const onCommit = vi.fn();
     render(<ResourcePriceInput resource={resource} quantity={1} value="500" onChange={vi.fn()} onCommit={onCommit} />);

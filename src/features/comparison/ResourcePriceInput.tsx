@@ -110,6 +110,12 @@ export function ResourcePriceInput({
             onBlur?.(value);
             if (!lockWhenFilled) return;
             setEditing(false);
+            // Only an actual edit session (edit button clicked, or typing started) can commit.
+            // Focusing the locked field alone — e.g. double-clicking the row — must not: its
+            // `lastCommittedValueRef` may still hold the value from mount (often empty, before the
+            // carnet or the community prefill arrived), so comparing against it would treat a
+            // price the player never touched as a new contribution.
+            if (!editing) return;
             if (value === lastCommittedValueRef.current) return;
             const previousValue = lastCommittedValueRef.current;
             const result = onCommit?.(value);
