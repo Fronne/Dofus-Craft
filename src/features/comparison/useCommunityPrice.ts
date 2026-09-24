@@ -49,6 +49,19 @@ function writeCache(resourceId: string, serverId: string, price: CommunityPrice)
   }
 }
 
+// One-off read of a resource's community median (fresh if reachable, else the last cached one),
+// for pages that need the value without mounting a hook per resource — e.g. Épinglés, which must
+// fill carnet gaps the same way RecherchePage's prefill does so both pages agree on the craft cost.
+export async function lookupCommunityMedian(resourceId: string, serverId: string): Promise<number | undefined> {
+  const result = await getCommunityPrice(resourceId, serverId);
+  if (result.status === 'found') {
+    writeCache(resourceId, serverId, result.price);
+    return result.price.medianAmountKamas;
+  }
+  if (result.status === 'not-found') return undefined;
+  return readCache(resourceId, serverId)?.medianAmountKamas;
+}
+
 // Fetch/cache/refresh logic shared by the price-field prefill (RecherchePage) and the compact
 // contribution-count indicator (ResourcePriceInput) — extracted from the former
 // CommunityPriceDisplay.tsx block so both consumers reuse the exact same behavior (FR-014).

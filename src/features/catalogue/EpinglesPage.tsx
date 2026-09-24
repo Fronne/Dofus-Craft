@@ -10,6 +10,7 @@ import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
 import { compare } from '../../domain/craft-comparison';
+import { lookupCommunityMedian } from '../comparison/useCommunityPrice';
 import { formatKamas } from '../../domain/kamas';
 import type { PinnedItem } from '../../persistence/pinned-items';
 
@@ -210,21 +211,39 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
       const allResourceIds = [...new Set(
         details.flatMap((detail) => detail.recipe?.ingredients.map((ingredient) => ingredient.resourceId) ?? []),
       )];
-      const resourcePrices = await resourcePricesFor(priceMode).getMany(serverId, allResourceIds);
+      const repository = resourcePricesFor(priceMode);
+      const resourcePrices = await repository.getMany(serverId, allResourceIds);
+      const summarize = () => {
+        const next: Record<string, PinnedPriceSummary> = {};
+        ids.forEach((id, index) => {
+          const detail = details[index];
+          const marketPriceKamas = marketPrices[id]?.marketPriceKamas;
+          const result = detail.recipe ? compare(detail.recipe, resourcePrices, marketPriceKamas) : undefined;
+          next[id] = {
+            craftCostKamas: result?.craftCostStatus === 'complete' ? result.knownCraftCostKamas : undefined,
+            marketPriceKamas,
+            recommendation: result && result.recommendation !== 'insufficient-data' ? result.recommendation : undefined,
+          };
+        });
+        setSummaries(next);
+      };
       if (cancelled) return;
-      const next: Record<string, PinnedPriceSummary> = {};
-      ids.forEach((id, index) => {
-        const detail = details[index];
-        const marketPriceKamas = marketPrices[id]?.marketPriceKamas;
-        const result = detail.recipe ? compare(detail.recipe, resourcePrices, marketPriceKamas) : undefined;
-        next[id] = {
-          craftCostKamas: result?.craftCostStatus === 'complete' ? result.knownCraftCostKamas : undefined,
-          marketPriceKamas,
-          recommendation: result && result.recommendation !== 'insufficient-data' ? result.recommendation : undefined,
-        };
-      });
-      setSummaries(next);
+      summarize();
       setLoadingSummaries(false);
+      // Mode communautaire: RecherchePage only copies a resource's community median into the carnet
+      // when that item's detail is displayed, so an item pinned earlier could show "Non renseigné"
+      // here while its detail page shows every price. Fill the same gaps the same way (median saved
+      // into the carnet, once) so both pages agree — after the carnet values are already on screen,
+      // so a slow network never delays them.
+      if (priceMode !== 'community') return;
+      const missingIds = allResourceIds.filter((resourceId) => !resourcePrices[resourceId]);
+      if (missingIds.length === 0) return;
+      await Promise.all(missingIds.map(async (resourceId) => {
+        const median = await lookupCommunityMedian(resourceId, serverId);
+        if (median === undefined || cancelled) return;
+        resourcePrices[resourceId] = await repository.save(serverId, resourceId, median);
+      }));
+      if (!cancelled) summarize();
     })();
     return () => {
       cancelled = true;
