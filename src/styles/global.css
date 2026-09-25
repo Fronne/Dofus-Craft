@@ -726,6 +726,40 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .market-price-summary p:not(.badge) { margin: 0; font-size: .95rem; color: var(--text-muted); }
 .market-price-summary p strong { color: var(--text); }
 
+/* specs/001 FR-010/FR-011: the verdict — recommendation and savings up top, then the craft cost and
+   the HDV price as proportional bars, the cheaper one in the success color. */
+.market-price-summary > .verdict { flex: 1 1 100%; min-width: 0; }
+/* The HDV field now sits inside the verdict: no separate column, so no separator either. */
+.market-price-panel .market-price-summary { padding-left: 0; border-left: 0; }
+.verdict { display: grid; gap: var(--space-3); }
+.verdict-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.verdict-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 50%; background: var(--gold-soft); color: var(--gold-bright); }
+.verdict--craft .verdict-icon, .verdict--buy .verdict-icon { background: var(--success-soft); color: var(--success); }
+.verdict--insufficient-data .verdict-icon { background: var(--warning-soft); color: var(--warning); }
+.verdict-text { flex: 1 1 180px; min-width: 0; }
+.market-price-summary p.verdict-title { margin: 0; color: var(--text); font-size: 1.25rem; font-weight: 800; line-height: 1.2; }
+.market-price-summary .verdict--craft p.verdict-title, .market-price-summary .verdict--buy p.verdict-title { color: var(--success); }
+.market-price-summary p.verdict-subtitle { margin: .1rem 0 0; font-size: .88rem; }
+.verdict-savings { display: grid; justify-items: end; text-align: right; }
+.market-price-summary .verdict-savings strong { color: var(--success); font-size: 1.35rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.verdict-savings span { color: var(--text-muted); font-size: .8rem; }
+.verdict-bars { display: grid; gap: var(--space-2); }
+/* Each row: its amount (or the HDV price field) on the left, its bar on the right. */
+.verdict-bar { display: grid; grid-template-columns: minmax(230px, 280px) minmax(0, 1fr); align-items: center; column-gap: var(--space-4); row-gap: .3rem; }
+.verdict-market-field { display: flex; align-items: center; gap: var(--space-3); }
+.verdict-market-field .market-price-label { margin: 0; white-space: nowrap; font-size: .88rem; font-weight: 400; color: var(--text-muted); }
+.verdict-market-field .market { flex: 1 1 auto; min-width: 0; margin: 0; }
+.verdict-market-field .kamas-input-wrap input { min-height: 40px; }
+.market-price-summary p.verdict-bar-label { font-size: .88rem; }
+.verdict-bar-empty { font-style: italic; }
+.verdict-bar-track { display: block; height: 10px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.verdict-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--text-faint); transition: width .3s ease; }
+.verdict-bar--cheaper .verdict-bar-fill { background: var(--success); }
+@media (max-width: 720px) {
+  .verdict-savings { justify-items: start; text-align: left; flex-basis: 100%; }
+  .verdict-bar { grid-template-columns: 1fr; }
+}
+
 /* "kamas" suffix shared by every price-entry input (resource unit price, HDV price), shown once
    a value is typed. padding-right stays reserved even while the suffix is absent so the input
    doesn't resize/jump as soon as typing starts. */
@@ -741,6 +775,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   transform: translateY(-50%);
   pointer-events: none;
 }
+.kamas-input-suffix--empty { opacity: .35; }
 .kamas-input-wrap input[readonly] { color: var(--text-muted); cursor: default; }
 .kamas-input-edit-button {
   position: absolute;

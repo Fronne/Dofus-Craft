@@ -2,13 +2,13 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { useSearchParams } from 'react-router-dom';
 import type { Resource, ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
-import { formatKamas, isValidKamas, parseKamas } from '../../domain/kamas';
+import { isValidKamas, parseKamas } from '../../domain/kamas';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults, RESULTS_PAGE_SIZE } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
-import { RecommendationBadge, SavingsNote, insufficientDataHint } from '../comparison/ComparisonResult';
+import { ComparisonVerdict } from '../comparison/ComparisonResult';
 import { useResourcePrices } from '../comparison/useResourcePrices';
 import { useCommunityPrice } from '../comparison/useCommunityPrice';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
@@ -488,30 +488,29 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
       {catalogue.detailError && <p className="warning">{catalogue.detailError}</p>}
       {detail?.recipe && result && (
         <section className="panel market-price-panel">
-          <label htmlFor="market-price-input" className="market-price-label">Prix HDV</label>
-          <div className="market-price-row">
-            <MarketPriceInput
-              value={market}
-              onChange={(value) => {
-                setMarket(value);
-                if (selectedItem && serverId) {
-                  const parsed = parseKamas(value);
-                  if (parsed === undefined) {
-                    void pinnedItemPrices.remove(serverId, selectedItem.id);
-                  } else {
-                    void pinnedItemPrices.save(serverId, selectedItem.id, parsed);
-                  }
-                }
-              }}
+          <div className="market-price-summary" data-tour="recommendation">
+            <ComparisonVerdict
+              result={result}
+              marketPriceField={(
+                <div className="verdict-market-field">
+                  <label htmlFor="market-price-input" className="market-price-label">Prix HDV</label>
+                  <MarketPriceInput
+                    value={market}
+                    onChange={(value) => {
+                      setMarket(value);
+                      if (selectedItem && serverId) {
+                        const parsed = parseKamas(value);
+                        if (parsed === undefined) {
+                          void pinnedItemPrices.remove(serverId, selectedItem.id);
+                        } else {
+                          void pinnedItemPrices.save(serverId, selectedItem.id, parsed);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              )}
             />
-            <div className="market-price-summary" data-tour="recommendation">
-              <RecommendationBadge recommendation={result.recommendation} hint={insufficientDataHint(result)} />
-              <p>
-                Coût de craft : <strong>{formatKamas(result.knownCraftCostKamas)}</strong>
-                {result.craftCostStatus === 'partial' && ' (partiel)'}
-              </p>
-              <SavingsNote result={result} />
-            </div>
           </div>
         </section>
       )}

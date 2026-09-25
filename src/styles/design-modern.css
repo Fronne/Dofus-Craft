@@ -98,7 +98,6 @@
 :root[data-design="modern"] .market-price-summary .badge { align-self: flex-start; padding: .3rem .7rem; font-size: .88rem; }
 /* The HDV panel stays compact: it is read at a glance, between the search and the recipe. */
 :root[data-design="modern"] .market-price-panel { padding-top: var(--space-5); padding-bottom: var(--space-5); }
-:root[data-design="modern"] .market-price-panel .market-price-label { margin-bottom: .4rem; }
 /* Badge and craft cost share a line when there is room; the savings sentence, when present,
    always gets its own line below them. */
 :root[data-design="modern"] .market-price-panel .market-price-summary {

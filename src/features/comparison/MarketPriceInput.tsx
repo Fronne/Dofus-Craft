@@ -4,11 +4,9 @@ export function MarketPriceInput({ value, onChange }: { value: string; onChange:
   const valid = isValidKamas(value);
   return (
     <div className="market" data-tour="market-price">
-      {/* The "Prix HDV" label lives in RecherchePage, above this input and the profitability
-          summary shown next to it, so both can be vertically centered against the input itself
-          instead of against the label+input block. It still targets #market-price-input via
-          htmlFor, so the association (and screen.getByLabelText('Prix HDV')) holds regardless
-          of where it sits in the DOM. */}
+      {/* The "Prix HDV" label lives in RecherchePage, next to this input on the HDV row of the
+          comparison. It targets #market-price-input via htmlFor, so the association (and
+          screen.getByLabelText('Prix HDV')) holds regardless of where it sits in the DOM. */}
       <span className="kamas-input-wrap">
         <input
           id="market-price-input"
@@ -16,9 +14,17 @@ export function MarketPriceInput({ value, onChange }: { value: string; onChange:
           aria-invalid={!valid}
           value={formatKamasInput(value)}
           onChange={(event) => onChange(normalizeKamasInput(event.target.value))}
-          placeholder="Prix en kamas"
+          // Only a placeholder: an actual 0 would count as a real HDV price and skew the verdict.
+          placeholder="0"
         />
-        {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
+        {/* Always shown, faded until a price is typed, so the field reads as an amount in kamas. */}
+        <img
+          src={KAMAS_ICON_URL}
+          alt="kamas"
+          className={`kamas-input-suffix${value ? '' : ' kamas-input-suffix--empty'}`}
+          width={18}
+          height={18}
+        />
       </span>
       {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
     </div>

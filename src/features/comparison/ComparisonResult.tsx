@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Comparison, Recommendation } from '../../domain/types';
 import { formatKamas, formatPercent } from '../../domain/kamas';
 import { Icon } from '../../components/Icon';
@@ -52,21 +53,97 @@ export function RecommendationBadge({ recommendation, hint }: { recommendation: 
   );
 }
 
-export function SavingsNote({ result }: { result: Comparison }) {
-  if (result.differenceKamas === undefined || result.differenceKamas <= 0) return null;
-  return result.recommendation === 'craft' ? (
-    <p>
-      Fabriquer coûte
-      {result.percentage !== undefined && <> <strong>{formatPercent(result.percentage)} moins cher</strong></>}
-      {' '}qu’acheter à l’HDV, soit une économie de{' '}
-      <strong>{formatKamas(result.differenceKamas)}</strong>.
-    </p>
-  ) : (
-    <p>
-      Acheter à l’HDV coûte
-      {result.percentage !== undefined && <> <strong>{formatPercent(result.percentage)} moins cher</strong></>}
-      {' '}que fabriquer, soit une économie de{' '}
-      <strong>{formatKamas(result.differenceKamas)}</strong>.
-    </p>
+const verdictTitles: Record<Recommendation, string> = {
+  craft: 'Fabriquer',
+  buy: 'Acheter à l’HDV',
+  equal: 'Les deux se valent',
+  'insufficient-data': 'Comparaison incomplète',
+};
+
+const verdictIcons: Record<Recommendation, IconName> = {
+  craft: 'package',
+  buy: 'coins',
+  equal: 'info',
+  'insufficient-data': 'info',
+};
+
+// One row of the comparison: its amount on the left — or, for the HDV price, the field where it's
+// typed (`field`) — and a bar proportional to it on the right.
+function VerdictBar({ label, value, max, partial, cheaper, field }: {
+  label: string;
+  value?: number;
+  max: number;
+  partial?: boolean;
+  cheaper: boolean;
+  field?: ReactNode;
+}) {
+  const width = value !== undefined && max > 0 ? Math.max(2, (value / max) * 100) : 0;
+  return (
+    <div className={`verdict-bar${cheaper ? ' verdict-bar--cheaper' : ''}`}>
+      {field ?? (
+        <p className="verdict-bar-label">
+          {label} : {value !== undefined ? <strong>{formatKamas(value)}</strong> : <span className="verdict-bar-empty">non renseigné</span>}
+          {partial && ' (partiel)'}
+        </p>
+      )}
+      <span className="verdict-bar-track" aria-hidden="true">
+        <span className="verdict-bar-fill" style={{ width: `${width}%` }} />
+      </span>
+    </div>
+  );
+}
+
+// specs/001 FR-010/FR-011/FR-016: the craft-or-buy verdict at a glance — the recommendation in large
+// type with what it saves (kamas and percentage, with its point of comparison), then the craft cost
+// and the HDV price as proportional bars, the cheaper one highlighted. An incomplete comparison
+// (FR-012) says what's missing instead of recommending, and highlights neither bar.
+// `marketPriceField`: the HDV price input, shown on the HDV row in place of its amount.
+export function ComparisonVerdict({ result, marketPriceField }: { result: Comparison; marketPriceField?: ReactNode }) {
+  const { recommendation } = result;
+  const definitive = recommendation === 'craft' || recommendation === 'buy';
+  const hint = insufficientDataHint(result)?.replace(/^Comparaison incomplète : /, '');
+  const max = Math.max(result.knownCraftCostKamas, result.marketPriceKamas ?? 0);
+  const subtitle = definitive
+    ? 'est plus rentable'
+    : recommendation === 'equal'
+      ? 'Fabriquer ou acheter coûte pareil.'
+      : hint && hint.charAt(0).toUpperCase() + hint.slice(1);
+  return (
+    <div className={`verdict verdict--${recommendation}`}>
+      <div className="verdict-head">
+        <span className="verdict-icon" aria-hidden="true"><Icon name={verdictIcons[recommendation]} size={22} /></span>
+        <div className="verdict-text">
+          <p className="verdict-title">{verdictTitles[recommendation]}</p>
+          {subtitle && <p className="verdict-subtitle">{subtitle}</p>}
+        </div>
+        {definitive && result.differenceKamas !== undefined && result.differenceKamas > 0 && (
+          <div className="verdict-savings">
+            <strong>{formatKamas(result.differenceKamas)}</strong>
+            <span>
+              d’économie
+              {result.percentage !== undefined && (
+                <> · {formatPercent(result.percentage)} moins cher {recommendation === 'craft' ? 'qu’à l’HDV' : 'que le craft'}</>
+              )}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="verdict-bars">
+        <VerdictBar
+          label="Coût de craft"
+          value={result.knownCraftCostKamas}
+          max={max}
+          partial={result.craftCostStatus === 'partial'}
+          cheaper={recommendation === 'craft'}
+        />
+        <VerdictBar
+          label="Prix HDV"
+          value={result.marketPriceKamas}
+          max={max}
+          cheaper={recommendation === 'buy'}
+          field={marketPriceField}
+        />
+      </div>
+    </div>
   );
 }
