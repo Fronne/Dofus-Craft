@@ -88,7 +88,7 @@ function CommunityResourcePriceRow({
   }, [communityState, hasCarnetEntry, pricesLoaded, onPrefill]);
 
   const communityMeta = communityState.kind === 'found'
-    ? { sampleSize: communityState.price.sampleSize, stale: communityState.stale }
+    ? { stale: communityState.stale }
     : undefined;
 
   // FR-017/FR-019: called on blur, only once the player has actually changed the value

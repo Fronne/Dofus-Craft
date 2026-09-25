@@ -44,7 +44,8 @@ test('pre-fills the resource price field with the community median, directly edi
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await expect(priceInput).toHaveValue('4 200');
-  await expect(page.getByText(/5 contributions/).first()).toBeVisible();
+  // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
+  await expect(page.getByText(/contribution/)).toHaveCount(0);
 
   // Once pre-filled, the field locks (lockWhenFilled) to guard against an accidental keystroke —
   // "Modifier ce prix" unlocks it, same convention as the confirmed-edit test below.
@@ -113,7 +114,8 @@ test('confirming an edit to a resource price field sends exactly one contributio
 
   const priceInput = page.getByPlaceholder('Prix unitaire').first();
   await expect(priceInput).toHaveValue('4 200');
-  await expect(page.getByText(/5 contributions/).first()).toBeVisible();
+  // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
+  await expect(page.getByText(/contribution/)).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('4500');
@@ -124,10 +126,8 @@ test('confirming an edit to a resource price field sends exactly one contributio
   // sent alongside the contribution.
   expect(Object.keys(contributedBodies[0] as object).sort()).toEqual(['amountKamas', 'deviceId', 'resourceId', 'serverId']);
   // specs/004 FR-018 (amendée) / specs/007 FR-012: a successful commit never overwrites the field
-  // with the recalculated median — it keeps showing exactly what the player typed. Only the
-  // contribution count (from the refreshed median lookup) updates.
+  // with the recalculated median — it keeps showing exactly what the player typed.
   await expect(priceInput).toHaveValue('4 500');
-  await expect(page.getByText(/6 contributions/).first()).toBeVisible();
 });
 
 test('shows the last known community price as stale, rather than breaking, when the backend becomes unavailable (US4)', async ({ page }) => {

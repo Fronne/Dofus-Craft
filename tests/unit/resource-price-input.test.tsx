@@ -114,6 +114,8 @@ describe('ResourcePriceInput price age highlighting', () => {
     const label = screen.getByPlaceholderText('Prix unitaire').closest('label');
     expect(label).not.toHaveClass('price-line--stale');
     expect(label).not.toHaveClass('price-line--expired');
+    // specs/004 (révision du 2026-09-25): no contribution count on the line.
+    expect(screen.queryByText(/contribution/)).not.toBeInTheDocument();
   });
 
   it('applies price-line--stale when the price is between 3 and 7 days old', () => {
@@ -134,7 +136,7 @@ describe('ResourcePriceInput price age highlighting', () => {
         resource={resource}
         quantity={1}
         value=""
-        communityMeta={{ sampleSize: 3, stale: false }}
+        communityMeta={{ stale: false }}
         onChange={vi.fn()}
       />,
     );
@@ -151,7 +153,7 @@ describe('ResourcePriceInput price age highlighting', () => {
         quantity={1}
         value="500"
         updatedAt={daysAgo(10)}
-        communityMeta={{ sampleSize: 2, stale: true }}
+        communityMeta={{ stale: true }}
         onChange={vi.fn()}
       />,
     );

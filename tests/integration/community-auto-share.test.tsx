@@ -119,7 +119,8 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
     await waitFor(() => expect(postBodies).toHaveLength(1));
     expect(Object.keys(postBodies[0] as object).sort()).toEqual(['amountKamas', 'deviceId', 'resourceId', 'serverId']);
-    await waitFor(() => expect(screen.getByText(/3 contributions/)).toBeInTheDocument());
+    // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
+    expect(screen.queryByText(/contribution/)).not.toBeInTheDocument();
     // specs/004 FR-018 (amendée révision 6): the field keeps the player's own entered value (1000),
     // not the mock's recalculated median (1200).
     expect(input).toHaveValue('1 000');
@@ -222,7 +223,8 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
     await waitFor(() => expect(postBodies).toHaveLength(1));
     expect(postBodies[0]).toMatchObject({ amountKamas: 1300 });
-    await waitFor(() => expect(screen.getByText(/3 contributions/)).toBeInTheDocument());
+    // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
+    expect(screen.queryByText(/contribution/)).not.toBeInTheDocument();
     // specs/004 FR-018 (amendée révision 6) / specs/007 FR-012: the field keeps the player's own
     // entered value (1300), not the mock's recalculated median (1000), even on the confirmed path.
     expect(input).toHaveValue('1 300');

@@ -179,7 +179,8 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
 
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('5 000'));
-    expect(screen.getByText(/3 contributions/)).toBeInTheDocument();
+    // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
+    expect(screen.queryByText(/contribution/)).not.toBeInTheDocument();
 
     // After the submission succeeds, the next getCommunityPrice call (the refresh) returns the
     // updated median/sampleSize including this new contribution.
@@ -193,7 +194,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     fireEvent.blur(input);
 
     await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('resource-1', 'mikhal', 6000));
-    await waitFor(() => expect(screen.getByText(/4 contributions/)).toBeInTheDocument());
+    expect(screen.queryByText(/contribution/)).not.toBeInTheDocument();
     expect(input).toHaveValue('6 000');
   });
 

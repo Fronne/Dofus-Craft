@@ -567,3 +567,15 @@ Suite à une revue de l'application :
   individuelle, un identifiant d'appareil ni un horodatage individuel.
 - **FR-013 inchangé** : aucune rétention supplémentaire ; l'historique s'arrête à la même fenêtre de
   90 jours.
+
+## Révision (2026-09-25) : plus de nombre de contributions sur les ressources
+
+- À la demande du joueur, la ligne d'une ressource en Mode communautaire n'affiche plus le nombre de
+  contributions. Elle garde la date de dernière mise à jour et, pour un prix ancien, la mention
+  « peut-être daté » (US5).
+- **FR-007 (retirée)** : le nombre de contributions n'est plus affiché.
+- **FR-019 (retirée)** : sans nombre affiché, il n'y a plus rien à incrémenter après un partage
+  réussi. Le partage et le rafraîchissement de la médiane sont inchangés.
+- Le Worker continue de renvoyer `sampleSize` (GET /community-price) ; seule l'application cesse de
+  l'afficher. L'historique des prix (specs/017) garde son nombre de prix par point, qui est une autre
+  information.
