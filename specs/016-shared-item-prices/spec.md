@@ -206,3 +206,11 @@ affiche ce prix sans ouvrir la fiche.
   aucune modération au-delà de la confirmation d'écart n'est prévue.
 - La fenêtre de confirmation reprend celle des ressources (specs/007), avec « dernier prix » à la
   place de « médiane communautaire ».
+
+## Révision (2026-09-25) : historique des prix (specs/017-price-history-chart)
+
+- Le champ « Prix HDV » gagne en Mode communautaire un bouton d'historique : la médiane par période
+  des prix HDV partagés pour l'objet sur 90 jours. Le champ continue d'afficher le prix le plus
+  récent (FR-001 inchangé) et la comparaison l'utilise toujours ; l'historique ne change aucun calcul.
+- La rétention ne change pas : la contribution la plus récente d'un objet reste gardée au-delà de
+  90 jours pour ce champ, mais n'entre pas dans l'historique une fois plus ancienne que 90 jours.

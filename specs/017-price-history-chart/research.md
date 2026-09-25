@@ -63,14 +63,17 @@ conception.
 - **Décision** : `PriceHistoryButton` rend un bouton déclencheur et, une fois ouvert, un panneau via
   `createPortal` dans `document.body`. Le panneau est positionné par rapport au déclencheur
   (`getBoundingClientRect`). Il se ferme avec Échap, par un clic hors du déclencheur et du panneau,
-  ou avec « Fermer ». Il se ferme aussi au défilement ou au redimensionnement, plutôt que de suivre
-  la ligne. Sous 480 px, il occupe toute la largeur moins une marge de 16 px de chaque côté.
+  ou avec « Fermer ». Au défilement ou au redimensionnement, il est **repositionné** (il suit le
+  déclencheur) plutôt que fermé : sur téléphone, il faut souvent faire défiler pour le voir en entier.
+  Sous 480 px, il s'affiche en panneau fixe en bas de l'écran (pleine largeur moins 16 px de chaque
+  côté), ce qui évite tout calcul de position.
 - **Raison** : `ResourcePriceInput` est un `<label>`. Un clic dans un panneau placé à l'intérieur
   donnerait le focus au champ de prix. Le comportement de fermeture reprend `DungeonCounterBubble`,
   et un seul popover reste ouvert à la fois (un clic sur un autre déclencheur est un clic « à
   l'extérieur »). Le déclencheur appelle `preventDefault` comme le bouton crayon.
 - **Alternatives écartées** : panneau dans le label (conflit de focus) ; `<dialog>` modal (la spec
-  demande un popover qui laisse voir la page).
+  demande un popover qui laisse voir la page) ; fermeture au défilement (sur téléphone, le popover se
+  fermerait dès qu'on fait défiler pour le voir).
 
 ## 6. Chargement et cache
 

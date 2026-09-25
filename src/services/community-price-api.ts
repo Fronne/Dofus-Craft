@@ -1,4 +1,5 @@
 import type { CommunityPrice } from '../domain/types';
+import { GROUPINGS, type HistoryPoint, type PriceHistory } from '../domain/price-history';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
@@ -88,6 +89,42 @@ export async function getLatestItemPrice(itemId: string, serverId: string): Prom
   }
   if (!isLatestItemPriceRow(payload)) return { status: 'unavailable' };
   return { status: 'found', price: payload };
+}
+
+function isHistoryPoint(value: unknown): value is HistoryPoint {
+  return isRecord(value) &&
+    typeof value.periodStart === 'string' &&
+    typeof value.medianAmountKamas === 'number' &&
+    typeof value.sampleSize === 'number';
+}
+
+function isPriceHistory(value: unknown): value is PriceHistory {
+  return isRecord(value) &&
+    GROUPINGS.every((grouping) => Array.isArray(value[grouping]) && (value[grouping] as unknown[]).every(isHistoryPoint));
+}
+
+export type PriceHistoryLookup = { status: 'found'; history: PriceHistory } | { status: 'unavailable' };
+
+// specs/017-price-history-chart: per-period medians of a resource ('resource') or an item's HDV price
+// ('item') on a server. No price yet is `found` with empty lists; like the reads above, this never
+// throws — any failure resolves to `unavailable` (FR-013).
+export async function getPriceHistory(kind: 'resource' | 'item', id: string, serverId: string): Promise<PriceHistoryLookup> {
+  const params = new URLSearchParams({ kind, id, serverId });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/price-history?${params.toString()}`, { headers: apiHeaders() });
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!response.ok) return { status: 'unavailable' };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!isPriceHistory(payload)) return { status: 'unavailable' };
+  return { status: 'found', history: payload };
 }
 
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing

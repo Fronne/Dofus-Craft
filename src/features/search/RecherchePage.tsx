@@ -7,6 +7,7 @@ import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults, RESULTS_PAGE_SIZE } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
 import { ResourcePriceInput } from '../comparison/ResourcePriceInput';
+import { PriceHistoryButton } from '../comparison/PriceHistoryButton';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
 import { ComparisonVerdict } from '../comparison/ComparisonResult';
 import { useResourcePrices } from '../comparison/useResourcePrices';
@@ -134,6 +135,7 @@ function CommunityResourcePriceRow({
         onCommit={handleCommit}
         retained={retained}
         subtotalKamas={subtotalKamas}
+        history={<PriceHistoryButton key={serverId} kind="resource" id={resource.id} name={resource.name} serverId={serverId} />}
       />
       {outlierDialog}
     </Fragment>
@@ -540,6 +542,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                     lockWhenFilled={community}
                     updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
                     onCommit={community ? commitMarketPrice : undefined}
+                    history={community && selectedItem && serverId
+                      ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} />
+                      : undefined}
                     onChange={(value) => {
                       setMarket(value);
                       // Mode communautaire shares on commit (above), never into the local price.

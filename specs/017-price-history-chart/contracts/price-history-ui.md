@@ -15,15 +15,17 @@
 ## Popover
 
 - `role="dialog"`, `aria-label="Historique du prix de <nom>"`. Il est rendu dans `document.body` et
-  positionné sous le déclencheur (ou au-dessus s'il manque de place). Sous 480 px de large, il
-  occupe la largeur de l'écran moins 16 px de chaque côté, sans défilement horizontal (FR-015).
+  positionné sous le déclencheur (ou au-dessus s'il manque de place), et repositionné au défilement
+  ou au redimensionnement. Sous 480 px de large, il s'affiche en panneau fixe en bas de l'écran,
+  sur la largeur de l'écran moins 16 px de chaque côté, sans défilement horizontal (FR-015).
 - En-tête : nom de la ressource ou de l'objet, serveur actif, bouton « Fermer ».
 - Sélecteur de regroupement : groupe de 3 boutons `Jour` / `Semaine` / `Mois` (`aria-pressed`). La
   valeur initiale vient de la préférence (`'week'` par défaut), et chaque changement l'enregistre
   (FR-007).
-- Mention sous la courbe : « Médiane par période, prix partagés sur 90 jours ».
-- Fermeture : Échap, clic hors du déclencheur et du panneau, « Fermer », défilement ou
-  redimensionnement de la page, changement de serveur ou de mode (démontage). Un seul popover est
+- Mention sous la courbe : « Médiane par période sur 90 jours, un prix par joueur et par période »
+  (FR-005).
+- Fermeture : Échap, clic hors du déclencheur et du panneau, « Fermer », changement de serveur ou
+  de mode (démontage). Le défilement ne le ferme pas. Un seul popover est
   ouvert à la fois. À la fermeture par Échap ou « Fermer », le focus revient au déclencheur.
 
 ## États

@@ -20,7 +20,8 @@ export type IconName =
   | 'level'
   | 'package'
   | 'edit'
-  | 'copy';
+  | 'copy'
+  | 'chart';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
   search: {
@@ -86,6 +87,10 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
       '<ellipse cx="9" cy="7" rx="6" ry="3.2"/><path d="M3 7v5c0 1.77 2.69 3.2 6 3.2s6-1.43 6-3.2V7"/>' +
       '<path d="M9 12.2v5c0 1.77 2.69 3.2 6 3.2s6-1.43 6-3.2v-5"/>' +
       '<ellipse cx="15" cy="12.2" rx="6" ry="3.2"/>',
+  },
+  // specs/017: price history — a small rising curve on its axes.
+  chart: {
+    children: '<polyline points="4 4 4 20 20 20"/><polyline points="7 15 11 11 14 13 19 7"/>',
   },
   'trending-up': {
     children: '<polyline points="3 17 10 10 14 14 21 6"/><polyline points="15 6 21 6 21 12"/>',

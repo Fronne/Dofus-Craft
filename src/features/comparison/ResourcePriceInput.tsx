@@ -18,6 +18,7 @@ export function ResourcePriceInput({
   onCommit,
   retained,
   subtotalKamas,
+  history,
 }: {
   resource: Resource;
   quantity: number;
@@ -52,6 +53,8 @@ export function ResourcePriceInput({
   // specs/015: the line's subtotal once its retained cost is known (quantity × retained unit cost),
   // replacing the one computed from the typed price; `null` hides it (retained cost missing).
   subtotalKamas?: number | null;
+  // specs/017: the price-history button, next to the quantity. Only passed in Mode communautaire.
+  history?: ReactNode;
 }) {
   const valid = isValidKamas(value);
   const communityLabel = communityMeta
@@ -81,7 +84,10 @@ export function ResourcePriceInput({
       <span className="price-resource">
         <ResourceDisplay resource={resource} copyable />
       </span>
-      <span className="price-resource-quantity">× {quantity}</span>
+      <span className="price-resource-quantity">
+        × {quantity}
+        {history}
+      </span>
       {(updatedAt || communityLabel) && (
         <small>
           {updatedAt && `Dernière mise à jour : ${formatRelativeTime(updatedAt)}`}

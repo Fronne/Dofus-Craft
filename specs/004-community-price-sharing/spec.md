@@ -557,3 +557,13 @@ Suite à une revue de l'application :
   contribution la plus récente de chaque objet et serveur (lignes `'item'` uniquement), pour que le
   dernier prix d'un objet reste affiché quel que soit son âge. Les contributions de ressources
   suivent la règle des 90 jours sans exception.
+
+## Révision (2026-09-25) : historique des prix (specs/017-price-history-chart)
+
+- En Mode communautaire, un popover montre l'historique des prix d'une ressource (et du prix HDV d'un
+  objet) sur les 90 jours conservés, lu par `GET /price-history` : une médiane et un nombre de prix par
+  jour, semaine ou mois (heure de Paris).
+- **FR-010 inchangé** : cette route n'expose que des agrégats par période, jamais une contribution
+  individuelle, un identifiant d'appareil ni un horodatage individuel.
+- **FR-013 inchangé** : aucune rétention supplémentaire ; l'historique s'arrête à la même fenêtre de
+  90 jours.

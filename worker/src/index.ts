@@ -2,6 +2,7 @@ import { purgeExpiredContributions } from './retention';
 import { readPlayerCounters } from './player-counters';
 import { fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { latestPriceResponse } from './latest';
+import { priceHistoryResponse } from './price-history';
 
 export interface Env {
   DB: D1Database;
@@ -115,6 +116,12 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/latest-price') {
       return handleGetLatestPrice(url, env);
+    }
+
+    // specs/017-price-history-chart: per-period medians only, never an individual contribution.
+    if (request.method === 'GET' && url.pathname === '/price-history') {
+      const { status, body } = await priceHistoryResponse(env.DB, url);
+      return json(body, status);
     }
 
     // specs/014-admin-counters: the humorous player counters, readable by everyone.

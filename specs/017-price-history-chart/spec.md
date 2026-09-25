@@ -123,7 +123,8 @@ avec des prix sur une seule période : les deux affichent l'état « pas assez d
    popover, **Then** il voit « Pas encore d'historique pour ce serveur », sans courbe.
 2. **Given** des prix sur une seule période pour le regroupement choisi, **When** le joueur ouvre le
    popover, **Then** il voit « Pas assez d'historique », avec le prix médian et le nombre de prix de
-   cette période, et une invitation à essayer un regroupement plus fin s'il en existe un.
+   cette période, et une invitation à essayer un regroupement plus fin si celui-ci compte au moins
+   deux périodes avec des prix.
 3. **Given** des prix sur une seule période au mois mais plusieurs au jour, **When** le joueur passe
    au regroupement « Jour », **Then** la courbe s'affiche.
 
@@ -145,8 +146,10 @@ avec des prix sur une seule période : les deux affichent l'état « pas assez d
   retenus.
 - **Période en cours** (jour, semaine ou mois pas encore terminé) : elle est affichée comme les
   autres, son nombre de prix indiquant qu'elle peut encore évoluer.
-- **Changement de serveur popover ouvert** : le popover se ferme ou se met à jour avec les données du
-  nouveau serveur ; il n'affiche jamais un mélange de deux serveurs.
+- **Changement de serveur popover ouvert** : le popover se ferme ; il n'affiche jamais un mélange de
+  deux serveurs.
+- **Défilement de la page popover ouvert** : le popover suit l'élément d'où il a été ouvert au lieu
+  de se fermer ; sur un écran étroit, il s'affiche en panneau fixe en bas de l'écran.
 - **Changement de mode vers le Mode personnel popover ouvert** : le popover se ferme.
 - **Écran étroit (téléphone)** : le popover reste lisible dans la largeur de l'écran, sans défilement
   horizontal de la page.
@@ -164,13 +167,17 @@ avec des prix sur une seule période : les deux affichent l'état « pas assez d
 - **FR-003**: Le popover MUST afficher une courbe dont chaque point correspond à une période
   contenant au moins un prix partagé pour cette ressource ou cet objet, sur le serveur actif
   uniquement.
-- **FR-004**: La valeur d'un point MUST être la médiane des prix partagés de la période, calculée de
-  la même manière que le prix communautaire actuel des ressources (specs/004 FR-003), après avoir
-  écarté les valeurs aberrantes selon la même règle (specs/004 FR-012). Cela vaut aussi pour les
-  objets, même si le champ « Prix HDV » affiche le prix le plus récent et non une médiane (specs/016
-  FR-001).
+- **FR-004**: La valeur d'un point MUST être la médiane des prix partagés de la période, avec la même
+  formule que le prix communautaire actuel des ressources (specs/004 FR-003), après avoir écarté les
+  valeurs aberrantes selon la même règle (specs/004 FR-012). Comme pour le prix actuel, un appareil
+  ne compte qu'une fois, avec son dernier prix (specs/004 FR-023), mais **une fois par période** et
+  non une fois sur 90 jours, pour qu'un joueur qui relève le prix chaque semaine apparaisse chaque
+  semaine. Cela vaut aussi pour les objets, même si le champ « Prix HDV » affiche le prix le plus
+  récent et non une médiane (specs/016 FR-001).
 - **FR-005**: Chaque point MUST indiquer, au survol ou au toucher, la période, le prix médian en
-  kamas et le nombre de prix retenus qui le composent.
+  kamas et le nombre de prix retenus qui le composent. Ce nombre compte les appareils de la période
+  (un appareil qui corrige son prix le même jour compte une fois) après le filtre des valeurs
+  aberrantes ; le popover MUST le rappeler (« un prix par joueur et par période »).
 - **FR-006**: Le système MUST NOT exposer de prix individuel ni aucune information permettant de
   relier un prix à un appareil ou à un joueur ; seules les valeurs agrégées par période (médiane et
   nombre de prix) sortent du service communautaire.
@@ -238,9 +245,12 @@ avec des prix sur une seule période : les deux affichent l'état « pas assez d
   le prix HDV le plus récent d'un objet (specs/016).
 - Le seuil de deux périodes (FR-009) suffit pour une tendance minimale ; il pourra être relevé plus
   tard sans changer le reste de la fonctionnalité.
-- Le filtrage des valeurs aberrantes s'applique à l'ensemble des prix de la période affichée
-  (ressource ou objet, serveur), puis la médiane est calculée période par période, pour garder des
-  points cohérents avec le prix communautaire actuel.
+- Le filtrage des valeurs aberrantes s'applique, pour chaque regroupement, à tous les prix gardés sur
+  la fenêtre de 90 jours (ressource ou objet, serveur), puis la médiane est calculée période par
+  période : un filtre période par période n'aurait presque jamais assez de valeurs pour agir. Comme
+  un appareil compte une fois par période, les prix gardés — donc les bornes du filtre — peuvent
+  légèrement différer d'un regroupement à l'autre ; c'est accepté.
+- La période en cours (jour, semaine ou mois pas terminé) est calculée comme les autres.
 - La contribution la plus récente d'un objet, conservée au-delà de 90 jours pour le champ « Prix
   HDV » (specs/016), n'entre pas dans l'historique si elle a plus de 90 jours.
 - La page Suivis n'a pas de bouton historique dans cette version.

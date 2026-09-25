@@ -33,7 +33,11 @@ Then set `VITE_COMMUNITY_API_URL` in the frontend's `.env.local` to the deployed
 
 ## Files
 
-- `src/index.ts` — the three routes (`GET`/`POST /community-price`, `DELETE /community-price/:id`).
+- `src/index.ts` — the routes: anonymous reads `GET /community-price`, `GET /latest-price`
+  (specs/016), `GET /price-history` (specs/017) and `GET /player-counters`; keyed writes
+  `POST /community-price` and `POST /visit`.
+- `src/price-history.ts` — per-day/week/month medians over the 90 retained days, Paris calendar
+  (specs/017), unit-tested via `tests/unit/price-history-aggregation.test.ts`.
 - `src/median.ts` — pure statistics (median + outlier exclusion), unit-tested from the repo root
   via `tests/unit/community-price-median.test.ts`.
 - `schema.sql` — D1 table definition, applied with `npm run worker:db:init`.

@@ -1,7 +1,7 @@
 // Linear-interpolation percentile, matching PostgreSQL's percentile_cont(p) exactly — kept
 // identical to the formula the previous Postgres-backed design used (specs/004-community-price-sharing
 // research.md), so switching backends doesn't silently change what FR-010/FR-011 actually compute.
-function percentileCont(sorted: number[], p: number): number {
+export function percentileCont(sorted: number[], p: number): number {
   const rank = p * (sorted.length - 1);
   const lower = Math.floor(rank);
   const upper = Math.ceil(rank);
@@ -13,7 +13,7 @@ function percentileCont(sorted: number[], p: number): number {
 // FR-010: bounds outside which a value is statistically aberrant, via the interquartile-range
 // method. With too few points for a meaningful IQR (fewer than 4, or q3 - q1 = 0), nothing is
 // excluded — mirrors the Postgres view's behavior from the previous design.
-function outlierBounds(sorted: number[]): [number, number] {
+export function outlierBounds(sorted: number[]): [number, number] {
   if (sorted.length < 4) return [-Infinity, Infinity];
   const q1 = percentileCont(sorted, 0.25);
   const q3 = percentileCont(sorted, 0.75);
