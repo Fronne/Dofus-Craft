@@ -25,7 +25,9 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Deux modes de prix** :
   - *Mode communautaire* (par défaut) : les prix saisis sont partagés anonymement avec le groupe,
     et chaque ressource est pré-remplie avec le prix médian du groupe. Une valeur très éloignée de
-    la médiane demande confirmation avant d'être enregistrée.
+    la médiane demande confirmation avant d'être enregistrée. Le prix HDV d'un objet est lui aussi
+    partagé : c'est le dernier prix relevé par le groupe, avec sa date, et un prix très différent du
+    dernier demande confirmation.
   - *Mode personnel* : les prix restent sur l'appareil, rien n'est envoyé.
 - **Prix périmés signalés** : les ressources dont le prix date trop sont mises en évidence.
 - **Objets suivis** : suivre des objets et les ranger en listes.

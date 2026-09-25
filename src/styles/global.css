@@ -746,8 +746,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .verdict-bars { display: grid; gap: var(--space-2); }
 /* Each row: its amount (or the HDV price field) on the left, its bar on the right. */
 .verdict-bar { display: grid; grid-template-columns: minmax(230px, 280px) minmax(0, 1fr); align-items: center; column-gap: var(--space-4); row-gap: .3rem; }
-.verdict-market-field { display: flex; align-items: center; gap: var(--space-3); }
-.verdict-market-field .market-price-label { margin: 0; white-space: nowrap; font-size: .88rem; font-weight: 400; color: var(--text-muted); }
+.verdict-market-field { display: flex; align-items: flex-start; gap: var(--space-3); }
+/* Same height as the input, so the label stays centered on it even with the date line below. */
+.verdict-market-field .market-price-label { display: flex; align-items: center; min-height: 40px; margin: 0; white-space: nowrap; font-size: .88rem; font-weight: 400; color: var(--text-muted); }
+/* specs/016: date of the latest shared HDV price, flagged like an old resource price (specs/008). */
+.market-date { font-size: .78rem; font-weight: 400; color: var(--text-muted); }
+.market-date--stale { color: var(--warning); font-weight: 600; }
+.market-date--expired { color: var(--danger); font-weight: 600; }
 .verdict-market-field .market { flex: 1 1 auto; min-width: 0; margin: 0; }
 .verdict-market-field .kamas-input-wrap input { min-height: 40px; }
 .market-price-summary p.verdict-bar-label { font-size: .88rem; }

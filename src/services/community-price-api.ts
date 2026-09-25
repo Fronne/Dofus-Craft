@@ -53,6 +53,43 @@ export async function getCommunityPrice(resourceId: string, serverId: string): P
   return { status: 'found', price: payload };
 }
 
+// specs/016-shared-item-prices: an item's shared HDV price — the latest contribution of the group
+// for this item and server, with its date (no median, no contribution count).
+export type LatestItemPrice = { itemId: string; serverId: string; amountKamas: number; contributedAt: string };
+export type LatestItemPriceLookup =
+  | { status: 'found'; price: LatestItemPrice }
+  | { status: 'not-found' }
+  | { status: 'unavailable' };
+
+function isLatestItemPriceRow(value: unknown): value is LatestItemPrice {
+  return isRecord(value) &&
+    typeof value.itemId === 'string' &&
+    typeof value.serverId === 'string' &&
+    typeof value.amountKamas === 'number' &&
+    typeof value.contributedAt === 'string';
+}
+
+// Never throws, like getCommunityPrice: any failure resolves to `unavailable`.
+export async function getLatestItemPrice(itemId: string, serverId: string): Promise<LatestItemPriceLookup> {
+  const params = new URLSearchParams({ itemId, serverId });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/latest-price?${params.toString()}`, { headers: apiHeaders() });
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (response.status === 404) return { status: 'not-found' };
+  if (!response.ok) return { status: 'unavailable' };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!isLatestItemPriceRow(payload)) return { status: 'unavailable' };
+  return { status: 'found', price: payload };
+}
+
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing
 // revision 5, FR-010/FR-021/FR-022) — never any information identifying the player personally.
 // Returns undefined on any failure rather than throwing, matching getCommunityPrice.
@@ -60,6 +97,9 @@ export async function submitCommunityPrice(
   resourceId: string,
   serverId: string,
   amountKamas: number,
+  // specs/016: 'item' for an item's HDV price (stored and outlier-traced as such); omitted for a
+  // resource price, so resource contributions are sent exactly as before.
+  kind?: 'item',
 ): Promise<{ id: string } | undefined> {
   const deviceId = getOrCreateDeviceId();
   let response: Response;
@@ -67,7 +107,7 @@ export async function submitCommunityPrice(
     response = await fetch(`${API_URL}/community-price`, {
       method: 'POST',
       headers: apiHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ resourceId, serverId, amountKamas, deviceId }),
+      body: JSON.stringify(kind ? { resourceId, serverId, amountKamas, deviceId, kind } : { resourceId, serverId, amountKamas, deviceId }),
     });
   } catch {
     return undefined;

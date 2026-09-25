@@ -12,6 +12,7 @@ import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-
 import { compare } from '../../domain/craft-comparison';
 import { effectiveIngredientPrices, treeResourceIds } from '../../domain/craft-tree';
 import { loadRecipeTree } from '../comparison/recipe-tree-loader';
+import { lookupLatestItemPrice } from '../comparison/useSharedItemPrice';
 import { getIngredientChoices } from '../../persistence/ingredient-choices';
 import type { RecipeTree, ResourcePrice } from '../../domain/types';
 import { fillCommunityGaps } from '../comparison/community-gap-fill';
@@ -186,6 +187,16 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
   );
 }
 
+async function sharedMarketPrices(serverId: string, ids: string[]): Promise<Record<string, { marketPriceKamas: number }>> {
+  const prices = await Promise.all(ids.map((id) => lookupLatestItemPrice(id, serverId)));
+  const byId: Record<string, { marketPriceKamas: number }> = {};
+  ids.forEach((id, index) => {
+    const price = prices[index];
+    if (price) byId[id] = { marketPriceKamas: price.amountKamas };
+  });
+  return byId;
+}
+
 export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
   const { pinnedItems, unpin, listCollectionNames, createCollection, assignCollection, renameCollection, deleteCollection } = usePinnedItems();
   const navigate = useNavigate();
@@ -210,7 +221,9 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
     (async () => {
       const [details, marketPrices] = await Promise.all([
         Promise.all(ids.map((id) => getItemDetail(id))),
-        pinnedItemPrices.getMany(serverId, ids),
+        // specs/016 FR-009: in Mode communautaire each card shows the group's latest shared HDV price
+        // (the same one as the item's detail); Mode personnel keeps the device's own price.
+        priceMode === 'community' ? sharedMarketPrices(serverId, ids) : pinnedItemPrices.getMany(serverId, ids),
       ]);
       // specs/015 FR-011: the whole craft chain of each item, exactly as its detail page counts it —
       // same recipe tree, same carnet (every resource of the chain), same forced choices. The cards

@@ -38,6 +38,9 @@ import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-pr
 describe('pinned item market price per server', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // The device's own HDV price is a Mode personnel behaviour since specs/016 (shared in Mode
+    // communautaire, the default for a new player).
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
     globalThis.indexedDB = new IDBFactory();
   });
 

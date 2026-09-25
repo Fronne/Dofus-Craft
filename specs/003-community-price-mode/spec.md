@@ -284,3 +284,9 @@ suite :
   conservé comme d'habitude.
 - Le carnet personnel n'est ni effacé ni modifié : revenir au Mode personnel retrouve les prix
   saisis auparavant.
+
+## Révision (2026-09-25) : prix HDV des objets partagé
+
+- Le prix HDV d'un objet n'est plus exclu du Mode communautaire : il y est partagé et affiche le
+  dernier prix du groupe (specs/016-shared-item-prices). En Mode personnel, il reste propre à
+  l'appareil, comme avant ; les prix HDV saisis localement restent dans le carnet du Mode personnel.

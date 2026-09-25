@@ -12,7 +12,7 @@ import { ComparisonVerdict } from '../comparison/ComparisonResult';
 import { useResourcePrices } from '../comparison/useResourcePrices';
 import { useCommunityPrice } from '../comparison/useCommunityPrice';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
-import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
+import { computeDeviationPercent, needsItemPriceConfirmation, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import { useCatalogue } from '../catalogue/useCatalogue';
 import { usePinnedItems } from '../catalogue/usePinnedItems';
 import { useActiveServer } from '../../app/ServerContext';
@@ -26,6 +26,7 @@ import { hasSeenSearchTour, markSearchTourSeen } from '../../persistence/search-
 import { effectiveIngredientPrices, retainedCost, treeResourceIds } from '../../domain/craft-tree';
 import { useRecipeTree } from '../comparison/useRecipeTree';
 import { useIngredientChoices } from '../comparison/useIngredientChoices';
+import { useSharedItemPrice } from '../comparison/useSharedItemPrice';
 import { fillCommunityGaps } from '../comparison/community-gap-fill';
 import { IngredientRow, type PriceFieldProps } from './IngredientRow';
 
@@ -238,6 +239,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const setSelected = (id: string) => updateParams({ item: id });
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [market, setMarket] = useState('');
+  const community = priceMode === 'community';
   const levelFilter = levelMin || levelMax ? `${levelMin}:${levelMax}` : '';
   const catalogue = useCatalogue(query, category, selected, levelFilter, resultLimit);
   const pinned = usePinnedItems();
@@ -259,6 +261,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     }
   }, [catalogue.items, catalogue.resultsMatchQuery, selected, selectedItem, pinned.pinnedItems]);
   useEffect(() => {
+    // specs/016: in Mode communautaire the HDV price is the group's latest shared one (below), never
+    // the device's own; Mode personnel reads the local price exactly as before (FR-010).
+    if (community) return;
     if (!serverId || !selected) {
       setMarket('');
       return;
@@ -270,7 +275,21 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     return () => {
       cancelled = true;
     };
-  }, [serverId, selected]);
+  }, [serverId, selected, community]);
+  // specs/016-shared-item-prices: the latest HDV price shared by the group for this item and server.
+  const [sharedItemPrice, commitSharedItemPrice] = useSharedItemPrice(community ? selected || undefined : undefined, serverId);
+  // Another item or server: start from an empty field, never the previous item's price — its own
+  // shared price (or the cached one) fills it in as soon as it's known.
+  useEffect(() => {
+    if (community) setMarket('');
+  }, [community, selected, serverId]);
+  useEffect(() => {
+    if (!community) return;
+    if (sharedItemPrice.kind === 'found') setMarket(String(sharedItemPrice.price.amountKamas));
+    // Only "nothing shared" empties the field: an unreachable service must never wipe what's shown
+    // or what the player just typed (FR-011).
+    else if (sharedItemPrice.kind === 'not-found') setMarket('');
+  }, [community, sharedItemPrice]);
   useEffect(() => {
     setInputs({});
   }, [serverId]);
@@ -359,6 +378,28 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     // of resources or the settled state changes, and the Set above prevents asking twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceMode, serverId, pricesLoaded, idsKey]);
+
+  // specs/016 US2: shares a validated HDV price in Mode communautaire. The typed value stays shown
+  // (and used by the comparison) even if the service can't be reached — for this visit (FR-011).
+  // US3: beyond 50 % of the latest price shown, a confirmation first — canceling shares nothing and
+  // puts the previous value back (FR-006 to FR-008).
+  const [marketOutlierDialog, confirmMarketOutlier] = useOutlierConfirm();
+  const commitMarketPrice = async (value: string): Promise<'accepted' | 'rejected' | void> => {
+    const amount = parseKamas(value);
+    if (amount === undefined) return;
+    const latest = sharedItemPrice.kind === 'found' ? sharedItemPrice.price.amountKamas : undefined;
+    if (latest !== undefined && needsItemPriceConfirmation(amount, latest)) {
+      const confirmed = await confirmMarketOutlier({
+        medianAmountKamas: latest,
+        enteredAmountKamas: amount,
+        deviationPercent: latest === 0 ? Number.POSITIVE_INFINITY : computeDeviationPercent(amount, latest),
+        referenceLabel: 'Dernier prix',
+      });
+      if (!confirmed) return 'rejected';
+    }
+    await commitSharedItemPrice(amount);
+    return 'accepted';
+  };
 
   // Top-level lines' retained costs. The guided tour's "Ingrédients craftables" step points at the
   // first craftable one, and unfolds its recipe while the step is shown.
@@ -496,9 +537,13 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                   <label htmlFor="market-price-input" className="market-price-label">Prix HDV</label>
                   <MarketPriceInput
                     value={market}
+                    lockWhenFilled={community}
+                    updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
+                    onCommit={community ? commitMarketPrice : undefined}
                     onChange={(value) => {
                       setMarket(value);
-                      if (selectedItem && serverId) {
+                      // Mode communautaire shares on commit (above), never into the local price.
+                      if (!community && selectedItem && serverId) {
                         const parsed = parseKamas(value);
                         if (parsed === undefined) {
                           void pinnedItemPrices.remove(serverId, selectedItem.id);
@@ -512,6 +557,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
               )}
             />
           </div>
+          {marketOutlierDialog}
         </section>
       )}
       <div className="grid">

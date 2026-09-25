@@ -11,6 +11,8 @@ const getCommunityPrice = vi.fn<(resourceId: string, serverId: string) => Promis
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: (resourceId: string, serverId: string) => getCommunityPrice(resourceId, serverId),
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
+  // specs/016: no shared HDV price in these scenarios.
+  getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({

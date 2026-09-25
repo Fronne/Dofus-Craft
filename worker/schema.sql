@@ -23,9 +23,13 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- for this resource/server just before inserting this row, and the resulting deviation in percent.
   -- Both NULL exactly when no median existed yet at submission time (FR-008) — never a fabricated
   -- comparison. Never read by GET /community-price nor by computeCommunityMedian (FR-010): a
-  -- moderator queries `WHERE deviation_percent > 25` directly against this table (see research.md).
+  -- moderator queries this table directly (see research.md): `WHERE kind = 'resource' AND
+  -- deviation_percent > 25` for resources, `WHERE kind = 'item' AND deviation_percent > 50` for items
+  -- (specs/016, where the reference is the latest item price rather than a median).
   median_at_submission_kamas INTEGER,
   deviation_percent REAL,
+  -- specs/016-shared-item-prices: 'item' for an item's shared HDV price, 'resource' otherwise.
+  kind TEXT NOT NULL DEFAULT 'resource' CHECK (kind IN ('resource', 'item')),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 

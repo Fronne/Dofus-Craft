@@ -42,6 +42,9 @@ import App from '../../src/app/App';
 describe('pinned items page shows craft cost and market price', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    // The device's own HDV price is a Mode personnel behaviour since specs/016 (shared in Mode
+    // communautaire, the default for a new player).
+    window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
     globalThis.indexedDB = new IDBFactory();
   });
 

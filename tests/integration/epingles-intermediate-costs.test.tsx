@@ -38,6 +38,8 @@ vi.mock('../../src/data/servers-repository', () => ({
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: (resourceId: string, serverId: string) => getCommunityPrice(resourceId, serverId),
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
+  // specs/016: no shared HDV price in these scenarios.
+  getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
 import App from '../../src/app/App';

@@ -546,3 +546,14 @@ Suite à une revue de l'application :
   sert uniquement de clé au limiteur et n'est jamais stockée (FR-010 inchangé).
 - **FR-013 (amendé)** : les contributions de plus de 90 jours sont supprimées de la base une fois
   par semaine, et non plus seulement ignorées à la lecture.
+
+## Révision (2026-09-25) : prix HDV des objets (specs/016-shared-item-prices)
+
+- Le prix HDV d'un objet est désormais partagé en Mode communautaire : c'est la contribution la plus
+  récente du groupe pour l'objet et le serveur (pas de médiane, pas de nombre de contributions),
+  lue par `GET /latest-price`. Les contributions d'objets sont marquées `kind = 'item'` ; celles de
+  ressources gardent `kind = 'resource'` et tout leur fonctionnement actuel (médiane sur 90 jours).
+- **FR-013 (amendé)** : la suppression hebdomadaire des contributions de plus de 90 jours épargne la
+  contribution la plus récente de chaque objet et serveur (lignes `'item'` uniquement), pour que le
+  dernier prix d'un objet reste affiché quel que soit son âge. Les contributions de ressources
+  suivent la règle des 90 jours sans exception.

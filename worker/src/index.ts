@@ -1,7 +1,7 @@
-import { summarizeContributions } from './median';
-import { purgeExpiredContributions, retentionCutoff } from './retention';
+import { purgeExpiredContributions } from './retention';
 import { readPlayerCounters } from './player-counters';
-import { resolveOutlierFields } from './outlier';
+import { fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
+import { latestPriceResponse } from './latest';
 
 export interface Env {
   DB: D1Database;
@@ -9,10 +9,6 @@ export interface Env {
   // Optional so local runs without the binding keep working (see wrangler.toml [[ratelimits]]).
   CONTRIBUTION_LIMITER?: RateLimit;
 }
-
-// Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
-// or an abusive request, and would never be a real price.
-const MAX_AMOUNT_KAMAS = 2_000_000_000;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -32,33 +28,12 @@ function isAuthorized(request: Request, env: Env): boolean {
   return header === `Bearer ${env.COMMUNITY_API_KEY}`;
 }
 
-// specs/007-outlier-confirmation: extracted so handlePostContribution can independently compute
-// the median just before inserting a new contribution (FR-009), reusing the exact same query and
-// aggregation as a plain read — never a separately-maintained calculation.
-async function fetchCurrentMedian(
-  env: Env,
-  resourceId: string,
-  serverId: string,
-): Promise<{ medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined> {
-  const since = retentionCutoff();
-  const { results } = await env.DB.prepare(
-    `SELECT amount_kamas, created_at, device_id FROM community_price_contributions
-     WHERE resource_id = ? AND server_id = ? AND created_at >= ?`,
-  ).bind(resourceId, serverId, since).all<{ amount_kamas: number; created_at: string; device_id: string }>();
-
-  return summarizeContributions(results.map((row) => ({
-    amountKamas: row.amount_kamas,
-    createdAt: row.created_at,
-    deviceId: row.device_id,
-  })));
-}
-
 async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
   const resourceId = url.searchParams.get('resourceId');
   const serverId = url.searchParams.get('serverId');
   if (!resourceId || !serverId) return json({ error: 'resourceId and serverId are required' }, 400);
 
-  const median = await fetchCurrentMedian(env, resourceId, serverId);
+  const median = await fetchCurrentMedian(env.DB, resourceId, serverId);
   // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
   // FR-012's outlier filtering) remains.
   if (!median) return json(null, 404);
@@ -72,18 +47,10 @@ async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
   });
 }
 
-type ContributionPayload = { resourceId: string; serverId: string; amountKamas: number; deviceId: string };
-
-function isContributionPayload(value: unknown): value is ContributionPayload {
-  if (typeof value !== 'object' || value === null) return false;
-  const record = value as Record<string, unknown>;
-  return typeof record.resourceId === 'string' &&
-    typeof record.serverId === 'string' &&
-    typeof record.amountKamas === 'number' &&
-    record.amountKamas >= 0 &&
-    record.amountKamas <= MAX_AMOUNT_KAMAS &&
-    typeof record.deviceId === 'string' &&
-    record.deviceId.length > 0;
+// specs/016-shared-item-prices: an item's shared HDV price — its latest contribution, no median.
+async function handleGetLatestPrice(url: URL, env: Env): Promise<Response> {
+  const { status, body } = await latestPriceResponse(env.DB, url);
+  return json(body, status);
 }
 
 async function handlePostContribution(request: Request, env: Env): Promise<Response> {
@@ -93,25 +60,13 @@ async function handlePostContribution(request: Request, env: Env): Promise<Respo
   } catch {
     return json({ error: 'Invalid JSON body' }, 400);
   }
-  if (!isContributionPayload(body)) {
-    return json({ error: `resourceId, serverId and an amountKamas between 0 and ${MAX_AMOUNT_KAMAS} are required` }, 400);
+  const contribution = parseContributionPayload(body);
+  if (!contribution) {
+    return json({ error: `resourceId, serverId, an amountKamas between 0 and ${MAX_AMOUNT_KAMAS} and an optional kind "item" are required` }, 400);
   }
-  const { resourceId, serverId, amountKamas, deviceId } = body;
-
-  // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted. deviceId
-  // is an anonymous, client-generated identifier that only lets contributions from the same device
-  // be recognized as such — never a player identity.
-  // specs/007-outlier-confirmation, FR-009: independently (never trusting the client) resolve the
-  // median this contribution is being compared against, and the resulting deviation, before the
-  // insert — this is what makes the outlier trace (deviation_percent > 25) queryable later, without
-  // affecting the median computation itself (FR-010).
-  const currentMedian = await fetchCurrentMedian(env, resourceId, serverId);
-  const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, currentMedian);
-
-  const id = crypto.randomUUID();
-  await env.DB.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent).run();
+  // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted; the
+  // outlier trace is resolved server-side (specs/007 FR-009, specs/016 FR-012) — see contribution.ts.
+  const id = await insertContribution(env.DB, contribution);
 
   return json({ id }, 201);
 }
@@ -158,6 +113,10 @@ export default {
       return handleGetCommunityPrice(url, env);
     }
 
+    if (request.method === 'GET' && url.pathname === '/latest-price') {
+      return handleGetLatestPrice(url, env);
+    }
+
     // specs/014-admin-counters: the humorous player counters, readable by everyone.
     if (request.method === 'GET' && url.pathname === '/player-counters') {
       return json(await readPlayerCounters(env.DB));
@@ -188,6 +147,6 @@ export default {
 
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
     const removed = await purgeExpiredContributions(env.DB);
-    console.log(`Retention: ${removed} contribution(s) older than 90 days removed`);
+    console.log(`Retention: ${removed} contribution(s) older than 90 days removed (latest item prices kept)`);
   },
 };

@@ -1,7 +1,14 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { formatKamas } from '../../domain/kamas';
+import { formatKamas, formatPercent } from '../../domain/kamas';
 
-export type OutlierConfirmDetails = { medianAmountKamas: number; enteredAmountKamas: number; deviationPercent: number };
+export type OutlierConfirmDetails = {
+  medianAmountKamas: number;
+  enteredAmountKamas: number;
+  deviationPercent: number;
+  // specs/016: what the reference is called — « Dernier prix » for an item's HDV price, whose
+  // confirmation also shows the deviation (FR-006). Omitted for resources: dialog unchanged.
+  referenceLabel?: string;
+};
 
 // specs/007-outlier-confirmation, FR-004/FR-005/FR-007: blocks a commit until the player explicitly
 // confirms or cancels, showing the three values that motivate the confirmation. Uses the native
@@ -38,8 +45,11 @@ export function useOutlierConfirm(): readonly [ReactNode, (details: OutlierConfi
         respond(false);
       }}
     >
-      <p>Prix habituel : <b>{formatKamas(details.medianAmountKamas)}</b></p>
+      <p>{details.referenceLabel ?? 'Prix habituel'} : <b>{formatKamas(details.medianAmountKamas)}</b></p>
       <p>Votre prix : <b>{formatKamas(details.enteredAmountKamas)}</b></p>
+      {details.referenceLabel && Number.isFinite(details.deviationPercent) && (
+        <p>Écart : <b>{formatPercent(details.deviationPercent)}</b></p>
+      )}
       <p className="outlier-confirm-dialog-question">
         Ce prix semble inhabituel. L'enregistrer quand même ?
       </p>
