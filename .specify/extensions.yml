@@ -1,0 +1,56 @@
+# Spec Kit extension hooks for this project (read by every /speckit-* command, see its
+# "Pre-Execution Checks" / "Mandatory Post-Execution Hooks"). Commands map to skills by replacing
+# dots with hyphens: speckit.git.feature → /speckit-git-feature (.claude/skills/speckit-git-feature).
+#
+# Workflow: one git branch per feature, created before the spec; one commit at the end of each
+# step on that branch; merging into master (where deployment happens) is only offered, never
+# automatic.
+hooks:
+  before_specify:
+    - extension: git
+      command: speckit.git.feature
+      description: Crée la branche de la fonctionnalité (NNN-nom-court) à partir de master
+      optional: false
+      enabled: true
+  after_specify:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite la spec de la fonctionnalité
+      optional: false
+      enabled: true
+  after_clarify:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite les clarifications de la spec
+      optional: false
+      enabled: true
+  after_plan:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite le plan et ses documents
+      optional: false
+      enabled: true
+  after_tasks:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite la liste des tâches
+      optional: false
+      enabled: true
+  after_implement:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite l'implémentation
+      optional: false
+      enabled: true
+    - extension: git
+      command: speckit.git.merge
+      description: Fusionne la branche de la fonctionnalité dans master
+      prompt: Fusionner la branche dans master pour pouvoir déployer ?
+      optional: true
+      enabled: true
+  after_converge:
+    - extension: git
+      command: speckit.git.commit
+      description: Commite les tâches de convergence ajoutées
+      optional: false
+      enabled: true
