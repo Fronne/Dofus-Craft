@@ -10,7 +10,11 @@ import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
 import { compare } from '../../domain/craft-comparison';
-import { lookupCommunityMedian } from '../comparison/useCommunityPrice';
+import { effectiveIngredientPrices, treeResourceIds } from '../../domain/craft-tree';
+import { loadRecipeTree } from '../comparison/recipe-tree-loader';
+import { getIngredientChoices } from '../../persistence/ingredient-choices';
+import type { RecipeTree, ResourcePrice } from '../../domain/types';
+import { fillCommunityGaps } from '../comparison/community-gap-fill';
 import { formatKamas } from '../../domain/kamas';
 import type { PinnedItem } from '../../persistence/pinned-items';
 
@@ -208,17 +212,30 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
         Promise.all(ids.map((id) => getItemDetail(id))),
         pinnedItemPrices.getMany(serverId, ids),
       ]);
-      const allResourceIds = [...new Set(
-        details.flatMap((detail) => detail.recipe?.ingredients.map((ingredient) => ingredient.resourceId) ?? []),
-      )];
+      // specs/015 FR-011: the whole craft chain of each item, exactly as its detail page counts it —
+      // same recipe tree, same carnet (every resource of the chain), same forced choices. The cards
+      // first show what the top-level carnet prices give, then refine once the recipe trees are in.
+      const trees: RecipeTree[] = details.map((detail) => ({
+        recipes: {},
+        resources: Object.fromEntries(detail.resources.map((resource) => [resource.id, resource])),
+      }));
+      const choices = getIngredientChoices();
       const repository = resourcePricesFor(priceMode);
-      const resourcePrices = await repository.getMany(serverId, allResourceIds);
+      const resourcePrices: Record<string, ResourcePrice> = {};
+      const chainResourceIds = () => [...new Set(details.flatMap((detail, index) =>
+        (detail.recipe ? treeResourceIds(detail.recipe, trees[index]) : [])))];
+      const readCarnet = async () => {
+        const missing = chainResourceIds().filter((resourceId) => !resourcePrices[resourceId]);
+        Object.assign(resourcePrices, await repository.getMany(serverId, missing));
+      };
       const summarize = () => {
         const next: Record<string, PinnedPriceSummary> = {};
         ids.forEach((id, index) => {
           const detail = details[index];
           const marketPriceKamas = marketPrices[id]?.marketPriceKamas;
-          const result = detail.recipe ? compare(detail.recipe, resourcePrices, marketPriceKamas) : undefined;
+          const result = detail.recipe
+            ? compare(detail.recipe, effectiveIngredientPrices(detail.recipe, trees[index], resourcePrices, choices), marketPriceKamas)
+            : undefined;
           next[id] = {
             craftCostKamas: result?.craftCostStatus === 'complete' ? result.knownCraftCostKamas : undefined,
             marketPriceKamas,
@@ -227,22 +244,28 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
         });
         setSummaries(next);
       };
+      await readCarnet();
       if (cancelled) return;
       summarize();
       setLoadingSummaries(false);
+
+      const loaded = await Promise.all(details.map((detail, index) => (detail.recipe
+        ? loadRecipeTree(detail.recipe, detail.resources)
+        : Promise.resolve(trees[index]))));
+      if (cancelled) return;
+      loaded.forEach((tree, index) => {
+        trees[index] = tree;
+      });
+      await readCarnet();
+      if (cancelled) return;
+      summarize();
       // Mode communautaire: RecherchePage only copies a resource's community median into the carnet
       // when that item's detail is displayed, so an item pinned earlier could show "Non renseigné"
       // here while its detail page shows every price. Fill the same gaps the same way (median saved
       // into the carnet, once) so both pages agree — after the carnet values are already on screen,
       // so a slow network never delays them.
       if (priceMode !== 'community') return;
-      const missingIds = allResourceIds.filter((resourceId) => !resourcePrices[resourceId]);
-      if (missingIds.length === 0) return;
-      await Promise.all(missingIds.map(async (resourceId) => {
-        const median = await lookupCommunityMedian(resourceId, serverId);
-        if (median === undefined || cancelled) return;
-        resourcePrices[resourceId] = await repository.save(serverId, resourceId, median);
-      }));
+      await fillCommunityGaps(serverId, chainResourceIds(), resourcePrices, (resourceId, median) => repository.save(serverId, resourceId, median), () => cancelled);
       if (!cancelled) summarize();
     })();
     return () => {

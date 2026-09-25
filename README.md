@@ -14,6 +14,9 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 
 - **Comparaison craft / achat** : recette de l'objet, coût total des ressources, prix HDV,
   différence en kamas et en pourcentage, recommandation « Fabriquer » ou « Acheter ».
+- **Ressources intermédiaires** : un ingrédient qui se crafte lui-même (planche, alliage…) est
+  compté au moins cher entre son prix d'achat et le coût de sa recette, sur toute la chaîne ; sa
+  recette se déplie sur la fiche, et on peut forcer « acheter » ou « crafter ».
 - **Recherche dans tout le catalogue** : par nom et par catégorie, avec les fiches d'objets et
   d'armes présentées comme dans le jeu. Le catalogue est gardé sur l'appareil, donc la page
   s'affiche instantanément aux visites suivantes.
@@ -26,7 +29,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   - *Mode personnel* : les prix restent sur l'appareil, rien n'est envoyé.
 - **Prix périmés signalés** : les ressources dont le prix date trop sont mises en évidence.
 - **Objets suivis** : suivre des objets et les ranger en listes.
-- **Compteurs de joueurs** : des bulles humoristiques en bas à droite (« 150+ donjons sans
+- **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
 - **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)
   ou « Classique ».

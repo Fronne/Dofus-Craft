@@ -135,6 +135,9 @@ masquée.
   l'objet sélectionné.
 - **FR-009**: Le système MUST calculer le coût total du craft en multipliant la quantité requise
   de chaque ressource par son prix unitaire enregistré, puis en additionnant les montants.
+  *(Révision 2026-09-25, specs/015-intermediate-craft-costs : pour une ressource qui se crafte
+  elle-même, le prix unitaire compté est son coût retenu — le moins cher entre son prix enregistré
+  et le coût de sa propre recette, ou le choix forcé du joueur.)*
 - **FR-010**: Lorsque tous les prix nécessaires et le prix HDV sont renseignés, le système MUST
   comparer les deux montants et indiquer clairement s'il est plus rentable de fabriquer,
   d'acheter, ou si les deux options sont équivalentes. Une recommandation définitive (fabriquer ou

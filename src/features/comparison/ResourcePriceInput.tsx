@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import type { Resource } from '../../domain/types';
 import { KAMAS_ICON_URL, formatKamas, formatKamasInput, isValidKamas, normalizeKamasInput } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
@@ -16,6 +16,8 @@ export function ResourcePriceInput({
   onChange,
   onBlur,
   onCommit,
+  retained,
+  subtotalKamas,
 }: {
   resource: Resource;
   quantity: number;
@@ -44,6 +46,12 @@ export function ResourcePriceInput({
   // same `lastCommittedValueRef` already tracked for the FR-020 no-op guard. A caller that returns
   // `void` (none today besides the outlier-aware one) keeps today's behavior: never reverted.
   onCommit?: (value: string) => Promise<'accepted' | 'rejected' | void>;
+  // specs/015: for a craftable resource, which of buying or crafting is counted, and for how much —
+  // rendered on its own row of the line. Omitted for a resource that doesn't craft.
+  retained?: ReactNode;
+  // specs/015: the line's subtotal once its retained cost is known (quantity × retained unit cost),
+  // replacing the one computed from the typed price; `null` hides it (retained cost missing).
+  subtotalKamas?: number | null;
 }) {
   const valid = isValidKamas(value);
   const communityLabel = communityMeta
@@ -145,7 +153,10 @@ export function ResourcePriceInput({
           </button>
         )}
       </span>
-      {value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}
+      {subtotalKamas !== undefined
+        ? subtotalKamas !== null && <b className="price-resource-formatted">{formatKamas(subtotalKamas)}</b>
+        : value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}
+      {retained}
       {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
     </label>
   );

@@ -61,9 +61,9 @@ describe('onboarding de la page Recherche (specs/011-search-onboarding)', () => 
     vi.unstubAllGlobals();
   });
 
-  it('starts automatically on a first visit, at step 1 of 6 (FR-001, FR-006)', async () => {
+  it('starts automatically on a first visit, at step 1 of 7 (FR-001, FR-006)', async () => {
     await openSearchPage();
-    expect(within(tour()).getByText('1 / 6')).toBeInTheDocument();
+    expect(within(tour()).getByText('1 / 7')).toBeInTheDocument();
     expect(within(tour()).getByText('Rechercher un objet')).toBeInTheDocument();
   });
 
@@ -71,15 +71,15 @@ describe('onboarding de la page Recherche (specs/011-search-onboarding)', () => 
     await openSearchPage();
     expect(within(tour()).queryByRole('button', { name: 'Précédent' })).not.toBeInTheDocument();
     clickTourButton('Suivant');
-    expect(within(tour()).getByText('2 / 6')).toBeInTheDocument();
+    expect(within(tour()).getByText('2 / 7')).toBeInTheDocument();
     clickTourButton('Précédent');
-    expect(within(tour()).getByText('1 / 6')).toBeInTheDocument();
+    expect(within(tour()).getByText('1 / 7')).toBeInTheDocument();
   });
 
   it('closes on "Terminer" at the last step and remembers it (US1 scenario 3)', async () => {
     await openSearchPage();
-    for (let step = 1; step < 6; step += 1) clickTourButton('Suivant');
-    expect(within(tour()).getByText('6 / 6')).toBeInTheDocument();
+    for (let step = 1; step < 7; step += 1) clickTourButton('Suivant');
+    expect(within(tour()).getByText('7 / 7')).toBeInTheDocument();
     clickTourButton('Terminer');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(window.localStorage.getItem(SEEN_KEY)).toBe('1');
@@ -129,7 +129,7 @@ describe('onboarding de la page Recherche (specs/011-search-onboarding)', () => 
     vi.stubGlobal('fetch', fetchSpy);
     await openSearchPage();
     const callsBefore = fetchSpy.mock.calls.length;
-    for (let step = 1; step < 6; step += 1) clickTourButton('Suivant');
+    for (let step = 1; step < 7; step += 1) clickTourButton('Suivant');
     clickTourButton('Terminer');
     expect(fetchSpy.mock.calls.length).toBe(callsBefore);
   });
@@ -139,11 +139,11 @@ describe('onboarding de la page Recherche (specs/011-search-onboarding)', () => 
     await openSearchPage();
     const help = screen.getByRole('button', { name: 'Comment fonctionne cette page ?' });
     fireEvent.click(help);
-    expect(within(tour()).getByText('1 / 6')).toBeInTheDocument();
+    expect(within(tour()).getByText('1 / 7')).toBeInTheDocument();
     clickTourButton('Suivant');
     clickTourButton('Suivant');
     clickTourButton('Passer');
     fireEvent.click(help);
-    expect(within(tour()).getByText('1 / 6')).toBeInTheDocument();
+    expect(within(tour()).getByText('1 / 7')).toBeInTheDocument();
   });
 });

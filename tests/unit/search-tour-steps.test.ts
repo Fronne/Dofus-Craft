@@ -11,10 +11,17 @@ describe('searchTourSteps (specs/011-search-onboarding)', () => {
     describe(`en ${mode}`, () => {
       const steps = searchTourSteps(mode);
 
-      it('lists the six steps in FR-003 order', () => {
+      it('lists the seven steps in FR-003 order', () => {
         expect(steps.map((step) => step.id)).toEqual([
-          'search', 'market-price', 'recommendation', 'recipe', 'resource-prices', 'price-mode',
+          'search', 'market-price', 'recommendation', 'recipe', 'resource-prices', 'intermediate', 'price-mode',
         ]);
+      });
+
+      it('explains craftable ingredients: the recipe and the forced choice (specs/015)', () => {
+        const step = steps.find((item) => item.id === 'intermediate')!;
+        expect(step.target).toBe('craftable-ingredient');
+        expect(step.points!.map((point) => point.term)).toEqual(['Voir la recette', 'Auto', 'Acheter · Crafter']);
+        expect(step.absentExample).toBe('craftable-ingredient');
       });
 
       it('keeps every bubble to one sentence and at most three points (FR-004)', () => {

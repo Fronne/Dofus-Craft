@@ -2,7 +2,7 @@ import manifest from './catalogue-manifest.json';
 import { cached, peekCached } from './catalogue-cache';
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
-import type { Category, ItemStat } from '../domain/types';
+import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
 import { CHARACTERISTIC_ASSET_BY_ID, ELEMENT_ASSET_BY_ID } from '../domain/characteristic-icons';
 
 export const getManifest = () => ({
@@ -195,6 +195,22 @@ export async function getItemDetail(id: string, signal?: AbortSignal) {
     panoplieName: itemSet?.name?.fr,
     isWeapon: weapon,
   };
+}
+
+// specs/015-intermediate-craft-costs: the recipe of a resource used as an ingredient. Same source,
+// cache key and mapping as an item's own recipe (getItemDetail above), first recipe only. `null`
+// when DofusDB has none or returns one that doesn't map — the resource then simply counts as bought
+// (FR-012); network errors propagate so the caller can tell "unreachable" from "no recipe".
+export async function getResourceRecipe(resourceId: string): Promise<{ recipe: Recipe; resources: Resource[] } | null> {
+  const recipes = await cached(`recipes:${resourceId}`, () => getDofusDbRecipes(resourceId));
+  const recipeData = recipes[0];
+  if (!recipeData) return null;
+  try {
+    const ingredientItems = recipeData.ingredients ?? [];
+    return { recipe: mapDofusDbRecipe(recipeData, ingredientItems), resources: ingredientItems.map(mapDofusDbResource) };
+  } catch {
+    return null;
+  }
 }
 
 export async function getResourceDetails(ids: string[]) {

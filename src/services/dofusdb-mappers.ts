@@ -143,7 +143,11 @@ export function mapDofusDbResource(item: DofusDbItem): Resource {
   const name = item.name?.fr?.trim();
   if (!name) throw new Error(`L’item DofusDB ${item.id} ne possède pas de nom français.`);
   const imageUrl = item.img && !item.img.endsWith('/undefined.png') ? item.img : undefined;
-  return { id: String(item.id), name, imageUrl };
+  // specs/015: DofusDB flags every item — ingredients embedded in a recipe included — with
+  // `hasRecipe`, which is what tells a craftable intermediate resource apart without another request.
+  return typeof item.hasRecipe === 'boolean'
+    ? { id: String(item.id), name, imageUrl, craftable: item.hasRecipe }
+    : { id: String(item.id), name, imageUrl };
 }
 
 export function mapDofusDbRecipe(recipe: DofusDbRecipe, ingredients: DofusDbItem[]): Recipe {

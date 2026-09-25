@@ -639,6 +639,28 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .price-resource-formatted { grid-column: 3; grid-row: 2; justify-self: end; text-align: right; color: var(--success); font-size: .85rem; font-weight: 700; }
 .price-line em { grid-column: 1 / -1; }
 
+/* specs/015: on a craftable ingredient, which of buying or crafting is counted, with both unit amounts. */
+.retained-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; font-size: .8rem; color: var(--text-muted); }
+.retained-cost-option { padding: .05rem .5rem; border-radius: var(--radius-pill); background: var(--gold-soft); color: var(--gold-bright); font-weight: 700; }
+.retained-cost--craft .retained-cost-option { background: var(--success-soft); color: var(--success); }
+.retained-cost--missing .retained-cost-option { background: var(--warning-soft); color: var(--warning); }
+.retained-cost-forced { font-weight: 700; }
+.retained-cost-amounts { font-variant-numeric: tabular-nums; }
+/* specs/015 US2: every line sits in its own .ingredient-row, so the separator moves there (a
+   `.price-line:last-of-type` rule would otherwise match every line); sub-resources are indented. */
+.ingredient-row { border-bottom: 1px solid var(--border); }
+.ingredient-row:last-child { border-bottom: 0; }
+.ingredient-row > .price-line { border-bottom: 0; }
+.retained-cost-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem .75rem; }
+.ingredient-toggle { padding: .2rem .55rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.ingredient-toggle:hover, .ingredient-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.ingredient-choice { display: inline-flex; margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
+.ingredient-choice button { padding: .2rem .55rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.ingredient-choice button + button { border-left: 1px solid var(--border); }
+.ingredient-choice button[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
+.ingredient-children { margin: 0 0 var(--space-2) var(--space-3); padding-left: var(--space-3); border-left: 2px solid var(--border); }
+.ingredient-children .ingredient-row:last-child { border-bottom: 0; }
+
 /* specs/008-stale-resource-highlight: flags a row whose price hasn't been updated in a while.
    Only the "Dernière mise à jour" text itself switches color (user feedback 2026-09-21: coloring
    the whole row was too much — the signal must stay on that text line only). */
@@ -1149,7 +1171,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   box-shadow: var(--shadow-sm);
 }
 .guided-tour-bubble--centered { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.guided-tour-bubble--wide { width: min(520px, calc(100vw - 32px)); }
 .guided-tour-bubble--docked { top: auto; bottom: 16px; left: 16px; right: 16px; width: auto; transform: none; }
+.guided-tour-bubble .tour-example { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--panel-soft); pointer-events: none; }
+.guided-tour-bubble .tour-example-caption { margin: 0 0 var(--space-1); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
+.tour-example .price-line { grid-template-columns: minmax(0, 1fr) auto auto; }
+.tour-example-price { grid-column: 3; grid-row: 1; justify-self: end; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.tour-example .ingredient-toggle[data-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
 .guided-tour-bubble h2 { margin: 0 0 var(--space-2); font-size: 1.05rem; }
 .guided-tour-bubble p { margin: 0 0 var(--space-3); font-size: .92rem; line-height: 1.45; color: var(--text-muted); }
 .guided-tour-bubble .guided-tour-progress { margin: 0 0 var(--space-1); font-size: .78rem; font-weight: 700; color: var(--gold); }

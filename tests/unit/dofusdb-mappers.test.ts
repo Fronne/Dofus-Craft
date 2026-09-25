@@ -122,6 +122,13 @@ describe('DofusDB catalogue classification', () => {
     });
   });
 
+  it('keeps DofusDB hasRecipe as craftable on a recipe ingredient (specs/015)', () => {
+    expect(mapDofusDbResource({ id: 16489, name: { fr: 'Planche Agglomérée' }, hasRecipe: true }))
+      .toEqual({ id: '16489', name: 'Planche Agglomérée', imageUrl: undefined, craftable: true });
+    expect(mapDofusDbResource({ id: 362, name: { fr: 'Peau de Larve Bleue' }, hasRecipe: false }))
+      .toEqual({ id: '362', name: 'Peau de Larve Bleue', imageUrl: undefined, craftable: false });
+  });
+
   it('maps a crafted trophy ingredient as a recipe resource', () => {
     expect(mapDofusDbResource({
       id: 12713,

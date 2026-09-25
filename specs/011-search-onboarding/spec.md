@@ -162,3 +162,17 @@ page sans ces détails.
 - Les autres pages (collections épinglées, etc.) sont hors du périmètre.
 - Un joueur existant verra aussi l'onboarding une fois après le déploiement, puisqu'il ne l'a
   jamais fermé.
+
+## Révision (2026-09-25) : étape « Ingrédients craftables »
+
+- FR-003 gagne une étape entre (5) les prix des ressources et (6) le mode de prix : les ingrédients
+  qui se craftent eux-mêmes (specs/015-intermediate-craft-costs) — comptés au moins cher entre
+  achat et craft, recette dépliable avec les quantités pour toute la ligne, choix Auto · Acheter ·
+  Crafter. L'onboarding compte désormais sept étapes (« 1 / 7 »).
+- Cette étape met en surbrillance la première ligne d'ingrédient craftable, dont la recette est
+  dépliée le temps de l'étape (puis repliée en la quittant, si c'est l'onboarding qui l'avait
+  dépliée) ; sur un objet sans
+  ingrédient craftable, elle s'affiche en bulle centrée contenant un exemple illustré et non
+  interactif d'une telle ligne (Planche Agglomérée × 2 dépliée sur Bois de Frêne × 20), pour que le
+  joueur ait toujours quelque chose de concret à voir — à la place du simple texte d'indication de
+  FR-008.

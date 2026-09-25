@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { Resource, ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
@@ -21,8 +21,13 @@ import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
 import { Icon } from '../../components/Icon';
 import { GuidedTour } from '../onboarding/GuidedTour';
-import { searchTourSteps } from '../onboarding/search-tour-steps';
+import { searchTourSteps, type TourStep } from '../onboarding/search-tour-steps';
 import { hasSeenSearchTour, markSearchTourSeen } from '../../persistence/search-tour-preference';
+import { effectiveIngredientPrices, retainedCost, treeResourceIds } from '../../domain/craft-tree';
+import { useRecipeTree } from '../comparison/useRecipeTree';
+import { useIngredientChoices } from '../comparison/useIngredientChoices';
+import { fillCommunityGaps } from '../comparison/community-gap-fill';
+import { IngredientRow, type PriceFieldProps } from './IngredientRow';
 
 const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
 
@@ -32,6 +37,8 @@ const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
 // that resource, so a later refresh of `useCommunityPrice` can never overwrite it. `useCommunityPrice`
 // is only ever mounted here (a dedicated key={resourceId} instance per ingredient), never in Mode
 // personnel, so no community network call happens outside Mode communautaire (FR-015).
+// specs/015: a displayed line owns its own prefill; RecherchePage's tree-wide gap fill only covers
+// resources whose line isn't displayed, so the two never write the same median.
 function CommunityResourcePriceRow({
   resource,
   quantity,
@@ -43,6 +50,8 @@ function CommunityResourcePriceRow({
   onChange,
   onPersist,
   onPrefill,
+  retained,
+  subtotalKamas,
 }: {
   resource: Resource;
   quantity: number;
@@ -64,6 +73,8 @@ function CommunityResourcePriceRow({
   // so persisting there would update the date even when the player goes on to click "Annuler".
   onPersist: (price: number) => void;
   onPrefill: (price: number) => void;
+  retained?: ReactNode;
+  subtotalKamas?: number | null;
 }) {
   const [communityState, commit] = useCommunityPrice(resource.id, serverId);
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
@@ -120,6 +131,8 @@ function CommunityResourcePriceRow({
         lockWhenFilled
         onChange={onChange}
         onCommit={handleCommit}
+        retained={retained}
+        subtotalKamas={subtotalKamas}
       />
       {outlierDialog}
     </Fragment>
@@ -266,7 +279,22 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     : selectedItem
       ? { item: selectedItem, category: catalogue.categories.find((candidate) => candidate.id === selectedItem.categoryId), resources: [] }
       : undefined;
-  const ids = detail?.recipe?.ingredients.map((ingredient) => ingredient.resourceId) ?? [];
+  // specs/015: the whole craft chain below the item — its intermediate recipes load progressively,
+  // and the carnet is read for every resource in it, not just the top-level ingredients.
+  const recipeTree = useRecipeTree(detail?.recipe, detail?.resources ?? []);
+  // specs/015 US2: unfolded lines, by path from the top-level ingredient ("16489>303"); folded
+  // again whenever another item is selected.
+  const [expandedPaths, setExpandedPaths] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    setExpandedPaths(new Set());
+  }, [selected]);
+  const toggleExpanded = (path: string) => setExpandedPaths((current) => {
+    const next = new Set(current);
+    if (next.has(path)) next.delete(path);
+    else next.add(path);
+    return next;
+  });
+  const ids = detail?.recipe ? treeResourceIds(detail.recipe, recipeTree) : [];
   // FR-005: the craft-cost comparison below MUST read exclusively from the carnet of the active
   // mode — the personal `prices` repository in Mode personnel (unchanged), the physically separate
   // `communityModePrices` repository in Mode communautaire — and MUST NOT fall back to or merge
@@ -289,9 +317,133 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     }
   });
 
+  // specs/015 FR-004: each ingredient counts for its retained cost (cheaper of buying and crafting),
+  // computed by the same function the Suivis page uses, so both show the same craft cost (FR-011).
+  const { choices: ingredientChoices, setChoice: setIngredientChoice } = useIngredientChoices();
   const result = detail?.recipe
-    ? compare(detail.recipe, merged, parseKamas(market))
+    ? compare(detail.recipe, effectiveIngredientPrices(detail.recipe, recipeTree, merged, ingredientChoices), parseKamas(market))
     : undefined;
+
+  // specs/015 research.md §7 (Mode communautaire): every resource of the tree without a carnet entry
+  // gets the community median, collapsed sub-resources included — the Suivis page fills the same
+  // gaps, so both pages count the same prices. Displayed lines are left to their own prefill
+  // (CommunityResourcePriceRow), so a median is never written twice. Only once the carnet read for the current ids has
+  // settled (`pricesLoaded`), so "not loaded yet" is never mistaken for "no entry" (FR-006 of
+  // specs/004), and each resource is asked for once per server.
+  const gapFillRequested = useRef(new Set<string>());
+  useEffect(() => {
+    gapFillRequested.current = new Set();
+  }, [serverId, priceMode]);
+  // Lines on screen: the top-level ingredients plus the sub-resources of every unfolded line.
+  const displayedIds = new Set<string>();
+  for (const ingredient of detail?.recipe?.ingredients ?? []) displayedIds.add(ingredient.resourceId);
+  for (const path of expandedPaths) {
+    const recipe = recipeTree.recipes[path.split('>').at(-1) as string];
+    recipe?.ingredients.forEach((ingredient) => displayedIds.add(ingredient.resourceId));
+  }
+  const idsKey = ids.join(',');
+  useEffect(() => {
+    if (priceMode !== 'community' || !serverId || !pricesLoaded) return;
+    const missing = idsKey.split(',').filter((id) =>
+      id && !data[id] && !displayedIds.has(id) && !gapFillRequested.current.has(id));
+    if (missing.length === 0) return;
+    missing.forEach((id) => gapFillRequested.current.add(id));
+    let cancelled = false;
+    void fillCommunityGaps(serverId, missing, { ...data }, async (resourceId, median) => {
+      await save(resourceId, median);
+    }, () => cancelled);
+    return () => {
+      cancelled = true;
+    };
+    // `data`/`save` change with every carnet write; the gap fill only needs to re-run when the set
+    // of resources or the settled state changes, and the Set above prevents asking twice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceMode, serverId, pricesLoaded, idsKey]);
+
+  // Top-level lines' retained costs. The guided tour's "Ingrédients craftables" step points at the
+  // first craftable one, and unfolds its recipe while the step is shown.
+  const topCosts = detail?.recipe
+    ? detail.recipe.ingredients.map((ingredient) =>
+      retainedCost(ingredient.resourceId, recipeTree, merged, ingredientChoices, new Set([detail.recipe!.itemId])))
+    : [];
+  const firstCraftable = topCosts.findIndex((cost) => cost.children !== undefined);
+  const firstCraftablePath = firstCraftable >= 0 ? topCosts[firstCraftable].resourceId : undefined;
+  // The line the tour unfolded itself (never one the player had unfolded), folded back afterwards.
+  const tourUnfoldedPath = useRef<string | undefined>(undefined);
+  const foldTourUnfolded = () => {
+    const path = tourUnfoldedPath.current;
+    if (!path) return;
+    tourUnfoldedPath.current = undefined;
+    setExpandedPaths((current) => {
+      const next = new Set(current);
+      next.delete(path);
+      return next;
+    });
+  };
+  const onTourStepChange = (step: TourStep) => {
+    if (step.id !== 'intermediate') {
+      foldTourUnfolded();
+      return;
+    }
+    if (!firstCraftablePath || expandedPaths.has(firstCraftablePath)) return;
+    tourUnfoldedPath.current = firstCraftablePath;
+    setExpandedPaths((current) => new Set(current).add(firstCraftablePath));
+  };
+
+  // One price field, whatever its depth in the craft chain (specs/015 FR-007): same carnet, same
+  // Mode personnel / communautaire rules as a top-level ingredient.
+  const renderPriceField = ({ resource, quantity, retained, subtotalKamas }: PriceFieldProps) => {
+    const resourceId = resource.id;
+    const value = inputs[resourceId] ?? data[resourceId]?.unitPriceKamas?.toString() ?? '';
+    // Only updates the locally-typed value — persistence (and therefore "dernière mise à jour")
+    // is deferred to `onBlur` below, so it doesn't move on every keystroke.
+    const onChange = (nextValue: string) => {
+      setInputs((current) => ({ ...current, [resourceId]: nextValue }));
+    };
+    // Writes the field to the carnet once the player is done typing, and only if the value
+    // actually changed since what's persisted — a no-op blur (click in, click out) must not touch
+    // `updatedAt` either.
+    const onBlur = (finalValue: string) => {
+      const price = parseKamas(finalValue);
+      const persisted = data[resourceId]?.unitPriceKamas;
+      if (price === persisted) return;
+      if (price === undefined) {
+        void remove(resourceId);
+      } else {
+        void save(resourceId, price);
+      }
+    };
+    if (priceMode === 'community' && serverId) {
+      return (
+        <CommunityResourcePriceRow
+          resource={resource}
+          quantity={quantity}
+          serverId={serverId}
+          value={value}
+          hasCarnetEntry={data[resourceId] !== undefined || inputs[resourceId] !== undefined}
+          pricesLoaded={pricesLoaded}
+          updatedAt={data[resourceId]?.updatedAt}
+          onChange={onChange}
+          onPersist={(price) => void save(resourceId, price)}
+          onPrefill={(price) => void save(resourceId, price)}
+          retained={retained}
+          subtotalKamas={subtotalKamas}
+        />
+      );
+    }
+    return (
+      <ResourcePriceInput
+        resource={resource}
+        quantity={quantity}
+        value={value}
+        updatedAt={data[resourceId]?.updatedAt}
+        onChange={onChange}
+        onBlur={onBlur}
+        retained={retained}
+        subtotalKamas={subtotalKamas}
+      />
+    );
+  };
 
   return (
     <>
@@ -380,60 +532,22 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
         {detail?.recipe && (
           <section className="card" data-tour="resource-prices">
             <h2>Prix des ressources</h2>
-            {detail.recipe.ingredients.map((ingredient) => {
-              const resource = detail.resources.find((item) => item.id === ingredient.resourceId) ??
-                { id: ingredient.resourceId, name: ingredient.resourceId };
-              const value =
-                inputs[ingredient.resourceId] ??
-                data[ingredient.resourceId]?.unitPriceKamas?.toString() ??
-                '';
-              // Only updates the locally-typed value — persistence (and therefore "dernière mise
-              // à jour") is deferred to `onBlur` below, so it doesn't move on every keystroke.
-              const onChange = (nextValue: string) => {
-                setInputs((current) => ({ ...current, [ingredient.resourceId]: nextValue }));
-              };
-              // Writes the field to the carnet once the player is done typing, and only if the
-              // value actually changed since what's persisted — a no-op blur (click in, click
-              // out) must not touch `updatedAt` either.
-              const onBlur = (finalValue: string) => {
-                const price = parseKamas(finalValue);
-                const persisted = data[ingredient.resourceId]?.unitPriceKamas;
-                if (price === persisted) return;
-                if (price === undefined) {
-                  void remove(ingredient.resourceId);
-                } else {
-                  void save(ingredient.resourceId, price);
-                }
-              };
-              if (priceMode === 'community' && serverId) {
-                return (
-                  <Fragment key={ingredient.resourceId}>
-                    <CommunityResourcePriceRow
-                      resource={resource}
-                      quantity={ingredient.quantity}
-                      serverId={serverId}
-                      value={value}
-                      hasCarnetEntry={data[ingredient.resourceId] !== undefined || inputs[ingredient.resourceId] !== undefined}
-                      pricesLoaded={pricesLoaded}
-                      updatedAt={data[ingredient.resourceId]?.updatedAt}
-                      onChange={onChange}
-                      onPersist={(price) => void save(ingredient.resourceId, price)}
-                      onPrefill={(price) => void save(ingredient.resourceId, price)}
-                    />
-                  </Fragment>
-                );
-              }
+            {detail.recipe.ingredients.map((ingredient, index) => {
+              const path = ingredient.resourceId;
               return (
-                <Fragment key={ingredient.resourceId}>
-                  <ResourcePriceInput
-                    resource={resource}
-                    quantity={ingredient.quantity}
-                    value={value}
-                    updatedAt={data[ingredient.resourceId]?.updatedAt}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                  />
-                </Fragment>
+                <IngredientRow
+                  key={path}
+                  path={path}
+                  quantity={ingredient.quantity}
+                  cost={topCosts[index]}
+                  tourTarget={index === firstCraftable ? 'craftable-ingredient' : undefined}
+                  tree={recipeTree}
+                  expandedPaths={expandedPaths}
+                  onToggle={toggleExpanded}
+                  renderPriceField={renderPriceField}
+                  choices={ingredientChoices}
+                  onChoose={setIngredientChoice}
+                />
               );
             })}
             {error && <p className="warning">{error}</p>}
@@ -443,7 +557,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
       {tourOpen && (
         <GuidedTour
           steps={tourSteps}
+          onStepChange={onTourStepChange}
           onClose={() => {
+            foldTourUnfolded();
             markSearchTourSeen();
             setTourOpen(false);
           }}

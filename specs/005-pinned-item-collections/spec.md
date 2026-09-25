@@ -30,6 +30,9 @@ désormais affichés ainsi, sans aucun changement de comportement ni de données
 Raison : « collection » évoque dans Dofus les panoplies ou les objets qu'on collectionne, et
 « épinglé » ne disait pas ce que fait la page (surveiller le coût de craft et le prix HDV).
 
+Le montant « Craft : … » des cartes suit les règles de specs/015-intermediate-craft-costs (coût
+retenu des ingrédients craftables) : il est toujours identique au coût de craft de la fiche.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Organiser ses objets épinglés en collections nommées (Priority: P1)

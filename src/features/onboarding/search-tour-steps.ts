@@ -14,6 +14,11 @@ export type TourStep = {
   body: string;
   points?: TourPoint[];
   absentHint?: string;
+  // Shown instead of `absentHint` when the target isn't on screen: a still example of the area, so
+  // the step always has something concrete to look at (specs/011 révision 2026-09-25).
+  absentExample?: 'craftable-ingredient';
+  // A wider bubble, for a step with more to show.
+  wide?: boolean;
 };
 
 const NEEDS_ITEM = 'Cette zone apparaît après avoir choisi un objet.';
@@ -75,6 +80,21 @@ export function searchTourSteps(priceMode: PriceMode): TourStep[] {
           STALE_POINT,
         ],
       absentHint: NEEDS_CRAFTABLE_ITEM,
+    },
+    {
+      // specs/015-intermediate-craft-costs: an ingredient that crafts itself counts for the cheaper
+      // of buying it and crafting it.
+      id: 'intermediate',
+      target: 'craftable-ingredient',
+      title: 'Ingrédients craftables',
+      body: 'Un ingrédient qui se crafte est compté au moins cher, acheté ou crafté.',
+      points: [
+        { term: 'Voir la recette', text: 'ses ressources, pour toute la quantité' },
+        { term: 'Auto', text: 'choisit automatiquement la méthode la moins chère' },
+        { term: 'Acheter · Crafter', text: 'imposer l\'une ou l\'autre' },
+      ],
+      absentExample: 'craftable-ingredient',
+      wide: true,
     },
     {
       id: 'price-mode',
