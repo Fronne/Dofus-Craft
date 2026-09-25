@@ -75,7 +75,6 @@ export function IngredientRow({
   const expanded = children !== undefined && expandedPaths.has(path);
   const retained = children !== undefined ? (
     <span className="retained-cost-row">
-      <RetainedCostIndicator cost={cost} />
       {/* US3: force buying or crafting this resource — everywhere it appears, on this device. */}
       <span className="ingredient-choice" role="group" aria-label={`Choix pour ${resource.name}`}>
         {CHOICE_OPTIONS.map(({ label, choice }) => (
@@ -105,6 +104,7 @@ export function IngredientRow({
       >
         {expanded ? 'Masquer la recette' : 'Voir la recette'}
       </button>
+      <RetainedCostIndicator cost={cost} />
     </span>
   ) : undefined;
   const subtotalKamas = children !== undefined

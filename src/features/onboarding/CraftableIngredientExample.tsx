@@ -30,13 +30,13 @@ export function CraftableIngredientExample() {
           <span className="tour-example-price">{formatKamas(5000)}</span>
           <b className="price-resource-formatted">{formatKamas(4000)}</b>
           <span className="retained-cost-row">
-            <RetainedCostIndicator cost={COST} />
             <span className="ingredient-choice">
               <button type="button" tabIndex={-1} aria-pressed="true">Auto</button>
               <button type="button" tabIndex={-1} aria-pressed="false">Acheter</button>
               <button type="button" tabIndex={-1} aria-pressed="false">Crafter</button>
             </span>
             <span className="ingredient-toggle" data-expanded="true">Masquer la recette</span>
+            <RetainedCostIndicator cost={COST} />
           </span>
         </div>
         <div className="ingredient-children">

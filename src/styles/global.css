@@ -651,10 +651,14 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .ingredient-row { border-bottom: 1px solid var(--border); }
 .ingredient-row:last-child { border-bottom: 0; }
 .ingredient-row > .price-line { border-bottom: 0; }
-.retained-cost-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem .75rem; }
+/* Choice (Auto / Acheter / Crafter) on the left and the recipe toggle on the right, on one line;
+   what is counted goes on its own line below. */
+.retained-cost-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; }
+.retained-cost-row .ingredient-toggle { margin-left: auto; }
+.retained-cost-row .retained-cost { flex-basis: 100%; }
 .ingredient-toggle { padding: .2rem .55rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
 .ingredient-toggle:hover, .ingredient-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
-.ingredient-choice { display: inline-flex; margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
+.ingredient-choice { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
 .ingredient-choice button { padding: .2rem .55rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
 .ingredient-choice button + button { border-left: 1px solid var(--border); }
 .ingredient-choice button[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
