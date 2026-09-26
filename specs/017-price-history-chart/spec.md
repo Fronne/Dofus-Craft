@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**Révision** : les boutons Jour / Semaine / Mois, la courbe et FR-003 à FR-009 et FR-012 sont remplacés par la spec 018 (fenêtres glissantes, un point par prix partagé) ; FR-006 y est levée.
+
 **Input**: User description: "Graphe d'historique des prix HDV en Mode communautaire, affiché dans un
 popover ouvert depuis la ligne d'une ressource ou d'un objet. Périmètre : ressources ET objets (pour
 les objets, cela implique de réviser la règle de rétention de la spec 016 qui ne garde aujourd'hui
