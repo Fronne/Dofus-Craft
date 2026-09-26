@@ -197,7 +197,7 @@ describe('Prix page — craft profit (specs/019)', () => {
       expect(screen.getByRole('button', { name: 'Trier par Marge' })).toHaveAttribute('aria-pressed', 'true');
       fireEvent.click(screen.getByRole('button', { name: 'Trier par Marge' }));
       expect(names()).toEqual(['Coiffe', 'Anneau', 'Bottes']);
-      fireEvent.click(screen.getByRole('button', { name: 'Trier par Objet' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par Item' }));
       expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
 
       fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un objet' }), { target: { value: 'ANN' } });
