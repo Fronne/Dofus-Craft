@@ -11,6 +11,17 @@ objets avec le bénéfice réalisé si on craft. » Choix du porteur du projet :
 calculables sur le serveur actif ; prix selon le mode actif (comme la page Recherche) ; coût de
 craft calculé comme le choix « Auto » ; la page actuelle est entièrement remplacée.
 
+## Clarifications
+
+### Session 2026-09-26
+
+- Q: Comment trier la liste et quel bénéfice afficher ? → A: bénéfice en kamas et en % du coût de
+  craft, avec un choix de tri (kamas ou %), kamas par défaut.
+- Q: Faut-il écarter ou signaler les prix anciens ? → A: tous les objets sont gardés, avec la date
+  du prix HDV affichée sur la ligne.
+- Q: Faut-il déduire la taxe de mise en vente de l'HDV du bénéfice ? → A: non, comme la page
+  Recherche.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Voir les objets rentables à crafter (Priority: P1)
@@ -33,11 +44,13 @@ dont une ressource n'a pas de prix, vérifier que la page liste les trois premie
    craft et son bénéfice en kamas.
 2. **Given** plusieurs objets calculables, **When** la page s'affiche, **Then** ils sont triés par
    bénéfice décroissant.
-3. **Given** un objet dont il manque le prix HDV ou le prix d'une ressource nécessaire, **When** la
+3. **Given** la liste triée par kamas, **When** le joueur choisit le tri par marge, **Then** les
+   objets sont triés par marge en % décroissante.
+4. **Given** un objet dont il manque le prix HDV ou le prix d'une ressource nécessaire, **When** la
    page s'affiche, **Then** cet objet n'apparaît pas.
-4. **Given** un objet dont le coût de craft dépasse le prix HDV, **When** la page s'affiche,
+5. **Given** un objet dont le coût de craft dépasse le prix HDV, **When** la page s'affiche,
    **Then** son bénéfice est affiché négatif et visuellement distinct d'un bénéfice positif.
-5. **Given** une ligne d'objet, **When** le joueur la choisit, **Then** il arrive sur la page
+6. **Given** une ligne d'objet, **When** le joueur la choisit, **Then** il arrive sur la page
    Recherche avec cet objet ouvert, pour voir le détail du calcul.
 
 ---
@@ -92,7 +105,8 @@ correspondants restent, toujours triés par bénéfice.
 - Aucun serveur actif : la page invite à choisir un serveur, comme aujourd'hui.
 - Aucun objet calculable : un état vide explique qu'il faut des prix HDV et des prix de ressources, et
   renvoie vers la page Recherche.
-- Bénéfice nul : affiché « 0 kamas », ni positif ni négatif.
+- Bénéfice nul : affiché « 0 kamas » et « 0 % », ni positif ni négatif.
+- Deux objets à égalité sur le critère de tri : départagés par nom, dans l'ordre alphabétique.
 - Recette qui contient un ingrédient craftable à plusieurs niveaux : le choix « Auto » s'applique à
   chaque niveau, comme sur la page Recherche.
 - Service communautaire injoignable en Mode communautaire : la page affiche qu'elle ne peut pas
@@ -109,15 +123,19 @@ correspondants restent, toujours triés par bénéfice.
   le serveur actif et dans le mode actif, le prix HDV est connu et le coût de craft est calculable
   (chaque ingrédient a un prix d'achat ou un coût de craft calculable).
 - **FR-003**: Pour chaque objet, la ligne MUST afficher son nom, son visuel, son prix HDV, son coût de
-  craft et son bénéfice (prix HDV − coût de craft), en kamas.
+  craft, son bénéfice (prix HDV − coût de craft) en kamas et sa marge en % du coût de craft
+  (bénéfice ÷ coût de craft × 100, arrondie à l'unité), ainsi que la date du prix HDV utilisé
+  (même présentation que la date de mise à jour du champ « Prix HDV » de la page Recherche). Aucun
+  objet n'est écarté à cause de l'âge de ses prix.
 - **FR-004**: Le coût de craft MUST être celui de la page Recherche avec le choix « Auto » sur chaque
   ingrédient à tous les niveaux (specs/015), sans tenir compte des choix « Acheter » / « Crafter »
   faits manuellement sur la page Recherche.
 - **FR-005**: Les prix MUST suivre le mode actif, avec les mêmes règles que la page Recherche :
   Mode communautaire → prix partagés (specs/004, specs/016) ; Mode personnel → carnet de l'appareil
   et prix HDV saisis (specs/002, specs/005).
-- **FR-006**: La liste MUST être triée par bénéfice décroissant ; un bénéfice négatif MUST être
-  distinct visuellement d'un bénéfice positif.
+- **FR-006**: Le joueur MUST pouvoir trier la liste par bénéfice en kamas (par défaut) ou par marge
+  en %, toujours décroissant ; un bénéfice négatif MUST être distinct visuellement d'un bénéfice
+  positif.
 - **FR-007**: Le joueur MUST pouvoir filtrer la liste par nom (sans accents ni casse) et choisir le
   nombre de lignes affichées (10, 25, 50, 100) ; le nombre total d'objets calculables MUST rester
   visible.
@@ -154,8 +172,8 @@ correspondants restent, toujours triés par bénéfice.
 - En Mode communautaire, le service communautaire devra pouvoir fournir la liste des objets ayant un
   prix HDV partagé et les prix partagés des ressources pour un serveur ; aujourd'hui, ces prix se
   lisent un par un. Le plan décidera comment (hors périmètre de la spec).
-- Le bénéfice ne tient pas compte des taxes de l'HDV ni du temps de craft, comme la comparaison de
-  la page Recherche.
+- Le bénéfice ne tient pas compte de la taxe de mise en vente de l'HDV ni du temps de craft, comme
+  la comparaison de la page Recherche (confirmé le 2026-09-26).
 - Le métier de craft du joueur n'est pas pris en compte.
 - Les éventuels choix « Acheter » / « Crafter » faits sur la page Recherche ne changent pas la page
   Prix, qui reste en « Auto » pour pouvoir comparer tous les objets de la même façon.
