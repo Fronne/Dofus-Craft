@@ -93,7 +93,7 @@ function ProfitLine({ row, onOpen }: { row: CraftProfitRow; onOpen: () => void }
 }
 
 const COLUMNS: { key: ProfitSortKey; label: string }[] = [
-  { key: 'name', label: 'Item' },
+  { key: 'name', label: 'Nom' },
   { key: 'market', label: 'Prix HDV' },
   { key: 'cost', label: 'Coût de craft' },
   { key: 'kamas', label: 'Bénéfice' },
