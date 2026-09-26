@@ -1,5 +1,5 @@
 import type { CommunityPrice } from '../domain/types';
-import { GROUPINGS, type HistoryPoint, type PriceHistory } from '../domain/price-history';
+import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
@@ -91,21 +91,18 @@ export async function getLatestItemPrice(itemId: string, serverId: string): Prom
   return { status: 'found', price: payload };
 }
 
-function isHistoryPoint(value: unknown): value is HistoryPoint {
-  return isRecord(value) &&
-    typeof value.periodStart === 'string' &&
-    typeof value.medianAmountKamas === 'number' &&
-    typeof value.sampleSize === 'number';
+function isSharedPrice(value: unknown): value is SharedPrice {
+  return isRecord(value) && typeof value.amountKamas === 'number' && typeof value.sharedAt === 'string';
 }
 
 function isPriceHistory(value: unknown): value is PriceHistory {
   return isRecord(value) &&
-    GROUPINGS.every((grouping) => Array.isArray(value[grouping]) && (value[grouping] as unknown[]).every(isHistoryPoint));
+    HISTORY_WINDOWS.every((window) => Array.isArray(value[window]) && (value[window] as unknown[]).every(isSharedPrice));
 }
 
 export type PriceHistoryLookup = { status: 'found'; history: PriceHistory } | { status: 'unavailable' };
 
-// specs/017-price-history-chart: per-period medians of a resource ('resource') or an item's HDV price
+// specs/018-price-history-windows: every shared price, per window, of a resource ('resource') or an item's HDV price
 // ('item') on a server. No price yet is `found` with empty lists; like the reads above, this never
 // throws — any failure resolves to `unavailable` (FR-013).
 export async function getPriceHistory(kind: 'resource' | 'item', id: string, serverId: string): Promise<PriceHistoryLookup> {

@@ -2,9 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPriceLookup, LatestItemPriceLookup, PriceHistoryLookup } from '../../src/services/community-price-api';
-import type { HistoryPoint, PriceHistory } from '../../src/domain/price-history';
+import type { PriceHistory, SharedPrice } from '../../src/domain/price-history';
 
-// specs/017-price-history-chart, contracts/price-history-ui.md « Tests obligatoires ».
+// specs/017-price-history-chart and specs/018-price-history-windows, contracts/price-history-ui.md.
 const { getCommunityPrice, getLatestItemPrice, getPriceHistory } = vi.hoisted(() => ({
   getCommunityPrice: vi.fn<(resourceId: string, serverId: string) => Promise<CommunityPriceLookup>>(),
   getLatestItemPrice: vi.fn<(itemId: string, serverId: string) => Promise<LatestItemPriceLookup>>(),
@@ -48,11 +48,13 @@ vi.mock('../../src/data/servers-repository', () => ({
 import App from '../../src/app/App';
 import { clearPriceHistoryCache } from '../../src/features/comparison/usePriceHistory';
 
-const point = (periodStart: string, medianAmountKamas = 1000, sampleSize = 2): HistoryPoint => ({ periodStart, medianAmountKamas, sampleSize });
+// Prices shared `hoursAgo` hours before now, since the chart spans the window up to the load time.
+const price = (hoursAgo: number, amountKamas = 1000): SharedPrice =>
+  ({ amountKamas, sharedAt: new Date(Date.now() - hoursAgo * 3_600_000).toISOString() });
 const HISTORY: PriceHistory = {
-  day: [point('2026-09-01'), point('2026-09-08'), point('2026-09-15'), point('2026-09-22')],
-  week: [point('2026-08-31'), point('2026-09-07'), point('2026-09-21')],
-  month: [point('2026-08-01'), point('2026-09-01')],
+  day: [price(5), price(3), price(2), price(1)],
+  week: [price(100), price(50), price(1)],
+  month: [price(400), price(1)],
 };
 
 async function openSearch(mode: 'community' | 'personal' = 'community') {
@@ -179,8 +181,8 @@ describe('price history popover (specs/017)', () => {
     });
   });
 
-  describe('US2 — grouping', () => {
-    it('starts on the week, redraws per grouping without a new request, and remembers the choice', async () => {
+  describe('US2 — window', () => {
+    it('starts on the week, redraws per window without a new request, and remembers the choice', async () => {
       await openSearch();
       fireEvent.click(resourceHistoryButton('Bois'));
       const dialog = await screen.findByRole('dialog');
@@ -224,32 +226,27 @@ describe('price history popover (specs/017)', () => {
       expect(dialog.querySelector('.price-history-svg')).toBeNull();
     });
 
-    it('shows the single period and offers a finer grouping that has a curve', async () => {
-      window.localStorage.setItem('craftcheck-history-grouping', 'month');
-      getPriceHistory.mockResolvedValue({
-        status: 'found',
-        history: { day: [point('2026-09-01'), point('2026-09-10'), point('2026-09-20')], week: [point('2026-09-14', 1000, 3)], month: [point('2026-09-01', 1200, 3)] },
-      });
+    it('says no price was shared in the window and offers a longer one (specs/018 FR-007)', async () => {
+      getPriceHistory.mockResolvedValue({ status: 'found', history: { day: [], week: [price(50), price(30)], month: [price(50), price(30)] } });
       await openSearch();
-      window.localStorage.setItem('craftcheck-history-grouping', 'month');
+      window.localStorage.setItem('craftcheck-history-grouping', 'day');
       fireEvent.click(resourceHistoryButton('Bois'));
       const dialog = await screen.findByRole('dialog');
-      expect(await within(dialog).findByText("Pas assez d'historique")).toBeInTheDocument();
-      expect(within(dialog).getByText(/sept\. 2026 : 1 200 kamas \(3 prix\)/)).toBeInTheDocument();
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Essayez le regroupement Jour' }));
-      expect(within(dialog).getByRole('button', { name: 'Jour' })).toHaveAttribute('aria-pressed', 'true');
-      expect(dialog.querySelectorAll('.price-history-point')).toHaveLength(3);
+      expect(await within(dialog).findByText('Aucun prix partagé sur cette période.')).toBeInTheDocument();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Voir Semaine' }));
+      expect(within(dialog).getByRole('button', { name: 'Semaine' })).toHaveAttribute('aria-pressed', 'true');
+      expect(dialog.querySelectorAll('.price-history-point')).toHaveLength(2);
     });
 
-    it('offers nothing finer than the day', async () => {
-      window.localStorage.setItem('craftcheck-history-grouping', 'day');
-      getPriceHistory.mockResolvedValue({ status: 'found', history: { day: [point('2026-09-21')], week: [point('2026-09-21')], month: [point('2026-09-01')] } });
+    it('shows a single price with its date and time, without a curve', async () => {
+      getPriceHistory.mockResolvedValue({ status: 'found', history: { day: [], week: [price(30, 1200)], month: [price(30, 1200)] } });
       await openSearch();
-      window.localStorage.setItem('craftcheck-history-grouping', 'day');
       fireEvent.click(resourceHistoryButton('Bois'));
       const dialog = await screen.findByRole('dialog');
-      expect(await within(dialog).findByText("Pas assez d'historique")).toBeInTheDocument();
-      expect(within(dialog).queryByRole('button', { name: /Essayez le regroupement/ })).not.toBeInTheDocument();
+      expect(await within(dialog).findByText('1 200 kamas')).toBeInTheDocument();
+      expect(within(dialog).getByText(/^le .+ à \d\d:\d\d$/)).toBeInTheDocument();
+      expect(dialog.querySelector('.price-history-svg')).toBeNull();
+      expect(within(dialog).queryByRole('button', { name: /^Voir / })).not.toBeInTheDocument();
     });
 
     it('says the history is unavailable when the service cannot be reached (FR-013)', async () => {

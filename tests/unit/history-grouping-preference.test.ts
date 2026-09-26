@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readHistoryGrouping, saveHistoryGrouping } from '../../src/persistence/history-grouping-preference';
 
-// specs/017-price-history-chart FR-007.
+// specs/018-price-history-windows FR-002 (specs/017 FR-007).
 describe('history grouping preference (specs/017)', () => {
   beforeEach(() => window.localStorage.clear());
   afterEach(() => vi.restoreAllMocks());

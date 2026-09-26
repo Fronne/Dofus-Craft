@@ -1,14 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPriceHistory } from '../../src/services/community-price-api';
 
-// specs/017-price-history-chart, contracts/price-history-api.md « Client ».
-const HISTORY = {
-  day: [{ periodStart: '2026-09-21', medianAmountKamas: 1000, sampleSize: 2 }],
-  week: [{ periodStart: '2026-09-21', medianAmountKamas: 1000, sampleSize: 2 }],
-  month: [{ periodStart: '2026-09-01', medianAmountKamas: 1000, sampleSize: 2 }],
-};
+// specs/018-price-history-windows, contracts/price-history-api.md « Client ».
+const PRICE = { amountKamas: 1000, sharedAt: '2026-09-21T10:00:00.000Z' };
+const HISTORY = { day: [PRICE], week: [PRICE], month: [PRICE] };
 
-describe('getPriceHistory (specs/017)', () => {
+describe('getPriceHistory (specs/018)', () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it('resolves the history and calls /price-history with kind, id and serverId', async () => {
@@ -30,9 +27,12 @@ describe('getPriceHistory (specs/017)', () => {
     ['a 500 status', () => Promise.resolve(new Response('', { status: 500 }))],
     ['a network error', () => Promise.reject(new TypeError('Failed to fetch'))],
     ['invalid JSON', () => Promise.resolve(new Response('not json', { status: 200 }))],
-    ['a missing grouping', () => Promise.resolve(new Response(JSON.stringify({ day: [], week: [] }), { status: 200 }))],
-    ['a point without its sample size', () => Promise.resolve(new Response(JSON.stringify({
-      ...HISTORY, week: [{ periodStart: '2026-09-21', medianAmountKamas: 1000 }],
+    ['a missing window', () => Promise.resolve(new Response(JSON.stringify({ day: [], week: [] }), { status: 200 }))],
+    ['a price without its time', () => Promise.resolve(new Response(JSON.stringify({
+      ...HISTORY, week: [{ amountKamas: 1000 }],
+    }), { status: 200 }))],
+    ['the specs/017 format', () => Promise.resolve(new Response(JSON.stringify({
+      day: [], week: [{ periodStart: '2026-09-21', medianAmountKamas: 1000, sampleSize: 2 }], month: [],
     }), { status: 200 }))],
   ])('resolves unavailable, without throwing, on %s', async (_label, response) => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(response));

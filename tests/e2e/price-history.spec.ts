@@ -1,23 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// specs/017-price-history-chart: the community Worker is mocked at the network level, like in
+// specs/017-price-history-chart, specs/018: the community Worker is mocked at the network level, like in
 // community-price-sharing.spec.ts; DofusDB is used for real.
+// specs/018-price-history-windows: one entry per shared price, `hoursAgo` hours before the test.
+const price = (hoursAgo: number, amountKamas: number) => ({ amountKamas, sharedAt: new Date(Date.now() - hoursAgo * 3_600_000).toISOString() });
 const HISTORY = {
-  day: [
-    { periodStart: '2026-09-01', medianAmountKamas: 4000, sampleSize: 2 },
-    { periodStart: '2026-09-08', medianAmountKamas: 4300, sampleSize: 1 },
-    { periodStart: '2026-09-15', medianAmountKamas: 4100, sampleSize: 3 },
-    { periodStart: '2026-09-22', medianAmountKamas: 4500, sampleSize: 2 },
-  ],
-  week: [
-    { periodStart: '2026-08-31', medianAmountKamas: 4000, sampleSize: 2 },
-    { periodStart: '2026-09-07', medianAmountKamas: 4300, sampleSize: 1 },
-    { periodStart: '2026-09-21', medianAmountKamas: 4400, sampleSize: 4 },
-  ],
-  month: [
-    { periodStart: '2026-08-01', medianAmountKamas: 4000, sampleSize: 2 },
-    { periodStart: '2026-09-01', medianAmountKamas: 4300, sampleSize: 6 },
-  ],
+  day: [price(20, 4000), price(10, 4300), price(5, 4100), price(1, 4500)],
+  week: [price(120, 4000), price(60, 4300), price(1, 4400)],
+  month: [price(500, 4000), price(1, 4300)],
 };
 
 async function mockCommunityBackend(page: Page) {

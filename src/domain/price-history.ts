@@ -1,38 +1,54 @@
-// specs/017-price-history-chart: a price history as the Worker sends it (contracts/price-history-api.md)
-// and the display rule of a grouping (data-model.md). Points are already aggregated per period.
+// specs/018-price-history-windows (revises specs/017): a price history as the Worker sends it
+// (contracts/price-history-api.md) — every shared price of the last 24 hours, 7 days and 30 days —
+// and the display rule of a window (data-model.md « Affichage »).
 
-export type Grouping = 'day' | 'week' | 'month';
-export type HistoryPoint = { periodStart: string; medianAmountKamas: number; sampleSize: number };
-export type PriceHistory = Record<Grouping, HistoryPoint[]>;
+export type HistoryWindow = 'day' | 'week' | 'month';
+export type SharedPrice = { amountKamas: number; sharedAt: string };
+export type PriceHistory = Record<HistoryWindow, SharedPrice[]>;
 
-// Finest first: the order of the selector, and the order in which a finer grouping is looked for.
-export const GROUPINGS: Grouping[] = ['day', 'week', 'month'];
+// Shortest first: the order of the selector, and the order in which a longer window is looked for.
+export const HISTORY_WINDOWS: HistoryWindow[] = ['day', 'week', 'month'];
 
-export const GROUPING_LABELS: Record<Grouping, string> = { day: 'Jour', week: 'Semaine', month: 'Mois' };
+export const WINDOW_LABELS: Record<HistoryWindow, string> = { day: 'Jour', week: 'Semaine', month: 'Mois' };
+
+const HOUR = 60 * 60 * 1000;
+const WINDOW_MS: Record<HistoryWindow, number> = { day: 24 * HOUR, week: 7 * 24 * HOUR, month: 30 * 24 * HOUR };
+
+export function windowStart(window: HistoryWindow, now: number): number {
+  return now - WINDOW_MS[window];
+}
 
 export type HistoryDisplay =
   | { kind: 'empty' }
-  | { kind: 'single'; point: HistoryPoint; finerGrouping?: Grouping }
-  | { kind: 'chart'; points: HistoryPoint[] };
+  | { kind: 'none-in-window'; longerWindow?: HistoryWindow }
+  | { kind: 'single'; price: SharedPrice; longerWindow?: HistoryWindow }
+  | { kind: 'chart'; prices: SharedPrice[] };
 
-// FR-009: no curve under two periods. With one, the closest finer grouping that does have two
-// periods (if any) is offered instead (US4).
-export function historyDisplay(history: PriceHistory, grouping: Grouping): HistoryDisplay {
-  const points = history[grouping];
-  if (points.length === 0) return { kind: 'empty' };
-  if (points.length >= 2) return { kind: 'chart', points };
-  const finer = GROUPINGS.slice(0, GROUPINGS.indexOf(grouping)).reverse();
-  const finerGrouping = finer.find((candidate) => history[candidate].length >= 2);
-  return finerGrouping ? { kind: 'single', point: points[0], finerGrouping } : { kind: 'single', point: points[0] };
+// FR-007: no curve under two prices. Windows are nested, so only a longer one can hold more prices:
+// the shortest longer window with at least two is offered instead (research.md §4).
+export function historyDisplay(history: PriceHistory, window: HistoryWindow): HistoryDisplay {
+  if (history.month.length === 0) return { kind: 'empty' };
+  const prices = history[window];
+  if (prices.length >= 2) return { kind: 'chart', prices };
+  const longerWindow = HISTORY_WINDOWS.slice(HISTORY_WINDOWS.indexOf(window) + 1)
+    .find((candidate) => history[candidate].length >= 2);
+  const invite = longerWindow ? { longerWindow } : {};
+  return prices.length === 1 ? { kind: 'single', price: prices[0], ...invite } : { kind: 'none-in-window', ...invite };
 }
 
-// `periodStart` is a civil date: read and formatted in UTC so no time zone can shift it by a day.
-const dayFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const monthFormatter = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+// Shown in Paris time (spec Edge Cases), whatever the viewer's time zone.
+const dayFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' });
+const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+const hourFormatter = new Intl.DateTimeFormat('fr-FR', { hour: 'numeric', timeZone: 'Europe/Paris' });
 
-export function formatPeriod(periodStart: string, grouping: Grouping): string {
-  const date = new Date(`${periodStart}T00:00:00.000Z`);
-  if (grouping === 'month') return monthFormatter.format(date);
-  const day = dayFormatter.format(date);
-  return grouping === 'week' ? `semaine du ${day}` : day;
+// « 24 sept. à 14:05 »
+export function formatSharedAt(time: string | number): string {
+  const date = new Date(time);
+  return `${dayFormatter.format(date)} à ${timeFormatter.format(date)}`;
+}
+
+// An x-axis end label: « 14 h » over 24 hours, « 22 sept. » otherwise.
+export function formatAxisTick(time: number, window: HistoryWindow): string {
+  const date = new Date(time);
+  return window === 'day' ? hourFormatter.format(date).replace(/\s*h$/, ' h') : dayFormatter.format(date);
 }

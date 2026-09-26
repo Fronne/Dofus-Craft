@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Icon } from '../../components/Icon';
 import { useActiveServer } from '../../app/ServerContext';
 import { formatKamas } from '../../domain/kamas';
-import { GROUPINGS, GROUPING_LABELS, formatPeriod, historyDisplay, type Grouping } from '../../domain/price-history';
+import { HISTORY_WINDOWS, WINDOW_LABELS, formatSharedAt, historyDisplay, type HistoryWindow } from '../../domain/price-history';
 import { readHistoryGrouping, saveHistoryGrouping } from '../../persistence/history-grouping-preference';
 import { PriceHistoryChart } from './PriceHistoryChart';
 import { usePriceHistory, type PriceHistoryState } from './usePriceHistory';
@@ -32,7 +32,7 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [grouping, setGrouping] = useState<Grouping>(readHistoryGrouping);
+  const [grouping, setGrouping] = useState<HistoryWindow>(readHistoryGrouping);
   const state = usePriceHistory(kind, id, serverId, open);
   const serverName = useActiveServer().servers.find((server) => server.id === serverId)?.name ?? serverId;
 
@@ -41,7 +41,7 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
     if (returnFocus) triggerRef.current?.focus();
   }, []);
 
-  const chooseGrouping = (next: Grouping) => {
+  const chooseGrouping = (next: HistoryWindow) => {
     setGrouping(next);
     saveHistoryGrouping(next);
   };
@@ -127,8 +127,8 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
               <Icon name="close" size={16} />
             </button>
           </div>
-          <div className="price-history-groupings" role="group" aria-label="Regroupement">
-            {GROUPINGS.map((candidate) => (
+          <div className="price-history-groupings" role="group" aria-label="Période">
+            {HISTORY_WINDOWS.map((candidate) => (
               <button
                 key={candidate}
                 type="button"
@@ -136,7 +136,7 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
                 aria-pressed={grouping === candidate}
                 onClick={() => chooseGrouping(candidate)}
               >
-                {GROUPING_LABELS[candidate]}
+                {WINDOW_LABELS[candidate]}
               </button>
             ))}
           </div>
@@ -150,27 +150,32 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
 
 function PriceHistoryBody({ state, grouping, onChooseGrouping }: {
   state: PriceHistoryState;
-  grouping: Grouping;
-  onChooseGrouping: (grouping: Grouping) => void;
+  grouping: HistoryWindow;
+  onChooseGrouping: (window: HistoryWindow) => void;
 }) {
   if (state.kind === 'loading') return <div className="price-history-skeleton" aria-busy="true" aria-label="Chargement de l'historique" />;
   // FR-013: no curve, no value — never an invented or outdated one.
   if (state.kind === 'unavailable') return <p className="price-history-message">Historique indisponible pour le moment.</p>;
   const display = historyDisplay(state.history, grouping);
   if (display.kind === 'empty') return <p className="price-history-message">Pas encore d'historique pour ce serveur.</p>;
-  if (display.kind === 'single') {
-    const { point, finerGrouping } = display;
-    return (
-      <div className="price-history-message">
-        <p><strong>Pas assez d'historique</strong></p>
-        <p>{formatPeriod(point.periodStart, grouping)} : {formatKamas(point.medianAmountKamas)} ({point.sampleSize} prix)</p>
-        {finerGrouping && (
-          <button type="button" className="price-history-invite" onClick={() => onChooseGrouping(finerGrouping)}>
-            Essayez le regroupement {GROUPING_LABELS[finerGrouping]}
-          </button>
-        )}
-      </div>
-    );
-  }
-  return <PriceHistoryChart points={display.points} grouping={grouping} />;
+  if (display.kind === 'chart') return <PriceHistoryChart prices={display.prices} window={grouping} now={state.loadedAt} />;
+  // specs/018 FR-007: fewer than two prices in the window — no curve, and a longer window when one has enough.
+  const { longerWindow } = display;
+  return (
+    <div className="price-history-message">
+      {display.kind === 'single' ? (
+        <>
+          <p><strong>{formatKamas(display.price.amountKamas)}</strong></p>
+          <p>le {formatSharedAt(display.price.sharedAt)}</p>
+        </>
+      ) : (
+        <p>Aucun prix partagé sur cette période.</p>
+      )}
+      {longerWindow && (
+        <button type="button" className="price-history-invite" onClick={() => onChooseGrouping(longerWindow)}>
+          Voir {WINDOW_LABELS[longerWindow]}
+        </button>
+      )}
+    </div>
+  );
 }

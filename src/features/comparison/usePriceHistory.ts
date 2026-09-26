@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { getPriceHistory } from '../../services/community-price-api';
 import type { PriceHistory } from '../../domain/price-history';
 
-// specs/017-price-history-chart (research.md §6): loaded when a popover opens, then kept in memory for
+// specs/017-price-history-chart (research.md §6), specs/018: the load time is kept with the history,
+// since the windows are counted back from it.: loaded when a popover opens, then kept in memory for
 // the visit — no localStorage, since an old history shown without saying so would mislead. A failed
 // load isn't cached, so reopening the popover tries again.
-const cache = new Map<string, PriceHistory>();
+const cache = new Map<string, { history: PriceHistory; loadedAt: number }>();
 
 export function clearPriceHistoryCache() {
   cache.clear();
@@ -13,7 +14,7 @@ export function clearPriceHistoryCache() {
 
 export type PriceHistoryState =
   | { kind: 'loading' }
-  | { kind: 'ready'; history: PriceHistory }
+  | { kind: 'ready'; history: PriceHistory; loadedAt: number }
   | { kind: 'unavailable' };
 
 export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId: string, enabled: boolean): PriceHistoryState {
@@ -26,8 +27,13 @@ export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId:
     let cancelled = false;
     void getPriceHistory(kind, id, serverId).then((lookup) => {
       if (cancelled) return;
-      if (lookup.status === 'found') cache.set(key, lookup.history);
-      setResult({ key, state: lookup.status === 'found' ? { kind: 'ready', history: lookup.history } : { kind: 'unavailable' } });
+      if (lookup.status === 'found') {
+        const ready = { history: lookup.history, loadedAt: Date.now() };
+        cache.set(key, ready);
+        setResult({ key, state: { kind: 'ready', ...ready } });
+      } else {
+        setResult({ key, state: { kind: 'unavailable' } });
+      }
     });
     return () => {
       cancelled = true;
@@ -35,7 +41,7 @@ export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId:
   }, [enabled, key, kind, id, serverId]);
 
   const cached = cache.get(key);
-  if (cached) return { kind: 'ready', history: cached };
+  if (cached) return { kind: 'ready', ...cached };
   if (result?.key === key) return result.state;
   return { kind: 'loading' };
 }

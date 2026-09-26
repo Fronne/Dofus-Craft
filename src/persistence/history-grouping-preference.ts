@@ -1,25 +1,26 @@
-import { GROUPINGS, type Grouping } from '../domain/price-history';
+import { HISTORY_WINDOWS, type HistoryWindow } from '../domain/price-history';
 
-// specs/017-price-history-chart FR-007: the last grouping picked in a price-history popover, kept on
-// this device only. Missing, unreadable or unknown values — or no localStorage at all — give the week.
+// specs/018-price-history-windows FR-002 (key and values kept from specs/017): the last window picked
+// in a price-history popover, kept on this device only. Missing, unreadable or unknown values — or no
+// localStorage at all — give the week.
 const STORAGE_KEY = 'craftcheck-history-grouping';
-const DEFAULT_GROUPING: Grouping = 'week';
+const DEFAULT_GROUPING: HistoryWindow = 'week';
 
-function isGrouping(value: string | null): value is Grouping {
-  return GROUPINGS.includes(value as Grouping);
+function isHistoryWindow(value: string | null): value is HistoryWindow {
+  return HISTORY_WINDOWS.includes(value as HistoryWindow);
 }
 
-export function readHistoryGrouping(): Grouping {
+export function readHistoryGrouping(): HistoryWindow {
   let stored: string | null;
   try {
     stored = window.localStorage.getItem(STORAGE_KEY);
   } catch {
     return DEFAULT_GROUPING;
   }
-  return isGrouping(stored) ? stored : DEFAULT_GROUPING;
+  return isHistoryWindow(stored) ? stored : DEFAULT_GROUPING;
 }
 
-export function saveHistoryGrouping(grouping: Grouping): void {
+export function saveHistoryGrouping(grouping: HistoryWindow): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, grouping);
   } catch {

@@ -567,6 +567,9 @@ Suite à une revue de l'application :
   individuelle, un identifiant d'appareil ni un horodatage individuel.
 - **FR-013 inchangé** : aucune rétention supplémentaire ; l'historique s'arrête à la même fenêtre de
   90 jours.
+- **Révisé le 2026-09-26 (specs/018-price-history-windows)** : l'historique montre désormais chaque
+  prix partagé des dernières 24 h, 7 jours ou 30 jours, avec son montant et son heure à la minute,
+  mais toujours sans identifiant d'appareil.
 
 ## Révision (2026-09-25) : plus de nombre de contributions sur les ressources
 
