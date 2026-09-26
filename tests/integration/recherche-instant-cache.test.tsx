@@ -26,6 +26,11 @@ vi.mock('../../src/data/catalogue-repository', () => ({
 const getCommunityPrice = vi.fn();
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: (...args: unknown[]) => getCommunityPrice(...args),
+  getCommunityPrices: async (ids: string[], serverId: string) => {
+    const results = await Promise.all(ids.map((id) => getCommunityPrice(id, serverId) as Promise<{ status: string; price?: unknown }>));
+    if (results.some((result) => !result || result.status === 'unavailable')) return { status: 'unavailable' };
+    return { status: 'found', prices: results.flatMap((result) => (result.status === 'found' ? [result.price] : [])) };
+  },
   submitCommunityPrice: vi.fn(),
 }));
 

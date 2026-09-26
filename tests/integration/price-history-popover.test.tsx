@@ -13,6 +13,11 @@ const { getCommunityPrice, getLatestItemPrice, getPriceHistory } = vi.hoisted(()
 
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: (resourceId: string, serverId: string) => getCommunityPrice(resourceId, serverId),
+  getCommunityPrices: async (ids: string[], serverId: string) => {
+    const results = await Promise.all(ids.map((id) => getCommunityPrice(id, serverId) as Promise<{ status: string; price?: unknown }>));
+    if (results.some((result) => !result || result.status === 'unavailable')) return { status: 'unavailable' };
+    return { status: 'found', prices: results.flatMap((result) => (result.status === 'found' ? [result.price] : [])) };
+  },
   getLatestItemPrice: (itemId: string, serverId: string) => getLatestItemPrice(itemId, serverId),
   getPriceHistory: (kind: 'resource' | 'item', id: string, serverId: string) => getPriceHistory(kind, id, serverId),
   submitCommunityPrice: vi.fn().mockResolvedValue({ id: 'c1' }),

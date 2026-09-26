@@ -1,9 +1,11 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { getItemDetail, getManifest, searchItems } from '../../src/data/catalogue-repository';
-import { clearCache } from '../../src/data/catalogue-cache';
+import { clearCache, setPersistentStore } from '../../src/data/catalogue-cache';
 
 beforeEach(() => {
   clearCache();
+  // specs/021: keep each test's DofusDB fixtures from leaking through the device copy.
+  setPersistentStore(undefined);
   vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
     const isTypesRequest = input.includes('/item-types?');
     const isItemSetsRequest = input.includes('/item-sets?');

@@ -13,6 +13,7 @@ const { getLatestItemPrice } = vi.hoisted(() => ({
 vi.mock('../../src/services/community-price-api', () => ({
   getLatestItemPrice: (itemId: string, serverId: string) => getLatestItemPrice(itemId, serverId),
   getCommunityPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
+  getCommunityPrices: vi.fn().mockResolvedValue({ status: 'found', prices: [] }),
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
 }));
 

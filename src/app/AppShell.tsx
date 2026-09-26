@@ -10,6 +10,8 @@ import { EpinglesPage } from '../features/catalogue/EpinglesPage';
 import { ParametresPage } from '../features/settings/ParametresPage';
 import { AccueilPage } from '../features/home/AccueilPage';
 import { PricesPage } from '../features/prices/PricesPage';
+import { preloadCraftProfits } from '../features/prices/useCraftProfits';
+import { useActiveServer } from './ServerContext';
 import type { AccentColorId } from '../domain/accent-colors';
 import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-preference';
 import type { PriceMode } from '../domain/price-modes';
@@ -62,6 +64,10 @@ export function AppShell() {
   useEffect(() => {
     void recordVisit();
   }, []);
+  const { serverId } = useActiveServer();
+  // specs/021-background-data-loading (FR-006, FR-009): the Prix list is prepared in the background
+  // for the active server and price mode, so it's already there when the player opens the page.
+  useEffect(() => preloadCraftProfits(serverId, priceMode), [serverId, priceMode]);
 
   return (
     <div className="app-shell">

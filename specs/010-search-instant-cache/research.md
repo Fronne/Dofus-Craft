@@ -125,3 +125,10 @@ large que nécessaire pour ce que demande la spec (afficher immédiatement ce qu
 déjà vu** sur cette page), et irait à l'encontre de la constitution IV (changement étroit et
 documenté). Le cache mémoire interne (`catalogue-cache.ts`) continue de servir son propre objectif
 (éviter des appels DofusDB redondants au sein d'un même onglet) sans changement.
+
+## Révision — specs/021-background-data-loading
+
+Le cache mémoire du catalogue (`src/data/catalogue-cache.ts`) est doublé d'une copie dans la base
+IndexedDB `dofus-craft-catalogue-cache` (entrées versionnées par `formatVersion`) : index complet,
+panoplies, fiches et recettes sont servis depuis l'appareil dès la deuxième visite, frais 24 h puis
+rechargés en fond.

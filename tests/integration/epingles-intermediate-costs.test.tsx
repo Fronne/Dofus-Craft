@@ -37,6 +37,11 @@ vi.mock('../../src/data/servers-repository', () => ({
 
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: (resourceId: string, serverId: string) => getCommunityPrice(resourceId, serverId),
+  getCommunityPrices: async (ids: string[], serverId: string) => {
+    const results = await Promise.all(ids.map((id) => getCommunityPrice(id, serverId) as Promise<{ status: string; price?: unknown }>));
+    if (results.some((result) => !result || result.status === 'unavailable')) return { status: 'unavailable' };
+    return { status: 'found', prices: results.flatMap((result) => (result.status === 'found' ? [result.price] : [])) };
+  },
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
   // specs/016: no shared HDV price in these scenarios.
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),

@@ -1,5 +1,5 @@
 import manifest from './catalogue-manifest.json';
-import { cached, peekCached } from './catalogue-cache';
+import { cached, hydrateFromPersistentStore, peekCached } from './catalogue-cache';
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
@@ -66,8 +66,12 @@ function getItemSetIndex(): Promise<ItemSetIndex> {
 }
 
 export function preloadCatalogueIndexes(): void {
-  void getCatalogueItemIndex();
-  void getItemSetIndex();
+  // specs/021-background-data-loading (SC-001): the indexes kept on the device from a previous visit
+  // go into memory first, so the search's synchronous "full index ready?" checks see them at once.
+  void hydrateFromPersistentStore(['catalogue-item-index', 'item-set-index']).finally(() => {
+    void getCatalogueItemIndex();
+    void getItemSetIndex();
+  });
 }
 
 /** Resolves once the full catalogue (all craftable equipment) has finished loading in the

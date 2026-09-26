@@ -66,6 +66,56 @@ export async function fetchCurrentMedian(
   })));
 }
 
+// specs/021-background-data-loading (FR-010): the same medians as `fetchCurrentMedian`, for several
+// resources of one server in a single query. Resources with no median are left out.
+export const MAX_BATCH_RESOURCE_IDS = 100;
+
+export async function fetchCurrentMedians(
+  db: ContributionDb,
+  resourceIds: string[],
+  serverId: string,
+): Promise<Map<string, { medianAmountKamas: number; sampleSize: number; lastContributionAt: string }>> {
+  const medians = new Map<string, { medianAmountKamas: number; sampleSize: number; lastContributionAt: string }>();
+  if (resourceIds.length === 0) return medians;
+  const placeholders = resourceIds.map(() => '?').join(', ');
+  const { results } = await db.prepare(
+    `SELECT resource_id, amount_kamas, created_at, device_id FROM community_price_contributions
+     WHERE resource_id IN (${placeholders}) AND server_id = ? AND created_at >= ? AND kind = 'resource'`,
+  ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string }>();
+
+  const byResource = new Map<string, { amountKamas: number; createdAt: string; deviceId: string }[]>();
+  for (const row of results) {
+    const rows = byResource.get(row.resource_id) ?? [];
+    rows.push({ amountKamas: row.amount_kamas, createdAt: row.created_at, deviceId: row.device_id });
+    byResource.set(row.resource_id, rows);
+  }
+  for (const [resourceId, rows] of byResource) {
+    const median = summarizeContributions(rows);
+    if (median) medians.set(resourceId, median);
+  }
+  return medians;
+}
+
+// GET /community-prices (contracts/community-prices.md).
+export async function communityPricesResponse(db: ContributionDb, url: URL): Promise<{ status: number; body: unknown }> {
+  const serverId = url.searchParams.get('serverId');
+  const resourceIds = [...new Set((url.searchParams.get('resourceIds') ?? '').split(',').map((id) => id.trim()).filter(Boolean))];
+  if (!serverId || resourceIds.length === 0 || resourceIds.length > MAX_BATCH_RESOURCE_IDS) {
+    return { status: 400, body: { error: `serverId and 1 to ${MAX_BATCH_RESOURCE_IDS} resourceIds are required` } };
+  }
+  const medians = await fetchCurrentMedians(db, resourceIds, serverId);
+  return {
+    status: 200,
+    body: {
+      serverId,
+      prices: resourceIds.flatMap((resourceId) => {
+        const median = medians.get(resourceId);
+        return median ? [{ resourceId, ...median }] : [];
+      }),
+    },
+  };
+}
+
 // FR-010 (specs/004): no player-identifying data is ever stored — deviceId is an anonymous,
 // client-generated identifier. specs/007 FR-009 / specs/016 FR-012: the reference this contribution
 // is compared against (the community median for a resource, the latest shared price for an item) and

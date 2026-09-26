@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getCommunityPrice, submitCommunityPrice } from '../../services/community-price-api';
+import { getCommunityPrice, getCommunityPrices, submitCommunityPrice, type CommunityPriceLookup } from '../../services/community-price-api';
 import type { CommunityPrice } from '../../domain/types';
 
 // FR-014 / research.md "Fréquence de rafraîchissement du prix communautaire": refetch on mount
@@ -49,11 +49,50 @@ function writeCache(resourceId: string, serverId: string, price: CommunityPrice)
   }
 }
 
+// specs/021-background-data-loading (FR-011): every community-median read made in the same tick —
+// the rows of a recipe as they mount, a page filling its gaps — is grouped per server into one
+// /community-prices request. A resource missing from the answer has no median (`not-found`).
+type Pending = { resourceId: string; resolve: (lookup: CommunityPriceLookup) => void };
+const queued = new Map<string, Pending[]>();
+
+function flush(serverId: string) {
+  const waiting = queued.get(serverId) ?? [];
+  queued.delete(serverId);
+  // A lone resource keeps the one-resource read: same answer, and no batch needed.
+  if (waiting.length === 1) {
+    void getCommunityPrice(waiting[0].resourceId, serverId).catch(() => ({ status: 'unavailable' as const })).then(waiting[0].resolve);
+    return;
+  }
+  void getCommunityPrices(waiting.map((entry) => entry.resourceId), serverId).catch(() => ({ status: 'unavailable' as const })).then((result) => {
+    for (const { resourceId, resolve } of waiting) {
+      if (result.status === 'unavailable') {
+        resolve({ status: 'unavailable' });
+        continue;
+      }
+      const price = result.prices.find((entry) => entry.resourceId === resourceId);
+      resolve(price ? { status: 'found', price } : { status: 'not-found' });
+    }
+  });
+}
+
+export function loadCommunityPrice(resourceId: string, serverId: string): Promise<CommunityPriceLookup> {
+  return new Promise((resolve) => {
+    const waiting = queued.get(serverId);
+    if (waiting) {
+      waiting.push({ resourceId, resolve });
+      return;
+    }
+    queued.set(serverId, [{ resourceId, resolve }]);
+    // Same task, after the current synchronous work: rows mounted in one render share one request.
+    queueMicrotask(() => flush(serverId));
+  });
+}
+
 // One-off read of a resource's community median (fresh if reachable, else the last cached one),
 // for pages that need the value without mounting a hook per resource — e.g. Épinglés, which must
 // fill carnet gaps the same way RecherchePage's prefill does so both pages agree on the craft cost.
 export async function lookupCommunityMedian(resourceId: string, serverId: string): Promise<number | undefined> {
-  const result = await getCommunityPrice(resourceId, serverId);
+  const result = await loadCommunityPrice(resourceId, serverId);
   if (result.status === 'found') {
     writeCache(resourceId, serverId, result.price);
     return result.price.medianAmountKamas;
@@ -77,7 +116,7 @@ export function useCommunityPrice(
   // while `commit` (a one-off, user-triggered call for the currently displayed resource) applies
   // it directly.
   const fetchState = useCallback(async (): Promise<CommunityPriceState> => {
-    const result = await getCommunityPrice(resourceId, serverId);
+    const result = await loadCommunityPrice(resourceId, serverId);
     if (result.status === 'found') {
       writeCache(resourceId, serverId, result.price);
       return { kind: 'found', price: result.price, stale: false };

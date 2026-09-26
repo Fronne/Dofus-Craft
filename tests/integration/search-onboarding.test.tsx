@@ -22,6 +22,7 @@ vi.mock('../../src/data/catalogue-repository', () => ({
 
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
+  getCommunityPrices: vi.fn().mockResolvedValue({ status: 'found', prices: [] }),
   submitCommunityPrice: vi.fn(),
 }));
 

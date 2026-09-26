@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let resolveCatalogueReady: () => void = () => undefined;
+// One shared "catalogue ready" moment, whoever waits on it (the search, and since specs/021 the
+// Prix page's background preparation).
+const catalogueReady = new Promise<void>((resolve) => {
+  resolveCatalogueReady = resolve;
+});
 
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([]),
@@ -11,9 +16,7 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   }),
   getItemDetail: vi.fn().mockResolvedValue({ resources: [] }),
   preloadCatalogueIndexes: vi.fn(),
-  whenCatalogueReady: vi.fn(() => new Promise<void>((resolve) => {
-    resolveCatalogueReady = resolve;
-  })),
+  whenCatalogueReady: vi.fn(() => catalogueReady),
   getManifest: vi.fn().mockReturnValue({
     sourceName: 'test',
     sourceVersion: '1',

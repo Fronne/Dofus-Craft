@@ -12,6 +12,24 @@ function apiHeaders(extra?: Record<string, string>): HeadersInit {
   };
 }
 
+// specs/021-background-data-loading (FR-013): price reads may be served from a 60-second cache
+// (the Worker's and the browser's). For that long after this device's own accepted contribution,
+// every read asks for fresh data, so the player always sees what they just shared — on the page
+// where they typed it as on the Prix and Suivis pages.
+const FRESH_READ_WINDOW_MS = 60_000;
+let freshReadsUntil = 0;
+
+function readParams(values: Record<string, string>): URLSearchParams {
+  const params = new URLSearchParams(values);
+  if (Date.now() < freshReadsUntil) params.set('fresh', '1');
+  return params;
+}
+
+// A fresh read bypasses the browser's HTTP cache too, not only the Worker's.
+function readInit(): RequestInit {
+  return Date.now() < freshReadsUntil ? { headers: apiHeaders(), cache: 'no-store' } : { headers: apiHeaders() };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -35,10 +53,10 @@ export type CommunityPriceLookup =
 // rather than an exception, so a failure here can never break the personal-price path around it
 // (contracts/community-price-api.md, FR-009).
 export async function getCommunityPrice(resourceId: string, serverId: string): Promise<CommunityPriceLookup> {
-  const params = new URLSearchParams({ resourceId, serverId });
+  const params = readParams({ resourceId, serverId });
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/community-price?${params.toString()}`, { headers: apiHeaders() });
+    response = await fetch(`${API_URL}/community-price?${params.toString()}`, readInit());
   } catch {
     return { status: 'unavailable' };
   }
@@ -72,10 +90,10 @@ function isLatestItemPriceRow(value: unknown): value is LatestItemPrice {
 
 // Never throws, like getCommunityPrice: any failure resolves to `unavailable`.
 export async function getLatestItemPrice(itemId: string, serverId: string): Promise<LatestItemPriceLookup> {
-  const params = new URLSearchParams({ itemId, serverId });
+  const params = readParams({ itemId, serverId });
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/latest-price?${params.toString()}`, { headers: apiHeaders() });
+    response = await fetch(`${API_URL}/latest-price?${params.toString()}`, readInit());
   } catch {
     return { status: 'unavailable' };
   }
@@ -106,7 +124,7 @@ export type PriceHistoryLookup = { status: 'found'; history: PriceHistory } | { 
 // ('item') on a server. No price yet is `found` with empty lists; like the reads above, this never
 // throws — any failure resolves to `unavailable` (FR-013).
 export async function getPriceHistory(kind: 'resource' | 'item', id: string, serverId: string): Promise<PriceHistoryLookup> {
-  const params = new URLSearchParams({ kind, id, serverId });
+  const params = readParams({ kind, id, serverId });
   let response: Response;
   try {
     response = await fetch(`${API_URL}/price-history?${params.toString()}`, { headers: apiHeaders() });
@@ -137,10 +155,10 @@ function isSharedItemPriceEntry(value: unknown): value is SharedItemPriceEntry {
 // specs/019-craft-profit-list: every item's latest shared HDV price on a server (the Prix page's
 // candidates). Like the reads above, this never throws — any failure resolves to `unavailable`.
 export async function getSharedItemPrices(serverId: string): Promise<SharedItemPricesLookup> {
-  const params = new URLSearchParams({ serverId });
+  const params = readParams({ serverId });
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/item-prices?${params.toString()}`, { headers: apiHeaders() });
+    response = await fetch(`${API_URL}/item-prices?${params.toString()}`, readInit());
   } catch {
     return { status: 'unavailable' };
   }
@@ -155,6 +173,31 @@ export async function getSharedItemPrices(serverId: string): Promise<SharedItemP
     return { status: 'unavailable' };
   }
   return { status: 'found', items: payload.items };
+}
+
+// specs/021-background-data-loading (FR-010): several resources' community medians in one request
+// per batch of 100 (contracts/community-prices.md). Never throws: `unavailable` if any batch fails.
+const COMMUNITY_PRICES_BATCH = 100;
+export type CommunityPricesLookup = { status: 'found'; prices: CommunityPrice[] } | { status: 'unavailable' };
+
+export async function getCommunityPrices(resourceIds: string[], serverId: string): Promise<CommunityPricesLookup> {
+  const ids = [...new Set(resourceIds)];
+  const batches: string[][] = [];
+  for (let start = 0; start < ids.length; start += COMMUNITY_PRICES_BATCH) batches.push(ids.slice(start, start + COMMUNITY_PRICES_BATCH));
+  const results = await Promise.all(batches.map(async (batch): Promise<CommunityPrice[] | undefined> => {
+    const params = readParams({ serverId, resourceIds: batch.join(',') });
+    try {
+      const response = await fetch(`${API_URL}/community-prices?${params.toString()}`, readInit());
+      if (!response.ok) return undefined;
+      const payload: unknown = await response.json();
+      if (!isRecord(payload) || !Array.isArray(payload.prices) || !payload.prices.every(isCommunityPriceRow)) return undefined;
+      return payload.prices;
+    } catch {
+      return undefined;
+    }
+  }));
+  if (results.some((prices) => prices === undefined)) return { status: 'unavailable' };
+  return { status: 'found', prices: results.flatMap((prices) => prices ?? []) };
 }
 
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing
@@ -180,6 +223,7 @@ export async function submitCommunityPrice(
     return undefined;
   }
   if (!response.ok) return undefined;
+  freshReadsUntil = Date.now() + FRESH_READ_WINDOW_MS;
   let payload: unknown;
   try {
     payload = await response.json();

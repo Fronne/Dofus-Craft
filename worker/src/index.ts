@@ -1,9 +1,10 @@
 import { purgeExpiredContributions } from './retention';
 import { readPlayerCounters } from './player-counters';
-import { fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
+import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
+import { cachedRead, clearReadCache } from './read-cache';
 
 export interface Env {
   DB: D1Database;
@@ -18,10 +19,10 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
 };
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders },
   });
 }
 
@@ -30,29 +31,32 @@ function isAuthorized(request: Request, env: Env): boolean {
   return header === `Bearer ${env.COMMUNITY_API_KEY}`;
 }
 
-async function handleGetCommunityPrice(url: URL, env: Env): Promise<Response> {
+// specs/021-background-data-loading: price reads go through the 60-second read cache.
+async function cachedJson(url: URL, read: () => Promise<{ status: number; body: unknown }>): Promise<Response> {
+  const { status, body, headers } = await cachedRead(url, read);
+  return json(body, status, headers);
+}
+
+async function communityPriceResponse(url: URL, env: Env): Promise<{ status: number; body: unknown }> {
   const resourceId = url.searchParams.get('resourceId');
   const serverId = url.searchParams.get('serverId');
-  if (!resourceId || !serverId) return json({ error: 'resourceId and serverId are required' }, 400);
+  if (!resourceId || !serverId) return { status: 400, body: { error: 'resourceId and serverId are required' } };
 
   const median = await fetchCurrentMedian(env.DB, resourceId, serverId);
   // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
   // FR-012's outlier filtering) remains.
-  if (!median) return json(null, 404);
+  if (!median) return { status: 404, body: null };
 
-  return json({
-    resourceId,
-    serverId,
-    medianAmountKamas: median.medianAmountKamas,
-    sampleSize: median.sampleSize,
-    lastContributionAt: median.lastContributionAt,
-  });
-}
-
-// specs/016-shared-item-prices: an item's shared HDV price — its latest contribution, no median.
-async function handleGetLatestPrice(url: URL, env: Env): Promise<Response> {
-  const { status, body } = await latestPriceResponse(env.DB, url);
-  return json(body, status);
+  return {
+    status: 200,
+    body: {
+      resourceId,
+      serverId,
+      medianAmountKamas: median.medianAmountKamas,
+      sampleSize: median.sampleSize,
+      lastContributionAt: median.lastContributionAt,
+    },
+  };
 }
 
 async function handlePostContribution(request: Request, env: Env): Promise<Response> {
@@ -69,6 +73,8 @@ async function handlePostContribution(request: Request, env: Env): Promise<Respo
   // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted; the
   // outlier trace is resolved server-side (specs/007 FR-009, specs/016 FR-012) — see contribution.ts.
   const id = await insertContribution(env.DB, contribution);
+  // specs/021 (FR-013): this isolate's cached reads no longer reflect the database.
+  clearReadCache();
 
   return json({ id }, 201);
 }
@@ -112,23 +118,27 @@ export default {
     // Reading a community price never requires the write-side app key — anonymous read access is
     // intentional and matches the client contract.
     if (request.method === 'GET' && url.pathname === '/community-price') {
-      return handleGetCommunityPrice(url, env);
+      return cachedJson(url, () => communityPriceResponse(url, env));
     }
 
+    // specs/021-background-data-loading: several resources' medians in one request.
+    if (request.method === 'GET' && url.pathname === '/community-prices') {
+      return cachedJson(url, () => communityPricesResponse(env.DB, url));
+    }
+
+    // specs/016-shared-item-prices: an item's shared HDV price — its latest contribution, no median.
     if (request.method === 'GET' && url.pathname === '/latest-price') {
-      return handleGetLatestPrice(url, env);
+      return cachedJson(url, () => latestPriceResponse(env.DB, url));
     }
 
     // specs/019-craft-profit-list: every item's latest shared HDV price on a server, for the Prix page.
     if (request.method === 'GET' && url.pathname === '/item-prices') {
-      const { status, body } = await itemPricesResponse(env.DB, url);
-      return json(body, status);
+      return cachedJson(url, () => itemPricesResponse(env.DB, url));
     }
 
     // specs/017-price-history-chart: per-period medians only, never an individual contribution.
     if (request.method === 'GET' && url.pathname === '/price-history') {
-      const { status, body } = await priceHistoryResponse(env.DB, url);
-      return json(body, status);
+      return cachedJson(url, () => priceHistoryResponse(env.DB, url));
     }
 
     // specs/020-info-banner: the information banner's message, readable by everyone.

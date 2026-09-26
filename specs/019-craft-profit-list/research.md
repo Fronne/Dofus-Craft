@@ -53,3 +53,10 @@
 
 - **Décision** : si `/item-prices` échoue, la page affiche « Impossible de charger les prix partagés
   pour le moment. » sans liste ; une médiane manquante rend simplement l'objet non calculable.
+
+## Révision — specs/021-background-data-loading
+
+Le calcul de la liste est désormais une fonction de module partagée (`useCraftProfits.ts`) : il est
+lancé en fond à l'ouverture du site (quand le catalogue est prêt et le navigateur inactif, au plus 2
+requêtes simultanées), et la page Prix s'abonne au calcul en cours ou reprend la liste terminée au
+lieu de recommencer. Les règles de calcul sont inchangées.
