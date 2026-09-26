@@ -1,4 +1,4 @@
-import { latestPerDevice, outlierBounds, percentileCont, type ContributionRow } from './median';
+import { outlierBounds, percentileCont, type ContributionRow } from './median';
 import { retentionCutoff } from './retention';
 
 // specs/017-price-history-chart: a resource's or an item's price history over the 90 retained days,
@@ -28,8 +28,8 @@ export function periodStartFor(date: string, grouping: Grouping): string {
   return day.toISOString().slice(0, 10);
 }
 
-// research.md §3, in this order: 90-day window, Paris period, one row per device and period
-// (specs/004 FR-023, but per period so a player who checks weekly shows every week), outlier bounds
+// research.md §3, in this order: 90-day window, Paris period, every contribution kept (spec FR-004,
+// révision : unlike the current price, a device counts once per price it shared), outlier bounds
 // over every row kept for the grouping (specs/004 FR-012 — per period there would rarely be the 4
 // values needed), then median and count per period. A period emptied by the filter disappears.
 function groupHistory(rows: ContributionRow[], grouping: Grouping): HistoryPoint[] {
@@ -38,7 +38,7 @@ function groupHistory(rows: ContributionRow[], grouping: Grouping): HistoryPoint
     const period = periodStartFor(parisDate(row.createdAt), grouping);
     byPeriod.set(period, [...(byPeriod.get(period) ?? []), row]);
   }
-  const kept = [...byPeriod].map(([period, periodRows]) => [period, latestPerDevice(periodRows)] as const);
+  const kept = [...byPeriod];
   const [low, high] = outlierBounds(kept.flatMap(([, periodRows]) => periodRows.map((row) => row.amountKamas)).sort((a, b) => a - b));
   const points: HistoryPoint[] = [];
   for (const [periodStart, periodRows] of kept) {

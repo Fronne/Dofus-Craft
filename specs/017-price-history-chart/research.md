@@ -30,8 +30,8 @@ conception.
   1. prendre les contributions du `kind` demandé (`'resource'` ou `'item'`), de l'identifiant et du
      serveur, dont `created_at` tombe dans les 90 derniers jours (`retentionCutoff()`) ;
   2. attribuer chaque contribution à sa période, en heure de Paris ;
-  3. dans chaque période, ne garder que le dernier prix de chaque appareil (`latestPerDevice`) ;
-     une ligne sans appareil (antérieure à la révision 5) compte seule ;
+  3. garder toutes les contributions de la période, sans dédoublonner par appareil (révision du
+     2026-09-26 : chaque prix partagé compte) ;
   4. calculer les bornes des valeurs aberrantes (`outlierBounds`, écart interquartile, sans effet
      sous 4 valeurs) **sur l'ensemble des lignes gardées à l'étape 3 pour ce regroupement**, puis
      écarter les lignes hors bornes ;

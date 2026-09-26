@@ -72,7 +72,7 @@ function resourceHistoryButton(name: string) {
 }
 
 function itemHistoryButton() {
-  return within(document.querySelector('.market') as HTMLElement).getByRole('button', { name: 'Historique du prix' });
+  return within(document.querySelector('.item-detail-card') as HTMLElement).getByRole('button', { name: 'Historique du prix' });
 }
 
 describe('price history popover (specs/017)', () => {
@@ -116,7 +116,6 @@ describe('price history popover (specs/017)', () => {
       expect(getPriceHistory).toHaveBeenCalledWith('resource', 'resource-1', 'mikhal');
       await waitFor(() => expect(dialog.querySelectorAll('.price-history-point')).toHaveLength(3));
       expect(document.activeElement?.getAttribute('placeholder')).not.toBe('Prix unitaire');
-      expect(within(dialog).getByText(/un prix par joueur et par période/)).toBeInTheDocument();
       expect(within(dialog).getByText('Serveur Mikhal')).toBeInTheDocument();
     });
 
@@ -202,7 +201,7 @@ describe('price history popover (specs/017)', () => {
   });
 
   describe('US3 — item history', () => {
-    it("opens the item's HDV price history from « Prix HDV », leaving the field locked and unchanged", async () => {
+    it("opens the item's HDV price history from the item card, leaving the field locked and unchanged", async () => {
       await openSearch();
       const hdv = screen.getByLabelText('Prix HDV');
       await waitFor(() => expect(hdv).toHaveValue('6 000'));

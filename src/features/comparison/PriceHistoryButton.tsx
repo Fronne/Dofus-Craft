@@ -20,11 +20,14 @@ const GAP = 8;
 const EDGE = 16;
 const NARROW_SCREEN = 480;
 
-export function PriceHistoryButton({ kind, id, name, serverId }: {
+export function PriceHistoryButton({ kind, id, name, serverId, label, className }: {
   kind: 'resource' | 'item';
   id: string;
   name: string;
   serverId: string;
+  // Visible text beside the icon (the item card's button); icon only otherwise.
+  label?: string;
+  className?: string;
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -94,7 +97,7 @@ export function PriceHistoryButton({ kind, id, name, serverId }: {
       <button
         ref={triggerRef}
         type="button"
-        className="icon-button price-history-trigger"
+        className={className ?? 'icon-button price-history-trigger'}
         aria-label="Historique du prix"
         title="Historique du prix"
         aria-expanded={open}
@@ -110,7 +113,8 @@ export function PriceHistoryButton({ kind, id, name, serverId }: {
           }
         }}
       >
-        <Icon name="chart" size={14} />
+        <Icon name="chart" size={label ? 18 : 14} />
+        {label}
       </button>
       {open && createPortal(
         <div ref={panelRef} className="price-history-panel" role="dialog" aria-label={`Historique du prix de ${name}`}>
@@ -137,7 +141,6 @@ export function PriceHistoryButton({ kind, id, name, serverId }: {
             ))}
           </div>
           <PriceHistoryBody state={state} grouping={grouping} onChooseGrouping={chooseGrouping} />
-          <p className="price-history-note">Médiane par période sur 90 jours, un prix par joueur et par période.</p>
         </div>,
         document.body,
       )}

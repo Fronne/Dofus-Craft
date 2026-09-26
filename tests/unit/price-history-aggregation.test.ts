@@ -55,16 +55,16 @@ describe('computePriceHistory (specs/017)', () => {
     expect(history.week.map((point) => point.periodStart)).toEqual(['2026-10-19', '2026-10-26']);
   });
 
-  it('counts a device once per day, with its latest price', () => {
+  it('counts every price a device shared in the day', () => {
     const history = computePriceHistory([
       row(1000, '2026-09-21T08:00:00.000Z'),
       row(1100, '2026-09-21T09:00:00.000Z'),
       row(1300, '2026-09-21T10:00:00.000Z'),
     ], NOW);
-    expect(history.day).toEqual([{ periodStart: '2026-09-21', medianAmountKamas: 1300, sampleSize: 1 }]);
+    expect(history.day).toEqual([{ periodStart: '2026-09-21', medianAmountKamas: 1100, sampleSize: 3 }]);
   });
 
-  it('counts a device once in each day it shared a price', () => {
+  it('counts a device in each day it shared a price', () => {
     const history = computePriceHistory([
       row(1000, '2026-09-21T08:00:00.000Z'),
       row(1200, '2026-09-22T08:00:00.000Z'),
@@ -73,8 +73,8 @@ describe('computePriceHistory (specs/017)', () => {
       { periodStart: '2026-09-21', medianAmountKamas: 1000, sampleSize: 1 },
       { periodStart: '2026-09-22', medianAmountKamas: 1200, sampleSize: 1 },
     ]);
-    // Same week: the device counts once there, with its latest price.
-    expect(history.week).toEqual([{ periodStart: '2026-09-21', medianAmountKamas: 1200, sampleSize: 1 }]);
+    // Same week: both prices count.
+    expect(history.week).toEqual([{ periodStart: '2026-09-21', medianAmountKamas: 1100, sampleSize: 2 }]);
   });
 
   it('counts each row without a device id on its own', () => {

@@ -22,7 +22,6 @@
 - Sélecteur de regroupement : groupe de 3 boutons `Jour` / `Semaine` / `Mois` (`aria-pressed`). La
   valeur initiale vient de la préférence (`'week'` par défaut), et chaque changement l'enregistre
   (FR-007).
-- Mention sous la courbe : « Médiane par période sur 90 jours, un prix par joueur et par période »
   (FR-005).
 - Fermeture : Échap, clic hors du déclencheur et du panneau, « Fermer », changement de serveur ou
   de mode (démontage). Le défilement ne le ferme pas. Un seul popover est

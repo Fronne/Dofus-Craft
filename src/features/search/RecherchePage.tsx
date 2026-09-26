@@ -542,9 +542,6 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                     lockWhenFilled={community}
                     updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
                     onCommit={community ? commitMarketPrice : undefined}
-                    history={community && selectedItem && serverId
-                      ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} />
-                      : undefined}
                     onChange={(value) => {
                       setMarket(value);
                       // Mode communautaire shares on commit (above), never into the local price.
@@ -569,6 +566,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
         <ItemDetail
           detail={detail}
           isPinned={selected ? pinned.isPinned(selected) : false}
+          history={community && selectedItem && serverId
+            ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} label="Historique" className="pin-item-button item-history-button" />
+            : undefined}
           onTogglePin={selectedItem
             ? () => {
               if (pinned.isPinned(selectedItem.id)) {

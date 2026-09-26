@@ -56,7 +56,6 @@
 .price-history-grouping { padding: .25rem .75rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
 .price-history-grouping + .price-history-grouping { border-left: 1px solid var(--border); }
 .price-history-grouping[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
-.price-history-note { margin: 0; font-size: .75rem; color: var(--text-faint); }
 .price-history-message { display: grid; gap: .35rem; min-height: 5rem; align-content: center; margin: 0; color: var(--text-muted); }
 .price-history-message p { margin: 0; }
 .price-history-message strong { color: var(--text); }
@@ -112,3 +111,5 @@
 }
 .price-history-tooltip--start { transform: translate(-12px, calc(-100% - 10px)); }
 .price-history-tooltip--end { transform: translate(calc(-100% + 12px), calc(-100% - 10px)); }
+.item-history-button { right: auto; left: var(--space-5); }
+.item-history-button[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }

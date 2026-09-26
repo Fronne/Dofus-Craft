@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Category, Item, ItemStat, Recipe, Resource } from '../../domain/types';
 import { Icon } from '../../components/Icon';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
@@ -30,10 +31,13 @@ export function ItemDetail({
   detail,
   isPinned = false,
   onTogglePin,
+  history,
 }: {
   detail?: ItemDetailData;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  // specs/017: the price-history button, in the card's top-left corner. Only passed in Mode communautaire.
+  history?: ReactNode;
 }) {
   if (!detail) {
     return <section className="card"><p>Sélectionnez un objet pour voir ses détails.</p></section>;
@@ -49,6 +53,7 @@ export function ItemDetail({
           {isPinned ? 'Ne plus suivre' : 'Suivre'}
         </button>
       )}
+      {history}
       {item.imageUrl ? (
         <img src={item.imageUrl} alt={item.name} />
       ) : (

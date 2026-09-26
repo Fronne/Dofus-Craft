@@ -169,15 +169,13 @@ avec des prix sur une seule période : les deux affichent l'état « pas assez d
   uniquement.
 - **FR-004**: La valeur d'un point MUST être la médiane des prix partagés de la période, avec la même
   formule que le prix communautaire actuel des ressources (specs/004 FR-003), après avoir écarté les
-  valeurs aberrantes selon la même règle (specs/004 FR-012). Comme pour le prix actuel, un appareil
-  ne compte qu'une fois, avec son dernier prix (specs/004 FR-023), mais **une fois par période** et
-  non une fois sur 90 jours, pour qu'un joueur qui relève le prix chaque semaine apparaisse chaque
-  semaine. Cela vaut aussi pour les objets, même si le champ « Prix HDV » affiche le prix le plus
+  valeurs aberrantes selon la même règle (specs/004 FR-012). Contrairement au prix actuel
+  (specs/004 FR-023), **tous les prix partagés comptent**, y compris plusieurs prix d'un même
+  appareil dans une période (révision du 2026-09-26, à la demande du porteur du projet). Cela vaut aussi pour les objets, même si le champ « Prix HDV » affiche le prix le plus
   récent et non une médiane (specs/016 FR-001).
 - **FR-005**: Chaque point MUST indiquer, au survol ou au toucher, la période, le prix médian en
-  kamas et le nombre de prix retenus qui le composent. Ce nombre compte les appareils de la période
-  (un appareil qui corrige son prix le même jour compte une fois) après le filtre des valeurs
-  aberrantes ; le popover MUST le rappeler (« un prix par joueur et par période »).
+  kamas et le nombre de prix retenus qui le composent. Ce nombre compte tous les prix partagés de la
+  période après le filtre des valeurs aberrantes (mention retirée du popover le 2026-09-26).
 - **FR-006**: Le système MUST NOT exposer de prix individuel ni aucune information permettant de
   relier un prix à un appareil ou à un joueur ; seules les valeurs agrégées par période (médiane et
   nombre de prix) sortent du service communautaire.
