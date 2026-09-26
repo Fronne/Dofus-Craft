@@ -37,11 +37,16 @@ describe('sortProfitRows / filterProfitRows (specs/019)', () => {
   const rows = [row('Bottes', 5000, 10), row('Anneau', 12000, 5), row('Coiffe', -2000, -20), row('Amulette', 5000, 50), row('Dague', 100)];
 
   it('sorts by profit in kamas, ties by name', () => {
-    expect(sortProfitRows(rows, 'kamas').map((entry) => entry.item.name)).toEqual(['Anneau', 'Amulette', 'Bottes', 'Dague', 'Coiffe']);
+    expect(sortProfitRows(rows, { key: 'kamas', direction: 'desc' }).map((entry) => entry.item.name)).toEqual(['Anneau', 'Amulette', 'Bottes', 'Dague', 'Coiffe']);
   });
 
   it('sorts by margin, a missing margin last', () => {
-    expect(sortProfitRows(rows, 'percent').map((entry) => entry.item.name)).toEqual(['Amulette', 'Bottes', 'Anneau', 'Coiffe', 'Dague']);
+    expect(sortProfitRows(rows, { key: 'percent', direction: 'desc' }).map((entry) => entry.item.name)).toEqual(['Amulette', 'Bottes', 'Anneau', 'Coiffe', 'Dague']);
+  });
+
+  it('sorts ascending on a second click, a missing margin still last', () => {
+    expect(sortProfitRows(rows, { key: 'percent', direction: 'asc' }).map((entry) => entry.item.name)).toEqual(['Coiffe', 'Anneau', 'Bottes', 'Amulette', 'Dague']);
+    expect(sortProfitRows(rows, { key: 'name', direction: 'asc' }).map((entry) => entry.item.name)).toEqual(['Amulette', 'Anneau', 'Bottes', 'Coiffe', 'Dague']);
   });
 
   it('filters by name without accents or case', () => {

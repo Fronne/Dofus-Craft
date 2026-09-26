@@ -63,6 +63,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 import App from '../../src/app/App';
 import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
+import { clearCraftProfitsCache } from '../../src/features/prices/useCraftProfits';
 
 const MEDIANS: Record<string, number> = { r1: 1000, r2: 500, r3: 9000 };
 const HDV: Record<string, number> = { anneau: 13000, bottes: 10000, coiffe: 1000, dague: 50000 };
@@ -84,6 +85,7 @@ describe('Prix page — craft profit (specs/019)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
+    clearCraftProfitsCache();
     getCommunityPrice.mockReset();
     getCommunityPrice.mockImplementation(async (resourceId) => (MEDIANS[resourceId] === undefined
       ? { status: 'not-found' }
@@ -104,13 +106,27 @@ describe('Prix page — craft profit (specs/019)', () => {
       await openPrices('community');
       await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
       const anneau = rowOf('Anneau');
-      expect(normalize(anneau.textContent)).toContain('13 000 kamas');
-      expect(normalize(anneau.textContent)).toContain('1 000 kamas');
-      expect(normalize(within(anneau).getByText(/^\+12 000 kamas/).textContent)).toContain('+12 000 kamas');
+      expect(normalize(anneau.textContent)).toContain('13 000');
+      expect(normalize(anneau.textContent)).toContain('1 000');
+      expect(normalize(anneau.querySelector('.profit-value')?.textContent ?? null)).toBe('Bénéfice+12 000');
+      // The unit is the kamas icon, named for screen readers.
+      expect(within(anneau).getAllByRole('img', { name: 'kamas' })).toHaveLength(3);
       expect(anneau.querySelector('.market-date')).toHaveTextContent(/il y a|heure/i);
       expect(rowOf('Coiffe').querySelector('.profit-value')).toHaveClass('profit-value--negative');
-      expect(normalize(rowOf('Coiffe').querySelector('.profit-value')?.textContent ?? null)).toContain('−1 000 kamas');
+      expect(normalize(rowOf('Coiffe').querySelector('.profit-value')?.textContent ?? null)).toContain('−1 000');
       expect(screen.getByText('3 objets')).toBeInTheDocument();
+    });
+
+    it('shows the last list at once when coming back, and refreshes it in the background', async () => {
+      await openPrices('community');
+      await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
+      fireEvent.click(screen.getByRole('link', { name: 'Suivis' }));
+      getSharedItemPrices.mockResolvedValue({ status: 'found', items: [{ itemId: 'anneau', amountKamas: 13000, contributedAt: recent }] });
+      fireEvent.click(screen.getByRole('link', { name: 'Prix' }));
+      // Straight away, without « Calcul en cours… »: the list from the previous visit.
+      expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
+      expect(screen.queryByText(/Calcul en cours/)).not.toBeInTheDocument();
+      await waitFor(() => expect(names()).toEqual(['Anneau']));
     });
 
     it('opens the item in the Recherche page', async () => {
@@ -119,6 +135,7 @@ describe('Prix page — craft profit (specs/019)', () => {
       fireEvent.click(within(rowOf('Anneau')).getByRole('button'));
       await waitFor(() => expect(window.location.pathname).not.toBe('/prix'));
       expect(window.location.search).toContain('item=anneau');
+      expect(new URLSearchParams(window.location.search).get('q')).toBe('Anneau');
     });
 
     it('says when no item is computable, with a way to the Recherche page', async () => {
@@ -141,7 +158,7 @@ describe('Prix page — craft profit (specs/019)', () => {
       await openPrices('community');
       await waitFor(() => expect(names()).toContain('Coiffe'));
       // 2 × r1 = 2 000 kamas, not the 9 000 kamas purchase price.
-      expect(normalize(rowOf('Coiffe').textContent)).toContain('2 000 kamas');
+      expect(normalize(rowOf('Coiffe').querySelectorAll('.profit-cell b')[1]?.textContent ?? null)).toBe('2 000');
     });
 
     it('keeps an item whose craftable ingredient has no purchase price but a computable craft', async () => {
@@ -159,18 +176,24 @@ describe('Prix page — craft profit (specs/019)', () => {
       await resourcePricesFor('personal').save('mikhal', 'r2', 4000);
       await openPrices('personal');
       await waitFor(() => expect(names()).toEqual(['Bottes']));
-      expect(normalize(rowOf('Bottes').textContent)).toContain('+16 000 kamas');
+      expect(normalize(rowOf('Bottes').textContent)).toContain('+16 000');
       expect(getSharedItemPrices).not.toHaveBeenCalled();
     });
   });
 
   describe('US3 — find an item', () => {
-    it('filters by name and sorts by margin', async () => {
+    it('filters by name and sorts by clicking a column, twice to reverse', async () => {
       await openPrices('community');
       await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
 
-      fireEvent.change(screen.getByLabelText(/Trier par/), { target: { value: 'percent' } });
+      expect(screen.queryByRole('combobox', { name: /Trier/ })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par Marge' }));
       expect(names()).toEqual(['Bottes', 'Anneau', 'Coiffe']);
+      expect(screen.getByRole('button', { name: 'Trier par Marge' })).toHaveAttribute('aria-pressed', 'true');
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par Marge' }));
+      expect(names()).toEqual(['Coiffe', 'Anneau', 'Bottes']);
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par Objet' }));
+      expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
 
       fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un objet' }), { target: { value: 'ANN' } });
       expect(names()).toEqual(['Anneau']);

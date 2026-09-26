@@ -17,7 +17,10 @@ export type CraftProfitRow = {
   marginPercent?: number;
 };
 
-export type ProfitSort = 'kamas' | 'percent';
+// The column the list is sorted by (a click on its header) and in which direction.
+export type ProfitSortKey = 'name' | 'market' | 'cost' | 'kamas' | 'percent';
+export type ProfitSort = { key: ProfitSortKey; direction: 'asc' | 'desc' };
+export const DEFAULT_PROFIT_SORT: ProfitSort = { key: 'kamas', direction: 'desc' };
 
 export function profitRow(item: ProfitItem, comparison: Comparison, marketPriceDate: string): CraftProfitRow | undefined {
   const marketPriceKamas = comparison.marketPriceKamas;
@@ -29,10 +32,26 @@ export function profitRow(item: ProfitItem, comparison: Comparison, marketPriceD
   return row;
 }
 
-// FR-006: descending on the chosen criterion, ties broken by name; with no margin, last when sorting by %.
+const SORT_VALUE: Record<Exclude<ProfitSortKey, 'name'>, (row: CraftProfitRow) => number | undefined> = {
+  market: (row) => row.marketPriceKamas,
+  cost: (row) => row.craftCostKamas,
+  kamas: (row) => row.profitKamas,
+  percent: (row) => row.marginPercent,
+};
+
+// FR-006 (revised 2026-09-26: sorting by clicking a column): by the chosen column in the chosen
+// direction, ties broken by name; a missing margin always comes last.
 export function sortProfitRows(rows: CraftProfitRow[], sort: ProfitSort): CraftProfitRow[] {
-  const value = (row: CraftProfitRow) => (sort === 'kamas' ? row.profitKamas : row.marginPercent ?? Number.NEGATIVE_INFINITY);
-  return [...rows].sort((left, right) => value(right) - value(left) || left.item.name.localeCompare(right.item.name, 'fr'));
+  const sign = sort.direction === 'asc' ? 1 : -1;
+  const byName = (left: CraftProfitRow, right: CraftProfitRow) => left.item.name.localeCompare(right.item.name, 'fr');
+  if (sort.key === 'name') return [...rows].sort((left, right) => sign * byName(left, right));
+  const value = SORT_VALUE[sort.key];
+  return [...rows].sort((left, right) => {
+    const a = value(left);
+    const b = value(right);
+    if (a === undefined || b === undefined) return a === b ? byName(left, right) : a === undefined ? 1 : -1;
+    return sign * (a - b) || byName(left, right);
+  });
 }
 
 export function filterProfitRows(rows: CraftProfitRow[], query: string): CraftProfitRow[] {

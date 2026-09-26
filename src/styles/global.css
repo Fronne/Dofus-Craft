@@ -1106,25 +1106,64 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 /* specs/019-craft-profit-list: the Prix page, one line per profitable item. */
 .profit-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
 .profit-toolbar .prices-search { margin: 0; flex: 1 1 240px; }
-.profit-list { display: grid; gap: 0; list-style: none; margin: var(--space-2) 0 0; padding: 0; }
-.profit-row { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
-.profit-row:last-child { border-bottom: 0; }
-.profit-row-main { flex: 1 1 auto; display: flex; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
-.profit-row-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
-.profit-row-figures { display: grid; grid-template-columns: repeat(3, minmax(7.5rem, auto)); gap: var(--space-4); margin: 0; }
-.profit-row-figures > div { display: grid; gap: .1rem; text-align: right; }
-.profit-row-figures dt { font-size: .75rem; color: var(--text-muted); }
-.profit-row-figures dd { display: grid; margin: 0; font-weight: 700; white-space: nowrap; }
-.profit-row-figures small { font-weight: 500; font-size: .75rem; }
-.profit-value--positive dd { color: var(--success); }
-.profit-value--negative dd { color: var(--danger); }
-.profit-value--neutral dd { color: var(--text-muted); }
-.profit-empty-link { text-align: center; }
-@media (max-width: 480px) {
-  .profit-row { flex-direction: column; align-items: stretch; gap: var(--space-2); }
-  .profit-row-figures { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
-  .profit-row-figures dd { white-space: normal; }
+.profit-head, .profit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 9rem 9rem 9.5rem 4.5rem;
+  column-gap: var(--space-4);
 }
+.profit-head { padding: 0 0 var(--space-2); border-bottom: 1px solid var(--border); }
+.profit-sort { padding: .25rem 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: right; cursor: pointer; white-space: nowrap; }
+.profit-sort:first-child { text-align: left; }
+.profit-sort:hover, .profit-sort--active { color: var(--gold-bright); }
+.profit-list { list-style: none; margin: 0; padding: 0; }
+.profit-row { align-items: start; padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+.profit-row:last-child { border-bottom: 0; }
+.profit-row-main { display: flex; align-self: center; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
+.profit-row-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
+.profit-cell { display: grid; justify-items: end; gap: .15rem; font-variant-numeric: tabular-nums; }
+.profit-cell b { font-weight: 700; white-space: nowrap; }
+.profit-cell small { font-size: .75rem; color: var(--text-muted); }
+.profit-cell-label { display: none; }
+.profit-value--positive b, .profit-value--positive small { color: var(--success); }
+.profit-value--negative b, .profit-value--negative small { color: var(--danger); }
+.profit-value--neutral b { color: var(--text-muted); }
+.kamas-amount { display: inline-flex; align-items: center; gap: .25rem; }
+.kamas-amount-icon { flex: none; width: 14px; height: 14px; object-fit: contain; }
+.profit-list-end { min-height: 2.5rem; padding: var(--space-2) 0; text-align: center; font-size: .85rem; color: var(--text-muted); }
+.back-to-top {
+  position: fixed;
+  z-index: 15;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.back-to-top svg { transform: rotate(180deg); }
+.back-to-top:hover { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+@media (max-width: 960px) {
+  /* Above the bottom tab bar. */
+  .back-to-top { right: var(--space-3); bottom: calc(72px + var(--space-3)); }
+}
+.profit-empty-link { text-align: center; }
+@media (max-width: 640px) {
+  .profit-head { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .profit-sort, .profit-sort:first-child { text-align: left; }
+  .profit-row { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--space-2); column-gap: var(--space-2); }
+  .profit-row-main { grid-column: 1 / -1; }
+  .profit-cell { justify-items: start; }
+  .profit-cell-label { display: block; font-size: .7rem; color: var(--text-muted); }
+  .profit-cell b { white-space: nowrap; }
+}
+
 
 /* ---------- Responsive ---------- */
 

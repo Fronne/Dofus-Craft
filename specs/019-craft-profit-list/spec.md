@@ -95,8 +95,9 @@ correspondants restent, toujours triés par bénéfice.
 
 1. **Given** une liste d'objets, **When** le joueur tape « amul », **Then** seuls les objets dont le
    nom contient « amul » (sans tenir compte des accents ni de la casse) restent affichés.
-2. **Given** plus d'objets que la limite choisie (10, 25, 50 ou 100), **When** la page s'affiche,
-   **Then** seuls les premiers selon le tri sont affichés, avec le nombre total d'objets calculables.
+2. **Given** plus de 25 objets, **When** la page s'affiche, **Then** les 25 premiers selon le tri
+   sont affichés avec le nombre total d'objets calculables, et les suivants apparaissent quand le
+   joueur fait défiler jusqu'au bas de la liste.
 
 ---
 
@@ -133,11 +134,15 @@ correspondants restent, toujours triés par bénéfice.
 - **FR-005**: Les prix MUST suivre le mode actif, avec les mêmes règles que la page Recherche :
   Mode communautaire → prix partagés (specs/004, specs/016) ; Mode personnel → carnet de l'appareil
   et prix HDV saisis (specs/002, specs/005).
-- **FR-006**: Le joueur MUST pouvoir trier la liste par bénéfice en kamas (par défaut) ou par marge
-  en %, toujours décroissant ; un bénéfice négatif MUST être distinct visuellement d'un bénéfice
+- **FR-006**: Le joueur MUST pouvoir trier la liste uniquement en cliquant sur l'en-tête d'une
+  colonne (Objet, Prix HDV, Coût de craft, Bénéfice, Marge) : un premier clic trie du plus grand au
+  plus petit (de A à Z pour le nom), un second inverse l'ordre ; par défaut, bénéfice en kamas
+  décroissant (révision du 2026-09-26, à la demande du porteur du projet : plus de menu « Trier
+  par », la marge devient une colonne) ; un bénéfice négatif MUST être distinct visuellement d'un bénéfice
   positif.
-- **FR-007**: Le joueur MUST pouvoir filtrer la liste par nom (sans accents ni casse) et choisir le
-  nombre de lignes affichées (10, 25, 50, 100) ; le nombre total d'objets calculables MUST rester
+- **FR-007**: Le joueur MUST pouvoir filtrer la liste par nom (sans accents ni casse)  ; la liste
+  s'affiche par défilement infini, 25 objets de plus à chaque fois que le bas de la liste approche
+  (révision du 2026-09-26 : plus de sélecteur « Afficher ») ; le nombre total d'objets calculables MUST rester
   visible.
 - **FR-008**: Choisir une ligne MUST ouvrir la page Recherche sur cet objet.
 - **FR-009**: Les objets non calculables MUST NOT apparaître, et aucune valeur MUST NOT être inventée

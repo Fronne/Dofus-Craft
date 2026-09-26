@@ -32,6 +32,15 @@ export type CraftProfitsState = {
 
 const INITIAL: CraftProfitsState = { status: 'loading', rows: [], done: 0, total: 0 };
 
+// The last complete result per server and mode, kept for the visit: coming back to the page shows it
+// at once, while a fresh computation runs in the background and replaces it only once finished — so
+// the list never empties or flickers. Not persisted: an old list shown after a reload could mislead.
+const cache = new Map<string, CraftProfitsState>();
+
+export function clearCraftProfitsCache() {
+  cache.clear();
+}
+
 async function loadCandidates(serverId: string, priceMode: PriceMode): Promise<Candidate[] | undefined> {
   if (priceMode === 'community') {
     const lookup = await getSharedItemPrices(serverId);
@@ -51,7 +60,8 @@ async function forEachLimited<T>(items: T[], limit: number, task: (item: T) => P
 }
 
 export function useCraftProfits(serverId: string | undefined, priceMode: PriceMode): CraftProfitsState {
-  const [state, setState] = useState<CraftProfitsState>(INITIAL);
+  const key = `${serverId}:${priceMode}`;
+  const [state, setState] = useState<CraftProfitsState>(() => cache.get(key) ?? INITIAL);
 
   useEffect(() => {
     if (!serverId) {
@@ -59,12 +69,14 @@ export function useCraftProfits(serverId: string | undefined, priceMode: PriceMo
       return;
     }
     let cancelled = false;
-    setState(INITIAL);
+    const cached = cache.get(key);
+    setState(cached ?? INITIAL);
     (async () => {
       const candidates = await loadCandidates(serverId, priceMode);
       if (cancelled) return;
       if (!candidates) {
-        setState({ ...INITIAL, status: 'unavailable' });
+        // Keep a list already shown rather than replacing it with an error.
+        if (!cached) setState({ ...INITIAL, status: 'unavailable' });
         return;
       }
       const items = await getResourceDetails(candidates.map((candidate) => candidate.itemId));
@@ -82,7 +94,11 @@ export function useCraftProfits(serverId: string | undefined, priceMode: PriceMo
         ))
         .filter((row): row is CraftProfitRow => row !== undefined);
       const publish = (status: CraftProfitsState['status']) => {
-        if (!cancelled) setState({ status, rows: rows(), done, total: candidates.length });
+        if (cancelled) return;
+        const next = { status, rows: rows(), done, total: candidates.length };
+        if (status === 'ready') cache.set(key, next);
+        // A cached list stays on screen until the background computation is complete.
+        if (status === 'ready' || !cached) setState(next);
       };
       publish('loading');
 
@@ -114,7 +130,7 @@ export function useCraftProfits(serverId: string | undefined, priceMode: PriceMo
     return () => {
       cancelled = true;
     };
-  }, [serverId, priceMode]);
+  }, [key, serverId, priceMode]);
 
   return state;
 }

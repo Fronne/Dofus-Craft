@@ -47,8 +47,8 @@ test.describe('Prix page (specs/019)', () => {
     const { row, elapsed } = await openPricesPage(page);
     // SC-004: the list shows within 3 seconds (recipes already cached by the Recherche page).
     expect(elapsed).toBeLessThan(3000);
-    await expect(row.locator('.profit-value')).toHaveClass(/profit-value--positive/);
-    await page.getByLabel(/Trier par/).selectOption('percent');
+    await expect(row.locator('.profit-value').first()).toHaveClass(/profit-value--positive/);
+    await page.getByRole('button', { name: 'Trier par Marge' }).click();
     await expect(row).toBeVisible();
   });
 
