@@ -37,7 +37,8 @@ déjà consultées s'affichent quand même, sans indicateur de chargement.
    d'une visite ultérieure, **Then** elle s'affiche sans requête vers la source du catalogue.
 3. **Given** un catalogue gardé depuis plus longtemps que la durée de fraîcheur, **When** le joueur
    ouvre le site, **Then** le catalogue gardé est affiché tout de suite et une mise à jour est
-   récupérée en fond ; elle ne remplace l'affichage que si elle diffère.
+   récupérée en fond ; elle est utilisée à partir de l'affichage suivant (navigation ou recherche),
+   sans faire clignoter la page en cours.
 4. **Given** la source du catalogue injoignable, **When** le joueur ouvre le site avec un catalogue
    gardé, **Then** le site fonctionne avec ce catalogue, sans message d'erreur bloquant.
 5. **Given** une première visite (rien de gardé), **When** le joueur ouvre le site, **Then** le
@@ -68,8 +69,8 @@ ouvrant la page directement.
 3. **Given** le joueur qui change de serveur ou de mode de prix, **When** il ouvre ensuite la page
    Prix, **Then** la liste correspond au nouveau serveur et au nouveau mode.
 4. **Given** le joueur qui saisit ou recherche pendant la préparation, **When** celle-ci tourne,
-   **Then** l'interface reste fluide : la préparation ne démarre que quand le site est inactif et ne
-   passe pas devant les chargements demandés par le joueur.
+   **Then** l'interface reste fluide : la préparation ne démarre que quand le site est inactif et
+   n'envoie pas plus de 2 requêtes simultanées tant que le joueur n'est pas sur la page Prix.
 
 ---
 
@@ -137,8 +138,9 @@ demande de prix partagés pour les 8 ressources, avec des valeurs identiques à 
 - **FR-011**: L'affichage d'une recette en mode communautaire DOIT utiliser cette demande regroupée.
 - **FR-012**: Les réponses de lecture du service partagé (prix communautaires, prix des objets,
   historique) PEUVENT être servies depuis un cache d'au plus 60 secondes.
-- **FR-013**: Une contribution envoyée par le joueur DOIT être visible pour lui immédiatement après
-  l'envoi, sans attendre l'expiration du cache.
+- **FR-013**: Une contribution envoyée par le joueur (prix d'une ressource ou prix HDV d'un objet)
+  DOIT être visible pour lui immédiatement après l'envoi, sur la page où il l'a saisie comme sur la
+  page Prix, sans attendre l'expiration du cache.
 - **FR-014**: Les préférences et les prix saisis par le joueur ne DOIVENT pas être affectés par cette
   fonctionnalité ; seules des données publiques (catalogue, prix partagés) sont mises en cache.
 

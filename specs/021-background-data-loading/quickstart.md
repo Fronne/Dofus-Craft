@@ -24,8 +24,11 @@ le worker local.
 
 1. Mode communautaire, ouvrir un objet à plusieurs ressources : une seule requête
    `/community-prices` (SC-004), valeurs identiques à l'ancien affichage.
-2. Envoyer un prix pour une ressource : la valeur mise à jour s'affiche (requête avec `fresh=1`).
-3. `curl -i "<worker>/community-prices?serverId=…&resourceIds=1,2"` deux fois : `Cache-Control:
+2. Envoyer un prix pour une ressource, puis un prix HDV pour un objet : chaque valeur mise à jour
+   s'affiche aussitôt (requêtes avec `fresh=1`) ; ouvrir Prix : la liste tient compte du nouveau prix.
+3. Page Suivis en mode communautaire : les prix manquants arrivent en une seule requête
+   `/community-prices`.
+4. `curl -i "<worker>/community-prices?serverId=…&resourceIds=1,2"` deux fois : `Cache-Control:
    public, max-age=60`.
 
 ## Tests automatisés
