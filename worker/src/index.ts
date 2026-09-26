@@ -2,6 +2,7 @@ import { purgeExpiredContributions } from './retention';
 import { readPlayerCounters } from './player-counters';
 import { fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
+import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
 
 export interface Env {
@@ -127,6 +128,12 @@ export default {
     // specs/017-price-history-chart: per-period medians only, never an individual contribution.
     if (request.method === 'GET' && url.pathname === '/price-history') {
       const { status, body } = await priceHistoryResponse(env.DB, url);
+      return json(body, status);
+    }
+
+    // specs/020-info-banner: the information banner's message, readable by everyone.
+    if (request.method === 'GET' && url.pathname === '/info-message') {
+      const { status, body } = await infoMessageResponse(env.DB);
       return json(body, status);
     }
 

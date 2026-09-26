@@ -8,6 +8,9 @@ const api = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  getMessage: vi.fn(),
+  saveMessage: vi.fn(),
+  deleteMessage: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -45,6 +48,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     for (const fn of Object.values(api)) fn.mockReset();
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
+    api.getMessage.mockResolvedValue({ status: 'ok', value: null });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -176,6 +180,48 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       fireEvent.click(within(card()).getByRole('button', { name: 'Supprimer' }));
       await act(async () => {});
       expect(api.remove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('bandeau d\'information (specs/020)', () => {
+    const published = { text: 'Maintenance mardi', tone: 'important', endsAt: null, version: 'v1' };
+
+    it('publishes a message with its style, and previews it', async () => {
+      api.saveMessage.mockResolvedValue({ status: 'ok', value: published });
+      render(<AdminPage />);
+      const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
+      fireEvent.change(within(section).getByLabelText('Message'), { target: { value: 'Maintenance mardi' } });
+      fireEvent.click(within(section).getByLabelText('Important'));
+      expect(section.querySelector('.info-banner--important')).toHaveTextContent('Maintenance mardi');
+      fireEvent.click(within(section).getByRole('button', { name: 'Publier' }));
+      expect(await within(section).findByText('Message publié.')).toBeInTheDocument();
+      expect(api.saveMessage).toHaveBeenCalledWith({ text: 'Maintenance mardi', tone: 'important', endsAt: null });
+      expect(within(section).getByRole('button', { name: 'Retirer' })).toBeInTheDocument();
+    });
+
+    it('refuses an empty message without calling the API', async () => {
+      render(<AdminPage />);
+      const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
+      fireEvent.click(within(section).getByRole('button', { name: 'Publier' }));
+      expect(await within(section).findByText('Le message ne peut pas être vide.')).toBeInTheDocument();
+      expect(api.saveMessage).not.toHaveBeenCalled();
+    });
+
+    it('removes the published message', async () => {
+      api.getMessage.mockResolvedValue({ status: 'ok', value: published });
+      api.deleteMessage.mockResolvedValue({ status: 'ok', value: undefined });
+      render(<AdminPage />);
+      const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
+      expect(await within(section).findByDisplayValue('Maintenance mardi')).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: 'Retirer' }));
+      expect(await within(section).findByText('Message retiré.')).toBeInTheDocument();
+      expect(within(section).queryByRole('button', { name: 'Retirer' })).not.toBeInTheDocument();
+    });
+
+    it('says when the published message has expired', async () => {
+      api.getMessage.mockResolvedValue({ status: 'ok', value: { ...published, endsAt: '2020-01-01T10:00:00.000Z' } });
+      render(<AdminPage />);
+      expect(await screen.findByText(/^Expiré le 1 janvier 2020/)).toBeInTheDocument();
     });
   });
 });

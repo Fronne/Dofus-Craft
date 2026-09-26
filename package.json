@@ -19,6 +19,7 @@
     "worker:db:migrate-visits": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0002_add_app_visits.sql --remote",
     "worker:db:migrate-outlier-tracking": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0003_add_outlier_tracking.sql --remote",
     "worker:db:migrate-player-counters": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0004_add_player_counters.sql --remote",
+    "worker:db:migrate-info-message": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0006_add_info_message.sql --remote",
     "worker:db:migrate-contribution-kind": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0005_add_contribution_kind.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",

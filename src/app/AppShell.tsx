@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { InfoBanner } from '../components/InfoBanner';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { ROUTES } from './router';
 import { Icon } from '../components/Icon';
@@ -102,6 +103,7 @@ export function AppShell() {
       <div className="app-shell-main">
         <PinnedPriceMigrationNotice />
         <main className="app-page">
+          <InfoBanner />
           <Routes>
             <Route path={ROUTES.home} element={<AccueilPage priceMode={priceMode} />} />
             <Route

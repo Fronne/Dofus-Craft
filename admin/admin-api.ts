@@ -1,3 +1,4 @@
+import { isInfoMessage, type InfoMessage, type InfoMessageInput } from '../src/domain/info-message';
 import { isPlayerCounter, type PlayerCounter, type PlayerCounterInput } from '../src/domain/player-counter';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): same-origin calls to the
@@ -51,6 +52,11 @@ export const adminApi = {
   create: (input: PlayerCounterInput) => call('POST', '/counters', input, asCounter),
   update: (id: string, patch: Partial<PlayerCounterInput>) =>
     call('PATCH', `/counters/${encodeURIComponent(id)}`, patch, asCounter),
+  // specs/020-info-banner: the information banner's message (`null` when none).
+  getMessage: () => call<InfoMessage | null>('GET', '/message', undefined, (payload) =>
+    (payload === null || isInfoMessage(payload) ? payload : undefined)),
+  saveMessage: (input: InfoMessageInput) => call('PUT', '/message', input, (payload) => (isInfoMessage(payload) ? payload : undefined)),
+  deleteMessage: () => call<void>('DELETE', '/message', undefined, () => undefined),
   remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
 };
 

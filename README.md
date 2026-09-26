@@ -33,6 +33,8 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Page Prix** : les objets du serveur dont le prix HDV et le coût de craft sont connus, avec le
   bénéfice en kamas et en % si on les crafte, triés par bénéfice ou par marge.
 - **Objets suivis** : suivre des objets et les ranger en listes.
+- **Bandeau d'information** : un message (Info ou Important, avec une date de fin facultative)
+  publié depuis la page d'administration, affiché en haut du site ; chaque joueur peut le fermer.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
 - **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)

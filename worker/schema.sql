@@ -65,3 +65,13 @@ CREATE TABLE IF NOT EXISTS player_counters (
 );
 
 CREATE INDEX IF NOT EXISTS idx_player_counters_created_at ON player_counters (created_at);
+
+-- specs/020-info-banner: the one information message shown as a banner (see
+-- migrations/0006_add_info_message.sql). Written only by the dofus-craft-admin Worker.
+CREATE TABLE IF NOT EXISTS info_message (
+  id TEXT PRIMARY KEY CHECK (id = 'current'),
+  text TEXT NOT NULL,
+  tone TEXT NOT NULL CHECK (tone IN ('info', 'important')),
+  ends_at TEXT,
+  updated_at TEXT NOT NULL
+);

@@ -68,3 +68,14 @@
   .admin-counter-player { font-size: .9rem; }
   .admin-counter-who img { width: 40px; height: 40px; }
 }
+
+/* specs/020-info-banner: the information banner's editor. */
+.admin-page > .admin-section + .admin-section { margin-top: var(--space-4); }
+.admin-message-form { display: grid; gap: var(--space-3); }
+.admin-message-field { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-message-field textarea, .admin-message-field input { width: 100%; min-width: 0; font: inherit; font-weight: 500; }
+.admin-message-field small { justify-self: end; font-weight: 500; }
+.admin-message-tones { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: 0; padding: 0; border: 0; }
+.admin-message-tones legend { margin-bottom: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-message-preview { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-message-preview .info-banner { margin: 0; }

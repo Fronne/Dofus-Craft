@@ -1,11 +1,13 @@
 import { validateCounterInput } from '../../src/domain/player-counter';
 import { verifyAccessToken, verifyOwner, type AccessEnv, type TokenVerifier } from './access';
 import { createCounter, deleteCounter, listCounters, updateCounter, type CountersDb } from './counters';
+import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
+import { validateInfoMessageInput } from '../../src/domain/info-message';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
 export interface Env extends AccessEnv {
-  DB: CountersDb;
+  DB: CountersDb & MessageDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -32,6 +34,21 @@ export async function handleApi(request: Request, env: Env, verify: TokenVerifie
   const counterId = pathname.match(/^\/api\/counters\/([^/]+)$/)?.[1];
 
   if (request.method === 'GET' && pathname === '/api/me') return json({ email: owner.email });
+  // specs/020-info-banner: the information banner's message. GET returns it even once expired, so
+  // the editor can show it and say so.
+  if (pathname === '/api/message') {
+    if (request.method === 'GET') return json(await getMessage(env.DB));
+    if (request.method === 'PUT') {
+      const validation = validateInfoMessageInput(await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
+      return json(await saveMessage(env.DB, validation.value));
+    }
+    if (request.method === 'DELETE') {
+      await deleteMessage(env.DB);
+      return new Response(null, { status: 204 });
+    }
+  }
+
   if (request.method === 'GET' && pathname === '/api/counters') return json(await listCounters(env.DB));
 
   if (request.method === 'POST' && pathname === '/api/counters') {

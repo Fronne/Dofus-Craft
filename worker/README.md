@@ -34,7 +34,8 @@ Then set `VITE_COMMUNITY_API_URL` in the frontend's `.env.local` to the deployed
 ## Files
 
 - `src/index.ts` — the routes: anonymous reads `GET /community-price`, `GET /latest-price`
-  (specs/016), `GET /item-prices` (specs/019), `GET /price-history` (specs/017, specs/018) and `GET /player-counters`; keyed writes
+  (specs/016), `GET /item-prices` (specs/019), `GET /price-history` (specs/017, specs/018), `GET /info-message` (specs/020) and
+  `GET /player-counters`; keyed writes
   `POST /community-price` and `POST /visit`.
 - `src/price-history.ts` — every shared price of the last 24 hours, 7 days and 30 days, outliers dropped
   per window, no device id (specs/018), unit-tested via `tests/unit/price-history-aggregation.test.ts`.
