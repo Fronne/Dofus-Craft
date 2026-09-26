@@ -30,6 +30,8 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
     dernier demande confirmation.
   - *Mode personnel* : les prix restent sur l'appareil, rien n'est envoyé.
 - **Prix périmés signalés** : les ressources dont le prix date trop sont mises en évidence.
+- **Page Prix** : les objets du serveur dont le prix HDV et le coût de craft sont connus, avec le
+  bénéfice en kamas et en % si on les crafte, triés par bénéfice ou par marge.
 - **Objets suivis** : suivre des objets et les ranger en listes.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.

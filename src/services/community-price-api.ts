@@ -124,6 +124,39 @@ export async function getPriceHistory(kind: 'resource' | 'item', id: string, ser
   return { status: 'found', history: payload };
 }
 
+export type SharedItemPriceEntry = { itemId: string; amountKamas: number; contributedAt: string };
+export type SharedItemPricesLookup = { status: 'found'; items: SharedItemPriceEntry[] } | { status: 'unavailable' };
+
+function isSharedItemPriceEntry(value: unknown): value is SharedItemPriceEntry {
+  return isRecord(value) &&
+    typeof value.itemId === 'string' &&
+    typeof value.amountKamas === 'number' &&
+    typeof value.contributedAt === 'string';
+}
+
+// specs/019-craft-profit-list: every item's latest shared HDV price on a server (the Prix page's
+// candidates). Like the reads above, this never throws — any failure resolves to `unavailable`.
+export async function getSharedItemPrices(serverId: string): Promise<SharedItemPricesLookup> {
+  const params = new URLSearchParams({ serverId });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/item-prices?${params.toString()}`, { headers: apiHeaders() });
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!response.ok) return { status: 'unavailable' };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!isRecord(payload) || !Array.isArray(payload.items) || !payload.items.every(isSharedItemPriceEntry)) {
+    return { status: 'unavailable' };
+  }
+  return { status: 'found', items: payload.items };
+}
+
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing
 // revision 5, FR-010/FR-021/FR-022) — never any information identifying the player personally.
 // Returns undefined on any failure rather than throwing, matching getCommunityPrice.

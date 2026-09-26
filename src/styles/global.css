@@ -1102,22 +1102,29 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 /* ---------- Prices page ---------- */
 
-.prices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); align-items: start; }
-.prices-grid > .panel + .panel { margin-top: 0; }
 .prices-search { max-width: 360px; margin: var(--space-3) 0 var(--space-4); }
-.price-overview-list { display: grid; gap: 0; list-style: none; margin: var(--space-2) 0 0; padding: 0; }
-.price-overview-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--border);
+/* specs/019-craft-profit-list: the Prix page, one line per profitable item. */
+.profit-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.profit-toolbar .prices-search { margin: 0; flex: 1 1 240px; }
+.profit-list { display: grid; gap: 0; list-style: none; margin: var(--space-2) 0 0; padding: 0; }
+.profit-row { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
+.profit-row:last-child { border-bottom: 0; }
+.profit-row-main { flex: 1 1 auto; display: flex; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
+.profit-row-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
+.profit-row-figures { display: grid; grid-template-columns: repeat(3, minmax(7.5rem, auto)); gap: var(--space-4); margin: 0; }
+.profit-row-figures > div { display: grid; gap: .1rem; text-align: right; }
+.profit-row-figures dt { font-size: .75rem; color: var(--text-muted); }
+.profit-row-figures dd { display: grid; margin: 0; font-weight: 700; white-space: nowrap; }
+.profit-row-figures small { font-weight: 500; font-size: .75rem; }
+.profit-value--positive dd { color: var(--success); }
+.profit-value--negative dd { color: var(--danger); }
+.profit-value--neutral dd { color: var(--text-muted); }
+.profit-empty-link { text-align: center; }
+@media (max-width: 480px) {
+  .profit-row { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+  .profit-row-figures { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .profit-row-figures dd { white-space: normal; }
 }
-.price-overview-row:last-child { border-bottom: 0; }
-.price-overview-row b { color: var(--success); font-weight: 700; white-space: nowrap; }
-.price-overview-main { flex: 1 1 auto; display: flex; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
-.price-overview-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
 
 /* ---------- Responsive ---------- */
 
@@ -1164,7 +1171,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .filters-panel { grid-template-columns: 1fr; }
   .grid { grid-template-columns: 1fr; gap: var(--space-3); }
   .market-price-summary { padding-left: 0; border-left: 0; border-top: 1px solid var(--border); padding-top: var(--space-4); }
-  .prices-grid { grid-template-columns: 1fr; gap: var(--space-3); }
   .category-icons { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
   .category-icons button { flex: 0 0 auto; min-height: 44px; }
   .results-meta { align-items: flex-start; flex-direction: column; gap: .5rem; }

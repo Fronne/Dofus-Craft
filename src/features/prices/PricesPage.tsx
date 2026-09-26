@@ -1,226 +1,147 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useActiveServer } from '../../app/ServerContext';
 import { ROUTES } from '../../app/router';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
-import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
-import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
-import { getResourceDetails } from '../../data/catalogue-repository';
-import { normalizeSearchText } from '../../services/dofusdb-api';
 import { formatKamas } from '../../domain/kamas';
-import type { Resource } from '../../domain/types';
+import { classifyPriceAge } from '../../domain/price-age';
+import { formatRelativeTime } from '../../domain/time';
+import { filterProfitRows, sortProfitRows, type CraftProfitRow, type ProfitSort } from '../../domain/craft-profit';
+import { useCraftProfits } from './useCraftProfits';
 
-type PriceRow = { resource: Resource; unitPriceKamas: number };
+// specs/019-craft-profit-list (contracts/prices-page-ui.md): the items of the active server whose HDV
+// price is known and whose craft cost is complete, with the profit of crafting them — computed like
+// the Recherche page in « Auto ». Replaces the former lists of item and resource prices (FR-001).
 
 const DISPLAY_LIMIT_OPTIONS = [10, 25, 50, 100];
 
+function signedKamas(value: number) {
+  return value > 0 ? `+${formatKamas(value)}` : value < 0 ? `−${formatKamas(-value)}` : formatKamas(0);
+}
+
+function signedPercent(value: number) {
+  return value > 0 ? `+${value} %` : value < 0 ? `−${-value} %` : '0 %';
+}
+
+function ProfitLine({ row, onOpen }: { row: CraftProfitRow; onOpen: () => void }) {
+  const tone = row.profitKamas > 0 ? 'positive' : row.profitKamas < 0 ? 'negative' : 'neutral';
+  const age = classifyPriceAge(row.marketPriceDate);
+  const ageClass = age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : '';
+  return (
+    <li className="profit-row">
+      <button type="button" className="profit-row-main" onClick={onOpen}>
+        <ResourceDisplay resource={{ id: row.item.id, name: row.item.name, imageUrl: row.item.imageUrl }} />
+      </button>
+      <dl className="profit-row-figures">
+        <div>
+          <dt>Prix HDV</dt>
+          <dd>
+            {formatKamas(row.marketPriceKamas)}
+            <small className={`market-date${ageClass}`}>{formatRelativeTime(row.marketPriceDate)}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Coût de craft</dt>
+          <dd>{formatKamas(row.craftCostKamas)}</dd>
+        </div>
+        <div className={`profit-value profit-value--${tone}`}>
+          <dt>Bénéfice</dt>
+          <dd>
+            {signedKamas(row.profitKamas)}
+            {row.marginPercent !== undefined && <small>{signedPercent(row.marginPercent)}</small>}
+          </dd>
+        </div>
+      </dl>
+    </li>
+  );
+}
+
 export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
-  const { serverId } = useActiveServer();
+  const { serverId, servers } = useActiveServer();
   const navigate = useNavigate();
-  const [itemRows, setItemRows] = useState<PriceRow[]>([]);
-  const [loadingItems, setLoadingItems] = useState(true);
-  const [itemQuery, setItemQuery] = useState('');
-  const [itemLimit, setItemLimit] = useState(DISPLAY_LIMIT_OPTIONS[0]);
-  const [resourceRows, setResourceRows] = useState<PriceRow[]>([]);
-  const [loadingResources, setLoadingResources] = useState(true);
-  const [resourceQuery, setResourceQuery] = useState('');
-  const [resourceLimit, setResourceLimit] = useState(DISPLAY_LIMIT_OPTIONS[0]);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<ProfitSort>('kamas');
+  const [limit, setLimit] = useState(DISPLAY_LIMIT_OPTIONS[0]);
+  const { status, rows, done, total } = useCraftProfits(serverId, priceMode);
+  const serverName = servers.find((server) => server.id === serverId)?.name;
 
-  useEffect(() => {
-    if (!serverId) {
-      setItemRows([]);
-      setLoadingItems(false);
-      return;
-    }
-    let cancelled = false;
-    setLoadingItems(true);
-    pinnedItemPrices.listAllForServer(serverId).then(async (entries) => {
-      if (!entries.length) {
-        if (!cancelled) {
-          setItemRows([]);
-          setLoadingItems(false);
-        }
-        return;
-      }
-      const items = await getResourceDetails(entries.map((entry) => entry.itemId));
-      if (cancelled) return;
-      const rows = entries
-        .map((entry) => {
-          const item = items.find((candidate) => candidate.id === entry.itemId);
-          return item ? { resource: item, unitPriceKamas: entry.marketPriceKamas } : undefined;
-        })
-        .filter((row): row is PriceRow => row !== undefined)
-        .sort((left, right) => left.resource.name.localeCompare(right.resource.name, 'fr'));
-      setItemRows(rows);
-      setLoadingItems(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId]);
-
-  useEffect(() => {
-    if (!serverId) {
-      setResourceRows([]);
-      setLoadingResources(false);
-      return;
-    }
-    let cancelled = false;
-    setLoadingResources(true);
-    resourcePricesFor(priceMode).listAllForServer(serverId).then(async (entries) => {
-      if (!entries.length) {
-        if (!cancelled) {
-          setResourceRows([]);
-          setLoadingResources(false);
-        }
-        return;
-      }
-      const resources = await getResourceDetails(entries.map((entry) => entry.resourceId));
-      if (cancelled) return;
-      const rows = entries
-        .map((entry) => {
-          const resource = resources.find((candidate) => candidate.id === entry.resourceId);
-          return resource ? { resource, unitPriceKamas: entry.unitPriceKamas } : undefined;
-        })
-        .filter((row): row is PriceRow => row !== undefined)
-        .sort((left, right) => left.resource.name.localeCompare(right.resource.name, 'fr'));
-      setResourceRows(rows);
-      setLoadingResources(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId, priceMode]);
-
-  const normalizedItemQuery = normalizeSearchText(itemQuery);
-  const filteredItems = normalizedItemQuery
-    ? itemRows.filter((row) => normalizeSearchText(row.resource.name).includes(normalizedItemQuery))
-    : itemRows;
-  const visibleItems = filteredItems.slice(0, itemLimit);
-  const normalizedResourceQuery = normalizeSearchText(resourceQuery);
-  const filteredResourceRows = normalizedResourceQuery
-    ? resourceRows.filter((row) => normalizeSearchText(row.resource.name).includes(normalizedResourceQuery))
-    : resourceRows;
-  const visibleResourceRows = filteredResourceRows.slice(0, resourceLimit);
+  const filtered = sortProfitRows(filterProfitRows(rows, query), sort);
+  const visible = filtered.slice(0, limit);
+  const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
   return (
     <>
       <header className="page-header">
         <h1>Prix</h1>
         <p>
-          Retrouvez en un coup d'œil les prix déjà enregistrés sur ce serveur
-          {priceMode === 'community' ? ' en Mode communautaire' : ' en Mode personnel'}.
+          Bénéfice si vous craftez{serverName ? `, serveur ${serverName}` : ''}, {modeLabel}.
         </p>
       </header>
 
-      <div className="prices-grid">
-        <section className="panel">
-          <h2>Objets</h2>
-          <div className="search-input-wrap prices-search">
-            <Icon name="search" size={18} className="search-input-icon" />
-            <input
-              type="search"
-              value={itemQuery}
-              onChange={(event) => setItemQuery(event.target.value)}
-              placeholder="Rechercher un objet..."
-              aria-label="Rechercher un objet"
-            />
-          </div>
-          {loadingItems ? (
-            <p className="empty">Chargement des prix…</p>
-          ) : itemRows.length === 0 ? (
-            <EmptyState
-              icon="coins"
-              title="Aucun prix HDV enregistré"
-              description="Renseignez le prix HDV d'un objet depuis la page Recherche pour le voir apparaître ici."
-            />
-          ) : filteredItems.length === 0 ? (
-            <EmptyState
-              icon="search"
-              title="Aucun objet ne correspond à votre recherche"
-              description="Essayez un autre nom d'objet."
-            />
-          ) : (
-            <>
-              <div className="results-meta">
-                <span>{filteredItems.length} {filteredItems.length === 1 ? 'objet' : 'objets'}</span>
-                <label>
-                  Afficher :
-                  <select value={itemLimit} onChange={(event) => setItemLimit(Number(event.target.value))}>
-                    {DISPLAY_LIMIT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                </label>
+      <section className="panel profit-panel">
+        {!serverId ? (
+          <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le bénéfice de craft des objets." />
+        ) : status === 'unavailable' ? (
+          <p className="warning">Impossible de charger les prix partagés pour le moment.</p>
+        ) : (
+          <>
+            <div className="profit-toolbar">
+              <div className="search-input-wrap prices-search">
+                <Icon name="search" size={18} className="search-input-icon" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Rechercher un objet..."
+                  aria-label="Rechercher un objet"
+                />
               </div>
-              <ul className="price-overview-list">
-                {visibleItems.map((row) => (
-                  <li key={row.resource.id} className="price-overview-row">
-                    <button
-                      type="button"
-                      className="price-overview-main"
-                      onClick={() => navigate(`${ROUTES.search}?item=${row.resource.id}`)}
-                    >
-                      <ResourceDisplay resource={row.resource} />
-                    </button>
-                    <b>{formatKamas(row.unitPriceKamas)}</b>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
-
-        <section className="panel">
-          <h2>Ressources</h2>
-          <div className="search-input-wrap prices-search">
-            <Icon name="search" size={18} className="search-input-icon" />
-            <input
-              type="search"
-              value={resourceQuery}
-              onChange={(event) => setResourceQuery(event.target.value)}
-              placeholder="Rechercher une ressource..."
-              aria-label="Rechercher une ressource"
-            />
-          </div>
-          {loadingResources ? (
-            <p className="empty">Chargement des prix…</p>
-          ) : resourceRows.length === 0 ? (
-            <EmptyState
-              icon="coins"
-              title="Aucun prix de ressource enregistré"
-              description="Saisissez le prix d'une ressource dans une recette pour le voir apparaître ici."
-            />
-          ) : filteredResourceRows.length === 0 ? (
-            <EmptyState
-              icon="search"
-              title="Aucune ressource ne correspond à votre recherche"
-              description="Essayez un autre nom de ressource."
-            />
-          ) : (
-            <>
-              <div className="results-meta">
-                <span>{filteredResourceRows.length} {filteredResourceRows.length === 1 ? 'ressource' : 'ressources'}</span>
-                <label>
-                  Afficher :
-                  <select value={resourceLimit} onChange={(event) => setResourceLimit(Number(event.target.value))}>
-                    {DISPLAY_LIMIT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                </label>
-              </div>
-              <ul className="price-overview-list">
-                {visibleResourceRows.map((row) => (
-                  <li key={row.resource.id} className="price-overview-row">
-                    <ResourceDisplay resource={row.resource} copyable />
-                    <b>{formatKamas(row.unitPriceKamas)}</b>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
-      </div>
+              <label>
+                Trier par :
+                <select value={sort} onChange={(event) => setSort(event.target.value as ProfitSort)}>
+                  <option value="kamas">Bénéfice (kamas)</option>
+                  <option value="percent">Marge (%)</option>
+                </select>
+              </label>
+            </div>
+            {status === 'loading' && (
+              <p className="empty" role="status">Calcul en cours… ({done} / {total})</p>
+            )}
+            {status === 'ready' && rows.length === 0 ? (
+              <>
+                <EmptyState
+                  icon="coins"
+                  title="Aucun objet calculable"
+                  description="Il faut un prix HDV et le prix de toutes ses ressources."
+                />
+                <p className="profit-empty-link"><Link to={ROUTES.search}>Aller à la page Recherche</Link></p>
+              </>
+            ) : rows.length > 0 && filtered.length === 0 ? (
+              <EmptyState icon="search" title="Aucun objet ne correspond à votre recherche" description="Essayez un autre nom d'objet." />
+            ) : rows.length > 0 && (
+              <>
+                <div className="results-meta">
+                  <span>{filtered.length} {filtered.length === 1 ? 'objet' : 'objets'}</span>
+                  <label>
+                    Afficher :
+                    <select value={limit} onChange={(event) => setLimit(Number(event.target.value))}>
+                      {DISPLAY_LIMIT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <ul className="profit-list">
+                  {visible.map((row) => (
+                    <ProfitLine key={row.item.id} row={row} onOpen={() => navigate(`${ROUTES.search}?item=${row.item.id}`)} />
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        )}
+      </section>
     </>
   );
 }

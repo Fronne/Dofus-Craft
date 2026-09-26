@@ -1,7 +1,7 @@
 import { purgeExpiredContributions } from './retention';
 import { readPlayerCounters } from './player-counters';
 import { fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
-import { latestPriceResponse } from './latest';
+import { itemPricesResponse, latestPriceResponse } from './latest';
 import { priceHistoryResponse } from './price-history';
 
 export interface Env {
@@ -116,6 +116,12 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/latest-price') {
       return handleGetLatestPrice(url, env);
+    }
+
+    // specs/019-craft-profit-list: every item's latest shared HDV price on a server, for the Prix page.
+    if (request.method === 'GET' && url.pathname === '/item-prices') {
+      const { status, body } = await itemPricesResponse(env.DB, url);
+      return json(body, status);
     }
 
     // specs/017-price-history-chart: per-period medians only, never an individual contribution.
