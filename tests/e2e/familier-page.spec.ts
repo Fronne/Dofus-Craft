@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // specs/022-pet-xp-calculator: the community Worker is mocked at the network level, with a single
-// median (Peau de Rat, 1 XP per unit, at 10 kamas); the XP data is the app's own reference file.
+// median (Peau de Rat, 2,646 XP per unit, at 10 kamas); the XP data is the app's own reference file.
 async function openFamilier(page: Page) {
   await page.route('**/community-prices?*', (route) => {
     const ids = new URL(route.request().url()).searchParams.get('resourceIds')?.split(',') ?? [];
@@ -29,9 +29,9 @@ async function openFamilier(page: Page) {
 test.describe('Familier page (specs/022)', () => {
   test('shows the XP needed and the cheapest resource', async ({ page }) => {
     await openFamilier(page);
-    await expect(page.getByText(/XP nécessaire/)).toContainText(/3\s141 XP/);
+    await expect(page.getByText(/XP nécessaire/)).toContainText(/2\s859 XP/);
     const row = page.locator('li.pet-food-row').filter({ hasText: 'Peau de Rat' });
-    await expect(row).toContainText(/31\s410/);
+    await expect(row).toContainText(/10\s810/);
   });
 
   test('fits a phone screen without horizontal scrolling', async ({ page }) => {

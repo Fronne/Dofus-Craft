@@ -6,6 +6,9 @@
 
 ## Summary
 
+> **Révision 2026-09-27** : données Dofus Tool abandonnées ; XP par ressource de l'onglet « XP COMPLET »
+> de l'Excel du porteur du projet (Dafous), courbe des fichiers du jeu, niveaux 0 à 100 (research.md §1).
+
 Nouvelle page **Familier** (`/familier`) : le joueur saisit niveau actuel, XP déjà gagnée et niveau
 cible ; la page affiche l'XP nécessaire puis les 10 ressources au coût total le plus bas, avec
 quantité, prix unitaire (et sa date) et coût total.
@@ -35,12 +38,12 @@ existants (lecture seule) ; `localStorage` pour les derniers niveaux saisis
 
 **Project Type** : SPA (+ Worker d'API communautaire existant, non modifié)
 
-**Performance Goals** : recalcul < 1 s après une saisie (SC-005) — ~830 ressources, calcul trivial
+**Performance Goals** : recalcul < 1 s après une saisie (SC-005) — ~2 100 ressources, calcul trivial
 
 **Constraints** : aucune valeur inventée ; ressource non rattachée de façon certaine = ignorée
 (FR-005, SC-004) ; pas d'écriture dans le carnet depuis cette page
 
-**Scale/Scope** : 1 page, ~830 ressources rattachées, 100 niveaux
+**Scale/Scope** : 1 page, ~2 100 ressources rattachées, niveaux 0 à 100
 
 ## Constitution Check
 
@@ -76,7 +79,8 @@ specs/022-pet-xp-calculator/
 
 ```text
 scripts/
-└── build-pet-xp-data.mjs          # nouveau : génère le fichier de données (dofustool + DofusDB)
+└── build-pet-xp-data.mjs          # nouveau : génère le fichier de données (scripts/data/ + DofusDB)
+└── data/                          # sources commitées : XP par ressource (Excel/Dafous), courbe du client
 
 src/
 ├── data/

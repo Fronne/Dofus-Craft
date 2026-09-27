@@ -18,7 +18,6 @@ import {
   planPetFood,
   validatePetLevels,
   xpNeeded,
-  xpPerUnit,
   type PetFoodRecommendation,
   type PetFoodSort,
   type PetFoodSortKey,
@@ -93,7 +92,7 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
       </div>
       <div className="profit-cell">
         <span className="profit-cell-label">XP par unité</span>
-        <b>{numberFormat.format(xpPerUnit(line.food))}</b>
+        <b>{numberFormat.format(line.food.xpPerUnit)}</b>
       </div>
       <div className="profit-cell">
         <span className="profit-cell-label">Prix unitaire</span>
@@ -208,11 +207,12 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                 <p className="warning">Prix communautaires indisponibles pour le moment : seuls vos prix sont utilisés.</p>
               )}
               <p>
-                {plan.unpricedCount} {plan.unpricedCount === 1 ? 'ressource sans prix connu n’est pas proposée' : 'ressources sans prix connu ne sont pas proposées'}.
+                {numberFormat.format(plan.unpricedCount)} {plan.unpricedCount === 1 ? 'ressource sans prix connu n’est pas proposée' : 'ressources sans prix connu ne sont pas proposées'}.
               </p>
               <p>
-                XP par ressource et par niveau : <a href={PET_XP_SOURCE.url} target="_blank" rel="noreferrer">{PET_XP_SOURCE.name}</a>
-                {' '}(relevé du {new Date(PET_XP_SOURCE.retrievedAt).toLocaleDateString('fr-FR')}). Ces valeurs communautaires peuvent être incomplètes.
+                XP par ressource : <a href={PET_XP_SOURCE.url} target="_blank" rel="noreferrer">{PET_XP_SOURCE.name}</a>
+                {' '}(relevé du {new Date(PET_XP_SOURCE.retrievedAt).toLocaleDateString('fr-FR')}) ; ces valeurs communautaires peuvent être
+                incomplètes. XP par niveau : fichiers du jeu.
               </p>
             </div>
           )}

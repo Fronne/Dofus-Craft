@@ -1,36 +1,36 @@
 # Research: Page Familier
 
-## §1 — Source des données d'XP
+## §1 — Source des données d'XP (révisé le 2026-09-27)
 
-- **Decision** : figer dans `src/data/pet-xp-data.json` les deux tableaux de
-  https://www.dofustool.com/tableau-xp-familier-dofus/ (courbe 1→100 : 1 à 196 159 XP ; 1 065 lignes
-  de ressources « nom / XP donnée / quantité nécessaire »), avec source et date de relevé.
-- **Rationale** : DofusDB n'expose ni la courbe ni l'XP par ressource (toutes les routes de l'API
-  vérifiées). La courbe concorde avec `EvolutiveItemTypes.d2o` du client local (type 1 :
-  `experienceByLevel`, valeur dofustool niveau N = valeur client indice N+1 − 1), ce qui la
-  confirme. Les données changent très rarement : un fichier statique suffit.
-- **Alternatives** : lire la page dofustool à l'exécution (fragile, dépendance tierce, CORS) ; lire
-  les fichiers du client (Dofus 2 seulement, et ne donne pas l'XP par ressource).
+- **Decision** : XP par ressource = onglet « XP COMPLET » du fichier EXCEL FAMILIER du porteur du
+  projet (colonne E « Nom », colonne F « XP » = XP donnée par **une** unité ; données issues de
+  https://dafous.app/pet-xp ; 2 118 ressources), exporté dans `scripts/data/pet-xp-resources.csv`.
+  Courbe par niveau = `EvolutiveItemTypes.d2o` du client (type 1, `experienceByLevel`, 101 valeurs,
+  indice = niveau 0 à 100), exportée dans `scripts/data/pet-xp-curve.json`. Les deux fichiers source
+  sont commités ; le script en tire `src/data/pet-xp-data.json`.
+- **Rationale** : le porteur du projet a demandé d'abandonner entièrement Dofus Tool, dont les
+  valeurs s'écartent fortement de l'Excel (ex. Alliage Ivre 375 contre 750 XP / unité). dafous.app
+  ne publie pas sa courbe par niveau (API protégée) mais utilise le total 179 592 XP, identique au
+  dernier palier de la courbe du client : les deux sources concordent. Un familier neuf est niveau 0.
+- **Encodage** : 4 noms de l'Excel contenaient « Œ / œ » mal encodés (octets cp1252 0x8C / 0x9C),
+  corrigés dans le CSV.
+- **Alternatives** : Dofus Tool (abandonné) ; lire l'Excel à chaque génération (format binaire, pas de
+  dépendance de lecture xlsx dans le projet).
 
 ## §2 — Rattachement des ressources au catalogue
 
-- **Decision** : un script (`scripts/build-pet-xp-data.mjs`) interroge DofusDB (`/items`) par nom
-  exact, insensible à la casse, en essayant aussi « Coeur » ↔ « Cœur » (oe ↔ œ). Exactement un
-  résultat → rattaché (id, nom DofusDB, icône). Zéro ou plusieurs résultats → écarté et consigné dans
-  la section `unmatched` du fichier, avec la raison.
-- **Rationale** : relevé du 2026-09-27 — 831 noms sur 1 064 trouvés à la casse près ; 4 ambigus
-  (« Carapace Bleue/Jaune/Rouge/Verte » existent en deux objets) ; ~229 introuvables, en partie
-  corrigés par œ, le reste correspond à des ressources renommées ou retirées de Dofus 3. SC-004
-  interdit tout rattachement approximatif.
-- **Alternatives** : rapprochement flou (risque de mauvais rattachement) ; rapprochement à
-  l'exécution (le catalogue en mémoire ne contient que les équipements craftables, pas les
-  ressources).
+- **Decision** : le script interroge DofusDB (`/items`) par nom exact, insensible à la casse, en
+  essayant aussi « oe » ↔ « œ ». Exactement un résultat → rattaché (id, nom DofusDB, icône
+  `https://api.dofusdb.fr/img/items/<iconId>.png`). Zéro ou plusieurs résultats → écarté et consigné
+  dans `unmatched` avec la raison.
+- **Rationale** : relevé du 2026-09-27 — 2 100 ressources sur 2 118 rattachées ; 9 ambiguës
+  (« Carapace Bleue/Jaune/Rouge/Verte », « Viande Fraîche »…) et 9 introuvables. SC-004 interdit
+  tout rattachement approximatif.
 
-## §3 — Lignes du tableau dofustool inexploitables
+## §3 — Lignes inexploitables
 
-- **Decision** : ignorer les lignes dont l'XP donnée ≤ 0 ou la quantité est vide / « ? » / ≤ 0.
-  Pour un nom présent deux fois (« Peau de Rat »), garder la ligne au meilleur XP par unité
-  seulement si les deux sont identiques ; sinon écarter le nom (données contradictoires).
+- **Decision** : ignorer les lignes dont l'XP par unité est absente ou ≤ 0 (`zero-xp`). Un nom présent
+  deux fois n'est gardé que si les valeurs sont identiques (`conflicting-duplicate` sinon).
 - **Rationale** : ne jamais recommander une ressource sur une valeur incertaine (principe I).
 
 ## §4 — Prix utilisés
@@ -39,7 +39,7 @@
   rattachées. En Mode communautaire, les ressources sans entrée de carnet sont complétées par
   `getCommunityPrices(ids, serverId)` (lots de 98), **en lecture seule** : rien n'est écrit dans le
   carnet. Date affichée : `updatedAt` du carnet ou `lastContributionAt` de la médiane.
-- **Rationale** : mêmes prix que les autres pages ; ~830 ressources = 9 requêtes groupées, pas 830.
+- **Rationale** : mêmes prix que les autres pages ; ~2 100 ressources = 22 requêtes groupées (lots de 98), pas 2 100.
   Écrire des centaines de médianes dans le carnet depuis une page de consultation serait un effet de
   bord inattendu.
 - **Alternatives** : `fillCommunityGaps` (une requête par ressource et écriture dans le carnet).
@@ -47,10 +47,10 @@
 
 ## §5 — Calcul et classement
 
-- **Decision** : `xpNeeded = cumul(cible) − (cumul(actuel) + xpDéjà)` ; `xpParUnité = xpDonnée /
-  quantité` ; `quantité = ceil(xpNeeded / xpParUnité)` calculé comme `ceil(xpNeeded × quantité /
-  xpDonnée)` sur valeurs arrondies pour éviter les erreurs de virgule flottante ; `coût = quantité ×
-  prix`. Tri par coût croissant, puis nom. 10 premières lignes.
+- **Decision** : `xpNeeded = cumul(cible) − (cumul(actuel) + xpDéjà)` ; `quantité = ceil(xpNeeded /
+  xpParUnité)`, le quotient étant arrondi à 1e-9 avant `ceil` pour éviter les erreurs de virgule
+  flottante ; `coût = quantité × prix`. Tri par coût croissant, puis nom (ou par la colonne choisie,
+  FR-007 révisé). 10 premières lignes.
 - **Rationale** : une seule ressource suffit (coût linéaire, spec — Assumptions). L'arrondi supérieur
   garantit d'atteindre le niveau.
 - **XP déjà gagnée** : bornée à `cumul(actuel+1) − cumul(actuel) − 1`.

@@ -4,6 +4,8 @@ description: "Task list — Page Familier (calculateur d'XP)"
 
 ---
 
+> Phases 1 à 6 : première version, sur les données Dofus Tool (remplacées en phase 8).
+
 # Tasks: Page Familier — calculateur d'XP et ressources les moins chères
 
 **Input**: Design documents from `/specs/022-pet-xp-calculator/`
@@ -89,6 +91,15 @@ calcul (cas normaux, bornes, entrées invalides ou incomplètes).
 
 - [X] T023 [US2] Ajouter `PetFoodSort` / `DEFAULT_PET_FOOD_SORT` et un paramètre `sort` à `planPetFood` dans `src/domain/pet-xp.ts` (tri de toutes les ressources avec prix avant la coupe à 10 ; égalités : coût total puis nom), avec tests dans `tests/unit/pet-xp.test.ts`
 - [X] T024 [US2] Remplacer l'en-tête statique de `src/features/pets/FamilierPage.tsx` par des boutons de tri (« Trier par … », flèche ↑/↓, premier sens selon la colonne), visibles aussi sur mobile, avec test dans `tests/integration/familier-page.test.tsx`
+
+---
+
+## Phase 8: Révision — données Excel « XP COMPLET » à la place de Dofus Tool
+
+- [X] T025 Exporter l'onglet « XP COMPLET » de `EXCEL FAMILIIER.xlsx` (colonnes Nom, XP = XP par unité) dans `scripts/data/pet-xp-resources.csv` (`name,xpPerUnit`, « Œ / œ » mal encodés corrigés) et la courbe `experienceByLevel` du client (niveaux 0 à 100) dans `scripts/data/pet-xp-curve.json`
+- [X] T026 Réécrire `scripts/build-pet-xp-data.mjs` pour lire ces deux fichiers (plus de Dofus Tool), rattacher les noms à DofusDB et produire `src/data/pet-xp-data.json` (`xpPerUnit`, `curveSource`) ; relu : 2 100 / 2 118 rattachées
+- [X] T027 Adapter `src/domain/pet-xp.ts` (`PetFood.xpPerUnit`, niveaux 0 à 100 : `currentLevel` 0–99, `targetLevel` 1–100), `src/features/pets/FamilierPage.tsx` (sources citées : Dafous et fichiers du jeu), `src/persistence/pet-levels-preference.ts` (défaut 0 → 100)
+- [X] T028 Mettre à jour les tests (`tests/unit/pet-xp*.test.ts`, `tests/integration/familier-page.test.tsx`, `tests/e2e/familier-page.spec.ts`) : 0 → 100 = 179 592 ; 50 → 60 = 2 859 ; Peau de Rat 1 081 unités
 
 ---
 

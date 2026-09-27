@@ -11,11 +11,16 @@ faut d'xp pour monter le familier au niveau indiqué, prendre en compte le nivea
 et indiquer les meilleures ressources à utiliser pour payer le moins cher possible. » Données de
 référence fournies par le porteur du projet : le tableau d'XP familier et le tableau des ressources
 (nom de la ressource / XP donnée / quantité nécessaire) de
-https://www.dofustool.com/tableau-xp-familier-dofus/.
+https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-09-27** (voir Revisions).
 
 ## Revisions
 
 - 2026-09-27 : tri de la liste au clic sur l'en-tête d'une colonne (FR-007), comme sur la page Prix.
+- 2026-09-27 : à la demande du porteur du projet, les données Dofus Tool sont entièrement abandonnées.
+  L'XP par ressource vient de l'onglet « XP COMPLET » de son fichier EXCEL FAMILIER (colonne XP = XP
+  donnée par 1 unité, données de https://dafous.app/pet-xp, 2 118 ressources) ; la courbe par niveau
+  vient des fichiers du jeu (niveaux 0 à 100, 179 592 XP au total, total identique à celui de l'Excel).
+  Un familier commence au niveau 0.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -26,15 +31,15 @@ atteindre. La page affiche immédiatement l'XP à donner au familier pour y arri
 
 **Why this priority**: c'est le calcul de base ; il est utile seul, même sans aucun prix connu.
 
-**Independent Test**: saisir niveau actuel 1 et niveau cible 100, vérifier que la page affiche
-196 158 XP (196 159 − 1).
+**Independent Test**: saisir niveau actuel 0 et niveau cible 100, vérifier que la page affiche
+179 592 XP.
 
 **Acceptance Scenarios**:
 
 1. **Given** la page Familier ouverte, **When** le joueur saisit niveau actuel 50 et niveau cible 60,
-   **Then** la page affiche 3 141 XP (5 023 − 1 882).
+   **Then** la page affiche 2 859 XP (4 562 − 1 703).
 2. **Given** niveau actuel 50 et 150 XP déjà gagnés dans ce niveau, **When** le niveau cible est 60,
-   **Then** la page affiche 2 991 XP.
+   **Then** la page affiche 2 709 XP.
 3. **Given** un niveau cible inférieur ou égal au niveau actuel, **When** le joueur le saisit,
    **Then** la page indique qu'il n'y a pas d'XP à donner et n'affiche pas de recommandation.
 
@@ -98,22 +103,22 @@ source des données d'XP et le nombre de ressources sans prix.
   expliquant qu'aucune recommandation n'est possible sans prix, avec un lien vers la saisie de prix.
 - XP déjà gagnée dans le niveau supérieure ou égale à l'XP du niveau suivant : la saisie est refusée
   avec un message indiquant le maximum possible pour ce niveau.
-- Niveau hors de 1 à 100 ou saisie non numérique : refusée avec un message.
+- Niveau hors de 0 à 100 ou saisie non numérique : refusée avec un message.
 - Ressource du tableau introuvable dans le catalogue de l'app (nom différent, doublon) : elle est
   ignorée ; elle ne doit jamais être rattachée à la mauvaise ressource.
-- Ressource dont l'XP donnée est 0 ou la quantité inconnue (« ? », vide) : jamais recommandée.
+- Ressource dont l'XP par unité est 0, absente ou illisible : jamais recommandée.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: L'app MUST proposer une page Familier accessible depuis la navigation principale.
-- **FR-002**: Le joueur MUST pouvoir saisir le niveau actuel (1 à 99), l'XP déjà gagnée dans ce
-  niveau (facultative, 0 par défaut) et le niveau cible (2 à 100).
+- **FR-002**: Le joueur MUST pouvoir saisir le niveau actuel (0 à 99), l'XP déjà gagnée dans ce
+  niveau (facultative, 0 par défaut) et le niveau cible (1 à 100).
 - **FR-003**: L'app MUST calculer l'XP nécessaire = XP totale du niveau cible − (XP totale du niveau
-  actuel + XP déjà gagnée), à partir de la courbe d'XP familier de référence (niveaux 1 à 100).
-- **FR-004**: L'app MUST connaître, pour chaque ressource du tableau de référence, l'XP donnée et la
-  quantité nécessaire, et en déduire l'XP par unité (XP donnée ÷ quantité nécessaire).
+  actuel + XP déjà gagnée), à partir de la courbe d'XP familier de référence (niveaux 0 à 100).
+- **FR-004**: L'app MUST connaître, pour chaque ressource du tableau de référence, l'XP donnée
+  par une unité.
 - **FR-005**: L'app MUST rattacher chaque ressource du tableau à une ressource du catalogue de l'app
   par son nom, sans ambiguïté ; une ressource non rattachée de façon certaine est ignorée.
 - **FR-006**: Pour chaque ressource rattachée qui a un prix connu sur le serveur actif et selon le
@@ -127,7 +132,7 @@ source des données d'XP et le nombre de ressources sans prix.
   départagées par coût total puis nom). Le tri n'est pas mémorisé.
 - **FR-008**: L'app MUST exclure les ressources sans prix connu et indiquer leur nombre.
 - **FR-009**: L'app MUST indiquer la source des données d'XP (tableau communautaire de
-  dofustool.com) et que ces valeurs peuvent être incomplètes.
+  Dafous) et que ces valeurs peuvent être incomplètes.
 - **FR-010**: Les résultats MUST se recalculer dès qu'un niveau, l'XP saisie, le serveur ou le mode
   de prix change.
 - **FR-011**: L'app MUST conserver sur l'appareil les derniers niveaux saisis pour les retrouver à la
@@ -135,10 +140,9 @@ source des données d'XP et le nombre de ressources sans prix.
 
 ### Key Entities
 
-- **Courbe d'XP familier**: pour chaque niveau de 1 à 100, l'XP totale cumulée nécessaire pour
-  l'atteindre (1 au niveau 1, 196 159 au niveau 100). Donnée fixe, avec sa source.
-- **Ressource nourrissante**: une ressource du tableau de référence : nom, XP donnée, quantité
-  nécessaire, XP par unité dérivée, et la ressource du catalogue à laquelle elle est rattachée.
+- **Courbe d'XP familier**: pour chaque niveau de 0 à 100, l'XP totale cumulée nécessaire pour
+  l'atteindre (0 au niveau 0, 179 592 au niveau 100). Donnée fixe, avec sa source.
+- **Ressource nourrissante**: une ressource du tableau de référence : nom, XP donnée par unité, et la ressource du catalogue à laquelle elle est rattachée.
 - **Recommandation**: une ressource nourrissante avec prix connu, sa quantité à donner et son coût
   total pour l'XP demandée.
 
@@ -159,9 +163,9 @@ source des données d'XP et le nombre de ressources sans prix.
 
 ## Assumptions
 
-- La courbe d'XP et le tableau des ressources de dofustool.com s'appliquent à la version actuelle
-  du jeu ; ce sont des données communautaires, figées dans l'app avec leur source et leur date de
-  relevé, et mises à jour à la main si besoin.
+- L'XP par ressource (Dafous, via l'Excel du porteur du projet) et la courbe du jeu s'appliquent à
+  la version actuelle ; elles sont figées dans l'app avec leur source et leur date de relevé, et
+  mises à jour à la main si besoin.
 - Nourrir avec une seule ressource suffit : le coût étant proportionnel à la quantité, la ressource
   au coût par point d'XP le plus bas est la moins chère ; mélanger plusieurs ressources n'est pas
   proposé.

@@ -3,7 +3,7 @@ import { validatePetLevels, type PetLevelsInput } from '../domain/pet-xp';
 // specs/022-pet-xp-calculator (FR-011): the last levels entered on the Familier page, kept on the
 // device so a returning player finds them again. Anything unreadable falls back to the defaults.
 const STORAGE_KEY = 'craftcheck-pet-levels';
-export const DEFAULT_PET_LEVELS: PetLevelsInput = { currentLevel: 1, xpInLevel: 0, targetLevel: 100 };
+export const DEFAULT_PET_LEVELS: PetLevelsInput = { currentLevel: 0, xpInLevel: 0, targetLevel: 100 };
 
 export function getPetLevels(): PetLevelsInput {
   try {

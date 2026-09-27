@@ -1,15 +1,15 @@
 import petXpData from '../data/pet-xp-data.json';
 
-// specs/022-pet-xp-calculator: pet XP rules. The curve and the per-resource XP come from the Dofus
-// Tool community tables frozen in src/data/pet-xp-data.json (research.md §1-§3); everything here is
-// pure so it can be tested on its own (constitution, principe II).
+// specs/022-pet-xp-calculator: pet XP rules. The per-resource XP (Dafous, via the player's EXCEL
+// FAMILIER workbook) and the level curve (game client) are frozen in src/data/pet-xp-data.json
+// (research.md §1-§3); everything here is pure so it can be tested on its own (constitution, principe II).
 
 export type PetFood = {
   itemId: string;
   name: string;
   imageUrl?: string;
-  xpGiven: number;
-  quantityNeeded: number;
+  /** XP one unit gives the pet. */
+  xpPerUnit: number;
   sourceName: string;
 };
 
@@ -31,7 +31,7 @@ export type PetFoodSort = { key: PetFoodSortKey; direction: 'asc' | 'desc' };
 export const DEFAULT_PET_FOOD_SORT: PetFoodSort = { key: 'total', direction: 'asc' };
 
 const SORT_VALUE: Record<Exclude<PetFoodSortKey, 'name'>, (line: PetFoodRecommendation) => number> = {
-  xpPerUnit: (line) => xpPerUnit(line.food),
+  xpPerUnit: (line) => line.food.xpPerUnit,
   unitPrice: (line) => line.unitPriceKamas,
   quantity: (line) => line.quantity,
   total: (line) => line.totalKamas,
@@ -48,13 +48,14 @@ export type PetFoodPlan = { xpNeeded: number; recommendations: PetFoodRecommenda
 
 export const PET_XP_CURVE: readonly number[] = petXpData.cumulativeXpByLevel;
 export const PET_FOODS: readonly PetFood[] = petXpData.foods;
-export const PET_XP_SOURCE = { name: petXpData.source, url: petXpData.sourceUrl, retrievedAt: petXpData.retrievedAt };
+export const PET_XP_SOURCE = { name: petXpData.source, url: petXpData.sourceUrl, curve: petXpData.curveSource, retrievedAt: petXpData.retrievedAt };
 
-export const PET_MIN_LEVEL = 1;
-export const PET_MAX_LEVEL = PET_XP_CURVE.length;
+// The curve is indexed by level: a new pet is level 0 with 0 XP, level 100 is the last one.
+export const PET_MIN_LEVEL = 0;
+export const PET_MAX_LEVEL = PET_XP_CURVE.length - 1;
 export const MAX_RECOMMENDATIONS = 10;
 
-const cumulativeXp = (level: number, curve: readonly number[]) => curve[level - 1];
+const cumulativeXp = (level: number, curve: readonly number[]) => curve[level];
 
 /** XP to go from `level` to `level + 1`. */
 export function xpBetweenLevels(level: number, curve: readonly number[] = PET_XP_CURVE): number {
@@ -70,7 +71,7 @@ export type PetLevelsErrors = Partial<Record<keyof PetLevelsInput, string>>;
 
 export function validatePetLevels(input: PetLevelsInput, curve: readonly number[] = PET_XP_CURVE): PetLevelsErrors {
   const errors: PetLevelsErrors = {};
-  const maxLevel = curve.length;
+  const maxLevel = curve.length - 1;
   const { currentLevel, xpInLevel, targetLevel } = input;
   if (!Number.isInteger(currentLevel) || currentLevel < PET_MIN_LEVEL || currentLevel > maxLevel - 1) {
     errors.currentLevel = `Niveau entre ${PET_MIN_LEVEL} et ${maxLevel - 1}.`;
@@ -92,12 +93,10 @@ export function xpNeeded(input: PetLevelsInput, curve: readonly number[] = PET_X
   return Math.max(0, cumulativeXp(input.targetLevel, curve) - (cumulativeXp(input.currentLevel, curve) + input.xpInLevel));
 }
 
-export const xpPerUnit = (food: PetFood) => food.xpGiven / food.quantityNeeded;
-
 /** Units of `food` to give for `xp` points, rounded up so the level is always reached. */
 export function quantityFor(xp: number, food: PetFood): number {
-  const exact = (xp * food.quantityNeeded) / food.xpGiven;
-  // xpGiven can be decimal (1,25): absorb floating-point noise before rounding up.
+  const exact = xp / food.xpPerUnit;
+  // xpPerUnit is decimal (0,075, 2,646…): absorb floating-point noise before rounding up.
   return Math.ceil(Math.round(exact * 1e9) / 1e9);
 }
 

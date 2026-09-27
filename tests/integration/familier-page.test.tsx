@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPricesLookup } from '../../src/services/community-price-api';
 
 // specs/022-pet-xp-calculator. Real reference data (src/data/pet-xp-data.json): Peau de Rat (8482)
-// 1 XP / unit, Pépite (14635) 1,25 XP / unit, Rune Pa Vi (1548) 1 XP / 4 units.
+// 2,646 XP / unit, Pépite (14635) 1 XP / unit, Rune Pa Vi (1548) 0,225 XP / unit. Level 50 → 60: 2 859 XP.
 const getCommunityPrices = vi.fn<(ids: string[], serverId: string) => Promise<CommunityPricesLookup>>();
 
 vi.mock('../../src/services/community-price-api', () => ({
@@ -66,9 +66,9 @@ describe('Familier page (specs/022)', () => {
       await openFamilier('personal');
       type('Niveau actuel', '50');
       type('Niveau visé', '60');
-      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('3 141 XP');
+      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 859 XP');
       type('XP déjà gagnée dans ce niveau', '150');
-      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 991 XP');
+      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 709 XP');
     });
 
     it('says there is no XP to give when the target is not above the current level', async () => {
@@ -83,7 +83,7 @@ describe('Familier page (specs/022)', () => {
       await openFamilier('personal');
       type('Niveau actuel', '50');
       type('XP déjà gagnée dans ce niveau', '500');
-      expect(screen.getByRole('alert')).toHaveTextContent('197');
+      expect(screen.getByRole('alert')).toHaveTextContent('179');
     });
 
     it('remembers the levels on the device', async () => {
@@ -101,26 +101,26 @@ describe('Familier page (specs/022)', () => {
   describe('US2 / US3 — cheapest resources', () => {
     it('lists priced resources by total cost with quantity, date, unpriced count and source', async () => {
       const carnet = resourcePricesFor('personal');
-      await carnet.save('mikhal', '8482', 10); // Peau de Rat: 3 141 × 10 = 31 410
-      await carnet.save('mikhal', '14635', 20); // Pépite: 2 513 × 20 = 50 260
-      await carnet.save('mikhal', '1548', 1); // Rune Pa Vi: 12 564 × 1 = 12 564
+      await carnet.save('mikhal', '8482', 10); // Peau de Rat: 1 081 × 10 = 10 810
+      await carnet.save('mikhal', '14635', 20); // Pépite: 2 859 × 20 = 57 180
+      await carnet.save('mikhal', '1548', 1); // Rune Pa Vi: 12 707 × 1 = 12 707
       await openFamilier('personal');
       type('Niveau actuel', '50');
       type('Niveau visé', '60');
-      await waitFor(() => expect(names()).toEqual(['Rune Pa Vi', 'Peau de Rat', 'Pépite']));
+      await waitFor(() => expect(names()).toEqual(['Peau de Rat', 'Rune Pa Vi', 'Pépite']));
       const peau = normalize(rowOf('Peau de Rat')?.textContent);
-      expect(peau).toContain('3 141');
-      expect(peau).toContain('31 410');
-      expect(normalize(rowOf('Pépite')?.textContent)).toContain('2 513');
+      expect(peau).toContain('1 081');
+      expect(peau).toContain('10 810');
+      expect(normalize(rowOf('Pépite')?.textContent)).toContain('57 180');
       expect(rowOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
-      expect(normalize(screen.getByText(/sans prix connu/).textContent)).toContain(`${PET_FOODS.length - 3} ressources`);
+      expect(normalize(screen.getByText(/sans prix connu/).textContent)).toContain(`${new Intl.NumberFormat('fr-FR').format(PET_FOODS.length - 3).replace(/[\u202f\u00a0]/g, ' ')} ressources`);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
-      expect(names()).toEqual(['Pépite', 'Peau de Rat', 'Rune Pa Vi']);
+      expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
-      expect(names()).toEqual(['Rune Pa Vi', 'Peau de Rat', 'Pépite']);
+      expect(names()).toEqual(['Rune Pa Vi', 'Pépite', 'Peau de Rat']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par Ressource' }));
       expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
-      expect(screen.getByRole('link', { name: /Dofus Tool/ })).toHaveAttribute('href', 'https://www.dofustool.com/tableau-xp-familier-dofus/');
+      expect(screen.getByRole('link', { name: /Dafous/ })).toHaveAttribute('href', 'https://dafous.app/pet-xp');
     });
 
     it('uses community medians for resources missing from the carnet, without writing them', async () => {
@@ -132,7 +132,7 @@ describe('Familier page (specs/022)', () => {
       type('Niveau actuel', '50');
       type('Niveau visé', '60');
       await waitFor(() => expect(names()).toEqual(['Peau de Rat']));
-      expect(normalize(rowOf('Peau de Rat')?.textContent)).toContain('6 282');
+      expect(normalize(rowOf('Peau de Rat')?.textContent)).toContain('2 162');
       expect(rowOf('Peau de Rat')?.textContent).toContain('Médiane');
       expect(await resourcePricesFor('community').get('mikhal', '8482')).toBeUndefined();
     });
