@@ -57,5 +57,5 @@
 
 ## §6 — Mémorisation des niveaux
 
-- **Decision** : `localStorage` (clé `dofus-craft:pet-levels`), lu et écrit dans un try/catch, comme
+- **Decision** : `localStorage` (clé `craftcheck-pet-levels`), lu et écrit dans un try/catch, comme
   les autres préférences de `src/persistence/`.
