@@ -26,6 +26,24 @@ export type PetFoodRecommendation = {
   totalKamas: number;
 };
 
+export type PetFoodSortKey = 'name' | 'xpPerUnit' | 'unitPrice' | 'quantity' | 'total';
+export type PetFoodSort = { key: PetFoodSortKey; direction: 'asc' | 'desc' };
+export const DEFAULT_PET_FOOD_SORT: PetFoodSort = { key: 'total', direction: 'asc' };
+
+const SORT_VALUE: Record<Exclude<PetFoodSortKey, 'name'>, (line: PetFoodRecommendation) => number> = {
+  xpPerUnit: (line) => xpPerUnit(line.food),
+  unitPrice: (line) => line.unitPriceKamas,
+  quantity: (line) => line.quantity,
+  total: (line) => line.totalKamas,
+};
+
+function compareLines(a: PetFoodRecommendation, b: PetFoodRecommendation, sort: PetFoodSort): number {
+  const byName = a.food.name.localeCompare(b.food.name, 'fr');
+  const value = sort.key === 'name' ? byName : SORT_VALUE[sort.key](a) - SORT_VALUE[sort.key](b);
+  // Ties always fall back to the cheapest total, then the name.
+  return (sort.direction === 'asc' ? value : -value) || a.totalKamas - b.totalKamas || byName;
+}
+
 export type PetFoodPlan = { xpNeeded: number; recommendations: PetFoodRecommendation[]; unpricedCount: number };
 
 export const PET_XP_CURVE: readonly number[] = petXpData.cumulativeXpByLevel;
@@ -83,12 +101,13 @@ export function quantityFor(xp: number, food: PetFood): number {
   return Math.ceil(Math.round(exact * 1e9) / 1e9);
 }
 
-/** Cheapest foods for `xp` points: priced foods only, by total cost then name (research.md §5). */
+/** Foods for `xp` points: priced foods only, sorted by `sort` (cheapest total first by default, research.md §5), then cut to `limit`. */
 export function planPetFood(
   xp: number,
   foods: readonly PetFood[],
   prices: Record<string, PetFoodPrice | undefined>,
   limit = MAX_RECOMMENDATIONS,
+  sort: PetFoodSort = DEFAULT_PET_FOOD_SORT,
 ): PetFoodPlan {
   const priced = foods.filter((food) => (prices[food.itemId]?.unitPriceKamas ?? 0) > 0);
   const unpricedCount = foods.length - priced.length;
@@ -106,7 +125,7 @@ export function planPetFood(
         totalKamas: quantity * price.unitPriceKamas,
       };
     })
-    .sort((a, b) => a.totalKamas - b.totalKamas || a.food.name.localeCompare(b.food.name, 'fr'))
+    .sort((a, b) => compareLines(a, b, sort))
     .slice(0, limit);
   return { xpNeeded: xp, recommendations, unpricedCount };
 }

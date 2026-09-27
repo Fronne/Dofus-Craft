@@ -85,6 +85,13 @@ calcul (cas normaux, bornes, entrées invalides ou incomplètes).
 
 ---
 
+## Phase 7: Révision — tri au clic sur les colonnes (FR-007 révisé)
+
+- [X] T023 [US2] Ajouter `PetFoodSort` / `DEFAULT_PET_FOOD_SORT` et un paramètre `sort` à `planPetFood` dans `src/domain/pet-xp.ts` (tri de toutes les ressources avec prix avant la coupe à 10 ; égalités : coût total puis nom), avec tests dans `tests/unit/pet-xp.test.ts`
+- [X] T024 [US2] Remplacer l'en-tête statique de `src/features/pets/FamilierPage.tsx` par des boutons de tri (« Trier par … », flèche ↑/↓, premier sens selon la colonne), visibles aussi sur mobile, avec test dans `tests/integration/familier-page.test.tsx`
+
+---
+
 ## Dependencies & Execution Order
 
 - Setup (T001 → T002) → Foundational (T003–T005) → US1 → US2 → US3 → Polish.

@@ -114,6 +114,12 @@ describe('Familier page (specs/022)', () => {
       expect(normalize(rowOf('Pépite')?.textContent)).toContain('2 513');
       expect(rowOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
       expect(normalize(screen.getByText(/sans prix connu/).textContent)).toContain(`${PET_FOODS.length - 3} ressources`);
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
+      expect(names()).toEqual(['Pépite', 'Peau de Rat', 'Rune Pa Vi']);
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
+      expect(names()).toEqual(['Rune Pa Vi', 'Peau de Rat', 'Pépite']);
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par Ressource' }));
+      expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
       expect(screen.getByRole('link', { name: /Dofus Tool/ })).toHaveAttribute('href', 'https://www.dofustool.com/tableau-xp-familier-dofus/');
     });
 

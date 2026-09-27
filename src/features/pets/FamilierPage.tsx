@@ -13,11 +13,15 @@ import {
   PET_MAX_LEVEL,
   PET_MIN_LEVEL,
   PET_XP_SOURCE,
+  DEFAULT_PET_FOOD_SORT,
+  MAX_RECOMMENDATIONS,
   planPetFood,
   validatePetLevels,
   xpNeeded,
   xpPerUnit,
   type PetFoodRecommendation,
+  type PetFoodSort,
+  type PetFoodSortKey,
   type PetLevelsInput,
 } from '../../domain/pet-xp';
 import { getPetLevels, setPetLevels } from '../../persistence/pet-levels-preference';
@@ -42,6 +46,42 @@ const toText = (levels: PetLevelsInput): Record<Field, string> => ({
 });
 
 const parse = (text: string) => (text.trim() === '' ? Number.NaN : Number(text));
+
+// Clicking a column header sorts the whole priced list by it, then keeps the first 10 lines: first
+// click in the most useful direction (A → Z, most XP per unit, cheapest), second click the other way.
+const COLUMNS: { key: PetFoodSortKey; label: string; first: PetFoodSort['direction'] }[] = [
+  { key: 'name', label: 'Ressource', first: 'asc' },
+  { key: 'xpPerUnit', label: 'XP par unité', first: 'desc' },
+  { key: 'unitPrice', label: 'Prix unitaire', first: 'asc' },
+  { key: 'quantity', label: 'Quantité', first: 'asc' },
+  { key: 'total', label: 'Coût total', first: 'asc' },
+];
+
+function SortHeader({ sort, onSort }: { sort: PetFoodSort; onSort: (sort: PetFoodSort) => void }) {
+  return (
+    <div className="profit-head pet-food-row" role="group" aria-label="Trier la liste">
+      {COLUMNS.map((column) => {
+        const active = sort.key === column.key;
+        return (
+          <button
+            key={column.key}
+            type="button"
+            className={`profit-sort${active ? ' profit-sort--active' : ''}`}
+            aria-pressed={active}
+            aria-label={`Trier par ${column.label}`}
+            onClick={() => onSort({
+              key: column.key,
+              direction: active ? (sort.direction === 'asc' ? 'desc' : 'asc') : column.first,
+            })}
+          >
+            {column.label}
+            {active && <span aria-hidden="true">{sort.direction === 'desc' ? ' ↓' : ' ↑'}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function FoodLine({ line }: { line: PetFoodRecommendation }) {
   const age = classifyPriceAge(line.priceDate);
@@ -78,6 +118,7 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
 export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId, servers } = useActiveServer();
   const [text, setText] = useState(() => toText(getPetLevels()));
+  const [sort, setSort] = useState<PetFoodSort>(DEFAULT_PET_FOOD_SORT);
   const levels: PetLevelsInput = {
     currentLevel: parse(text.currentLevel),
     xpInLevel: text.xpInLevel.trim() === '' ? 0 : parse(text.xpInLevel),
@@ -93,7 +134,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   }, [valid, levels.currentLevel, levels.xpInLevel, levels.targetLevel]);
 
   const { status, prices, communityUnavailable } = usePetFoodPrices(serverId, priceMode);
-  const plan = xp !== undefined ? planPetFood(xp, PET_FOODS, prices) : undefined;
+  const plan = xp !== undefined ? planPetFood(xp, PET_FOODS, prices, MAX_RECOMMENDATIONS, sort) : undefined;
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
@@ -139,7 +180,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
 
       {plan && plan.xpNeeded > 0 && (
         <section className="panel profit-panel">
-          <h2>Ressources les moins chères</h2>
+          <h2>{sort.key === 'total' && sort.direction === 'asc' ? 'Ressources les moins chères' : 'Ressources'}</h2>
           {!serverId ? (
             <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le prix des ressources." />
           ) : status === 'loading' ? (
@@ -155,13 +196,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             </>
           ) : (
             <>
-              <div className="profit-head pet-food-row" aria-hidden="true">
-                <span className="profit-sort">Ressource</span>
-                <span className="profit-sort">XP par unité</span>
-                <span className="profit-sort">Prix unitaire</span>
-                <span className="profit-sort">Quantité</span>
-                <span className="profit-sort">Coût total</span>
-              </div>
+              <SortHeader sort={sort} onSort={setSort} />
               <ul className="profit-list">
                 {plan.recommendations.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
               </ul>

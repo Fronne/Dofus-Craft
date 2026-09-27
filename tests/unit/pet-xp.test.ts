@@ -63,6 +63,21 @@ describe('planPetFood', () => {
     expect(plan.unpricedCount).toBe(1);
   });
 
+  it('sorts the whole priced list by the chosen column before keeping the first lines', () => {
+    // Rune: 1 XP / unit at 5 → 50 ; Os: 2 XP / unit at 30 → 150 ; Piou: 0,5 XP / unit at 1 → 20.
+    const foods = [food('rune', 'Rune', 1, 1), food('os', 'Os', 2, 1), food('piou', 'Piou', 1, 2)];
+    const prices = { rune: { unitPriceKamas: 5, origin: 'carnet' as const }, os: { unitPriceKamas: 30, origin: 'carnet' as const }, piou: { unitPriceKamas: 1, origin: 'carnet' as const } };
+    const order = (key: 'name' | 'xpPerUnit' | 'unitPrice' | 'quantity' | 'total', direction: 'asc' | 'desc', limit = 10) =>
+      planPetFood(10, foods, prices, limit, { key, direction }).recommendations.map((line) => line.food.name);
+    expect(order('total', 'asc')).toEqual(['Piou', 'Rune', 'Os']);
+    expect(order('xpPerUnit', 'desc')).toEqual(['Os', 'Rune', 'Piou']);
+    expect(order('unitPrice', 'asc')).toEqual(['Piou', 'Rune', 'Os']);
+    expect(order('quantity', 'desc')).toEqual(['Piou', 'Rune', 'Os']);
+    expect(order('name', 'asc')).toEqual(['Os', 'Piou', 'Rune']);
+    // Sorted before the cut: the best XP per unit is kept even though it is the most expensive.
+    expect(order('xpPerUnit', 'desc', 1)).toEqual(['Os']);
+  });
+
   it('recommends nothing when no XP is needed', () => {
     expect(planPetFood(0, [food('1', 'Rune', 1, 1)], { 1: { unitPriceKamas: 5, origin: 'carnet' } }).recommendations).toEqual([]);
   });

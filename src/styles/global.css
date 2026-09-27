@@ -1177,7 +1177,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pet-food-notes { margin-top: var(--space-4); font-size: .82rem; color: var(--text-muted); }
 .pet-food-notes p { margin: var(--space-1) 0; }
 @media (max-width: 640px) {
-  .profit-head.pet-food-row { display: none; }
   .profit-row.pet-food-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
