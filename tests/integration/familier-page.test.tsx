@@ -79,6 +79,14 @@ describe('Familier page (specs/022)', () => {
       expect(screen.queryByText('Ressources les moins chères')).not.toBeInTheDocument();
     });
 
+    it('brings a level typed above the maximum back to it', async () => {
+      await openFamilier('personal');
+      type('Niveau visé', '150');
+      expect(field('Niveau visé').value).toBe('100');
+      type('Niveau actuel', '120');
+      expect(field('Niveau actuel').value).toBe('99');
+    });
+
     it('shows the most XP the current level can hold', async () => {
       await openFamilier('personal');
       type('Niveau actuel', '50');

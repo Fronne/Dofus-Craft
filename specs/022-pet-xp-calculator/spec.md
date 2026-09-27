@@ -103,7 +103,8 @@ source des données d'XP et le nombre de ressources sans prix.
   expliquant qu'aucune recommandation n'est possible sans prix, avec un lien vers la saisie de prix.
 - XP déjà gagnée dans le niveau supérieure ou égale à l'XP du niveau suivant : la saisie est refusée
   avec un message indiquant le maximum possible pour ce niveau.
-- Niveau hors de 0 à 100 ou saisie non numérique : refusée avec un message.
+- Niveau saisi au-dessus du maximum (99 pour le niveau actuel, 100 pour le niveau visé) : ramené
+  aussitôt à ce maximum. Niveau négatif ou saisie non numérique : refusé avec un message.
 - Ressource du tableau introuvable dans le catalogue de l'app (nom différent, doublon) : elle est
   ignorée ; elle ne doit jamais être rattachée à la mauvaise ressource.
 - Ressource dont l'XP par unité est 0, absente ou illisible : jamais recommandée.

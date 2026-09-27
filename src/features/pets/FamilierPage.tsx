@@ -44,6 +44,11 @@ const toText = (levels: PetLevelsInput): Record<Field, string> => ({
   targetLevel: String(levels.targetLevel),
 });
 
+// A level typed above its maximum (e.g. 150) is brought back to that maximum right away, rather than
+// left in the field with an error.
+const clampToMax = (value: string, max: number | undefined) =>
+  max !== undefined && value.trim() !== '' && Number(value) > max ? String(max) : value;
+
 const parse = (text: string) => (text.trim() === '' ? Number.NaN : Number(text));
 
 // Clicking a column header sorts the whole priced list by it, then keeps the first 10 lines: first
@@ -160,7 +165,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                 step={1}
                 value={text[field.key]}
                 aria-invalid={errors[field.key] ? true : undefined}
-                onChange={(event) => setText((current) => ({ ...current, [field.key]: event.target.value }))}
+                onChange={(event) => setText((current) => ({ ...current, [field.key]: clampToMax(event.target.value, field.max) }))}
               />
               {errors[field.key] && <small className="warning" role="alert">{errors[field.key]}</small>}
             </label>
