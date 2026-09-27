@@ -21,9 +21,16 @@ export type IconName =
   | 'package'
   | 'edit'
   | 'copy'
-  | 'chart';
+  | 'chart'
+  | 'paw';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  paw: {
+    children:
+      '<ellipse cx="6" cy="10" rx="1.7" ry="2.2"/><ellipse cx="9.8" cy="6" rx="1.8" ry="2.3"/>' +
+      '<ellipse cx="14.2" cy="6" rx="1.8" ry="2.3"/><ellipse cx="18" cy="10" rx="1.7" ry="2.2"/>' +
+      '<path d="M12 11.5c-2.8 0-5.5 3.6-5.5 6.1 0 1.6 1.2 2.4 2.6 2.4 1.2 0 1.9-.6 2.9-.6s1.7.6 2.9.6c1.4 0 2.6-.8 2.6-2.4 0-2.5-2.7-6.1-5.5-6.1z"/>',
+  },
   search: {
     children:
       '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',

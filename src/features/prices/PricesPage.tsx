@@ -46,7 +46,7 @@ const kamasNumber = new Intl.NumberFormat('fr-FR');
 
 // An amount followed by the in-game kamas icon instead of the word « kamas », to keep the lines light.
 // The icon's alt text keeps the unit for screen readers.
-function Kamas({ value, signed = false }: { value: number; signed?: boolean }) {
+export function Kamas({ value, signed = false }: { value: number; signed?: boolean }) {
   const sign = signed && value > 0 ? '+' : value < 0 ? '−' : '';
   return (
     <span className="kamas-amount">

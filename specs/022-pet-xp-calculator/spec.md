@@ -29,8 +29,8 @@ atteindre. La page affiche immédiatement l'XP à donner au familier pour y arri
 
 1. **Given** la page Familier ouverte, **When** le joueur saisit niveau actuel 50 et niveau cible 60,
    **Then** la page affiche 3 141 XP (5 023 − 1 882).
-2. **Given** niveau actuel 50 et 200 XP déjà gagnés dans ce niveau, **When** le niveau cible est 60,
-   **Then** la page affiche 2 941 XP.
+2. **Given** niveau actuel 50 et 150 XP déjà gagnés dans ce niveau, **When** le niveau cible est 60,
+   **Then** la page affiche 2 991 XP.
 3. **Given** un niveau cible inférieur ou égal au niveau actuel, **When** le joueur le saisit,
    **Then** la page indique qu'il n'y a pas d'XP à donner et n'affiche pas de recommandation.
 

@@ -10,6 +10,7 @@ import { EpinglesPage } from '../features/catalogue/EpinglesPage';
 import { ParametresPage } from '../features/settings/ParametresPage';
 import { AccueilPage } from '../features/home/AccueilPage';
 import { PricesPage } from '../features/prices/PricesPage';
+import { FamilierPage } from '../features/pets/FamilierPage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import type { AccentColorId } from '../domain/accent-colors';
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true },
   { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
   { to: ROUTES.prices, label: 'Prix', icon: 'coins' as const, end: false },
+  { to: ROUTES.pets, label: 'Familier', icon: 'paw' as const, end: false },
   { to: ROUTES.settings, label: 'Paramètres', icon: 'settings' as const, end: false },
 ];
 
@@ -120,6 +122,7 @@ export function AppShell() {
             {/* Former address of the Suivis page, kept so existing bookmarks still land on it. */}
             <Route path={ROUTES.legacyPinned} element={<Navigate to={ROUTES.pinned} replace />} />
             <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
+            <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
             <Route
               path={ROUTES.settings}
               element={

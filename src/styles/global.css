@@ -1164,6 +1164,23 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .profit-cell b { white-space: nowrap; }
 }
 
+/* specs/022-pet-xp-calculator: the Familier page. */
+.pet-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-3); }
+.pet-level-field { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
+.pet-level-field input { min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; }
+.pet-level-field .warning { margin: 0; font-size: .78rem; }
+.pet-xp-needed { margin: var(--space-4) 0 0; font-size: 1.05rem; }
+.pet-xp-needed b { color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+.pet-levels-panel { margin-bottom: var(--space-4); }
+.profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
+.profit-row.pet-food-row .profit-row-main { cursor: default; }
+.pet-food-notes { margin-top: var(--space-4); font-size: .82rem; color: var(--text-muted); }
+.pet-food-notes p { margin: var(--space-1) 0; }
+@media (max-width: 640px) {
+  .profit-head.pet-food-row { display: none; }
+  .profit-row.pet-food-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 
 /* specs/020-info-banner: the owner's information message, above every page. */
 .info-banner {

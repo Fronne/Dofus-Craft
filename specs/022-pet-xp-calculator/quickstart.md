@@ -18,7 +18,7 @@ pnpm test:e2e -- familier-page
 ## Vérification manuelle (`pnpm dev`, page `/familier`)
 
 1. Niveau 1 → 100 : **196 158 XP**.
-2. Niveau 50 → 60 : **3 141 XP** ; avec 200 XP déjà gagnés : **2 941 XP**.
+2. Niveau 50 → 60 : **3 141 XP** ; avec 150 XP déjà gagnés : **2 991 XP**.
 3. Cible ≤ actuel : message « aucune XP à donner », pas de liste.
 4. Saisir un prix pour « Peau de Rat » (1 XP / unité) à 10 kamas, niveau 50 → 60 : ligne avec
    3 141 unités et 31 410 kamas, triée selon son coût parmi les autres.
