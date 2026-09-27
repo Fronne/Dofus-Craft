@@ -55,7 +55,7 @@ const parse = (text: string) => (text.trim() === '' ? Number.NaN : Number(text))
 // click in the most useful direction (A → Z, most XP per unit, cheapest), second click the other way.
 const COLUMNS: { key: PetFoodSortKey; label: string; first: PetFoodSort['direction'] }[] = [
   { key: 'name', label: 'Ressource', first: 'asc' },
-  { key: 'xpPerUnit', label: 'XP par unité', first: 'desc' },
+  { key: 'xpPerUnit', label: 'XP', first: 'desc' },
   { key: 'unitPrice', label: 'Prix unitaire', first: 'asc' },
   { key: 'quantity', label: 'Quantité', first: 'asc' },
   { key: 'total', label: 'Coût total', first: 'asc' },
@@ -96,7 +96,7 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
         <ResourceDisplay resource={{ id: line.food.itemId, name: line.food.name, imageUrl: line.food.imageUrl }} />
       </div>
       <div className="profit-cell">
-        <span className="profit-cell-label">XP par unité</span>
+        <span className="profit-cell-label">XP</span>
         <b>{numberFormat.format(line.food.xpPerUnit)}</b>
       </div>
       <div className="profit-cell">

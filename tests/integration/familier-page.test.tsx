@@ -122,9 +122,9 @@ describe('Familier page (specs/022)', () => {
       expect(normalize(rowOf('Pépite')?.textContent)).toContain('57 180');
       expect(rowOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
       expect(normalize(screen.getByText(/sans prix connu/).textContent)).toContain(`${new Intl.NumberFormat('fr-FR').format(PET_FOODS.length - 3).replace(/[\u202f\u00a0]/g, ' ')} ressources`);
-      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP' }));
       expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
-      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP par unité' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP' }));
       expect(names()).toEqual(['Rune Pa Vi', 'Pépite', 'Peau de Rat']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par Ressource' }));
       expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
