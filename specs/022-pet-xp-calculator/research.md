@@ -37,7 +37,7 @@
 
 - **Decision** : `resourcePricesFor(priceMode).getMany(serverId, ids)` pour toutes les ressources
   rattachées. En Mode communautaire, les ressources sans entrée de carnet sont complétées par
-  `getCommunityPrices(ids, serverId)` (lots de 100), **en lecture seule** : rien n'est écrit dans le
+  `getCommunityPrices(ids, serverId)` (lots de 98), **en lecture seule** : rien n'est écrit dans le
   carnet. Date affichée : `updatedAt` du carnet ou `lastContributionAt` de la médiane.
 - **Rationale** : mêmes prix que les autres pages ; ~830 ressources = 9 requêtes groupées, pas 830.
   Écrire des centaines de médianes dans le carnet depuis une page de consultation serait un effet de

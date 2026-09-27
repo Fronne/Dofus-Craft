@@ -9,7 +9,7 @@ Lecture anonyme (pas de clé d'API), comme `/community-price`.
 | Nom | Obligatoire | Règle |
 |---|---|---|
 | `serverId` | oui | identifiant de serveur |
-| `resourceIds` | oui | ids séparés par des virgules, 1 à 100, doublons ignorés |
+| `resourceIds` | oui | ids séparés par des virgules, 1 à 98, doublons ignorés (D1 lie au plus 100 paramètres par requête : les ids, `serverId` et la date limite de rétention — corrigé le 2026-09-27, la limite de 100 faisait planter le Worker) |
 | `fresh` | non | `1` : contourne le cache (lecture juste après une contribution) |
 
 **200**
@@ -26,7 +26,7 @@ Lecture anonyme (pas de clé d'API), comme `/community-price`.
 Chaque valeur est identique à celle de `GET /community-price?resourceId=…` pour la même ressource.
 Les ressources sans médiane ne figurent pas dans `prices`.
 
-**400** : `serverId` absent, `resourceIds` vide ou plus de 100 ids.
+**400** : `serverId` absent, `resourceIds` vide ou plus de 98 ids.
 
 ## En-têtes de cache (tous les GET de lecture de prix)
 

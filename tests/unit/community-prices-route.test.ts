@@ -33,9 +33,9 @@ describe('GET /community-prices', () => {
     });
   });
 
-  it('answers 400 without a server, without ids, or with more than 100 ids', async () => {
+  it('answers 400 without a server, without ids, or with more than 98 ids', async () => {
     const { d1 } = createTestD1();
-    const tooMany = Array.from({ length: 101 }, (_, index) => index).join(',');
+    const tooMany = Array.from({ length: 99 }, (_, index) => index).join(',');
 
     expect((await communityPricesResponse(d1, url('resourceIds=1'))).status).toBe(400);
     expect((await communityPricesResponse(d1, url('serverId=mikhal&resourceIds='))).status).toBe(400);

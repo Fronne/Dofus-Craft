@@ -176,8 +176,8 @@ export async function getSharedItemPrices(serverId: string): Promise<SharedItemP
 }
 
 // specs/021-background-data-loading (FR-010): several resources' community medians in one request
-// per batch of 100 (contracts/community-prices.md). Never throws: `unavailable` if any batch fails.
-const COMMUNITY_PRICES_BATCH = 100;
+// per batch of 98 (contracts/community-prices.md: D1's 100-parameter limit, minus serverId and the cutoff). Never throws: `unavailable` if any batch fails.
+const COMMUNITY_PRICES_BATCH = 98;
 export type CommunityPricesLookup = { status: 'found'; prices: CommunityPrice[] } | { status: 'unavailable' };
 
 export async function getCommunityPrices(resourceIds: string[], serverId: string): Promise<CommunityPricesLookup> {

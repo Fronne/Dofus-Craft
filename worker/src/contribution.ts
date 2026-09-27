@@ -68,7 +68,8 @@ export async function fetchCurrentMedian(
 
 // specs/021-background-data-loading (FR-010): the same medians as `fetchCurrentMedian`, for several
 // resources of one server in a single query. Resources with no median are left out.
-export const MAX_BATCH_RESOURCE_IDS = 100;
+// D1 binds at most 100 parameters per query: the ids plus `serverId` and the retention cutoff.
+export const MAX_BATCH_RESOURCE_IDS = 98;
 
 export async function fetchCurrentMedians(
   db: ContributionDb,

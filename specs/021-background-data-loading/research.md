@@ -49,7 +49,7 @@
 - **Decision**: nouvel endpoint `GET /community-prices?serverId=…&resourceIds=a,b,c` (100 ids max) :
   une requête D1 avec `resource_id IN (…)`, regroupement par ressource côté worker, puis
   `summarizeContributions` identique à `fetchCurrentMedian`. Côté client,
-  `getCommunityPrices(resourceIds, serverId)` découpe en lots de 100 ; `fillCommunityGaps` et le
+  `getCommunityPrices(resourceIds, serverId)` découpe en lots de 98 ; `fillCommunityGaps` et le
   préremplissage de la recette (RecherchePage) l'utilisent via une fonction de lot
   `lookupCommunityMedians`, qui alimente aussi le cache localStorage de `useCommunityPrice`. Ainsi
   chaque `useCommunityPrice` monté trouve déjà sa valeur. L'endpoint unitaire est conservé.
