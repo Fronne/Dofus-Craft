@@ -15,6 +15,7 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-27 : recherche par nom de ressource (FR-007b).
 - 2026-09-27 : tri de la liste au clic sur l'en-tête d'une colonne (FR-007), comme sur la page Prix.
 - 2026-09-27 : à la demande du porteur du projet, les données Dofus Tool sont entièrement abandonnées.
   L'XP par ressource vient de l'onglet « XP COMPLET » de son fichier EXCEL FAMILIER (colonne XP = XP
@@ -131,6 +132,9 @@ source des données d'XP et le nombre de ressources sans prix.
   un prix selon cette colonne avant de garder les 10 premières (premier clic : nom A → Z, XP par
   unité décroissante, prix / quantité / coût croissants ; second clic : sens inverse ; égalités
   départagées par coût total puis nom). Le tri n'est pas mémorisé.
+- **FR-007b**: Le joueur MUST pouvoir filtrer la liste par nom de ressource (sans tenir compte des
+  accents ni de la casse) ; le filtre s'applique avant le tri et la limite de 10 lignes. Si aucune
+  ressource avec un prix ne correspond, la page le dit et indique combien correspondent sans prix.
 - **FR-008**: L'app MUST exclure les ressources sans prix connu et indiquer leur nombre.
 - **FR-009**: L'app MUST indiquer la source des données d'XP (tableau communautaire de
   Dafous) et que ces valeurs peuvent être incomplètes.

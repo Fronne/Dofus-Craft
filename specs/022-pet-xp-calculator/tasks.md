@@ -103,6 +103,12 @@ calcul (cas normaux, bornes, entrées invalides ou incomplètes).
 
 ---
 
+## Phase 9: Révision — recherche par nom (FR-007b)
+
+- [X] T029 [US2] Ajouter dans `src/features/pets/FamilierPage.tsx` un champ « Rechercher une ressource » (même rendu que la page Prix) filtrant `PET_FOODS` par nom normalisé (`normalizeSearchText`) avant `planPetFood` ; message si aucune ressource avec prix ne correspond ; test dans `tests/integration/familier-page.test.tsx`
+
+---
+
 ## Dependencies & Execution Order
 
 - Setup (T001 → T002) → Foundational (T003–T005) → US1 → US2 → US3 → Polish.

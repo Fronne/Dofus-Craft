@@ -8,6 +8,8 @@ import { Kamas } from '../prices/PricesPage';
 import { classifyPriceAge } from '../../domain/price-age';
 import type { PriceMode } from '../../domain/price-modes';
 import { formatRelativeTime } from '../../domain/time';
+import { Icon } from '../../components/Icon';
+import { normalizeSearchText } from '../../services/dofusdb-api';
 import {
   PET_FOODS,
   PET_MAX_LEVEL,
@@ -123,6 +125,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId, servers } = useActiveServer();
   const [text, setText] = useState(() => toText(getPetLevels()));
   const [sort, setSort] = useState<PetFoodSort>(DEFAULT_PET_FOOD_SORT);
+  const [query, setQuery] = useState('');
   const levels: PetLevelsInput = {
     currentLevel: parse(text.currentLevel),
     xpInLevel: text.xpInLevel.trim() === '' ? 0 : parse(text.xpInLevel),
@@ -138,7 +141,12 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   }, [valid, levels.currentLevel, levels.xpInLevel, levels.targetLevel]);
 
   const { status, prices, communityUnavailable } = usePetFoodPrices(serverId, priceMode);
-  const plan = xp !== undefined ? planPetFood(xp, PET_FOODS, prices, MAX_RECOMMENDATIONS, sort) : undefined;
+  // The name search narrows the resources before sorting and keeping the first 10 lines.
+  const normalizedQuery = normalizeSearchText(query);
+  const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
+  const plan = xp !== undefined ? planPetFood(xp, foods, prices, MAX_RECOMMENDATIONS, sort) : undefined;
+  const unpricedCount = PET_FOODS.filter((food) => !(prices[food.itemId]?.unitPriceKamas > 0)).length;
+  const hasAnyPrice = unpricedCount < PET_FOODS.length;
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
@@ -184,12 +192,12 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
 
       {plan && plan.xpNeeded > 0 && (
         <section className="panel profit-panel">
-          <h2>{sort.key === 'total' && sort.direction === 'asc' ? 'Ressources les moins chères' : 'Ressources'}</h2>
+          <h2>{sort.key === 'total' && sort.direction === 'asc' && !normalizedQuery ? 'Ressources les moins chères' : 'Ressources'}</h2>
           {!serverId ? (
             <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le prix des ressources." />
           ) : status === 'loading' ? (
             <p className="empty" role="status">Chargement des prix…</p>
-          ) : plan.recommendations.length === 0 ? (
+          ) : !hasAnyPrice ? (
             <>
               <EmptyState
                 icon="coins"
@@ -200,10 +208,34 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             </>
           ) : (
             <>
-              <SortHeader sort={sort} onSort={setSort} />
-              <ul className="profit-list">
-                {plan.recommendations.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
-              </ul>
+              <div className="profit-toolbar">
+                <div className="search-input-wrap prices-search">
+                  <Icon name="search" size={18} className="search-input-icon" />
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Rechercher une ressource..."
+                    aria-label="Rechercher une ressource"
+                  />
+                </div>
+              </div>
+              {plan.recommendations.length === 0 ? (
+                <EmptyState
+                  icon="search"
+                  title="Aucune ressource avec un prix ne correspond"
+                  description={foods.length > 0
+                    ? `${numberFormat.format(foods.length)} ${foods.length === 1 ? 'ressource correspond' : 'ressources correspondent'}, mais sans prix connu.`
+                    : 'Essayez un autre nom de ressource.'}
+                />
+              ) : (
+                <>
+                  <SortHeader sort={sort} onSort={setSort} />
+                  <ul className="profit-list">
+                    {plan.recommendations.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
+                  </ul>
+                </>
+              )}
             </>
           )}
           {status === 'ready' && (
@@ -212,7 +244,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                 <p className="warning">Prix communautaires indisponibles pour le moment : seuls vos prix sont utilisés.</p>
               )}
               <p>
-                {numberFormat.format(plan.unpricedCount)} {plan.unpricedCount === 1 ? 'ressource sans prix connu n’est pas proposée' : 'ressources sans prix connu ne sont pas proposées'}.
+                {numberFormat.format(unpricedCount)} {unpricedCount === 1 ? 'ressource sans prix connu n’est pas proposée' : 'ressources sans prix connu ne sont pas proposées'}.
               </p>
               <p>
                 XP par ressource : <a href={PET_XP_SOURCE.url} target="_blank" rel="noreferrer">{PET_XP_SOURCE.name}</a>

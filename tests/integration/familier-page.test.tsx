@@ -131,6 +131,22 @@ describe('Familier page (specs/022)', () => {
       expect(screen.getByRole('link', { name: /Dafous/ })).toHaveAttribute('href', 'https://dafous.app/pet-xp');
     });
 
+    it('narrows the list by resource name, accents and case ignored', async () => {
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', '8482', 10);
+      await carnet.save('mikhal', '14635', 20);
+      await carnet.save('mikhal', '1548', 1);
+      await openFamilier('personal');
+      type('Niveau actuel', '50');
+      type('Niveau visé', '60');
+      await waitFor(() => expect(names()).toHaveLength(3));
+      fireEvent.change(screen.getByLabelText('Rechercher une ressource'), { target: { value: 'pepite' } });
+      expect(names()).toEqual(['Pépite']);
+      fireEvent.change(screen.getByLabelText('Rechercher une ressource'), { target: { value: 'Agathe' } });
+      expect(screen.getByText('Aucune ressource avec un prix ne correspond')).toBeInTheDocument();
+      expect(screen.getByText(/2 ressources correspondent, mais sans prix connu/)).toBeInTheDocument();
+    });
+
     it('uses community medians for resources missing from the carnet, without writing them', async () => {
       getCommunityPrices.mockResolvedValue({
         status: 'found',
