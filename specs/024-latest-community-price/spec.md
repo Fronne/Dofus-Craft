@@ -138,7 +138,9 @@ confirmation s'affiche avec le prix saisi, sans médiane ni pourcentage d'écart
   il s'affiche tel quel, puisque c'est le dernier relevé ; le prochain relevé du groupe le
   remplacera. Le joueur voit sa date et peut le corriger.
 - **Prix saisi hors ligne sur l'appareil, jamais partagé** : il reste affiché tant qu'aucun prix
-  partagé plus récent n'existe.
+  partagé plus récent n'existe ; dès qu'il en existe un, il est remplacé par ce prix partagé, sans
+  avertissement (choix voulu : le relevé le plus récent du groupe l'emporte). Le joueur peut
+  ressaisir son prix, qui sera alors partagé.
 - **Contributions anciennes** : seuls les prix encore conservés par le service (90 jours) comptent ;
   au-delà, la ressource n'a plus de prix partagé.
 - **Prix du joueur lui-même** : quand le dernier relevé est celui que le joueur vient de partager,
@@ -183,6 +185,9 @@ confirmation s'affiche avec le prix saisi, sans médiane ni pourcentage d'écart
   MUST NOT lire ni utiliser de prix partagé.
 - **FR-012**: Le système MUST NOT afficher de nombre de contributions sur les lignes de prix des
   ressources (règle déjà en vigueur, rappelée ici).
+- **FR-013**: À chaque ouverture de la page Rentabilité, le système MUST relire les prix partagés et
+  mettre la liste à jour si un prix de ressource plus récent existe, sans rechargement de l'onglet ;
+  la liste déjà calculée reste affichée pendant cette mise à jour (specs/021, inchangé).
 
 ### Key Entities
 

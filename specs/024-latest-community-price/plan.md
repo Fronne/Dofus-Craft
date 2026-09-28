@@ -126,3 +126,12 @@ pages appliquent la même règle.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | Principe III : la confirmation d'un prix aberrant de ressource ne montre plus sa référence | Demande explicite (spec FR-003, FR-009 option B) : la médiane ne doit plus être visible | Montrer le dernier prix comme référence (option A) : refusé par le joueur ; montrer la médiane : contraire à FR-003 |
+
+**Périmètre de l'exception** : uniquement la boîte de confirmation d'un prix aberrant pour une
+**ressource**, en Mode communautaire. La confirmation d'un prix HDV d'objet (specs/016) continue de
+montrer sa référence (dernier prix) et l'écart ; toutes les lignes de prix continuent de montrer le
+prix utilisé et sa date.
+
+**Condition de levée** : l'exception prend fin si le groupe décide de montrer de nouveau une
+référence dans cette confirmation (médiane, dernier prix ou autre) ; ce changement passe par une
+nouvelle spec qui amende FR-003 / FR-009 de specs/024.
