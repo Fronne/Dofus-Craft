@@ -33,6 +33,11 @@ nourrissent les familiers à l'HDV Animaux.
   l'unité seulement, comme sur la page Recherche ; pas de choix de lot.
 - Q: Où placer la saisie HDV dans l'app ? → A: Nouvelle entrée « HDV » dans la navigation
   principale ; la page Accueil, peu utile pour l'instant, est retirée de la navigation.
+- Q: Les certificats de dragodinde (ingrédients de 69 recettes) sont-ils listés ? → A: Non, ils ne
+  servent à rien pour les joueurs du groupe ; précision donnée pendant le plan.
+- Q: L'onglet Animaux n'aurait que 2 objets (une seule croquette dans le tableau d'XP familier) :
+  que faire ? → A: Lister toute la nourriture pour familier échangeable (35 objets), même absente
+  du tableau d'XP ; son prix est saisissable mais la page Familier ne l'utilise pas.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,8 +108,9 @@ Familier et vérifier que cette croquette apparaît dans les ressources avec ce 
    date y apparaissent.
 2. **Given** un prix modifié sur la page Recherche, **When** le joueur revient sur la page Saisie
    HDV, **Then** il y voit le prix modifié.
-3. **Given** le prix d'une nourriture pour familier saisi sur la page Saisie HDV, **When** le joueur
-   ouvre la page Familier, **Then** cette nourriture est prise en compte dans les recommandations.
+3. **Given** le prix d'une ressource du tableau d'XP familier saisi sur la page Saisie HDV (ex.
+   Croquette enrichie), **When** le joueur ouvre la page Familier, **Then** elle est prise en compte
+   dans les recommandations. Une nourriture absente de ce tableau ne l'est pas (FR-004b).
 
 ---
 
@@ -163,8 +169,12 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   documentée. Un objet apparaît dans un seul onglet.
 - **FR-004**: Les onglets MUST ne lister que les objets utiles à l'app : ceux qui sont ingrédients
   d'au moins une recette du catalogue, et ceux qui figurent dans le tableau d'XP de la page Familier.
-  Les autres (parchemins, potions de téléportation, familiers, montures, certificats…) ne sont pas
-  listés, même s'ils se vendent à cet HDV.
+  Les autres (parchemins, montures, familiers…) ne sont pas listés, même s'ils se vendent à cet
+  HDV. Les certificats de dragodinde ne sont jamais listés, même s'ils figurent comme ingrédients
+  dans des recettes du jeu : leur prix ne sert à rien dans l'app.
+- **FR-004b**: Par exception à FR-004, l'onglet Animaux MUST lister toute la nourriture pour
+  familier échangeable, même celle qui n'est ni un ingrédient ni dans le tableau d'XP familier ; la
+  page n'affirme pas que ces prix servent à la page Familier.
 - **FR-005**: Chaque ligne MUST afficher le nom et l'icône de l'objet, son type, et un champ de prix
   unitaire avec la date de dernière mise à jour. Aucun choix de lot (x10, x100, x1000) n'est
   proposé.
@@ -205,8 +215,8 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   dans le bon onglet ; aucun objet n'apparaît dans un onglet où il ne se vend pas.
 - **SC-003**: Un prix saisi sur la page Saisie HDV est visible avec la même valeur et la même date
   sur les pages Recherche, Prix et Familier, sans action supplémentaire.
-- **SC-004**: Après la saisie des prix de l'HDV Animaux, la page Familier recommande des nourritures
-  qu'elle écartait auparavant faute de prix.
+- **SC-004**: Après la saisie des prix des onglets Consommables et Animaux, la page Familier
+  recommande des ressources de son tableau qu'elle écartait auparavant faute de prix.
 - **SC-005**: Filtrer ou rechercher dans un onglet met la liste à jour sans délai perceptible (moins
   d'une seconde).
 
