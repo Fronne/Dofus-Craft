@@ -94,11 +94,11 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
   it('sends exactly one POST with only resourceId/serverId/amountKamas once the field is confirmed (blur after a real change), then refreshes via GET (FR-017/FR-018/FR-019)', async () => {
     const postBodies: unknown[] = [];
-    let median = { medianAmountKamas: 1200, sampleSize: 2 };
+    let median = { medianAmountKamas: 1200, sampleSize: 2, latestAmountKamas: 1200, latestContributionAt: '2026-09-01T12:00:00.000Z' };
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) {
         postBodies.push(JSON.parse(init!.body as string));
-        median = { medianAmountKamas: 1200, sampleSize: 3 };
+        median = { medianAmountKamas: 1200, sampleSize: 3, latestAmountKamas: 1200, latestContributionAt: '2026-09-01T12:00:00.000Z' };
         return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       }
       return Promise.resolve(
@@ -130,7 +130,7 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       return Promise.resolve(
-        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1200, sampleSize: 2 }), { status: 200 }),
+        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1200, sampleSize: 2, latestAmountKamas: 1200, latestContributionAt: '2026-09-01T12:00:00.000Z' }), { status: 200 }),
       );
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -151,7 +151,7 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) return Promise.resolve(new Response('error', { status: 500 }));
       return Promise.resolve(
-        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1200, sampleSize: 2 }), { status: 200 }),
+        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1200, sampleSize: 2, latestAmountKamas: 1200, latestContributionAt: '2026-09-01T12:00:00.000Z' }), { status: 200 }),
       );
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -177,7 +177,7 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       return Promise.resolve(
-        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2 }), { status: 200 }),
+        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' }), { status: 200 }),
       );
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -192,17 +192,17 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     fireEvent.change(input, { target: { value: '1300' } });
     fireEvent.blur(input);
 
-    await screen.findByText(/Prix habituel/);
+    await screen.findByText(/très différent des relevés du groupe/);
     expect(fetchMock.mock.calls.every(([url, init]) => !isPost(url as string, init as RequestInit | undefined))).toBe(true);
   });
 
   it('sends the value and refreshes the median once the confirmation is accepted', async () => {
     const postBodies: unknown[] = [];
-    let median = { medianAmountKamas: 1000, sampleSize: 2 };
+    let median = { medianAmountKamas: 1000, sampleSize: 2, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' };
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) {
         postBodies.push(JSON.parse(init!.body as string));
-        median = { medianAmountKamas: 1000, sampleSize: 3 };
+        median = { medianAmountKamas: 1000, sampleSize: 3, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' };
         return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       }
       return Promise.resolve(new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', ...median }), { status: 200 }));
@@ -234,7 +234,7 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const fetchMock = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       if (isPost(input, init)) return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       return Promise.resolve(
-        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2 }), { status: 200 }),
+        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' }), { status: 200 }),
       );
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -263,7 +263,7 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
         return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
       }
       return Promise.resolve(
-        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2 }), { status: 200 }),
+        new Response(JSON.stringify({ resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 2, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' }), { status: 200 }),
       );
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -280,7 +280,63 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
     await waitFor(() => expect(postBodies).toHaveLength(1));
     expect(postBodies[0]).toMatchObject({ amountKamas: 1150 });
-    expect(screen.queryByText(/Prix habituel/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/très différent des relevés du groupe/)).not.toBeInTheDocument();
+  });
+
+  // specs/024-latest-community-price US4 (FR-009, option B): the check still uses the median, which
+  // the confirmation never shows — nor any deviation percentage.
+  describe('confirmation against the hidden median (specs/024)', () => {
+    function stubShared(postBodies: unknown[]) {
+      vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string, init?: RequestInit) => {
+        if (isPost(input, init)) {
+          postBodies.push(JSON.parse(init!.body as string));
+          return Promise.resolve(new Response(JSON.stringify({ id: 'contribution-1' }), { status: 201 }));
+        }
+        return Promise.resolve(new Response(JSON.stringify({
+          resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3,
+          latestAmountKamas: 1100, latestContributionAt: '2026-09-27T12:00:00.000Z',
+        }), { status: 200 }));
+      }));
+    }
+
+    it('asks for confirmation beyond 25 % of the median, showing the typed price but neither the median nor a percentage', async () => {
+      const postBodies: unknown[] = [];
+      stubShared(postBodies);
+      render(<App />);
+      await enterCommunityMode();
+
+      const input = await screen.findByPlaceholderText('Prix unitaire');
+      await waitFor(() => expect(input).toHaveValue('1 100'));
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
+      fireEvent.change(input, { target: { value: '2000' } });
+      fireEvent.blur(input);
+
+      const question = await screen.findByText(/très différent des relevés du groupe/);
+      const dialog = question.closest('dialog') as HTMLElement;
+      const text = dialog.textContent!.replace(/[\u202f\u00a0]/g, ' ');
+      expect(text).toContain('2 000');
+      expect(text).not.toContain('1 000');
+      expect(text).not.toContain('%');
+      expect(text).not.toMatch(/[Mm]édiane|Prix habituel/);
+      expect(postBodies).toHaveLength(0);
+    });
+
+    it('shares without confirmation within 25 % of the median, even if different from the latest price shown', async () => {
+      const postBodies: unknown[] = [];
+      stubShared(postBodies);
+      render(<App />);
+      await enterCommunityMode();
+
+      const input = await screen.findByPlaceholderText('Prix unitaire');
+      await waitFor(() => expect(input).toHaveValue('1 100'));
+      fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
+      fireEvent.change(input, { target: { value: '1200' } });
+      fireEvent.blur(input);
+
+      await waitFor(() => expect(postBodies).toHaveLength(1));
+      expect(postBodies[0]).toMatchObject({ amountKamas: 1200 });
+      expect(screen.queryByText(/très différent des relevés du groupe/)).not.toBeInTheDocument();
+    });
   });
 
   it('never shows any manual or bulk sharing action in Paramètres', async () => {

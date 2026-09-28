@@ -44,6 +44,11 @@
   bord inattendu.
 - **Alternatives** : `fillCommunityGaps` (une requête par ressource et écriture dans le carnet).
   Médianes indisponibles → seuls les prix du carnet sont utilisés, avec un message.
+- **Révision (2026-09-28, [specs/024](../024-latest-community-price/spec.md))** : en Mode
+  communautaire, toutes les ressources (plus seulement celles sans entrée de carnet) sont lues par
+  `getCommunityPrices` ; chacune prend le **dernier prix partagé** quand il est plus récent que le
+  carnet, et ce prix **est écrit** dans le carnet avec sa propre date, comme sur les autres pages.
+  La mention « Médiane » n'est plus affichée ; la date est celle du carnet ou du dernier prix.
 
 ## §5 — Calcul et classement
 

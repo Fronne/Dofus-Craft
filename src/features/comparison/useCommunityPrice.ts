@@ -26,7 +26,14 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
     const raw = window.localStorage.getItem(cacheKey(resourceId, serverId));
     if (!raw) return undefined;
     const parsed = JSON.parse(raw) as Partial<CommunityPrice>;
-    if (typeof parsed.medianAmountKamas !== 'number' || typeof parsed.sampleSize !== 'number') {
+    // specs/024-latest-community-price: an entry saved before the latest price existed is ignored,
+    // never turned into a price from its median.
+    if (
+      typeof parsed.medianAmountKamas !== 'number' ||
+      typeof parsed.sampleSize !== 'number' ||
+      typeof parsed.latestAmountKamas !== 'number' ||
+      typeof parsed.latestContributionAt !== 'string'
+    ) {
       return undefined;
     }
     return {
@@ -35,6 +42,8 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
       medianAmountKamas: parsed.medianAmountKamas,
       sampleSize: parsed.sampleSize,
       lastContributionAt: typeof parsed.lastContributionAt === 'string' ? parsed.lastContributionAt : undefined,
+      latestAmountKamas: parsed.latestAmountKamas,
+      latestContributionAt: parsed.latestContributionAt,
     };
   } catch {
     return undefined;
@@ -88,17 +97,17 @@ export function loadCommunityPrice(resourceId: string, serverId: string): Promis
   });
 }
 
-// One-off read of a resource's community median (fresh if reachable, else the last cached one),
-// for pages that need the value without mounting a hook per resource — e.g. Épinglés, which must
-// fill carnet gaps the same way RecherchePage's prefill does so both pages agree on the craft cost.
-export async function lookupCommunityMedian(resourceId: string, serverId: string): Promise<number | undefined> {
+// One-off read of a resource's shared price (fresh if reachable, else the last cached one), for
+// pages that need the value without mounting a hook per resource — e.g. Épinglés, which must sync
+// the carnet the same way the Recherche lines do so both pages agree on the craft cost.
+export async function lookupCommunityPrice(resourceId: string, serverId: string): Promise<CommunityPrice | undefined> {
   const result = await loadCommunityPrice(resourceId, serverId);
   if (result.status === 'found') {
     writeCache(resourceId, serverId, result.price);
-    return result.price.medianAmountKamas;
+    return result.price;
   }
   if (result.status === 'not-found') return undefined;
-  return readCache(resourceId, serverId)?.medianAmountKamas;
+  return readCache(resourceId, serverId);
 }
 
 // Fetch/cache/refresh logic shared by the price-field prefill (RecherchePage) and the compact

@@ -10,7 +10,7 @@ async function mockCommunityBackend(page: Page) {
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ resourceId: url.searchParams.get('resourceId'), serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3 }),
+      body: JSON.stringify({ resourceId: url.searchParams.get('resourceId'), serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3, latestAmountKamas: 1000, latestContributionAt: '2026-09-01T12:00:00.000Z' }),
     });
   });
   await page.route('**/latest-price?*', (route) => {

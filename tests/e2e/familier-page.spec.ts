@@ -10,7 +10,7 @@ async function openFamilier(page: Page) {
       contentType: 'application/json',
       body: JSON.stringify({
         prices: ids.includes('8482')
-          ? [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 10, sampleSize: 3, lastContributionAt: new Date().toISOString() }]
+          ? [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 10, sampleSize: 3, lastContributionAt: new Date().toISOString(), latestAmountKamas: 10, latestContributionAt: new Date().toISOString() }]
           : [],
       }),
     });

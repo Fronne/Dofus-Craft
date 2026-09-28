@@ -582,3 +582,14 @@ Suite à une revue de l'application :
 - Le Worker continue de renvoyer `sampleSize` (GET /community-price) ; seule l'application cesse de
   l'afficher. L'historique des prix (specs/017) garde son nombre de prix par point, qui est une autre
   information.
+
+## Révision (2026-09-28) : dernier prix partagé au lieu de la médiane
+
+Amendée par [specs/024-latest-community-price](../024-latest-community-price/spec.md).
+
+- **FR-001 / FR-003 (amendées)** : le prix communautaire d'une ressource est désormais le **dernier
+  prix partagé** (la contribution la plus récente pour cette ressource et ce serveur), plus la
+  médiane. La médiane reste calculée et enregistrée avec chaque contribution, sans être affichée.
+- **FR-006 (remplacée)** : un prix gardé sur l'appareil est remplacé par le dernier prix partagé
+  quand celui-ci est plus récent (comparaison des dates), jamais pendant une saisie en cours ; un
+  prix gardé plus récent est conservé.

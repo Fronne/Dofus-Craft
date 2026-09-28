@@ -38,7 +38,7 @@ test.describe('community price sharing', () => {
 
 test('pre-fills the resource price field with the community median, directly editable (US1)', async ({ page }) => {
   await mockCommunityBackend(page, {
-    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5 },
+    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5, latestAmountKamas: 4200, latestContributionAt: '2026-09-01T12:00:00.000Z' },
   });
   await openStrigideInCommunityMode(page);
 
@@ -65,7 +65,7 @@ test('leaves the field empty and directly fillable when no community price exist
 
 test('the Mode communautaire carnet never depends on the Mode personnel carnet (US2)', async ({ page }) => {
   await mockCommunityBackend(page, {
-    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 2 },
+    medianRow: { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 2, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
@@ -96,13 +96,13 @@ test('the Mode communautaire carnet never depends on the Mode personnel carnet (
 
 test('confirming an edit to a resource price field sends exactly one contribution, sending only resourceId/serverId/amountKamas, then refreshes the field (US1/US3)', async ({ page }) => {
   const contributedBodies: unknown[] = [];
-  let medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5 };
+  let medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 5, latestAmountKamas: 4200, latestContributionAt: '2026-09-01T12:00:00.000Z' };
   await page.route('**/community-price?*', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(medianRow) }),
   );
   await page.route('**/community-price', async (route) => {
     contributedBodies.push(route.request().postDataJSON());
-    medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 6 };
+    medianRow = { resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 4200, sampleSize: 6, latestAmountKamas: 4200, latestContributionAt: '2026-09-01T12:00:00.000Z' };
     await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'e2e-contribution-1' }) });
   });
   await openStrigideInCommunityMode(page);
@@ -137,7 +137,7 @@ test('shows the last known community price as stale, rather than breaking, when 
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 1500, sampleSize: 1 }),
+      body: JSON.stringify({ resourceId: 'whatever', serverId: 'mikhal', medianAmountKamas: 1500, sampleSize: 1, latestAmountKamas: 1500, latestContributionAt: '2026-09-01T12:00:00.000Z' }),
     });
   });
   await openStrigideInCommunityMode(page);

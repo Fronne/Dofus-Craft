@@ -26,7 +26,7 @@ import { effectiveIngredientPrices, retainedCost, treeResourceIds } from '../../
 import { useRecipeTree } from '../comparison/useRecipeTree';
 import { useIngredientChoices } from '../comparison/useIngredientChoices';
 import { useSharedItemPrice } from '../comparison/useSharedItemPrice';
-import { fillCommunityGaps } from '../comparison/community-gap-fill';
+import { syncCommunityPrices } from '../comparison/community-gap-fill';
 import { IngredientRow, type PriceFieldProps } from './IngredientRow';
 import { PriceEntryField } from '../comparison/PriceEntryField';
 
@@ -235,16 +235,17 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     ? compare(detail.recipe, effectiveIngredientPrices(detail.recipe, recipeTree, merged, ingredientChoices), parseKamas(market))
     : undefined;
 
-  // specs/015 research.md §7 (Mode communautaire): every resource of the tree without a carnet entry
-  // gets the community median, collapsed sub-resources included — the Suivis page fills the same
-  // gaps, so both pages count the same prices. Displayed lines are left to their own prefill
-  // (CommunityResourcePriceRow), so a median is never written twice. Only once the carnet read for the current ids has
-  // settled (`pricesLoaded`), so "not loaded yet" is never mistaken for "no entry" (FR-006 of
-  // specs/004), and each resource is asked for once per server.
+  // specs/015 research.md §7, specs/024 (Mode communautaire): every resource of the tree gets the
+  // latest shared price when it is more recent than the carnet's, collapsed sub-resources included —
+  // the Suivis and Rentabilité pages sync the same way, so every page counts the same prices.
+  // Displayed lines are left to their own sync (CommunityResourcePriceRow), so a price is never
+  // written twice. Only once the carnet read for the current ids has settled (`pricesLoaded`), so
+  // "not loaded yet" is never mistaken for "no entry", and each resource is asked for once per item
+  // shown.
   const gapFillRequested = useRef(new Set<string>());
   useEffect(() => {
     gapFillRequested.current = new Set();
-  }, [serverId, priceMode]);
+  }, [serverId, priceMode, selected]);
   // Lines on screen: the top-level ingredients plus the sub-resources of every unfolded line.
   const displayedIds = new Set<string>();
   for (const ingredient of detail?.recipe?.ingredients ?? []) displayedIds.add(ingredient.resourceId);
@@ -255,13 +256,13 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const idsKey = ids.join(',');
   useEffect(() => {
     if (priceMode !== 'community' || !serverId || !pricesLoaded) return;
-    const missing = idsKey.split(',').filter((id) =>
-      id && !data[id] && !displayedIds.has(id) && !gapFillRequested.current.has(id));
-    if (missing.length === 0) return;
-    missing.forEach((id) => gapFillRequested.current.add(id));
+    const hidden = idsKey.split(',').filter((id) =>
+      id && !displayedIds.has(id) && !gapFillRequested.current.has(id));
+    if (hidden.length === 0) return;
+    hidden.forEach((id) => gapFillRequested.current.add(id));
     let cancelled = false;
-    void fillCommunityGaps(serverId, missing, { ...data }, async (resourceId, median) => {
-      await save(resourceId, median);
+    void syncCommunityPrices(serverId, hidden, { ...data }, async (resourceId, amountKamas, updatedAt) => {
+      await save(resourceId, amountKamas, updatedAt);
     }, () => cancelled);
     return () => {
       cancelled = true;

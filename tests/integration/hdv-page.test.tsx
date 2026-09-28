@@ -164,10 +164,21 @@ describe('HDV page (specs/023)', () => {
       await waitFor(() => expect(document.querySelector('li.pet-food-row')?.textContent).toContain(CROQUETTE.name));
     });
 
+    // specs/024-latest-community-price (US3, scenario 3).
+    it('in Mode communautaire, shows the latest shared price over an older kept one (specs/024)', async () => {
+      await resourcePricesFor('community').save('mikhal', CROQUETTE.id, 900, '2026-09-01T12:00:00.000Z');
+      getCommunityPrice.mockResolvedValue({
+        status: 'found',
+        price: { resourceId: CROQUETTE.id, serverId: 'mikhal', medianAmountKamas: 900, sampleSize: 3, latestAmountKamas: 1200, latestContributionAt: '2026-09-27T12:00:00.000Z' },
+      });
+      await openHdv('community');
+      await waitFor(() => expect(normalize(priceInput(CROQUETTE.name).value)).toBe('1 200'));
+    });
+
     it('in Mode communautaire, behaves like the Recherche field: prefill, lock, history and unusual-price confirmation', async () => {
       getCommunityPrice.mockResolvedValue({
         status: 'found',
-        price: { resourceId: CROQUETTE.id, serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3, lastContributionAt: new Date().toISOString() },
+        price: { resourceId: CROQUETTE.id, serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3, lastContributionAt: new Date().toISOString(), latestAmountKamas: 1000, latestContributionAt: new Date().toISOString() },
       });
       await openHdv('community');
       await waitFor(() => expect(normalize(priceInput(CROQUETTE.name).value)).toBe('1 000'));

@@ -8,7 +8,7 @@ import type { Recipe, RecipeTree, ResourcePrice } from '../../domain/types';
 import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { getSharedItemPrices } from '../../services/community-price-api';
-import { fillCommunityGaps } from '../comparison/community-gap-fill';
+import { syncCommunityPrices } from '../comparison/community-gap-fill';
 import { loadRecipeTree } from '../comparison/recipe-tree-loader';
 
 // specs/019-craft-profit-list (research.md §1-§5): the Prix page's lines. Candidates are the items
@@ -138,10 +138,13 @@ async function compute(serverId: string, priceMode: PriceMode, run: Run, publish
     if (!run.cancelled) progress();
   });
   if (run.cancelled) return;
-  // Mode communautaire: the medians the Recherche page would copy into the carnet, the same way.
+  // Mode communautaire (specs/024): the latest shared prices the Recherche page would sync into the
+  // carnet, the same way. `useCraftProfits` starts a new run each time the page opens (the kept list
+  // stays shown meanwhile), so a price shared since the last visit is picked up without reloading
+  // the tab (FR-013).
   if (priceMode === 'community') {
     const resourceIds = [...new Set(costed.flatMap(({ recipe, tree }) => treeResourceIds(recipe, tree)))];
-    await fillCommunityGaps(serverId, resourceIds, prices, (resourceId, median) => repository.save(serverId, resourceId, median), () => run.cancelled);
+    await syncCommunityPrices(serverId, resourceIds, prices, (resourceId, amountKamas, updatedAt) => repository.save(serverId, resourceId, amountKamas, updatedAt), () => run.cancelled);
   }
   if (run.cancelled) return;
   publish({ status: 'ready', rows: rows(), done, total: candidates.length });

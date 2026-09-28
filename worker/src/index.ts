@@ -55,6 +55,9 @@ async function communityPriceResponse(url: URL, env: Env): Promise<{ status: num
       medianAmountKamas: median.medianAmountKamas,
       sampleSize: median.sampleSize,
       lastContributionAt: median.lastContributionAt,
+      // specs/024-latest-community-price: the price the site shows (contracts/community-price-api.md).
+      latestAmountKamas: median.latestAmountKamas,
+      latestContributionAt: median.latestContributionAt,
     },
   };
 }

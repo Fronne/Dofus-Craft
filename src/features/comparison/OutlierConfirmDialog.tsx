@@ -6,7 +6,8 @@ export type OutlierConfirmDetails = {
   enteredAmountKamas: number;
   deviationPercent: number;
   // specs/016: what the reference is called — « Dernier prix » for an item's HDV price, whose
-  // confirmation also shows the deviation (FR-006). Omitted for resources: dialog unchanged.
+  // confirmation also shows the reference and the deviation (FR-006). Omitted for resources: their
+  // reference, the median, is never shown (specs/024 FR-009).
   referenceLabel?: string;
 };
 
@@ -45,13 +46,19 @@ export function useOutlierConfirm(): readonly [ReactNode, (details: OutlierConfi
         respond(false);
       }}
     >
-      <p>{details.referenceLabel ?? 'Prix habituel'} : <b>{formatKamas(details.medianAmountKamas)}</b></p>
+      {/* specs/024-latest-community-price (FR-003, FR-009): a resource's reference is the group's
+          median, used for the check but never shown — only an item's latest price is. */}
+      {details.referenceLabel && (
+        <p>{details.referenceLabel} : <b>{formatKamas(details.medianAmountKamas)}</b></p>
+      )}
       <p>Votre prix : <b>{formatKamas(details.enteredAmountKamas)}</b></p>
       {details.referenceLabel && Number.isFinite(details.deviationPercent) && (
         <p>Écart : <b>{formatPercent(details.deviationPercent)}</b></p>
       )}
       <p className="outlier-confirm-dialog-question">
-        Ce prix semble inhabituel. L'enregistrer quand même ?
+        {details.referenceLabel
+          ? "Ce prix semble inhabituel. L'enregistrer quand même ?"
+          : "Ce prix semble très différent des relevés du groupe. L'enregistrer quand même ?"}
       </p>
       <div className="outlier-confirm-dialog-actions">
         <button type="button" onClick={() => respond(false)}>Annuler</button>

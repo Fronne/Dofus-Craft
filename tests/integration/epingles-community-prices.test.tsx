@@ -48,6 +48,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
+import { communityModePrices } from '../../src/persistence/indexeddb-community-mode-price-repository';
 
 describe('pinned items page in Mode communautaire', () => {
   beforeEach(() => {
@@ -80,7 +81,7 @@ describe('pinned items page in Mode communautaire', () => {
     // Someone else prices the resource afterwards; the player comes back to Épinglés directly.
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
     fireEvent.click(screen.getByRole('link', { name: 'Paramètres' }));
     fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
@@ -88,6 +89,31 @@ describe('pinned items page in Mode communautaire', () => {
     const updatedCard = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
     await waitFor(() =>
       expect(within(updatedCard).getByText(/Craft :/)).toHaveTextContent(normalizeSpaces(`Craft : ${formatKamas(10000)}`)),
+    );
+  });
+  // specs/024-latest-community-price (FR-004, FR-007): an older kept price is replaced by the latest
+  // shared one on the Suivis page too.
+  it('replaces an older kept price by the latest shared one (specs/024)', async () => {
+    await communityModePrices.save('mikhal', 'resource-1', 1000, '2026-09-01T12:00:00.000Z');
+    getCommunityPrice.mockResolvedValue({ status: 'not-found' });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Paramètres' }));
+    fireEvent.click(await screen.findByRole('button', { name: /mode communautaire/i }));
+    fireEvent.click(screen.getByRole('link', { name: 'Recherche' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Suivre' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ne plus suivre' })).toBeInTheDocument());
+
+    getCommunityPrice.mockResolvedValue({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3, latestAmountKamas: 3000, latestContributionAt: '2026-09-27T12:00:00.000Z' },
+    });
+    fireEvent.click(screen.getByRole('link', { name: /Suivis/ }));
+
+    const card = (await screen.findByText('Épée Boueuse')).closest('.pinned-card') as HTMLElement;
+    await waitFor(() =>
+      expect(within(card).getByText(/Craft :/)).toHaveTextContent(normalizeSpaces(`Craft : ${formatKamas(6000)}`)),
     );
   });
 });

@@ -20,8 +20,8 @@ export const communityModePrices: ResourcePriceRepository = {
     }
     return output;
   },
-  async save(serverId, resourceId, unitPriceKamas) {
-    const record = await store.save(serverId, resourceId, unitPriceKamas);
+  async save(serverId, resourceId, unitPriceKamas, updatedAt) {
+    const record = await store.save(serverId, resourceId, unitPriceKamas, updatedAt);
     return { resourceId, unitPriceKamas: record.amountKamas, updatedAt: record.updatedAt };
   },
   async remove(serverId, resourceId) {

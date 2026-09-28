@@ -97,7 +97,7 @@ describe('page Suivis et ressources intermédiaires (specs/015 US4)', () => {
     await communityModePrices.save('mikhal', '16489', 5000);
     await communityModePrices.save('mikhal', '362', 100);
     getCommunityPrice.mockImplementation(async (resourceId) => (resourceId === '303'
-      ? { status: 'found', price: { resourceId: '303', serverId: 'mikhal', medianAmountKamas: 200, sampleSize: 2 } }
+      ? { status: 'found', price: { resourceId: '303', serverId: 'mikhal', medianAmountKamas: 200, sampleSize: 2, latestAmountKamas: 200, latestContributionAt: '2026-09-01T12:00:00.000Z' } }
       : { status: 'not-found' }));
     const card = await openSuivis();
     await waitFor(() => expect(within(card).getByText(/Craft :/)).toHaveTextContent(n(`Craft : ${formatKamas(4300)}`)));

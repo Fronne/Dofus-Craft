@@ -20,6 +20,16 @@ describe('community-mode price carnet persistence', () => {
     expect(await communityModePrices.get('mikhal', 'resource-1')).toEqual(saved);
   });
 
+  it('keeps the date it is given — a shared price written with its own date (specs/024)', async () => {
+    await communityModePrices.save('mikhal', '11929', 1848, '2026-09-28T13:51:28.940Z');
+    expect(await communityModePrices.get('mikhal', '11929')).toEqual({
+      resourceId: '11929', unitPriceKamas: 1848, updatedAt: '2026-09-28T13:51:28.940Z',
+    });
+    const before = new Date().toISOString();
+    await communityModePrices.save('mikhal', '11929', 1900);
+    expect((await communityModePrices.get('mikhal', '11929'))!.updatedAt >= before).toBe(true);
+  });
+
   it('overwrites a previously saved community-mode price for the same server and resource', async () => {
     await communityModePrices.save('mikhal', 'resource-1', 500);
     const overwritten = await communityModePrices.save('mikhal', 'resource-1', 600);

@@ -15,7 +15,7 @@ import { loadRecipeTree } from '../comparison/recipe-tree-loader';
 import { lookupLatestItemPrice } from '../comparison/useSharedItemPrice';
 import { getIngredientChoices } from '../../persistence/ingredient-choices';
 import type { RecipeTree, ResourcePrice } from '../../domain/types';
-import { fillCommunityGaps } from '../comparison/community-gap-fill';
+import { syncCommunityPrices } from '../comparison/community-gap-fill';
 import { formatKamas } from '../../domain/kamas';
 import type { PinnedItem } from '../../persistence/pinned-items';
 
@@ -272,13 +272,12 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
       await readCarnet();
       if (cancelled) return;
       summarize();
-      // Mode communautaire: RecherchePage only copies a resource's community median into the carnet
-      // when that item's detail is displayed, so an item pinned earlier could show "Non renseigné"
-      // here while its detail page shows every price. Fill the same gaps the same way (median saved
-      // into the carnet, once) so both pages agree — after the carnet values are already on screen,
-      // so a slow network never delays them.
+      // Mode communautaire (specs/024): RecherchePage only syncs a resource's latest shared price into
+      // the carnet when that item's detail is displayed, so an item pinned earlier could show an old
+      // price (or "Non renseigné") here. Sync the same way, so both pages agree — after the carnet
+      // values are already on screen, so a slow network never delays them.
       if (priceMode !== 'community') return;
-      await fillCommunityGaps(serverId, chainResourceIds(), resourcePrices, (resourceId, median) => repository.save(serverId, resourceId, median), () => cancelled);
+      await syncCommunityPrices(serverId, chainResourceIds(), resourcePrices, (resourceId, amountKamas, updatedAt) => repository.save(serverId, resourceId, amountKamas, updatedAt), () => cancelled);
       if (!cancelled) summarize();
     })();
     return () => {

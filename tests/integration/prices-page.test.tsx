@@ -94,7 +94,7 @@ describe('Prix page — craft profit (specs/019)', () => {
     getCommunityPrice.mockReset();
     getCommunityPrice.mockImplementation(async (resourceId) => (MEDIANS[resourceId] === undefined
       ? { status: 'not-found' }
-      : { status: 'found', price: { resourceId, serverId: 'mikhal', medianAmountKamas: MEDIANS[resourceId], sampleSize: 3 } }));
+      : { status: 'found', price: { resourceId, serverId: 'mikhal', medianAmountKamas: MEDIANS[resourceId], sampleSize: 3, latestAmountKamas: MEDIANS[resourceId], latestContributionAt: '2026-09-01T12:00:00.000Z' } }));
     getSharedItemPrices.mockReset();
     getSharedItemPrices.mockResolvedValue({
       status: 'found',
@@ -132,6 +132,35 @@ describe('Prix page — craft profit (specs/019)', () => {
       expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
       expect(screen.queryByText(/Calcul en cours/)).not.toBeInTheDocument();
       await waitFor(() => expect(names()).toEqual(['Anneau']));
+    });
+
+    // specs/024-latest-community-price (FR-004, FR-007): the latest shared price, not the median,
+    // replaces an older kept price in the craft cost.
+    it('counts the latest shared price, not the median, even over an older kept price', async () => {
+      await resourcePricesFor('community').save('mikhal', 'r1', 1000, '2026-09-01T12:00:00.000Z');
+      getCommunityPrice.mockImplementation(async (resourceId) => (resourceId === 'r1'
+        ? { status: 'found', price: { resourceId, serverId: 'mikhal', medianAmountKamas: 1000, sampleSize: 3, latestAmountKamas: 3000, latestContributionAt: '2026-09-27T12:00:00.000Z' } }
+        : MEDIANS[resourceId] === undefined
+          ? { status: 'not-found' }
+          : { status: 'found', price: { resourceId, serverId: 'mikhal', medianAmountKamas: MEDIANS[resourceId], sampleSize: 3, latestAmountKamas: MEDIANS[resourceId], latestContributionAt: '2026-09-01T12:00:00.000Z' } }));
+
+      await openPrices('community');
+      await waitFor(() => expect(normalize(rowOf('Anneau')?.querySelector('.profit-value')?.textContent ?? null)).toBe('Bénéfice+10 000'));
+      expect((await resourcePricesFor('community').get('mikhal', 'r1'))?.unitPriceKamas).toBe(3000);
+    });
+
+    // specs/024 FR-013: reopening the page picks up a more recent shared price without reloading.
+    it('picks up a more recent shared price when the page is opened again, without reloading', async () => {
+      await openPrices('community');
+      await waitFor(() => expect(normalize(rowOf('Anneau')?.querySelector('.profit-value')?.textContent ?? null)).toBe('Bénéfice+12 000'));
+      fireEvent.click(screen.getByRole('link', { name: 'Suivis' }));
+      getCommunityPrice.mockImplementation(async (resourceId) => (MEDIANS[resourceId] === undefined
+        ? { status: 'not-found' }
+        : { status: 'found', price: { resourceId, serverId: 'mikhal', medianAmountKamas: MEDIANS[resourceId], sampleSize: 3, latestAmountKamas: resourceId === 'r1' ? 2000 : MEDIANS[resourceId], latestContributionAt: new Date().toISOString() } }));
+      fireEvent.click(screen.getByRole('link', { name: 'Rentabilité' }));
+      // The previous list stays on screen while it is recomputed.
+      expect(names()).toContain('Anneau');
+      await waitFor(() => expect(normalize(rowOf('Anneau')?.querySelector('.profit-value')?.textContent ?? null)).toBe('Bénéfice+11 000'));
     });
 
     it('opens the item in the Recherche page', async () => {

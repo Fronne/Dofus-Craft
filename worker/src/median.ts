@@ -54,11 +54,20 @@ export function latestPerDevice(rows: ContributionRow[]): ContributionRow[] {
   return [...latest.values(), ...anonymous];
 }
 
+export type ContributionsSummary = {
+  medianAmountKamas: number;
+  sampleSize: number;
+  lastContributionAt: string;
+  latestAmountKamas: number;
+  latestContributionAt: string;
+};
+
 // What GET /community-price returns: the median over one contribution per device, and the date of
 // the most recent contribution actually kept in that median — never one excluded as aberrant.
-export function summarizeContributions(
-  rows: ContributionRow[],
-): { medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined {
+// specs/024-latest-community-price: plus the latest contribution itself, over every row (no
+// per-device grouping, no outlier filter) — the price the site now shows. On equal dates the last
+// row wins: the queries read rows in insertion order, so it is the one recorded last.
+export function summarizeContributions(rows: ContributionRow[]): ContributionsSummary | undefined {
   const kept = latestPerDevice(rows);
   const median = computeCommunityMedian(kept.map((row) => row.amountKamas));
   if (!median) return undefined;
@@ -66,5 +75,6 @@ export function summarizeContributions(
   const lastContributionAt = kept
     .filter((row) => row.amountKamas >= low && row.amountKamas <= high)
     .reduce((latest, row) => (row.createdAt > latest ? row.createdAt : latest), '');
-  return { ...median, lastContributionAt };
+  const latest = rows.reduce((current, row) => (row.createdAt >= current.createdAt ? row : current));
+  return { ...median, lastContributionAt, latestAmountKamas: latest.amountKamas, latestContributionAt: latest.createdAt };
 }

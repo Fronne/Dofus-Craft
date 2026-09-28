@@ -8,7 +8,8 @@ type ServerScopedPriceRecord = {
 interface ServerScopedPriceStore {
   get(serverId: string, entryId: string): Promise<ServerScopedPriceRecord | undefined>;
   getMany(serverId: string, entryIds: string[]): Promise<Record<string, ServerScopedPriceRecord>>;
-  save(serverId: string, entryId: string, amountKamas: number): Promise<ServerScopedPriceRecord>;
+  // `updatedAt` defaults to now; specs/024 passes a shared price's own date.
+  save(serverId: string, entryId: string, amountKamas: number, updatedAt?: string): Promise<ServerScopedPriceRecord>;
   remove(serverId: string, entryId: string): Promise<void>;
   removeAllForEntry(entryId: string): Promise<void>;
   listAllForServer(serverId: string): Promise<ServerScopedPriceRecord[]>;
@@ -72,13 +73,13 @@ export function createServerScopedPriceStore(storeName: string): ServerScopedPri
       database.close();
       return output;
     },
-    async save(serverId, entryId, amountKamas) {
+    async save(serverId, entryId, amountKamas, updatedAt) {
       if (!Number.isInteger(amountKamas) || amountKamas < 0) throw new Error('Prix invalide');
       const record: ServerScopedPriceRecord = {
         serverId,
         entryId,
         amountKamas,
-        updatedAt: new Date().toISOString(),
+        updatedAt: updatedAt ?? new Date().toISOString(),
       };
       const database = await openDatabase();
       await new Promise<void>((resolve, reject) => {

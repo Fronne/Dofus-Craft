@@ -220,3 +220,14 @@ médiane, la valeur saisie et l'écart au moment de la confirmation.
   déjà saisie localement par le joueur : elle reste uniquement un repère de préremplissage (absence de
   valeur locale) et de détection d'écart. Chaque joueur voit et utilise pour son calcul de craft le
   dernier prix qu'il a lui-même constaté en jeu, pas un consensus recalculé après coup.
+
+## Révision (2026-09-28) : médiane non affichée
+
+Amendée par [specs/024-latest-community-price](../024-latest-community-price/spec.md) (FR-009).
+
+- La détection est inchangée : écart à la médiane communautaire de plus de 25 %, pas de
+  confirmation sans médiane connue.
+- **FR-005 (amendée)** : pour une ressource, la confirmation n'affiche plus la médiane ni l'écart en
+  pourcentage ; elle indique le prix saisi et que ce prix semble très différent des relevés du
+  groupe. La confirmation d'un prix HDV d'objet (specs/016) garde son affichage.
+- Le prix affiché dans le champ est désormais le dernier prix partagé (specs/024), plus la médiane.

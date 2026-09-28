@@ -176,18 +176,35 @@ describe('Familier page (specs/022)', () => {
       expect(screen.getByText(/2 ressources correspondent, mais sans prix connu/)).toBeInTheDocument();
     });
 
-    it('uses community medians for resources missing from the carnet, without writing them', async () => {
+    // specs/024-latest-community-price: the latest shared price, never the median, written to the
+    // carnet with its own date when it is more recent than the carnet's entry.
+    it('uses the latest shared price, not the median, and writes it to the carnet with its date', async () => {
+      const sharedAt = new Date(Date.now() - 60_000).toISOString();
       getCommunityPrices.mockResolvedValue({
         status: 'found',
-        prices: [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 2, sampleSize: 3, lastContributionAt: new Date().toISOString() }],
+        prices: [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 5, sampleSize: 3, lastContributionAt: sharedAt, latestAmountKamas: 2, latestContributionAt: sharedAt }],
       });
       await openFamilier('community');
       type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       await waitFor(() => expect(names()).toEqual(['Peau de Rat']));
       expect(normalize(rowOf('Peau de Rat')?.textContent)).toContain('2 162');
-      expect(rowOf('Peau de Rat')?.textContent).toContain('Médiane');
-      expect(await resourcePricesFor('community').get('mikhal', '8482')).toBeUndefined();
+      expect(rowOf('Peau de Rat')?.textContent).not.toMatch(/[Mm]édiane/);
+      expect(await resourcePricesFor('community').get('mikhal', '8482')).toEqual({ resourceId: '8482', unitPriceKamas: 2, updatedAt: sharedAt });
+    });
+
+    it('keeps a carnet price more recent than the latest shared one (specs/024)', async () => {
+      await resourcePricesFor('community').save('mikhal', '8482', 3);
+      getCommunityPrices.mockResolvedValue({
+        status: 'found',
+        prices: [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 2, sampleSize: 3, latestAmountKamas: 2, latestContributionAt: '2026-09-01T12:00:00.000Z' }],
+      });
+      await openFamilier('community');
+      type('XP totale du familier', '1703');
+      type('Niveau visé', '60');
+      await waitFor(() => expect(names()).toEqual(['Peau de Rat']));
+      expect(normalize(rowOf('Peau de Rat')?.textContent)).toContain('3 243');
+      expect((await resourcePricesFor('community').get('mikhal', '8482'))?.unitPriceKamas).toBe(3);
     });
 
     it('explains that no recommendation is possible without prices', async () => {

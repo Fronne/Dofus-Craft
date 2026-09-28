@@ -23,11 +23,13 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Prix mémorisés par serveur** : un prix de ressource saisi une fois se retrouve dans toutes les
   recettes qui l'utilisent. Chaque serveur Dofus a ses propres prix.
 - **Deux modes de prix** :
-  - *Mode communautaire* (par défaut) : les prix saisis sont partagés anonymement avec le groupe,
-    et chaque ressource est pré-remplie avec le prix médian du groupe. Une valeur très éloignée de
-    la médiane demande confirmation avant d'être enregistrée. Le prix HDV d'un objet est lui aussi
-    partagé : c'est le dernier prix relevé par le groupe, avec sa date, et un prix très différent du
-    dernier demande confirmation.
+  - *Mode communautaire* (par défaut) : les prix saisis sont partagés anonymement avec le groupe.
+    Chaque ressource affiche le dernier prix relevé par le groupe, avec sa date ; il remplace le prix
+    gardé sur l'appareil dès qu'il est plus récent, sur toutes les pages. Une valeur très éloignée
+    des relevés du groupe (plus de 25 % de leur médiane, qui n'est pas affichée) demande
+    confirmation avant d'être enregistrée. Le prix HDV d'un objet est lui aussi partagé : c'est le
+    dernier prix relevé par le groupe, avec sa date, et un prix très différent du dernier demande
+    confirmation.
   - *Mode personnel* : les prix restent sur l'appareil, rien n'est envoyé.
 - **Prix périmés signalés** : les ressources dont le prix date trop sont mises en évidence.
 - **Page Prix** : les objets du serveur dont le prix HDV et le coût de craft sont connus, avec le

@@ -13,6 +13,7 @@ vi.mock('../../src/services/community-price-api', () => ({
     return { status: 'found', prices: results.flatMap((result) => (result.status === 'found' ? [result.price] : [])) };
   },
   submitCommunityPrice: vi.fn(),
+  getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
@@ -80,7 +81,7 @@ describe('Mode communautaire resilience when the community service is unavailabl
   it('pre-fills from the last community price cached this session, marked as potentially stale, once a later fetch fails', async () => {
     getCommunityPrice.mockResolvedValueOnce({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1500, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1500, sampleSize: 3, latestAmountKamas: 1500, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
     getCommunityPrice.mockResolvedValue({ status: 'unavailable' });
 
@@ -104,6 +105,31 @@ describe('Mode communautaire resilience when the community service is unavailabl
     const reopenedInput = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(reopenedInput).toHaveValue('1 500'));
     expect(screen.queryByText(/peut-être daté/)).not.toBeInTheDocument();
+  });
+
+  // specs/024-latest-community-price FR-010: offline, the latest shared price already cached on the
+  // device is shown (never its median), with its date.
+  it('shows the cached latest shared price, not the median, once the service is unavailable (specs/024)', async () => {
+    getCommunityPrice.mockResolvedValueOnce({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1500, sampleSize: 3, latestAmountKamas: 1400, latestContributionAt: '2026-09-27T10:00:00.000Z' },
+    });
+    getCommunityPrice.mockResolvedValue({ status: 'unavailable' });
+
+    const { unmount } = render(<App />);
+    await enterCommunityMode();
+    await waitFor(() => expect(screen.getByPlaceholderText('Prix unitaire')).toHaveValue('1 400'));
+
+    unmount();
+    document.body.innerHTML = '';
+    globalThis.indexedDB = new IDBFactory();
+    render(<App />);
+    fireEvent.click(await screen.findByRole('link', { name: 'Recherche' }));
+
+    const reopenedInput = await screen.findByPlaceholderText('Prix unitaire');
+    await waitFor(() => expect(reopenedInput).toHaveValue('1 400'));
+    expect(reopenedInput).not.toBeDisabled();
+    expect(screen.queryByText(/indisponible/)).not.toBeInTheDocument();
   });
 
   it('keeps the craft-cost calculation fully usable from the community-mode carnet regardless of network state', async () => {

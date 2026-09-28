@@ -91,7 +91,7 @@ describe('the two price carnets are strictly independent (specs/004-community-pr
   it('never shows or uses a Mode communautaire price after switching back to Mode personnel, and never alters the original personal price', async () => {
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 2 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 2, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
     render(<App />);

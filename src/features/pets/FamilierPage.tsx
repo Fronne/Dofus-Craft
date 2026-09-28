@@ -127,7 +127,6 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
         <span className="profit-cell-label">Prix unitaire</span>
         <b><Kamas value={line.unitPriceKamas} /></b>
         <small className={`market-date${ageClass}`}>
-          {line.priceOrigin === 'community-median' ? 'Médiane · ' : ''}
           {line.priceDate ? formatRelativeTime(line.priceDate) : 'date inconnue'}
         </small>
       </div>

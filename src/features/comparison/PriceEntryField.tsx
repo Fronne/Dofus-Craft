@@ -31,7 +31,7 @@ export function PriceEntryField({
   onInput: (value: string) => void;
   carnet: {
     data: Record<string, ResourcePrice>;
-    save: (resourceId: string, price: number) => Promise<unknown>;
+    save: (resourceId: string, price: number, updatedAt?: string) => Promise<unknown>;
     remove: (resourceId: string) => Promise<unknown>;
     loaded: boolean;
   };
@@ -45,8 +45,8 @@ export function PriceEntryField({
   const resourceId = resource.id;
   const { data, loaded } = carnet;
   const value = input ?? data[resourceId]?.unitPriceKamas?.toString() ?? '';
-  const save = (price: number) => {
-    void carnet.save(resourceId, price).then(() => onSaved?.(resourceId));
+  const save = (price: number, updatedAt?: string) => {
+    void carnet.save(resourceId, price, updatedAt).then(() => onSaved?.(resourceId));
   };
   // Writes the field to the carnet once the player is done typing, and only if the value actually
   // changed since what's persisted — a no-op blur (click in, click out) must not touch `updatedAt`
@@ -68,11 +68,11 @@ export function PriceEntryField({
         quantity={quantity}
         serverId={serverId}
         value={value}
-        hasCarnetEntry={data[resourceId] !== undefined || input !== undefined}
+        carnetEntry={data[resourceId]}
+        isEditing={input !== undefined}
         pricesLoaded={loaded}
-        updatedAt={data[resourceId]?.updatedAt}
         onChange={onInput}
-        onPersist={save}
+        onPersist={(price) => save(price)}
         onPrefill={save}
         retained={retained}
         subtotalKamas={subtotalKamas}

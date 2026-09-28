@@ -1,4 +1,4 @@
-import { summarizeContributions } from './median';
+import { summarizeContributions, type ContributionsSummary } from './median';
 import { retentionCutoff } from './retention';
 import { resolveOutlierFields } from './outlier';
 import { readLatestContribution } from './latest';
@@ -53,10 +53,11 @@ export async function fetchCurrentMedian(
   db: ContributionDb,
   resourceId: string,
   serverId: string,
-): Promise<{ medianAmountKamas: number; sampleSize: number; lastContributionAt: string } | undefined> {
+): Promise<ContributionsSummary | undefined> {
   const { results } = await db.prepare(
     `SELECT amount_kamas, created_at, device_id FROM community_price_contributions
-     WHERE resource_id = ? AND server_id = ? AND created_at >= ? AND kind = 'resource'`,
+     WHERE resource_id = ? AND server_id = ? AND created_at >= ? AND kind = 'resource'
+     ORDER BY created_at, rowid`,
   ).bind(resourceId, serverId, retentionCutoff()).all<{ amount_kamas: number; created_at: string; device_id: string }>();
 
   return summarizeContributions(results.map((row) => ({
@@ -75,13 +76,14 @@ export async function fetchCurrentMedians(
   db: ContributionDb,
   resourceIds: string[],
   serverId: string,
-): Promise<Map<string, { medianAmountKamas: number; sampleSize: number; lastContributionAt: string }>> {
-  const medians = new Map<string, { medianAmountKamas: number; sampleSize: number; lastContributionAt: string }>();
+): Promise<Map<string, ContributionsSummary>> {
+  const medians = new Map<string, ContributionsSummary>();
   if (resourceIds.length === 0) return medians;
   const placeholders = resourceIds.map(() => '?').join(', ');
   const { results } = await db.prepare(
     `SELECT resource_id, amount_kamas, created_at, device_id FROM community_price_contributions
-     WHERE resource_id IN (${placeholders}) AND server_id = ? AND created_at >= ? AND kind = 'resource'`,
+     WHERE resource_id IN (${placeholders}) AND server_id = ? AND created_at >= ? AND kind = 'resource'
+     ORDER BY created_at, rowid`,
   ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string }>();
 
   const byResource = new Map<string, { amountKamas: number; createdAt: string; deviceId: string }[]>();

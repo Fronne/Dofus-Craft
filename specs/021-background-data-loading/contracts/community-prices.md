@@ -36,3 +36,9 @@ Les ressources sans médiane ne figurent pas dans `prices`.
 Endpoints concernés : `/community-price`, `/community-prices`, `/latest-price`, `/item-prices`,
 `/price-history`. `/info-message` et `/player-counters` ne changent pas (modifiés par l'admin, doivent
 apparaître tout de suite).
+
+## Révision (2026-09-28)
+
+Chaque entrée de `prices` (et la réponse de `/community-price`) contient en plus `latestAmountKamas`
+et `latestContributionAt` : le dernier prix partagé et sa date. Voir
+[specs/024-latest-community-price/contracts/community-price-api.md](../../024-latest-community-price/contracts/community-price-api.md).

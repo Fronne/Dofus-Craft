@@ -15,6 +15,7 @@ vi.mock('../../src/services/community-price-api', () => ({
   },
   submitCommunityPrice: (resourceId: string, serverId: string, amountKamas: number) =>
     submitCommunityPrice(resourceId, serverId, amountKamas),
+  getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
@@ -45,6 +46,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
+import { communityModePrices } from '../../src/persistence/indexeddb-community-mode-price-repository';
 
 async function enterCommunityMode() {
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
@@ -70,7 +72,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
   it('pre-fills the price field with the community median when the carnet has no entry yet (FR-001)', async () => {
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
     render(<App />);
@@ -99,7 +101,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
   it('uses an edited value immediately for the craft cost and keeps it across a remount (FR-004)', async () => {
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
     submitCommunityPrice.mockResolvedValue({ id: 'contribution-1' });
 
@@ -130,10 +132,80 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     await waitFor(() => expect(reopenedInput).toHaveValue('7 000'));
   });
 
-  it('never lets an automatic refresh overwrite a price already present in the community-mode carnet (FR-006)', async () => {
+  // specs/024-latest-community-price US1: the latest shared price, not the median.
+  it('pre-fills with the latest shared price, not the median, dated with that contribution (specs/024 FR-001/FR-002)', async () => {
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 200, sampleSize: 3, latestAmountKamas: 150, latestContributionAt: '2026-09-27T10:00:00.000Z' },
+    });
+
+    render(<App />);
+    await enterCommunityMode();
+
+    const input = await screen.findByPlaceholderText('Prix unitaire');
+    await waitFor(() => expect(input).toHaveValue('150'));
+    await waitFor(async () => expect(await communityModePrices.get('mikhal', 'resource-1')).toEqual({
+      resourceId: 'resource-1', unitPriceKamas: 150, updatedAt: '2026-09-27T10:00:00.000Z',
+    }));
+    expect(document.body.textContent).not.toMatch(/[Mm]édiane/);
+  });
+
+  // specs/024 US2: the case reported on 2026-09-28 (Queue de Blérom).
+  it('replaces an older kept price by a more recent shared one, for display and craft cost (specs/024 FR-004)', async () => {
+    await communityModePrices.save('mikhal', 'resource-1', 1437, '2026-09-22T14:39:01.772Z');
+    getCommunityPrice.mockResolvedValue({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1437, sampleSize: 1, latestAmountKamas: 1848, latestContributionAt: '2026-09-28T13:51:28.940Z' },
+    });
+
+    render(<App />);
+    await enterCommunityMode();
+
+    const input = await screen.findByPlaceholderText('Prix unitaire');
+    await waitFor(() => expect(input).toHaveValue('1 848'));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('1 848'));
+    expect((await communityModePrices.get('mikhal', 'resource-1'))?.updatedAt).toBe('2026-09-28T13:51:28.940Z');
+  });
+
+  it('keeps a kept price more recent than the latest shared one (specs/024 FR-005)', async () => {
+    await communityModePrices.save('mikhal', 'resource-1', 1700);
+    getCommunityPrice.mockResolvedValue({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 1437, sampleSize: 1, latestAmountKamas: 1848, latestContributionAt: '2026-09-01T12:00:00.000Z' },
+    });
+
+    render(<App />);
+    await enterCommunityMode();
+
+    const input = await screen.findByPlaceholderText('Prix unitaire');
+    await waitFor(() => expect(getCommunityPrice).toHaveBeenCalled());
+    await waitFor(() => expect(input).toHaveValue('1 700'));
+    expect((await communityModePrices.get('mikhal', 'resource-1'))?.unitPriceKamas).toBe(1700);
+  });
+
+  it('never replaces a value being typed by a shared price arriving meanwhile (specs/024 FR-006)', async () => {
+    let resolveShared!: (lookup: CommunityPriceLookup) => void;
+    getCommunityPrice.mockReturnValue(new Promise((resolve) => { resolveShared = resolve; }));
+
+    render(<App />);
+    await enterCommunityMode();
+
+    const input = await screen.findByPlaceholderText('Prix unitaire');
+    fireEvent.change(input, { target: { value: '6000' } });
+    resolveShared({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-28T13:51:28.940Z' },
+    });
+
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent('6 000'));
+    expect(input).toHaveValue('6 000');
+    expect(await communityModePrices.get('mikhal', 'resource-1')).toBeUndefined();
+  });
+
+  it('never lets a refresh without a more recent shared price overwrite the kept one (FR-006, amended by specs/024)', async () => {
+    getCommunityPrice.mockResolvedValue({
+      status: 'found',
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
     render(<App />);
@@ -149,7 +221,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     // fake-indexeddb's own internal scheduling.
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 9000, sampleSize: 5 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 9000, sampleSize: 5, latestAmountKamas: 9000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
     fireEvent.click(screen.getByRole('link', { name: 'Paramètres' }));
@@ -175,7 +247,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
   it('submits a confirmed edit, keeps the field at the typed value, and refreshes the contribution count (FR-017/FR-018/FR-019)', async () => {
     getCommunityPrice.mockResolvedValueOnce({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
     submitCommunityPrice.mockResolvedValue({ id: 'contribution-1' });
 
@@ -191,7 +263,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     // updated median/sampleSize including this new contribution.
     getCommunityPrice.mockResolvedValue({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5500, sampleSize: 4 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5500, sampleSize: 4, latestAmountKamas: 5500, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
@@ -208,7 +280,7 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
   it('keeps the locally typed value and does not refresh when a confirmed edit fails to submit (FR-020)', async () => {
     getCommunityPrice.mockResolvedValueOnce({
       status: 'found',
-      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3 },
+      price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5000, sampleSize: 3, latestAmountKamas: 5000, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
     submitCommunityPrice.mockResolvedValue(undefined);
 

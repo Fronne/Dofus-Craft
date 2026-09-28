@@ -1,19 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCommunityPrice, getLatestItemPrice, submitCommunityPrice } from '../../src/services/community-price-api';
+import { getCommunityPrice, getCommunityPrices, getLatestItemPrice, submitCommunityPrice } from '../../src/services/community-price-api';
 
 describe('community price API service (Cloudflare Worker client)', () => {
   beforeEach(() => vi.restoreAllMocks());
 
   describe('getCommunityPrice', () => {
-    it('resolves a found median from a successful response', async () => {
+    it('resolves a found price, with its latest contribution, from a successful response', async () => {
+      const price = {
+        resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4,
+        latestAmountKamas: 1100, latestContributionAt: '2026-09-28T13:51:28.940Z',
+      };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(price), { status: 200 })));
+
+      await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'found', price });
+    });
+
+    it('resolves unavailable when the answer has no latest price (specs/024)', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(
         { resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4 },
       ), { status: 200 })));
 
-      await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({
-        status: 'found',
-        price: { resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4 },
-      });
+      await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'unavailable' });
+    });
+
+    it('does the same for a batched read (specs/024)', async () => {
+      const complete = { resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4, latestAmountKamas: 1100, latestContributionAt: '2026-09-28T13:51:28.940Z' };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ serverId: 's1', prices: [complete] }), { status: 200 })));
+      await expect(getCommunityPrices(['r1'], 's1')).resolves.toEqual({ status: 'found', prices: [complete] });
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(
+        { serverId: 's1', prices: [{ resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4 }] },
+      ), { status: 200 })));
+      await expect(getCommunityPrices(['r1'], 's1')).resolves.toEqual({ status: 'unavailable' });
     });
 
     it('resolves not-found on a 404 response', async () => {

@@ -51,10 +51,10 @@ export function useResourcePrices(
         setLoaded(true);
       });
   }, [serverId, ids.join(','), repository]);
-  async function save(id: string, value: number) {
+  async function save(id: string, value: number, updatedAt?: string) {
     if (!serverId) return;
     try {
-      const price = await repository.save(serverId, id, value);
+      const price = await repository.save(serverId, id, value, updatedAt);
       setData((current) => ({ ...current, [id]: price }));
       setError('');
     } catch {

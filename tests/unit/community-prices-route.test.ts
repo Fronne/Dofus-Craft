@@ -33,6 +33,25 @@ describe('GET /community-prices', () => {
     });
   });
 
+  it('gives each resource its latest contribution and date (specs/024)', async () => {
+    const { d1 } = seed();
+    const { body } = await communityPricesResponse(d1, url('serverId=mikhal&resourceIds=1,2'));
+    const prices = (body as { prices: { resourceId: string; medianAmountKamas: number; latestAmountKamas: number; latestContributionAt: string }[] }).prices;
+
+    expect(prices[0]).toMatchObject({ resourceId: '1', medianAmountKamas: 200, latestAmountKamas: 200 });
+    expect(prices[1]).toMatchObject({ resourceId: '2', latestAmountKamas: 50 });
+    expect(await fetchCurrentMedian(d1, '1', 'mikhal')).toMatchObject({ latestAmountKamas: 200, latestContributionAt: prices[0].latestContributionAt });
+  });
+
+  it('breaks a tie on the date by recording order (specs/024)', async () => {
+    const { d1, insert } = createTestD1();
+    const at = recent(1);
+    insert({ resourceId: '1', amountKamas: 120, createdAt: at, deviceId: 'a' });
+    insert({ resourceId: '1', amountKamas: 100, createdAt: at, deviceId: 'b' });
+
+    expect(await fetchCurrentMedian(d1, '1', 'mikhal')).toMatchObject({ latestAmountKamas: 100 });
+  });
+
   it('answers 400 without a server, without ids, or with more than 98 ids', async () => {
     const { d1 } = createTestD1();
     const tooMany = Array.from({ length: 99 }, (_, index) => index).join(',');

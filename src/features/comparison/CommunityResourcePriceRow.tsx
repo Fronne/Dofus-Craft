@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, type ReactNode } from 'react';
-import type { Resource } from '../../domain/types';
+import type { Resource, ResourcePrice } from '../../domain/types';
+import { pickCommunityPrice } from '../../domain/community-price-choice';
 import { isValidKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import { ResourcePriceInput } from './ResourcePriceInput';
@@ -7,22 +8,22 @@ import { PriceHistoryButton } from './PriceHistoryButton';
 import { useCommunityPrice } from './useCommunityPrice';
 import { useOutlierConfirm } from './OutlierConfirmDialog';
 
-// FR-001/FR-004/FR-006: in Mode communautaire, a resource with no entry yet in the community-mode
-// carnet is pre-filled from the community median (once, guarded by `prefilled`) and immediately
-// saved via `onPrefill` — after that, `hasCarnetEntry` becomes true and this never fires again for
-// that resource, so a later refresh of `useCommunityPrice` can never overwrite it. `useCommunityPrice`
-// is only ever mounted here (a dedicated key={resourceId} instance per ingredient), never in Mode
-// personnel, so no community network call happens outside Mode communautaire (FR-015).
-// specs/015: a displayed line owns its own prefill; RecherchePage's tree-wide gap fill only covers
-// resources whose line isn't displayed, so the two never write the same median.
+// specs/024-latest-community-price (FR-001, FR-004 to FR-006): in Mode communautaire, the line shows
+// the latest price shared by the group. Whenever that price is more recent than the carnet's entry
+// (or there is none), it is written to the carnet with its own date via `onPrefill` — never while the
+// player is typing in this field. `useCommunityPrice` is only ever mounted here (a dedicated
+// key={resourceId} instance per ingredient), never in Mode personnel, so no community network call
+// happens outside Mode communautaire (specs/004 FR-015).
+// specs/015: a displayed line owns its own sync; RecherchePage's tree-wide sync only covers
+// resources whose line isn't displayed, so the two never write the same price.
 export function CommunityResourcePriceRow({
   resource,
   quantity,
   serverId,
   value,
-  hasCarnetEntry,
+  carnetEntry,
+  isEditing,
   pricesLoaded,
-  updatedAt,
   onChange,
   onPersist,
   onPrefill,
@@ -34,14 +35,15 @@ export function CommunityResourcePriceRow({
   quantity: number;
   serverId: string;
   value: string;
-  hasCarnetEntry: boolean;
+  carnetEntry: ResourcePrice | undefined;
+  /** A value is being typed and not yet saved: the shared price must not replace it (FR-006). */
+  isEditing: boolean;
   // specs/010-search-instant-cache, FR-006 (specs/004): true once the carnet's own read for the
   // current server/ids has actually settled. Gates the prefill below so "no entry yet" (still
   // loading) can never be mistaken for "confirmed empty" — without this, a remount race could let
   // a cache-first community median win against the carnet's own (still in-flight) load and
   // overwrite an already-persisted price.
   pricesLoaded: boolean;
-  updatedAt?: string;
   onChange: (value: string) => void;
   // Writes the confirmed value to the local carnet (updating "dernière mise à jour" /
   // contribution count) — called from `handleCommit` below, once the outlier confirmation (if
@@ -49,19 +51,25 @@ export function CommunityResourcePriceRow({
   // isn't a safe trigger here: it fires before the player has answered the confirmation dialog,
   // so persisting there would update the date even when the player goes on to click "Annuler".
   onPersist: (price: number) => void;
-  onPrefill: (price: number) => void;
+  /** Writes the latest shared price to the carnet, dated with its own date. */
+  onPrefill: (price: number, updatedAt: string) => void;
   retained?: ReactNode;
   subtotalKamas?: number | null;
   caption?: ReactNode;
 }) {
   const [communityState, commit] = useCommunityPrice(resource.id, serverId);
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
-  const prefilled = useRef(false);
+  // The latest price already handed to `onPrefill`: the carnet write is asynchronous, so until it
+  // lands the comparison below would ask for the same write again on every render.
+  const synced = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (prefilled.current || !pricesLoaded || hasCarnetEntry || communityState.kind !== 'found') return;
-    prefilled.current = true;
-    onPrefill(communityState.price.medianAmountKamas);
-  }, [communityState, hasCarnetEntry, pricesLoaded, onPrefill]);
+    if (!pricesLoaded || isEditing || communityState.kind !== 'found') return;
+    const { latestAmountKamas, latestContributionAt } = communityState.price;
+    const choice = pickCommunityPrice(carnetEntry, { amountKamas: latestAmountKamas, contributedAt: latestContributionAt });
+    if (!choice.replacesCarnet || synced.current === latestContributionAt) return;
+    synced.current = latestContributionAt;
+    onPrefill(latestAmountKamas, latestContributionAt);
+  }, [communityState, carnetEntry, isEditing, pricesLoaded, onPrefill]);
 
   // FR-017/FR-019: called on blur, only once the player has actually changed the value
   // (ResourcePriceInput's own onCommit guard) — submits it as a new contribution. Since specs/004
@@ -100,7 +108,7 @@ export function CommunityResourcePriceRow({
         resource={resource}
         quantity={quantity}
         value={value}
-        updatedAt={communityState.kind === 'found' && communityState.price.lastContributionAt ? communityState.price.lastContributionAt : updatedAt}
+        updatedAt={carnetEntry?.updatedAt ?? (communityState.kind === 'found' ? communityState.price.latestContributionAt : undefined)}
         lockWhenFilled
         onChange={onChange}
         onCommit={handleCommit}

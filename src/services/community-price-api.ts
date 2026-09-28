@@ -34,14 +34,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isCommunityPriceRow(
-  value: unknown,
-): value is { resourceId: string; serverId: string; medianAmountKamas: number; sampleSize: number; lastContributionAt?: string } {
+// specs/024-latest-community-price: the latest price and its date are required — an answer without
+// them (an older Worker) is unusable rather than guessed from the median.
+function isCommunityPriceRow(value: unknown): value is CommunityPrice {
   return isRecord(value) &&
     typeof value.resourceId === 'string' &&
     typeof value.serverId === 'string' &&
     typeof value.medianAmountKamas === 'number' &&
-    typeof value.sampleSize === 'number';
+    typeof value.sampleSize === 'number' &&
+    typeof value.latestAmountKamas === 'number' &&
+    typeof value.latestContributionAt === 'string';
 }
 
 export type CommunityPriceLookup =

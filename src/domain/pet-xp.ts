@@ -16,7 +16,7 @@ export type PetFood = {
 /** What the player types (FR-002, revised 2026-09-28): the pet's total XP and the level aimed for. */
 export type PetLevelsInput = { totalXp: number; targetLevel: number };
 
-export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-median' };
+export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest' };
 
 export type PetFoodRecommendation = {
   food: PetFood;
