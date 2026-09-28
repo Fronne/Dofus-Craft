@@ -1111,7 +1111,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   grid-template-columns: minmax(0, 1fr) 9rem 9rem 9.5rem 4.5rem;
   column-gap: var(--space-4);
 }
-.profit-head { padding: 0 0 var(--space-2); border-bottom: 1px solid var(--border); }
+/* Stays pinned at the top while the list scrolls, so the column names remain readable. */
+.profit-head { position: sticky; top: 0; z-index: 5; padding: var(--space-2) 0; border-bottom: 1px solid var(--border); background: var(--panel-strong); }
 .profit-sort { padding: .25rem 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: right; cursor: pointer; white-space: nowrap; }
 .profit-sort:first-child { text-align: left; }
 .profit-sort:hover, .profit-sort--active { color: var(--gold-bright); }
