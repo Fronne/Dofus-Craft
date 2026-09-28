@@ -58,11 +58,15 @@ const toText = (levels: PetLevelsInput): Record<Field, string> => ({
 
 const isIntegerIn = (value: number, min: number, max: number) => Number.isInteger(value) && value >= min && value <= max;
 
+// An emptied « Niveau actuel » counts as level 0 (FR-002, 2026-09-29): no error, the total XP back to 0,
+// and the field shows « 0 » as its placeholder.
+const parseCurrentLevel = (text: string) => (text.trim() === '' ? PET_MIN_LEVEL : parse(text));
+
 /** The fields after `key` was typed, with the linked field (level ↔ total XP) kept in step. */
 function withField(text: Record<Field, string>, key: Field, raw: string): Record<Field, string> {
   const value = clampToMax(raw, FIELDS[key].max);
   const next = { ...text, [key]: value };
-  const number = parse(value);
+  const number = key === 'currentLevel' ? parseCurrentLevel(value) : parse(value);
   if (key === 'currentLevel' && isIntegerIn(number, PET_MIN_LEVEL, PET_MAX_LEVEL)) {
     next.totalXp = String(PET_XP_CURVE[number]);
   } else if (key === 'totalXp' && isIntegerIn(number, 0, maxTotalXp())) {
@@ -78,8 +82,8 @@ const clampToMax = (value: string, max: number | undefined) =>
 
 const parse = (text: string) => (text.trim() === '' ? Number.NaN : Number(text));
 
-// Clicking a column header sorts the whole priced list by it, then keeps the first 10 lines: first
-// click in the most useful direction (A → Z, most XP per unit, cheapest), second click the other way.
+// Clicking a column header sorts the whole priced list by it: first click in the most useful direction
+// (A → Z, most XP per unit, cheapest), second click the other way.
 const COLUMNS: { key: PetFoodSortKey; label: string; first: PetFoodSort['direction'] }[] = [
   { key: 'name', label: 'Ressource', first: 'asc' },
   { key: 'xpPerUnit', label: 'XP', first: 'desc' },
@@ -165,7 +169,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const xp = valid ? xpNeeded(levels) : undefined;
   const fieldErrors: Partial<Record<Field, string>> = {
     ...errors,
-    ...(isIntegerIn(parse(text.currentLevel), PET_MIN_LEVEL, PET_MAX_LEVEL) ? {} : { currentLevel: `Niveau entre ${PET_MIN_LEVEL} et ${PET_MAX_LEVEL}.` }),
+    ...(isIntegerIn(parseCurrentLevel(text.currentLevel), PET_MIN_LEVEL, PET_MAX_LEVEL) ? {} : { currentLevel: `Niveau entre ${PET_MIN_LEVEL} et ${PET_MAX_LEVEL}.` }),
   };
 
   useEffect(() => {
@@ -206,6 +210,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
         max={field.max}
         step={1}
         value={text[field.key]}
+        placeholder={field.key === 'currentLevel' ? String(PET_MIN_LEVEL) : undefined}
         aria-invalid={fieldErrors[field.key] ? true : undefined}
         onChange={(event) => setText((current) => withField(current, field.key, event.target.value))}
       />

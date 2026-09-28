@@ -338,4 +338,16 @@ describe('Familier page (specs/022)', () => {
       expect(names()).toEqual([richest.name]);
     });
   });
+  // specs/022 FR-002 (2026-09-29): an emptied « Niveau actuel » counts as level 0.
+  it('treats an emptied current level as level 0, without an error', async () => {
+    await openFamilier('personal');
+    type('Niveau actuel', '50');
+    expect(field('XP totale du familier').value).not.toBe('0');
+    type('Niveau actuel', '');
+    expect(field('Niveau actuel')).toHaveAttribute('placeholder', '0');
+    expect(field('XP totale du familier').value).toBe('0');
+    expect(screen.queryByText(/Niveau entre/)).not.toBeInTheDocument();
+    type('Niveau visé', '100');
+    expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('179 592 XP');
+  });
 });

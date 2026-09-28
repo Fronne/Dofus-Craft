@@ -15,6 +15,8 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-29 : un champ « Niveau actuel » vidé vaut le niveau 0 (FR-002) : pas de message d'erreur,
+  l'XP totale revient à 0, et le champ affiche « 0 » en grisé tant qu'il est vide.
 - 2026-09-29 : à la demande du porteur du projet, plafond de quantité (FR-008b). Une ressource bon
   marché qui donne très peu d'XP demande parfois des centaines de milliers d'unités, que l'HDV n'a
   jamais en stock à ce prix : son coût est irréaliste. Les ressources dont la quantité à donner
