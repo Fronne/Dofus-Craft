@@ -18,6 +18,7 @@ export function ResourcePriceInput({
   retained,
   subtotalKamas,
   history,
+  caption,
 }: {
   resource: Resource;
   quantity: number;
@@ -51,6 +52,8 @@ export function ResourcePriceInput({
   subtotalKamas?: number | null;
   // specs/017: the price-history button, next to the quantity. Only passed in Mode communautaire.
   history?: ReactNode;
+  // specs/023: shown instead of « × quantity » where a quantity means nothing (HDV page: the item type).
+  caption?: ReactNode;
 }) {
   const valid = isValidKamas(value);
   const [editing, setEditing] = useState(false);
@@ -78,7 +81,7 @@ export function ResourcePriceInput({
         <ResourceDisplay resource={resource} copyable />
       </span>
       <span className="price-resource-quantity">
-        × {quantity}
+        {caption ?? <>× {quantity}</>}
         {history}
       </span>
       {updatedAt && (

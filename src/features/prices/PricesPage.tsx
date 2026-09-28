@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useActiveServer } from '../../app/ServerContext';
 import { ROUTES } from '../../app/router';
@@ -11,36 +11,11 @@ import { classifyPriceAge } from '../../domain/price-age';
 import { formatRelativeTime } from '../../domain/time';
 import { DEFAULT_PROFIT_SORT, filterProfitRows, sortProfitRows, type CraftProfitRow, type ProfitSort, type ProfitSortKey } from '../../domain/craft-profit';
 import { useCraftProfits } from './useCraftProfits';
+import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
 
 // specs/019-craft-profit-list (contracts/prices-page-ui.md): the items of the active server whose HDV
 // price is known and whose craft cost is complete, with the profit of crafting them — computed like
 // the Recherche page in « Auto ». Replaces the former lists of item and resource prices (FR-001).
-
-// Infinite scroll (FR-007, revised): the next lines appear as the end of the list comes into view.
-const PAGE_SIZE = 25;
-// A short pause before the next lines appear, with a small « Chargement… » in the meantime, so they
-// read as loaded rather than popping in.
-const MORE_DELAY_MS = 800;
-
-// Watches the element at the end of the list and calls `onVisible` when it scrolls into view. Without
-// IntersectionObserver (very old browsers, tests), every line is simply shown.
-function useEndOfList(onVisible: () => void, enabled: boolean) {
-  const ref = useRef<HTMLDivElement>(null);
-  const callback = useRef(onVisible);
-  useEffect(() => {
-    callback.current = onVisible;
-  });
-  useEffect(() => {
-    const target = ref.current;
-    if (!enabled || !target || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) callback.current();
-    }, { rootMargin: '400px' });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [enabled]);
-  return ref;
-}
 
 const kamasNumber = new Intl.NumberFormat('fr-FR');
 
@@ -159,26 +134,12 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ProfitSort>(DEFAULT_PROFIT_SORT);
-  const [shown, setShown] = useState(PAGE_SIZE);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const moreTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(moreTimer.current), []);
-  const showMore = () => {
-    if (moreTimer.current !== undefined) return;
-    setLoadingMore(true);
-    moreTimer.current = window.setTimeout(() => {
-      moreTimer.current = undefined;
-      setLoadingMore(false);
-      setShown((count) => count + PAGE_SIZE);
-    }, MORE_DELAY_MS);
-  };
   const { status, rows, done, total } = useCraftProfits(serverId, priceMode);
   const serverName = servers.find((server) => server.id === serverId)?.name;
 
   const filtered = sortProfitRows(filterProfitRows(rows, query), sort);
-  const limit = typeof IntersectionObserver === 'undefined' ? filtered.length : shown;
-  const visible = filtered.slice(0, limit);
-  const endRef = useEndOfList(showMore, visible.length < filtered.length);
+  // Infinite scroll (FR-007, revised): the next lines appear as the end of the list comes into view.
+  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(filtered);
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
   return (
@@ -205,7 +166,7 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
                   value={query}
                   onChange={(event) => {
                     setQuery(event.target.value);
-                    setShown(PAGE_SIZE);
+                    resetShown();
                   }}
                   placeholder="Rechercher un objet..."
                   aria-label="Rechercher un objet"
@@ -233,7 +194,7 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
                 </div>
                 <SortHeader sort={sort} onSort={(next) => {
                   setSort(next);
-                  setShown(PAGE_SIZE);
+                  resetShown();
                 }} />
                 <ul className="profit-list">
                   {visible.map((row) => (

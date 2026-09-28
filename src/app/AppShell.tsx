@@ -8,9 +8,9 @@ import { PinnedPriceMigrationNotice } from '../features/server/PinnedPriceMigrat
 import { RecherchePage } from '../features/search/RecherchePage';
 import { EpinglesPage } from '../features/catalogue/EpinglesPage';
 import { ParametresPage } from '../features/settings/ParametresPage';
-import { AccueilPage } from '../features/home/AccueilPage';
 import { PricesPage } from '../features/prices/PricesPage';
 import { FamilierPage } from '../features/pets/FamilierPage';
+import { HdvPage } from '../features/hdv/HdvPage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import type { AccentColorId } from '../domain/accent-colors';
@@ -22,11 +22,13 @@ import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble
 import type { DesignId } from '../domain/designs';
 import { applyDesign, getDesignId, setDesignId } from '../persistence/design-preference';
 
+// specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
+// (src/features/home/AccueilPage.tsx) is kept so it can come back later.
 const NAV_ITEMS = [
-  { to: ROUTES.home, label: 'Accueil', icon: 'home' as const, end: false },
   { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true },
   { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
   { to: ROUTES.prices, label: 'Prix', icon: 'coins' as const, end: false },
+  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
   { to: ROUTES.pets, label: 'Familier', icon: 'paw' as const, end: false },
   { to: ROUTES.settings, label: 'Paramètres', icon: 'settings' as const, end: false },
 ];
@@ -113,7 +115,8 @@ export function AppShell() {
         <main className="app-page">
           <InfoBanner />
           <Routes>
-            <Route path={ROUTES.home} element={<AccueilPage priceMode={priceMode} />} />
+            {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
+            <Route path={ROUTES.home} element={<Navigate to={ROUTES.search} replace />} />
             <Route
               path={ROUTES.search}
               element={<RecherchePage priceMode={priceMode} />}
@@ -122,6 +125,7 @@ export function AppShell() {
             {/* Former address of the Suivis page, kept so existing bookmarks still land on it. */}
             <Route path={ROUTES.legacyPinned} element={<Navigate to={ROUTES.pinned} replace />} />
             <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
+            <Route path={ROUTES.hdv} element={<HdvPage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
             <Route
               path={ROUTES.settings}

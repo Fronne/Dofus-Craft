@@ -5,5 +5,6 @@ export const ROUTES = {
   legacyPinned: '/epingles',
   prices: '/prix',
   pets: '/familier',
+  hdv: '/hdv',
   settings: '/parametres',
 } as const;

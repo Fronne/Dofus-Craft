@@ -22,9 +22,16 @@ export type IconName =
   | 'edit'
   | 'copy'
   | 'chart'
-  | 'paw';
+  | 'paw'
+  | 'store';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  // A market stall (awning over a counter), for the HDV price-entry page (specs/023).
+  store: {
+    children:
+      '<path d="M4 4h16l1.5 5a2.5 2.5 0 0 1-4.9.6 2.5 2.5 0 0 1-4.6 0 2.5 2.5 0 0 1-4.6 0A2.5 2.5 0 0 1 2.5 9z"/>' +
+      '<path d="M4.5 11.5V20h15v-8.5"/><path d="M10 20v-5h4v5"/>',
+  },
   paw: {
     children:
       '<ellipse cx="6" cy="10" rx="1.7" ry="2.2"/><ellipse cx="9.8" cy="6" rx="1.8" ry="2.3"/>' +
