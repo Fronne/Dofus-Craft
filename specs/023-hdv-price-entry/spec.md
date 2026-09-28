@@ -22,6 +22,18 @@ Contexte donné par le porteur du projet : jusqu'ici, seuls les prix des objets 
 ont été relevés ; le reste des ressources se vend à l'HDV Consommables, et les croquettes qui
 nourrissent les familiers à l'HDV Animaux.
 
+## Clarifications
+
+### Session 2026-09-28
+
+- Q: Chaque onglet liste-t-il tous les objets échangeables de l'HDV, ou seulement ceux dont l'app se
+  sert ? → A: Seulement les objets utiles à l'app : ingrédients d'au moins une recette, et
+  ressources du tableau d'XP de la page Familier.
+- Q: Comment saisir un prix quand l'HDV l'affiche par lot (x1, x10, x100, x1000) ? → A: Prix à
+  l'unité seulement, comme sur la page Recherche ; pas de choix de lot.
+- Q: Où placer la saisie HDV dans l'app ? → A: Nouvelle entrée « HDV » dans la navigation
+  principale ; la page Accueil, peu utile pour l'instant, est retirée de la navigation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Relever les prix d'un HDV d'un seul passage (Priority: P1)
@@ -39,8 +51,7 @@ prix est enregistré avec sa date sur le serveur actif et qu'il est toujours là
 **Acceptance Scenarios**:
 
 1. **Given** la page Saisie HDV ouverte, **When** le joueur choisit l'onglet Animaux, **Then** la
-   liste montre les objets vendus à l'HDV Animaux dont l'app peut utiliser le prix, dont les
-   croquettes, chacun avec son nom, son icône et un champ de prix.
+   liste montre les objets utiles à l'app vendus à l'HDV Animaux, dont les croquettes, chacun avec son nom, son icône et un champ de prix.
 2. **Given** un objet sans prix connu, **When** le joueur saisit un prix valide et quitte le champ,
    **Then** le prix est enregistré pour le serveur actif et le mode de prix actif, et la ligne
    affiche « Dernière mise à jour : à l'instant ».
@@ -139,16 +150,24 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
 
 ### Functional Requirements
 
-- **FR-001**: L'app MUST proposer une page Saisie HDV accessible depuis la navigation principale.
+- **FR-001**: L'app MUST proposer une page Saisie HDV accessible depuis une nouvelle entrée « HDV »
+  de la navigation principale (ordinateur et barre du bas sur mobile), placée entre Prix et
+  Familier.
+- **FR-001b**: L'entrée Accueil MUST être retirée de la navigation principale pour l'instant ;
+  l'ancienne adresse de l'Accueil mène à la page Recherche, qui reste la page d'arrivée. La page
+  Accueil n'est pas supprimée du code, pour pouvoir la remettre plus tard.
 - **FR-002**: La page MUST proposer trois onglets, un par HDV du jeu : Ressources, Consommables,
   Animaux. L'onglet ouvert est mémorisé sur l'appareil pour la visite suivante.
 - **FR-003**: Chaque onglet MUST lister les objets échangeables vendus à cet HDV en jeu, d'après une
   correspondance entre types d'objets et HDV tirée des données du jeu, dont la source est
   documentée. Un objet apparaît dans un seul onglet.
-- **FR-004**: Les onglets MUST exclure les objets dont l'app n'utilise pas le prix d'une ressource
-  (familiers, montures, certificats de monture et autres équipements vendus à l'HDV Animaux).
+- **FR-004**: Les onglets MUST ne lister que les objets utiles à l'app : ceux qui sont ingrédients
+  d'au moins une recette du catalogue, et ceux qui figurent dans le tableau d'XP de la page Familier.
+  Les autres (parchemins, potions de téléportation, familiers, montures, certificats…) ne sont pas
+  listés, même s'ils se vendent à cet HDV.
 - **FR-005**: Chaque ligne MUST afficher le nom et l'icône de l'objet, son type, et un champ de prix
-  unitaire avec la date de dernière mise à jour.
+  unitaire avec la date de dernière mise à jour. Aucun choix de lot (x10, x100, x1000) n'est
+  proposé.
 - **FR-006**: Le champ de prix MUST se comporter exactement comme celui des ingrédients de la page
   Recherche : même validation, même enregistrement (serveur actif, mode de prix actif), même
   signalement des prix anciens, même verrouillage et même partage en mode communautaire, même
@@ -172,7 +191,8 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   d'objets qu'il vend.
 - **Correspondance type → HDV**: pour chaque type d'objet vendu, l'HDV où il se vend en jeu ; donnée
   fixe tirée du jeu, avec sa source et sa date de relevé.
-- **Objet d'HDV**: un objet échangeable d'un type rattaché à un HDV : nom, icône, type.
+- **Objet d'HDV**: un objet échangeable d'un type rattaché à un HDV, ingrédient d'une recette ou
+  ressource du tableau d'XP familier : nom, icône, type.
 - **Prix relevé**: le prix unitaire existant de l'app (par objet, serveur et mode, avec sa date) ;
   aucune nouvelle sorte de prix n'est créée.
 
@@ -181,7 +201,7 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
 ### Measurable Outcomes
 
 - **SC-001**: Un joueur relève 20 prix d'un même HDV en moins de 3 minutes, sans quitter la page.
-- **SC-002**: 100 % des objets vendus aux trois HDV en jeu et utilisables par l'app sont trouvables
+- **SC-002**: 100 % des objets utiles à l'app (FR-004) vendus aux trois HDV en jeu sont trouvables
   dans le bon onglet ; aucun objet n'apparaît dans un onglet où il ne se vend pas.
 - **SC-003**: Un prix saisi sur la page Saisie HDV est visible avec la même valeur et la même date
   sur les pages Recherche, Prix et Familier, sans action supplémentaire.
@@ -199,11 +219,15 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   nourriture pour familier y est classée en « Ressources » alors qu'elle se vend à l'HDV Animaux. La
   correspondance type → HDV vient donc des données du jeu (fichiers du client installé du porteur du
   projet si besoin) ; le plan vérifiera où la trouver.
-- Le prix saisi est un prix unitaire, comme partout dans l'app ; le joueur fait lui-même la division
-  quand l'HDV affiche un lot de 10 ou de 100.
+- Le prix saisi est un prix unitaire, comme partout dans l'app ; aucun choix de lot n'est proposé,
+  le joueur fait lui-même la division quand l'HDV affiche un lot de 10, 100 ou 1000.
 - Le prix est enregistré dans le même carnet que les prix d'ingrédients, par serveur et par mode ;
   en mode communautaire, il est partagé avec le groupe comme une saisie de la page Recherche.
 - La liste des objets d'un HDV change très rarement ; elle peut être gardée en cache comme le reste
   du catalogue.
+- Retirer l'Accueil ne fait disparaître aucune information : son contenu (raccourci vers la
+  Recherche, serveur actif, mode de prix, nombre d'objets suivis, suivis récents) est déjà visible
+  dans la navigation et sur les pages Recherche, Suivis et Paramètres. Le
+  préchargement discret de la page Prix (specs/021) ne dépend pas de la page ouverte.
 - Le groupe d'utilisateurs est petit (une dizaine à une vingtaine de joueurs) ; aucune contrainte de
   volume particulière.
