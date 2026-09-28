@@ -189,6 +189,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                         // A unit price only: no « × 1 » subtotal repeating it.
                         subtotalKamas={null}
                         caption={<span className="hdv-item-type">{typeNames[String(item.typeId)]}</span>}
+                        historyNextToName
                         priceMode={priceMode}
                         serverId={serverId}
                         input={inputs[item.id]}

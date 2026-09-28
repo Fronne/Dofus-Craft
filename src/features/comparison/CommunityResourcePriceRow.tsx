@@ -29,6 +29,7 @@ export function CommunityResourcePriceRow({
   retained,
   subtotalKamas,
   caption,
+  historyNextToName,
 }: {
   resource: Resource;
   quantity: number;
@@ -53,6 +54,7 @@ export function CommunityResourcePriceRow({
   retained?: ReactNode;
   subtotalKamas?: number | null;
   caption?: ReactNode;
+  historyNextToName?: boolean;
 }) {
   const [communityState, commit] = useCommunityPrice(resource.id, serverId);
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
@@ -107,6 +109,7 @@ export function CommunityResourcePriceRow({
         retained={retained}
         subtotalKamas={subtotalKamas}
         caption={caption}
+        historyNextToName={historyNextToName}
         history={<PriceHistoryButton key={serverId} kind="resource" id={resource.id} name={resource.name} serverId={serverId} />}
       />
       {outlierDialog}
