@@ -13,7 +13,8 @@ export type PetFood = {
   sourceName: string;
 };
 
-export type PetLevelsInput = { currentLevel: number; xpInLevel: number; targetLevel: number };
+/** What the player types (FR-002, revised 2026-09-28): the pet's total XP and the level aimed for. */
+export type PetLevelsInput = { totalXp: number; targetLevel: number };
 
 export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-median' };
 
@@ -72,9 +73,19 @@ export function xpBetweenLevels(level: number, curve: readonly number[] = PET_XP
   return cumulativeXp(level + 1, curve) - cumulativeXp(level, curve);
 }
 
-/** Highest XP a pet can hold inside `level` without reaching the next one. */
-export function maxXpInLevel(level: number, curve: readonly number[] = PET_XP_CURVE): number {
-  return xpBetweenLevels(level, curve) - 1;
+/** Highest total XP a pet can have: the one of the last level. */
+export function maxTotalXp(curve: readonly number[] = PET_XP_CURVE): number {
+  return curve[curve.length - 1];
+}
+
+/**
+ * The level a pet with `totalXp` has reached — the highest level whose cumulative XP is not above it —
+ * and the XP it already holds inside that level (FR-002).
+ */
+export function levelForTotalXp(totalXp: number, curve: readonly number[] = PET_XP_CURVE): { level: number; xpInLevel: number } {
+  let level = 0;
+  while (level < curve.length - 1 && curve[level + 1] <= totalXp) level += 1;
+  return { level, xpInLevel: totalXp - curve[level] };
 }
 
 export type PetLevelsErrors = Partial<Record<keyof PetLevelsInput, string>>;
@@ -82,25 +93,19 @@ export type PetLevelsErrors = Partial<Record<keyof PetLevelsInput, string>>;
 export function validatePetLevels(input: PetLevelsInput, curve: readonly number[] = PET_XP_CURVE): PetLevelsErrors {
   const errors: PetLevelsErrors = {};
   const maxLevel = curve.length - 1;
-  const { currentLevel, xpInLevel, targetLevel } = input;
-  if (!Number.isInteger(currentLevel) || currentLevel < PET_MIN_LEVEL || currentLevel > maxLevel - 1) {
-    errors.currentLevel = `Niveau entre ${PET_MIN_LEVEL} et ${maxLevel - 1}.`;
+  const { totalXp, targetLevel } = input;
+  if (!Number.isInteger(totalXp) || totalXp < 0 || totalXp > maxTotalXp(curve)) {
+    errors.totalXp = `Nombre entier entre 0 et ${new Intl.NumberFormat('fr-FR').format(maxTotalXp(curve))}.`;
   }
   if (!Number.isInteger(targetLevel) || targetLevel < PET_MIN_LEVEL + 1 || targetLevel > maxLevel) {
     errors.targetLevel = `Niveau entre ${PET_MIN_LEVEL + 1} et ${maxLevel}.`;
   }
-  if (!Number.isInteger(xpInLevel) || xpInLevel < 0) {
-    errors.xpInLevel = 'Nombre entier positif ou nul.';
-  } else if (!errors.currentLevel && xpInLevel > maxXpInLevel(currentLevel, curve)) {
-    errors.xpInLevel = `Au plus ${maxXpInLevel(currentLevel, curve)} XP dans ce niveau.`;
-  }
   return errors;
 }
 
-/** XP still to give to reach `targetLevel`; 0 when the target isn't above the current level. */
+/** XP still to give to reach `targetLevel`; 0 when the pet already has that much. */
 export function xpNeeded(input: PetLevelsInput, curve: readonly number[] = PET_XP_CURVE): number {
-  if (input.targetLevel <= input.currentLevel) return 0;
-  return Math.max(0, cumulativeXp(input.targetLevel, curve) - (cumulativeXp(input.currentLevel, curve) + input.xpInLevel));
+  return Math.max(0, cumulativeXp(input.targetLevel, curve) - input.totalXp);
 }
 
 /** Units of `food` to give for `xp` points, rounded up so the level is always reached. */

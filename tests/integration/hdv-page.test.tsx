@@ -159,7 +159,7 @@ describe('HDV page (specs/023)', () => {
       await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [CROQUETTE.id]))[CROQUETTE.id]).toBeDefined());
       fireEvent.click(screen.getByRole('link', { name: 'Familier' }));
       await screen.findByRole('heading', { name: 'Familier' });
-      fireEvent.change(screen.getByLabelText('Niveau actuel'), { target: { value: '50' } });
+      fireEvent.change(screen.getByLabelText('XP totale du familier'), { target: { value: '1703' } });
       fireEvent.change(screen.getByLabelText('Niveau visé'), { target: { value: '60' } });
       await waitFor(() => expect(document.querySelector('li.pet-food-row')?.textContent).toContain(CROQUETTE.name));
     });

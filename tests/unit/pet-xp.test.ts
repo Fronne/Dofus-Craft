@@ -1,44 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { ALMANAX_PET_XP_MULTIPLIER, isPetXpAlmanaxDay, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
+import { ALMANAX_PET_XP_MULTIPLIER, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
   ({ itemId, name, xpPerUnit, sourceName: name });
 
 describe('xpNeeded', () => {
-  it('computes the XP between two levels from the reference curve', () => {
-    expect(xpNeeded({ currentLevel: 0, xpInLevel: 0, targetLevel: 100 })).toBe(179592);
-    expect(xpNeeded({ currentLevel: 50, xpInLevel: 0, targetLevel: 60 })).toBe(2859);
+  it('computes the XP from the total XP to the target level, on the reference curve', () => {
+    expect(xpNeeded({ totalXp: 0, targetLevel: 100 })).toBe(179592);
+    expect(xpNeeded({ totalXp: 1703, targetLevel: 60 })).toBe(2859);
+    expect(xpNeeded({ totalXp: 1853, targetLevel: 60 })).toBe(2709);
   });
 
-  it('subtracts the XP already gained in the current level', () => {
-    expect(xpNeeded({ currentLevel: 50, xpInLevel: 150, targetLevel: 60 })).toBe(2709);
+  it('needs no XP when the pet already has the target level', () => {
+    expect(xpNeeded({ totalXp: 4562, targetLevel: 60 })).toBe(0);
+    expect(xpNeeded({ totalXp: 4562, targetLevel: 40 })).toBe(0);
   });
+});
 
-  it('needs no XP when the target is not above the current level', () => {
-    expect(xpNeeded({ currentLevel: 60, xpInLevel: 0, targetLevel: 60 })).toBe(0);
-    expect(xpNeeded({ currentLevel: 60, xpInLevel: 0, targetLevel: 40 })).toBe(0);
+describe('levelForTotalXp', () => {
+  it('deduces the highest level reached and the XP inside it', () => {
+    expect(levelForTotalXp(0)).toEqual({ level: 0, xpInLevel: 0 });
+    expect(levelForTotalXp(1703)).toEqual({ level: 50, xpInLevel: 0 });
+    expect(levelForTotalXp(1882)).toEqual({ level: 50, xpInLevel: 179 });
+    expect(levelForTotalXp(1883)).toEqual({ level: 51, xpInLevel: 0 });
+    // 256 (level 32) ≤ 261 < 286 (level 33)
+    expect(levelForTotalXp(261)).toEqual({ level: 32, xpInLevel: 5 });
+    expect(levelForTotalXp(179592)).toEqual({ level: 100, xpInLevel: 0 });
   });
 });
 
 describe('validatePetLevels', () => {
-  it('accepts valid levels', () => {
-    expect(validatePetLevels({ currentLevel: 50, xpInLevel: 0, targetLevel: 60 })).toEqual({});
+  it('accepts a total XP between 0 and the last level, and a target level from 1 to 100', () => {
+    expect(validatePetLevels({ totalXp: 0, targetLevel: 1 })).toEqual({});
+    expect(validatePetLevels({ totalXp: 179592, targetLevel: 100 })).toEqual({});
   });
 
-  it('rejects levels outside the range or not integers', () => {
-    expect(validatePetLevels({ currentLevel: 0, xpInLevel: 0, targetLevel: 60 })).toEqual({});
-    expect(validatePetLevels({ currentLevel: -1, xpInLevel: 0, targetLevel: 60 }).currentLevel).toBeDefined();
-    expect(validatePetLevels({ currentLevel: 5, xpInLevel: 0, targetLevel: 0 }).targetLevel).toBeDefined();
-    expect(validatePetLevels({ currentLevel: 100, xpInLevel: 0, targetLevel: 100 }).currentLevel).toBeDefined();
-    expect(validatePetLevels({ currentLevel: 5.5, xpInLevel: 0, targetLevel: 60 }).currentLevel).toBeDefined();
-    expect(validatePetLevels({ currentLevel: 5, xpInLevel: 0, targetLevel: 101 }).targetLevel).toBeDefined();
-  });
-
-  it('caps the XP already gained at what the level can hold', () => {
-    // Level 50 → 51 takes 1 883 − 1 703 = 180 XP, so at most 179 inside level 50.
-    expect(validatePetLevels({ currentLevel: 50, xpInLevel: 179, targetLevel: 60 })).toEqual({});
-    expect(validatePetLevels({ currentLevel: 50, xpInLevel: 180, targetLevel: 60 }).xpInLevel).toContain('179');
-    expect(validatePetLevels({ currentLevel: 50, xpInLevel: -1, targetLevel: 60 }).xpInLevel).toBeDefined();
+  it('rejects values outside the range or not integers', () => {
+    expect(validatePetLevels({ totalXp: -1, targetLevel: 60 }).totalXp).toBeDefined();
+    expect(validatePetLevels({ totalXp: 179593, targetLevel: 60 }).totalXp).toBeDefined();
+    expect(validatePetLevels({ totalXp: 10.5, targetLevel: 60 }).totalXp).toBeDefined();
+    expect(validatePetLevels({ totalXp: Number.NaN, targetLevel: 60 }).totalXp).toBeDefined();
+    expect(validatePetLevels({ totalXp: 5, targetLevel: 0 }).targetLevel).toBeDefined();
+    expect(validatePetLevels({ totalXp: 5, targetLevel: 101 }).targetLevel).toBeDefined();
   });
 });
 

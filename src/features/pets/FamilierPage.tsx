@@ -14,6 +14,8 @@ import {
   PET_FOODS,
   PET_MAX_LEVEL,
   PET_MIN_LEVEL,
+  levelForTotalXp,
+  maxTotalXp,
   PET_XP_SOURCE,
   ALMANAX_PET_XP_MULTIPLIER,
   isPetXpAlmanaxDay,
@@ -36,17 +38,14 @@ import { usePetFoodPrices } from './usePetFoodPrices';
 const numberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 });
 
 type Field = keyof PetLevelsInput;
-// The two levels come first; the XP already gained, optional and of lesser importance, comes last
-// and is shown more discreetly.
-const FIELDS: { key: Field; label: string; min: number; max?: number; secondary?: boolean }[] = [
-  { key: 'currentLevel', label: 'Niveau actuel', min: PET_MIN_LEVEL, max: PET_MAX_LEVEL - 1 },
+// FR-002 (revised 2026-09-28): the player types the pet's total XP, the current level is deduced.
+const FIELDS: { key: Field; label: string; min: number; max: number }[] = [
+  { key: 'totalXp', label: 'XP totale du familier', min: 0, max: maxTotalXp() },
   { key: 'targetLevel', label: 'Niveau visé', min: PET_MIN_LEVEL + 1, max: PET_MAX_LEVEL },
-  { key: 'xpInLevel', label: 'XP déjà gagnée dans ce niveau', min: 0, secondary: true },
 ];
 
 const toText = (levels: PetLevelsInput): Record<Field, string> => ({
-  currentLevel: String(levels.currentLevel),
-  xpInLevel: String(levels.xpInLevel),
+  totalXp: String(levels.totalXp),
   targetLevel: String(levels.targetLevel),
 });
 
@@ -133,18 +132,18 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   // FR-012: on by itself on 23 July, the day of the pet XP Almanax; never remembered.
   const [almanax, setAlmanax] = useState(() => isPetXpAlmanaxDay());
   const levels: PetLevelsInput = {
-    currentLevel: parse(text.currentLevel),
-    xpInLevel: text.xpInLevel.trim() === '' ? 0 : parse(text.xpInLevel),
+    totalXp: parse(text.totalXp),
     targetLevel: parse(text.targetLevel),
   };
   const errors = validatePetLevels(levels);
   const valid = Object.keys(errors).length === 0;
   const xp = valid ? xpNeeded(levels) : undefined;
+  const current = errors.totalXp ? undefined : levelForTotalXp(levels.totalXp);
 
   useEffect(() => {
     if (valid) setPetLevels(levels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valid, levels.currentLevel, levels.xpInLevel, levels.targetLevel]);
+  }, [valid, levels.totalXp, levels.targetLevel]);
 
   const { status, prices, communityUnavailable } = usePetFoodPrices(serverId, priceMode);
   // The name search narrows the resources before sorting and keeping the first 10 lines.
@@ -157,11 +156,8 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
   const renderField = (field: (typeof FIELDS)[number]) => (
-    <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
-      <span>
-        {field.label}
-        {field.secondary && <small> (facultatif)</small>}
-      </span>
+    <label key={field.key} className="pet-level-field">
+      <span>{field.label}</span>
       <input
         type="number"
         inputMode="numeric"
@@ -187,7 +183,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
       </header>
 
       <section className="panel pet-levels-panel">
-        {/* Left: what the player types (the two levels first, the optional XP already gained below).
+        {/* Left: what the player types (total XP → level aimed for) and the level deduced from it.
             Right: the result, with the Almanax switch that changes how it is reached. */}
         <div className="pet-levels-inputs">
           <div className="pet-levels">
@@ -195,7 +191,14 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             <span className="pet-levels-arrow" aria-hidden="true">→</span>
             {renderField(FIELDS[1])}
           </div>
-          {renderField(FIELDS[2])}
+          <p className="pet-current-level" role="status">
+            {current ? (
+              <>
+                Niveau actuel : <b>{current.level}</b>
+                {current.xpInLevel > 0 && <> · {numberFormat.format(current.xpInLevel)} XP dans ce niveau</>}
+              </>
+            ) : 'Niveau actuel : —'}
+          </p>
         </div>
         <div className="pet-levels-result">
           <p className="pet-xp-needed" role="status">

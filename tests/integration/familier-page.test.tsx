@@ -62,46 +62,58 @@ describe('Familier page (specs/022)', () => {
   });
 
   describe('US1 — XP needed', () => {
-    it('shows the XP to reach the target level, minus the XP already gained', async () => {
+    it('turns levels saved in the former format into total XP', async () => {
+      window.localStorage.setItem('craftcheck-pet-levels', JSON.stringify({ currentLevel: 50, xpInLevel: 150, targetLevel: 60 }));
       await openFamilier('personal');
-      type('Niveau actuel', '50');
-      type('Niveau visé', '60');
-      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 859 XP');
-      type('XP déjà gagnée dans ce niveau (facultatif)', '150');
-      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 709 XP');
+      expect(field('XP totale du familier').value).toBe('1853');
+      expect(field('Niveau visé').value).toBe('60');
     });
 
-    it('says there is no XP to give when the target is not above the current level', async () => {
+
+    it('deduces the current level from the total XP and shows the XP to reach the target level', async () => {
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
+      type('Niveau visé', '60');
+      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 50');
+      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 859 XP');
+      type('XP totale du familier', '1853');
+      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('150 XP dans ce niveau');
+      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 709 XP');
+      type('XP totale du familier', '261');
+      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 32');
+    });
+
+    it('says there is no XP to give when the pet already has the target level', async () => {
+      await openFamilier('personal');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '40');
       expect(screen.getByText(/Aucune XP à donner/)).toBeInTheDocument();
       expect(screen.queryByText('Ressources les moins chères')).not.toBeInTheDocument();
     });
 
-    it('brings a level typed above the maximum back to it', async () => {
+    it('brings a value typed above the maximum back to it', async () => {
       await openFamilier('personal');
       type('Niveau visé', '150');
       expect(field('Niveau visé').value).toBe('100');
-      type('Niveau actuel', '120');
-      expect(field('Niveau actuel').value).toBe('99');
+      type('XP totale du familier', '999999');
+      expect(field('XP totale du familier').value).toBe('179592');
+      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 100');
     });
 
-    it('shows the most XP the current level can hold', async () => {
+    it('rejects a negative total XP', async () => {
       await openFamilier('personal');
-      type('Niveau actuel', '50');
-      type('XP déjà gagnée dans ce niveau (facultatif)', '500');
-      expect(screen.getByRole('alert')).toHaveTextContent('179');
+      type('XP totale du familier', '-5');
+      expect(screen.getByRole('alert')).toHaveTextContent('179 592');
     });
 
     it('remembers the levels on the device', async () => {
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       cleanup();
       render(<App />);
       fireEvent.click(await screen.findByRole('link', { name: 'Familier' }));
-      expect(field('Niveau actuel').value).toBe('50');
+      expect(field('XP totale du familier').value).toBe('1703');
       expect(field('Niveau visé').value).toBe('60');
     });
   });
@@ -113,7 +125,7 @@ describe('Familier page (specs/022)', () => {
       await carnet.save('mikhal', '14635', 20); // Pépite: 2 859 × 20 = 57 180
       await carnet.save('mikhal', '1548', 1); // Rune Pa Vi: 12 707 × 1 = 12 707
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       await waitFor(() => expect(names()).toEqual(['Peau de Rat', 'Rune Pa Vi', 'Pépite']));
       const peau = normalize(rowOf('Peau de Rat')?.textContent);
@@ -134,7 +146,7 @@ describe('Familier page (specs/022)', () => {
     it('recomputes quantities and totals with the Almanax of 23 July switch (FR-012)', async () => {
       await resourcePricesFor('personal').save('mikhal', '14635', 20); // Pépite, 1 XP / unit
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       const almanax = screen.getByRole('switch', { name: /Almanax du 23 juillet/ });
       if ((almanax as HTMLInputElement).checked) fireEvent.click(almanax);
@@ -153,7 +165,7 @@ describe('Familier page (specs/022)', () => {
       await carnet.save('mikhal', '14635', 20);
       await carnet.save('mikhal', '1548', 1);
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       await waitFor(() => expect(names()).toHaveLength(3));
       fireEvent.change(screen.getByLabelText('Rechercher une ressource'), { target: { value: 'pepite' } });
@@ -169,7 +181,7 @@ describe('Familier page (specs/022)', () => {
         prices: [{ resourceId: '8482', serverId: 'mikhal', medianAmountKamas: 2, sampleSize: 3, lastContributionAt: new Date().toISOString() }],
       });
       await openFamilier('community');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       await waitFor(() => expect(names()).toEqual(['Peau de Rat']));
       expect(normalize(rowOf('Peau de Rat')?.textContent)).toContain('2 162');
@@ -179,7 +191,7 @@ describe('Familier page (specs/022)', () => {
 
     it('explains that no recommendation is possible without prices', async () => {
       await openFamilier('personal');
-      type('Niveau actuel', '50');
+      type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       expect(await screen.findByText('Aucune recommandation sans prix')).toBeInTheDocument();
     });

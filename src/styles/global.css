@@ -1187,9 +1187,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pet-level-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .pet-levels-result { display: grid; gap: var(--space-3); justify-items: start; padding-left: var(--space-5); border-left: 1px solid var(--border); }
 .pet-level-field .warning { margin: 0; font-size: .78rem; }
-.pet-level-field--secondary { max-width: 16rem; font-size: .78rem; opacity: .75; }
-.pet-level-field--secondary input { min-height: 34px; padding: .3rem .6rem; font-size: .85rem; }
-.pet-level-field--secondary small { display: inline; margin: 0; font-size: inherit; }
+.pet-current-level { margin: 0; color: var(--text-muted); font-size: .85rem; }
+.pet-current-level b { color: var(--text); font-variant-numeric: tabular-nums; }
 .pet-xp-needed { display: grid; gap: .1rem; margin: 0; color: var(--text-muted); font-size: .85rem; }
 .pet-xp-needed b { font-size: 1.6rem; line-height: 1.2; }
 .pet-xp-needed b { color: var(--gold-bright); font-variant-numeric: tabular-nums; }
@@ -1206,7 +1205,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 @media (max-width: 720px) {
   .pet-levels-panel { grid-template-columns: 1fr; }
   .pet-levels-result { padding: var(--space-4) 0 0; border-left: 0; border-top: 1px solid var(--border); }
-  .pet-level-field--secondary { max-width: none; }
 }
 .profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
 .profit-row.pet-food-row .profit-row-main { cursor: default; }
