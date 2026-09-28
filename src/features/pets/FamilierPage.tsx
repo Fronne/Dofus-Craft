@@ -21,6 +21,7 @@ import {
   ALMANAX_PET_XP_MULTIPLIER,
   isPetXpAlmanaxDay,
   DEFAULT_PET_FOOD_SORT,
+  capPetFoodQuantity,
   planPetFood,
   validatePetLevels,
   xpNeeded,
@@ -30,6 +31,7 @@ import {
   type PetLevelsInput,
 } from '../../domain/pet-xp';
 import { getPetLevels, setPetLevels } from '../../persistence/pet-levels-preference';
+import { getPetMaxQuantity, setPetMaxQuantity } from '../../persistence/pet-max-quantity-preference';
 import { usePetFoodPrices } from './usePetFoodPrices';
 import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
 
@@ -148,6 +150,10 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const [text, setText] = useState(() => toText(getPetLevels()));
   const [sort, setSort] = useState<PetFoodSort>(DEFAULT_PET_FOOD_SORT);
   const [query, setQuery] = useState('');
+  // FR-008b: the « Quantité max » typed, and the cap in force (the last valid value; none when emptied).
+  const [maxQuantity, setMaxQuantity] = useState<number | undefined>(() => getPetMaxQuantity());
+  const [maxQuantityText, setMaxQuantityText] = useState(() => (maxQuantity === undefined ? '' : String(maxQuantity)));
+  const maxQuantityValid = maxQuantityText === '' || (Number.isInteger(Number(maxQuantityText)) && Number(maxQuantityText) > 0);
   // FR-012: on by itself on 23 July, the day of the pet XP Almanax; never remembered.
   const [almanax, setAlmanax] = useState(() => isPetXpAlmanaxDay());
   const levels: PetLevelsInput = {
@@ -174,7 +180,17 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const normalizedQuery = normalizeSearchText(query);
   const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
   const plan = xp !== undefined ? planPetFood(xp, foods, prices, Number.POSITIVE_INFINITY, sort, almanax ? ALMANAX_PET_XP_MULTIPLIER : 1) : undefined;
-  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(plan?.recommendations ?? []);
+  // FR-008b: lines needing more units than the cap are hidden, before the list is shown in slices.
+  const capped = capPetFoodQuantity(plan?.recommendations ?? [], maxQuantity);
+  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(capped.shown);
+  const changeMaxQuantity = (raw: string) => {
+    setMaxQuantityText(raw);
+    const next = raw === '' ? undefined : Number(raw);
+    if (next !== undefined && !(Number.isInteger(next) && next > 0)) return;
+    setMaxQuantity(next);
+    setPetMaxQuantity(next);
+    resetShown();
+  };
   const unpricedCount = PET_FOODS.filter((food) => !(prices[food.itemId]?.unitPriceKamas > 0)).length;
   const hasAnyPrice = unpricedCount < PET_FOODS.length;
   const serverName = servers.find((server) => server.id === serverId)?.name;
@@ -276,6 +292,24 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                     aria-label="Rechercher une ressource"
                   />
                 </div>
+                <label className="pet-max-quantity">
+                  <span>Quantité max</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    value={maxQuantityText}
+                    placeholder="Aucune"
+                    aria-invalid={maxQuantityValid ? undefined : true}
+                    onChange={(event) => changeMaxQuantity(event.target.value)}
+                  />
+                </label>
+                {capped.hiddenCount > 0 && maxQuantity !== undefined && (
+                  <p className="pet-max-quantity-note">
+                    {numberFormat.format(capped.hiddenCount)} {capped.hiddenCount === 1 ? 'ressource masquée' : 'ressources masquées'} (plus de {numberFormat.format(maxQuantity)} unités)
+                  </p>
+                )}
               </div>
               {plan.recommendations.length === 0 ? (
                 <EmptyState
@@ -284,6 +318,12 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                   description={foods.length > 0
                     ? `${numberFormat.format(foods.length)} ${foods.length === 1 ? 'ressource correspond' : 'ressources correspondent'}, mais sans prix connu.`
                     : 'Essayez un autre nom de ressource.'}
+                />
+              ) : capped.shown.length === 0 ? (
+                <EmptyState
+                  icon="search"
+                  title={`Toutes les ressources demandent plus de ${numberFormat.format(maxQuantity ?? 0)} unités`}
+                  description="Augmentez la quantité max, ou videz le champ pour toutes les voir."
                 />
               ) : (
                 <>
@@ -294,7 +334,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                   <ul className="profit-list">
                     {visible.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
                   </ul>
-                  {visible.length < plan.recommendations.length && (
+                  {visible.length < capped.shown.length && (
                     <div ref={endRef} className="profit-list-end" role="status">
                       {loadingMore && 'Chargement…'}
                     </div>

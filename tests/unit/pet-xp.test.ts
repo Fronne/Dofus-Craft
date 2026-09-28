@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALMANAX_PET_XP_MULTIPLIER, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
+import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
   ({ itemId, name, xpPerUnit, sourceName: name });
@@ -113,5 +113,35 @@ describe('Almanax of 23 July', () => {
     expect(isPetXpAlmanaxDay(new Date(2031, 6, 23, 23, 55))).toBe(true);
     expect(isPetXpAlmanaxDay(new Date(2026, 6, 22))).toBe(false);
     expect(isPetXpAlmanaxDay(new Date(2026, 5, 23))).toBe(false);
+  });
+});
+
+// specs/022 FR-008b (2026-09-29).
+describe('capPetFoodQuantity', () => {
+  // 100 000 XP: 0,5 XP / unit → 200 000 units (hidden), 2 XP → 50 000 (kept, at the cap), 10 XP → 10 000.
+  const plan = planPetFood(100_000, [food('a', 'Poussière', 0.5), food('b', 'Os', 2), food('c', 'Rune', 10)], {
+    a: { unitPriceKamas: 1, origin: 'carnet' },
+    b: { unitPriceKamas: 5, origin: 'carnet' },
+    c: { unitPriceKamas: 40, origin: 'carnet' },
+  }, Number.POSITIVE_INFINITY);
+
+  it('defaults to 50 000 units', () => {
+    expect(DEFAULT_PET_FOOD_MAX_QUANTITY).toBe(50_000);
+  });
+
+  it('hides the lines needing more units than the cap, keeping one exactly at it, and counts them', () => {
+    const { shown, hiddenCount } = capPetFoodQuantity(plan.recommendations, 50_000);
+    expect(shown.map((line) => line.food.name)).toEqual(['Os', 'Rune']);
+    expect(hiddenCount).toBe(1);
+  });
+
+  it('keeps every line without a cap', () => {
+    expect(capPetFoodQuantity(plan.recommendations, undefined)).toEqual({ shown: plan.recommendations, hiddenCount: 0 });
+  });
+
+  it('applies to the quantity with the Almanax (+50 % XP → fewer units)', () => {
+    const almanax = planPetFood(100_000, [food('a', 'Poussière', 0.5)], { a: { unitPriceKamas: 1, origin: 'carnet' } }, Number.POSITIVE_INFINITY, undefined, ALMANAX_PET_XP_MULTIPLIER);
+    expect(capPetFoodQuantity(almanax.recommendations, 150_000).hiddenCount).toBe(0);
+    expect(capPetFoodQuantity(almanax.recommendations, 100_000).hiddenCount).toBe(1);
   });
 });

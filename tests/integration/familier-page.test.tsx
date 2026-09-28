@@ -278,4 +278,64 @@ describe('Familier page (specs/022)', () => {
       Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     });
   });
+  // specs/022 FR-008b (2026-09-29). Level 0 → 100 = 179 592 XP: Peau de Rat (2,646 XP) needs 67 873
+  // units, Rune Pa Vi (0,225 XP) 798 187 — both above the default 50 000 cap —, the food giving the
+  // most XP per unit far fewer.
+  describe('« Quantité max » (FR-008b)', () => {
+    const richest = [...PET_FOODS].sort((a, b) => b.xpPerUnit - a.xpPerUnit)[0];
+
+    async function openWithThreeFoods() {
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', '8482', 10);
+      await carnet.save('mikhal', '1548', 1);
+      await carnet.save('mikhal', richest.itemId, 500);
+      await openFamilier('personal');
+      type('XP totale du familier', '0');
+      type('Niveau visé', '100');
+    }
+
+    it('hides the resources needing more than 50 000 units by default, and says how many', async () => {
+      await openWithThreeFoods();
+      await waitFor(() => expect(names()).toEqual([richest.name]));
+      expect(field('Quantité max').value).toBe('50000');
+      expect(normalize(screen.getByText(/ressources masquées/).textContent)).toBe('2 ressources masquées (plus de 50 000 unités)');
+    });
+
+    it('shows them again under a higher cap or with the field emptied, and remembers it', async () => {
+      await openWithThreeFoods();
+      await waitFor(() => expect(names()).toEqual([richest.name]));
+
+      type('Quantité max', '70000');
+      await waitFor(() => expect(names()).toHaveLength(2));
+      expect(names()).toContain('Peau de Rat');
+      expect(normalize(screen.getByText(/ressource masquée/).textContent)).toBe('1 ressource masquée (plus de 70 000 unités)');
+
+      type('Quantité max', '');
+      await waitFor(() => expect(names()).toHaveLength(3));
+      expect(screen.queryByText(/masquée/)).not.toBeInTheDocument();
+
+      cleanup();
+      document.body.innerHTML = '';
+      render(<App />);
+      fireEvent.click(await screen.findByRole('link', { name: 'XP Familier' }));
+      await waitFor(() => expect(names()).toHaveLength(3));
+      expect(field('Quantité max').value).toBe('');
+    });
+
+    it('says so when every resource needs more units than the cap', async () => {
+      await openWithThreeFoods();
+      await waitFor(() => expect(names()).toEqual([richest.name]));
+      type('Quantité max', '10');
+      expect(await screen.findByText('Toutes les ressources demandent plus de 10 unités')).toBeInTheDocument();
+      expect(names()).toEqual([]);
+    });
+
+    it('keeps the last valid cap while the field holds an invalid value', async () => {
+      await openWithThreeFoods();
+      await waitFor(() => expect(names()).toEqual([richest.name]));
+      type('Quantité max', '0');
+      expect(field('Quantité max')).toHaveAttribute('aria-invalid', 'true');
+      expect(names()).toEqual([richest.name]);
+    });
+  });
 });

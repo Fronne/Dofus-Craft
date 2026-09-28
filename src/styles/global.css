@@ -1478,3 +1478,11 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .hdv-type-filter { flex: 1 1 100%; }
   .hdv-tab { flex: 1 1 0; padding: var(--space-2) var(--space-1); font-size: .9rem; }
 }
+
+/* specs/022 FR-008b: « Quantité max » of the XP Familier list, next to the name search. */
+.pet-max-quantity { display: inline-flex; align-items: center; gap: var(--space-2); font-size: .85rem; color: var(--text-muted); white-space: nowrap; }
+.pet-max-quantity input { width: 9rem; min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }
+.pet-max-quantity input::-webkit-inner-spin-button,
+.pet-max-quantity input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.pet-max-quantity input[aria-invalid="true"] { border-color: var(--danger); }
+.pet-max-quantity-note { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: .82rem; }

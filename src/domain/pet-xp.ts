@@ -146,3 +146,17 @@ export function planPetFood(
     .slice(0, limit);
   return { xpNeeded: xp, recommendations, unpricedCount };
 }
+
+// specs/022 FR-008b (2026-09-29): above this many units, a cheap food's price is out of reach — the
+// auction house never holds that much at it — so the line is hidden unless the player raises the cap.
+export const DEFAULT_PET_FOOD_MAX_QUANTITY = 50_000;
+
+/** Splits `lines` into the ones needing at most `maxQuantity` units and how many are hidden; no cap when `maxQuantity` is undefined. */
+export function capPetFoodQuantity(
+  lines: readonly PetFoodRecommendation[],
+  maxQuantity: number | undefined,
+): { shown: PetFoodRecommendation[]; hiddenCount: number } {
+  if (maxQuantity === undefined) return { shown: [...lines], hiddenCount: 0 };
+  const shown = lines.filter((line) => line.quantity <= maxQuantity);
+  return { shown, hiddenCount: lines.length - shown.length };
+}

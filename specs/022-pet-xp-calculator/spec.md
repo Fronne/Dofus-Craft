@@ -15,6 +15,11 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-29 : à la demande du porteur du projet, plafond de quantité (FR-008b). Une ressource bon
+  marché qui donne très peu d'XP demande parfois des centaines de milliers d'unités, que l'HDV n'a
+  jamais en stock à ce prix : son coût est irréaliste. Les ressources dont la quantité à donner
+  dépasse le plafond (50 000 par défaut, réglable, mémorisé sur l'appareil) sont masquées, avec leur
+  nombre indiqué.
 - 2026-09-28 : à la demande du porteur du projet, la liste n'est plus limitée à 10 ressources : elle
   affiche toutes les ressources ayant un prix, 25 lignes à la fois, les suivantes apparaissant quand
   le bas de la liste arrive à l'écran, avec un bouton « Revenir en haut » — comme la page
@@ -163,6 +168,13 @@ sache.
   accents ni de la casse) ; le filtre s'applique avant le tri et revient aux 25 premières lignes. Si aucune
   ressource avec un prix ne correspond, la page le dit et indique combien correspondent sans prix.
 - **FR-008**: L'app MUST exclure les ressources sans prix connu.
+- **FR-008b** *(2026-09-29)*: L'app MUST masquer les ressources dont la quantité à donner (FR-006,
+  Almanax compris) dépasse le plafond « Quantité max », saisi dans la barre d'outils de la liste :
+  50 000 par défaut, nombre entier positif, mémorisé sur l'appareil ; un champ vide retire le
+  plafond. Le plafond s'applique avant le tri et l'affichage par tranches (FR-007), et la recherche
+  par nom (FR-007b) avant lui. Quand des ressources sont masquées, la page indique leur nombre
+  (« N ressources masquées (plus de 50 000 unités) ») ; si toutes le sont, elle le dit et invite à
+  augmenter ou vider le plafond.
 - **FR-009**: *(retirée le 2026-09-28)*
 - **FR-010**: Les résultats MUST se recalculer dès que l'XP totale, le niveau visé, le serveur ou le
   mode de prix change.
