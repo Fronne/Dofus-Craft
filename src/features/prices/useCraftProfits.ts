@@ -215,8 +215,8 @@ export function useCraftProfits(serverId: string | undefined, priceMode: PriceMo
     }
     const cached = cache.get(key);
     // A list already shown this visit is refreshed quietly: it stays on screen until the fresh
-    // computation is complete, so the list never empties or flickers.
-    if (cached) cache.delete(key);
+    // computation is complete, so the list never empties or flickers. The cache is kept until then
+    // (replaced by `publish`), so leaving and coming back mid-refresh still shows it.
     const run = startRun(serverId, priceMode);
     setState(cached ?? run.latest ?? INITIAL);
     run.foreground = true;
