@@ -1178,8 +1178,12 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 /* specs/022-pet-xp-calculator: the Familier page. */
 .pet-levels-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4) var(--space-6, 2.5rem); align-items: center; }
 .pet-levels-inputs { display: grid; gap: var(--space-3); }
-.pet-levels { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--space-2); align-items: end; }
-.pet-levels-arrow { padding-bottom: .55rem; color: var(--text-muted); font-size: 1.1rem; }
+/* Aligned by the top, not the bottom: an error under one field (« Niveau entre 0 et 100. ») must not
+   push the other one down. Both labels share a size, so the inputs stay face to face; the arrow gets a
+   label-sized spacer, then sits on the input's height (40px). */
+.pet-levels { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--space-2); align-items: start; }
+.pet-levels-arrow { display: grid; gap: var(--space-1); color: var(--text-muted); font-size: 1.1rem; line-height: 40px; }
+.pet-levels-arrow::before { content: '\00a0'; font-size: .85rem; line-height: normal; }
 .pet-level-field { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
 .pet-level-field input { min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; }
 /* No native spinner arrows (they clash with the theme); keyboard arrows still step the value. */
