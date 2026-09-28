@@ -774,6 +774,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
    doesn't resize/jump as soon as typing starts. */
 .kamas-input-wrap { position: relative; display: block; }
 .kamas-input-wrap input { width: 100%; box-sizing: border-box; padding-right: 3.1rem; }
+/* Empty field: no kamas icon nor edit button to make room for, so « Prix unitaire » fits in full. */
+.kamas-input-wrap input:placeholder-shown { padding-right: .75rem; text-overflow: ellipsis; }
 .kamas-input-suffix {
   position: absolute;
   top: 50%;
