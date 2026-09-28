@@ -30,7 +30,6 @@ const NAV_ITEMS = [
   { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false },
   { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
   { to: ROUTES.pets, label: 'Familier', icon: 'paw' as const, end: false },
-  { to: ROUTES.settings, label: 'Paramètres', icon: 'settings' as const, end: false },
 ];
 
 export function AppShell() {
@@ -97,7 +96,16 @@ export function AppShell() {
             </li>
           ))}
         </ul>
+        {/* Paramètres is reached from this icon, not from the page list above. */}
         <div className="app-nav-footer">
+          <NavLink
+            to={ROUTES.settings}
+            className={({ isActive }) => `icon-button app-nav-settings${isActive ? ' active' : ''}`}
+            aria-label="Paramètres"
+            title="Paramètres"
+          >
+            <Icon name="settings" size={18} />
+          </NavLink>
           <button
             type="button"
             className="icon-button"
