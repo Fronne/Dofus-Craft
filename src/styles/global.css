@@ -1181,6 +1181,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pet-levels-arrow { padding-bottom: .55rem; color: var(--text-muted); font-size: 1.1rem; }
 .pet-level-field { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
 .pet-level-field input { min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; }
+/* No native spinner arrows (they clash with the theme); keyboard arrows still step the value. */
+.pet-level-field input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+.pet-level-field input[type="number"]::-webkit-inner-spin-button,
+.pet-level-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .pet-levels-result { display: grid; gap: var(--space-3); justify-items: start; padding-left: var(--space-5); border-left: 1px solid var(--border); }
 .pet-level-field .warning { margin: 0; font-size: .78rem; }
 .pet-level-field--secondary { max-width: 16rem; font-size: .78rem; opacity: .75; }
