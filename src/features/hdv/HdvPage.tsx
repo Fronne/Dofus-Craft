@@ -171,7 +171,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
 
             {tab === 'animals' && (
               <p className="hdv-note">
-                La page Familier ne recommande que les nourritures de son tableau d'XP : les autres croquettes
+                La page XP Familier ne recommande que les nourritures de son tableau d'XP : les autres croquettes
                 peuvent avoir un prix ici, sans être proposées là-bas.
               </p>
             )}

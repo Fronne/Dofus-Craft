@@ -87,7 +87,7 @@ describe('HDV page (specs/023)', () => {
       const links = within(screen.getByRole('navigation', { name: 'Navigation principale' })).getAllByRole('link').map((link) => link.textContent);
       expect(links).not.toContain('Accueil');
       expect(links.indexOf('HDV')).toBe(links.indexOf('Rentabilité') + 1);
-      expect(links.indexOf('Familier')).toBe(links.indexOf('HDV') + 1);
+      expect(links.indexOf('XP Familier')).toBe(links.indexOf('HDV') + 1);
     });
 
     it('lists the pet foods of the Créatures tab, each with its type and a price field', async () => {
@@ -157,8 +157,8 @@ describe('HDV page (specs/023)', () => {
       await openHdv('personal');
       typePrice(CROQUETTE.name, '1500');
       await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [CROQUETTE.id]))[CROQUETTE.id]).toBeDefined());
-      fireEvent.click(screen.getByRole('link', { name: 'Familier' }));
-      await screen.findByRole('heading', { name: 'Familier' });
+      fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
+      await screen.findByRole('heading', { name: 'XP Familier' });
       fireEvent.change(screen.getByLabelText('XP totale du familier'), { target: { value: '1703' } });
       fireEvent.change(screen.getByLabelText('Niveau visé'), { target: { value: '60' } });
       await waitFor(() => expect(document.querySelector('li.pet-food-row')?.textContent).toContain(CROQUETTE.name));

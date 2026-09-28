@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
   { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false },
   { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
-  { to: ROUTES.pets, label: 'Familier', icon: 'paw' as const, end: false },
+  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false },
 ];
 
 export function AppShell() {

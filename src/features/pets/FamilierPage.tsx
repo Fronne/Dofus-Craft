@@ -197,7 +197,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   return (
     <>
       <header className="page-header">
-        <h1>Familier</h1>
+        <h1>XP Familier</h1>
         <p>
           XP à donner à votre familier et ressources les moins chères pour y arriver
           {serverName ? `, serveur ${serverName}` : ''}, {modeLabel}.

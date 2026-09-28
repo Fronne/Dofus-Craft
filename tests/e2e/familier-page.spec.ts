@@ -21,7 +21,7 @@ async function openFamilier(page: Page) {
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Mikhal' }).click();
-  await page.getByRole('link', { name: 'Familier' }).click();
+  await page.getByRole('link', { name: 'XP Familier' }).click();
   await page.getByLabel('XP totale du familier').fill('1703');
   await page.getByLabel('Niveau visé').fill('60');
 }
