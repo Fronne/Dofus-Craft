@@ -15,9 +15,10 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
-- 2026-09-28 : le joueur saisit l'**XP totale** de son familier (celle du tableau de référence, 0 à
-  179 592) au lieu du niveau actuel et de l'XP déjà gagnée dans ce niveau ; l'app en déduit le niveau
-  actuel et l'affiche (FR-002, FR-003, FR-011).
+- 2026-09-28 : le niveau actuel et l'**XP totale** du familier (celle du tableau de référence, 0 à
+  179 592) sont deux champs liés, l'XP totale sous le niveau, à la place de l'« XP déjà gagnée dans
+  ce niveau » : saisir un niveau remplit l'XP totale avec l'XP cumulée de ce niveau ; saisir une XP
+  totale met le niveau à jour. Le calcul part de l'XP totale (FR-002, FR-003, FR-011).
 - 2026-09-28 : interrupteur « Almanax du 23 juillet » (FR-012). Chaque jour de l'année a un Almanax
   fixe, identique d'une année à l'autre ; celui du 23 juillet augmente de 50 % l'XP gagnée par les
   familiers. Quand l'interrupteur est activé, chaque ressource donne 1,5 fois son XP par unité.
@@ -33,23 +34,23 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ### User Story 1 - Connaître l'XP nécessaire pour atteindre un niveau (Priority: P1)
 
-Le joueur ouvre la page Familier, saisit l'XP totale de son familier et le niveau qu'il veut
-atteindre. La page en déduit le niveau actuel du familier et affiche immédiatement l'XP à lui donner
-pour arriver au niveau visé.
+Le joueur ouvre la page Familier, saisit le niveau actuel de son familier (ou son XP totale exacte)
+et le niveau qu'il veut atteindre. La page affiche immédiatement l'XP à lui donner pour arriver au
+niveau visé.
 
 **Why this priority**: c'est le calcul de base ; il est utile seul, même sans aucun prix connu.
 
-**Independent Test**: saisir XP totale 0 et niveau cible 100, vérifier que la page affiche le niveau
-actuel 0 et 179 592 XP.
+**Independent Test**: saisir niveau actuel 0 et niveau cible 100, vérifier que l'XP totale affiche 0
+et la page 179 592 XP.
 
 **Acceptance Scenarios**:
 
-1. **Given** la page Familier ouverte, **When** le joueur saisit XP totale 1 703 et niveau cible 60,
-   **Then** la page affiche niveau actuel 50 et 2 859 XP (4 562 − 1 703).
-2. **Given** XP totale 1 853, **When** le niveau cible est 60, **Then** la page affiche niveau actuel
-   50 (150 XP dans ce niveau) et 2 709 XP.
-3. **Given** XP totale 261, **When** la page se met à jour, **Then** elle affiche niveau actuel 32
-   (256 ≤ 261 < 286).
+1. **Given** la page Familier ouverte, **When** le joueur saisit niveau actuel 50 et niveau cible 60,
+   **Then** l'XP totale affiche 1 703 et la page 2 859 XP (4 562 − 1 703).
+2. **Given** niveau actuel 50, **When** le joueur remplace l'XP totale par 1 853, **Then** le niveau
+   reste 50 et la page affiche 2 709 XP.
+3. **Given** la page ouverte, **When** le joueur saisit XP totale 261, **Then** le niveau actuel
+   affiche 32 (256 ≤ 261 < 286).
 4. **Given** un niveau cible inférieur ou égal au niveau déduit, **When** le joueur le saisit,
    **Then** la page indique qu'il n'y a pas d'XP à donner et n'affiche pas de recommandation.
 
@@ -115,7 +116,7 @@ source des données d'XP et le nombre de ressources sans prix.
 
 - Aucune ressource du tableau n'a de prix connu : la page affiche l'XP nécessaire et un message
   expliquant qu'aucune recommandation n'est possible sans prix, avec un lien vers la saisie de prix.
-- XP totale saisie au-dessus de 179 592 (niveau 100) ou niveau visé au-dessus de 100 : ramenés
+- XP totale saisie au-dessus de 179 592, niveau actuel ou niveau visé au-dessus de 100 : ramenés
   aussitôt à ce maximum. XP totale au maximum : niveau actuel 100, plus rien à donner.
 - XP négative, niveau visé inférieur à 1, nombre non entier ou saisie non numérique : refusé avec un
   message.
@@ -128,10 +129,11 @@ source des données d'XP et le nombre de ressources sans prix.
 ### Functional Requirements
 
 - **FR-001**: L'app MUST proposer une page Familier accessible depuis la navigation principale.
-- **FR-002**: Le joueur MUST pouvoir saisir l'XP totale de son familier (entier de 0 à 179 592) et
-  le niveau cible (1 à 100). L'app MUST afficher le niveau actuel qu'elle en déduit = le plus haut
-  niveau dont l'XP totale cumulée est inférieure ou égale à l'XP saisie, avec l'XP déjà gagnée dans
-  ce niveau.
+- **FR-002**: Le joueur MUST pouvoir saisir le niveau actuel (0 à 100), l'XP totale de son familier
+  (entier de 0 à 179 592), dans un champ sous le niveau, et le niveau cible (1 à 100). Les deux
+  premiers sont liés : saisir un niveau valide remplit l'XP totale avec l'XP cumulée de ce niveau ;
+  saisir une XP totale valide remplace le niveau par celui qu'elle donne = le plus haut niveau dont
+  l'XP cumulée est inférieure ou égale à cette XP.
 - **FR-003**: L'app MUST calculer l'XP nécessaire = XP totale cumulée du niveau cible − XP totale
   saisie (0 si négative), à partir de la courbe d'XP familier de référence (niveaux 0 à 100).
 - **FR-004**: L'app MUST connaître, pour chaque ressource du tableau de référence, l'XP donnée

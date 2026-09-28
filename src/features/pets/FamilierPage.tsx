@@ -14,6 +14,7 @@ import {
   PET_FOODS,
   PET_MAX_LEVEL,
   PET_MIN_LEVEL,
+  PET_XP_CURVE,
   levelForTotalXp,
   maxTotalXp,
   PET_XP_SOURCE,
@@ -37,17 +38,36 @@ import { usePetFoodPrices } from './usePetFoodPrices';
 
 const numberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 });
 
-type Field = keyof PetLevelsInput;
-// FR-002 (revised 2026-09-28): the player types the pet's total XP, the current level is deduced.
-const FIELDS: { key: Field; label: string; min: number; max: number }[] = [
-  { key: 'totalXp', label: 'XP totale du familier', min: 0, max: maxTotalXp() },
-  { key: 'targetLevel', label: 'Niveau visé', min: PET_MIN_LEVEL + 1, max: PET_MAX_LEVEL },
-];
+type Field = 'currentLevel' | keyof PetLevelsInput;
+// FR-002 (revised 2026-09-28): the current level and the pet's total XP are linked — typing a level
+// fills the total XP with that level's cumulative XP, typing a total XP updates the level. The
+// calculation always starts from the total XP, shown below the levels and more discreetly.
+const FIELDS: Record<Field, { key: Field; label: string; min: number; max: number; secondary?: boolean }> = {
+  currentLevel: { key: 'currentLevel', label: 'Niveau actuel', min: PET_MIN_LEVEL, max: PET_MAX_LEVEL },
+  targetLevel: { key: 'targetLevel', label: 'Niveau visé', min: PET_MIN_LEVEL + 1, max: PET_MAX_LEVEL },
+  totalXp: { key: 'totalXp', label: 'XP totale du familier', min: 0, max: maxTotalXp(), secondary: true },
+};
 
 const toText = (levels: PetLevelsInput): Record<Field, string> => ({
+  currentLevel: String(levelForTotalXp(levels.totalXp).level),
   totalXp: String(levels.totalXp),
   targetLevel: String(levels.targetLevel),
 });
+
+const isIntegerIn = (value: number, min: number, max: number) => Number.isInteger(value) && value >= min && value <= max;
+
+/** The fields after `key` was typed, with the linked field (level ↔ total XP) kept in step. */
+function withField(text: Record<Field, string>, key: Field, raw: string): Record<Field, string> {
+  const value = clampToMax(raw, FIELDS[key].max);
+  const next = { ...text, [key]: value };
+  const number = parse(value);
+  if (key === 'currentLevel' && isIntegerIn(number, PET_MIN_LEVEL, PET_MAX_LEVEL)) {
+    next.totalXp = String(PET_XP_CURVE[number]);
+  } else if (key === 'totalXp' && isIntegerIn(number, 0, maxTotalXp())) {
+    next.currentLevel = String(levelForTotalXp(number).level);
+  }
+  return next;
+}
 
 // A level typed above its maximum (e.g. 150) is brought back to that maximum right away, rather than
 // left in the field with an error.
@@ -138,7 +158,10 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const errors = validatePetLevels(levels);
   const valid = Object.keys(errors).length === 0;
   const xp = valid ? xpNeeded(levels) : undefined;
-  const current = errors.totalXp ? undefined : levelForTotalXp(levels.totalXp);
+  const fieldErrors: Partial<Record<Field, string>> = {
+    ...errors,
+    ...(isIntegerIn(parse(text.currentLevel), PET_MIN_LEVEL, PET_MAX_LEVEL) ? {} : { currentLevel: `Niveau entre ${PET_MIN_LEVEL} et ${PET_MAX_LEVEL}.` }),
+  };
 
   useEffect(() => {
     if (valid) setPetLevels(levels);
@@ -155,8 +178,8 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
-  const renderField = (field: (typeof FIELDS)[number]) => (
-    <label key={field.key} className="pet-level-field">
+  const renderField = (field: (typeof FIELDS)[Field]) => (
+    <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
       <span>{field.label}</span>
       <input
         type="number"
@@ -165,10 +188,10 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
         max={field.max}
         step={1}
         value={text[field.key]}
-        aria-invalid={errors[field.key] ? true : undefined}
-        onChange={(event) => setText((current) => ({ ...current, [field.key]: clampToMax(event.target.value, field.max) }))}
+        aria-invalid={fieldErrors[field.key] ? true : undefined}
+        onChange={(event) => setText((current) => withField(current, field.key, event.target.value))}
       />
-      {errors[field.key] && <small className="warning" role="alert">{errors[field.key]}</small>}
+      {fieldErrors[field.key] && <small className="warning" role="alert">{fieldErrors[field.key]}</small>}
     </label>
   );
 
@@ -183,22 +206,15 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
       </header>
 
       <section className="panel pet-levels-panel">
-        {/* Left: what the player types (total XP → level aimed for) and the level deduced from it.
+        {/* Left: what the player types (current level → level aimed for, the linked total XP below).
             Right: the result, with the Almanax switch that changes how it is reached. */}
         <div className="pet-levels-inputs">
           <div className="pet-levels">
-            {renderField(FIELDS[0])}
+            {renderField(FIELDS.currentLevel)}
             <span className="pet-levels-arrow" aria-hidden="true">→</span>
-            {renderField(FIELDS[1])}
+            {renderField(FIELDS.targetLevel)}
           </div>
-          <p className="pet-current-level" role="status">
-            {current ? (
-              <>
-                Niveau actuel : <b>{current.level}</b>
-                {current.xpInLevel > 0 && <> · {numberFormat.format(current.xpInLevel)} XP dans ce niveau</>}
-              </>
-            ) : 'Niveau actuel : —'}
-          </p>
+          {renderField(FIELDS.totalXp)}
         </div>
         <div className="pet-levels-result">
           <p className="pet-xp-needed" role="status">

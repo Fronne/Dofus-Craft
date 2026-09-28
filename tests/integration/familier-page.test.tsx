@@ -66,21 +66,22 @@ describe('Familier page (specs/022)', () => {
       window.localStorage.setItem('craftcheck-pet-levels', JSON.stringify({ currentLevel: 50, xpInLevel: 150, targetLevel: 60 }));
       await openFamilier('personal');
       expect(field('XP totale du familier').value).toBe('1853');
+      expect(field('Niveau actuel').value).toBe('50');
       expect(field('Niveau visé').value).toBe('60');
     });
 
 
-    it('deduces the current level from the total XP and shows the XP to reach the target level', async () => {
+    it('fills the total XP from the level typed, and the level from the total XP typed', async () => {
       await openFamilier('personal');
-      type('XP totale du familier', '1703');
+      type('Niveau actuel', '50');
       type('Niveau visé', '60');
-      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 50');
+      expect(field('XP totale du familier').value).toBe('1703');
       expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 859 XP');
       type('XP totale du familier', '1853');
-      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('150 XP dans ce niveau');
+      expect(field('Niveau actuel').value).toBe('50');
       expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 709 XP');
       type('XP totale du familier', '261');
-      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 32');
+      expect(field('Niveau actuel').value).toBe('32');
     });
 
     it('says there is no XP to give when the pet already has the target level', async () => {
@@ -97,7 +98,9 @@ describe('Familier page (specs/022)', () => {
       expect(field('Niveau visé').value).toBe('100');
       type('XP totale du familier', '999999');
       expect(field('XP totale du familier').value).toBe('179592');
-      expect(normalize(document.querySelector('.pet-current-level')?.textContent)).toContain('Niveau actuel : 100');
+      expect(field('Niveau actuel').value).toBe('100');
+      type('Niveau actuel', '150');
+      expect(field('Niveau actuel').value).toBe('100');
     });
 
     it('rejects a negative total XP', async () => {
