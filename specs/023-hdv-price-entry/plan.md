@@ -7,7 +7,7 @@
 ## Summary
 
 Nouvelle page « HDV » (entrée de navigation entre Prix et Familier, l'Accueil sortant de la
-navigation) avec trois onglets — Ressources, Consommables, Animaux — listant les objets utiles à
+navigation) avec trois onglets — Ressources, Consommables, Créatures — listant les objets utiles à
 l'app vendus à chaque HDV, chacun avec le même champ de prix que la page Recherche (même carnet, même
 comportement personnel / communautaire). La liste des objets de chaque HDV est générée une fois par
 un script (recettes DofusDB + tableau d'XP familier + nourriture pour familier) à partir d'une
@@ -46,7 +46,7 @@ prix strictement identique à la Recherche (FR-006)
 |---|---|---|
 | I. Données traçables | Correspondance type → HDV commitée avec source (« relevé en jeu ») et date ; `hdv-items.json` porte sa source, sa date et les types non rattachés ; aucun HDV deviné | ✅ |
 | II. Correction avant optimisation | Filtres, décompte et règle « objet utile » en fonctions pures testées ; sélection du script isolée dans `scripts/hdv-items-selection.mjs` et testée sur des cas limites (type non rattaché, certificats exclus, doublons) | ✅ |
-| III. Décisions explicables | Date et âge de chaque prix ; décompte « N sur M » ; note sur l'onglet Animaux indiquant que la page Familier n'utilise que les nourritures de son tableau | ✅ |
+| III. Décisions explicables | Date et âge de chaque prix ; décompte « N sur M » ; note sur l'onglet Créatures indiquant que la page Familier n'utilise que les nourritures de son tableau | ✅ |
 | IV. Changements petits et cohérents | Extraction du champ de prix de la Recherche sans changement de comportement (nécessaire à FR-006) ; extraction du chargement au défilement de la page Prix (réutilisé) ; retrait de l'Accueil limité à la navigation | ✅ |
 | V. Données utilisateur | Aucune nouvelle donnée ; mêmes carnets et même partage communautaire qu'aujourd'hui | ✅ |
 

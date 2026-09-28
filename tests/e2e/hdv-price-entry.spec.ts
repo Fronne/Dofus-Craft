@@ -21,23 +21,23 @@ test.describe('HDV page (specs/023)', () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test('keeps a price typed in the Animaux tab after a reload', async ({ page }) => {
+  test('keeps a price typed in the Créatures tab after a reload', async ({ page }) => {
     await openHdv(page);
-    await page.getByRole('tab', { name: 'Animaux' }).click();
+    await page.getByRole('tab', { name: 'Créatures' }).click();
     const field = croquette(page).getByPlaceholder('Prix unitaire');
     await field.fill('1500');
     await field.blur();
     await expect(croquette(page)).toContainText('Dernière mise à jour');
     await expect(page.getByText('1 objet sur 35 a un prix')).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('tab', { name: 'Animaux' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Créatures' })).toHaveAttribute('aria-selected', 'true');
     await expect(croquette(page).getByPlaceholder('Prix unitaire')).toHaveValue(/1\s500/);
   });
 
   test('fits a phone screen without horizontal scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 740 });
     await openHdv(page);
-    await page.getByRole('tab', { name: 'Animaux' }).click();
+    await page.getByRole('tab', { name: 'Créatures' }).click();
     await expect(croquette(page)).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

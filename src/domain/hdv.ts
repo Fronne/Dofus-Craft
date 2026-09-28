@@ -11,7 +11,7 @@ export type HdvId = 'resources' | 'consumables' | 'animals';
 export const HDV_TABS: { id: HdvId; label: string }[] = [
   { id: 'resources', label: 'Ressources' },
   { id: 'consumables', label: 'Consommables' },
-  { id: 'animals', label: 'Animaux' },
+  { id: 'animals', label: 'Créatures' },
 ];
 
 export type HdvItem = { id: string; name: string; imageUrl?: string; typeId: number; hdv: HdvId };

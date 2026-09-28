@@ -26,7 +26,7 @@ describe('src/data/hdv-items.json', () => {
     expect(data.items.filter((item) => forbidden.has(item.typeId))).toEqual([]);
   });
 
-  it('lists the exchangeable pet foods in the Animaux tab, including Croquette enrichie', () => {
+  it('lists the exchangeable pet foods in the Créatures tab, including Croquette enrichie', () => {
     const animals = data.items.filter((item) => item.hdv === 'animals');
     expect(animals.filter((item) => item.typeId === 209).length).toBeGreaterThanOrEqual(30);
     expect(animals.some((item) => item.id === '20125' && item.name === 'Croquette enrichie')).toBe(true);

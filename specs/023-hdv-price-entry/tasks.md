@@ -27,7 +27,7 @@ décompte, âge des prix, règle « objet utile ») et le plan liste les fichier
 
 - [X] T001 Écrire `scripts/data/hdv-type-map.json` selon contracts/hdv-type-map.md et le tableau validé de research.md §2 : `"source": "Relevé en jeu par le porteur du projet"`, `"checkedAt": "2026-09-28"` ; `types` = chaque type utile de catégorie DofusDB 2 → `"resources"` (dont Fragment de carte 175, Ressource de quête 312, Caution 197, Haïku 232), chaque type de catégorie 1 (74, 37, 49, 42, 12, 79, 310, 33, 69, 43, 94, 89) → `"consumables"`, Nourriture pour familier 209 → `"animals"`, et `null` pour Familier 18, Rune de forgemagie 78, Rune de transcendance 211, Rune astrale 233, Potion de forgemagie 26, Orbe de forgemagie 189, Gravure de forgemagie 258, Pierre d'âme spéciale non transformée 309 et les types d'équipement 151, 6, 1, 16, 11, 7, 82, 17 ; `"excludedTypes": [97]` ; `"listAllExchangeable": [209]`
 - [X] T002 Écrire `scripts/hdv-items-selection.mjs` : fonction pure `selectHdvItems({ typeMap, usefulIds, items, allExchangeableItems })` qui applique les règles ci-dessous (dédoublonnage par id, exclusions, types manquants → erreur listant ces types) et renvoie `{ items, skipped }` ; puis `scripts/build-hdv-items.mjs`, sur le modèle de `scripts/build-pet-xp-data.mjs`, qui récupère les données et appelle cette fonction : lire toutes les recettes DofusDB (`/recipes`, paginé) pour obtenir les ids d'ingrédients, y ajouter les `foods[].itemId` de `src/data/pet-xp-data.json`, lire les objets par lots de 50 ids (`/items?id[$in][]=…`, champs id, name, img, typeId, exchangeable), y ajouter tous les objets échangeables des types de `listAllExchangeable` (`/items?typeId=209&exchangeable=true`) ; garder les objets échangeables dont le type est rattaché à un HDV non nul et absent de `excludedTypes` ; **échouer** avec la liste des types manquants si un type utile n'est pas dans `types` ; écrire `src/data/hdv-items.json` au format de contracts/hdv-items-data.md (`items` triés par `hdv` puis par nom avec `localeCompare('fr')`, `types` id → nom français, `skipped` { outOfScope, excluded, notExchangeable }) et afficher un résumé par HDV
-- [X] T003 Lancer `node scripts/build-hdv-items.mjs`, vérifier le résumé (Ressources ≈ 2 750, Consommables ≈ 130, Animaux = 35 nourritures pour familier, aucun type 97 ni 18) et garder `src/data/hdv-items.json`
+- [X] T003 Lancer `node scripts/build-hdv-items.mjs`, vérifier le résumé (Ressources ≈ 2 750, Consommables ≈ 130, Créatures = 35 nourritures pour familier, aucun type 97 ni 18) et garder `src/data/hdv-items.json`
 
 ---
 
@@ -35,7 +35,7 @@ décompte, âge des prix, règle « objet utile ») et le plan liste les fichier
 
 **Purpose**: domaine pur, chargement des données, champ de prix partagé, navigation.
 
-- [X] T004 [P] Créer `src/domain/hdv.ts` : type `HdvId = 'resources' | 'consumables' | 'animals'`, `HDV_TABS` ordonné avec les libellés « Ressources », « Consommables », « Animaux », types `HdvItem` { id, name, imageUrl?, typeId, hdv } et `HdvItemsData` (contrat hdv-items-data.md), et `itemsForHdv(data, hdv)` qui renvoie les objets de l'onglet triés par nom
+- [X] T004 [P] Créer `src/domain/hdv.ts` : type `HdvId = 'resources' | 'consumables' | 'animals'`, `HDV_TABS` ordonné avec les libellés « Ressources », « Consommables », « Créatures », types `HdvItem` { id, name, imageUrl?, typeId, hdv } et `HdvItemsData` (contrat hdv-items-data.md), et `itemsForHdv(data, hdv)` qui renvoie les objets de l'onglet triés par nom
 - [X] T005 [P] Créer `src/features/hdv/useHdvItems.ts` : charge `src/data/hdv-items.json` par `import()` dynamique (hors bundle initial), renvoie `{ status: 'loading' | 'ready' | 'unavailable', data }` ; en cas d'échec de chargement, `unavailable` sans liste partielle (FR-011)
 - [X] T006 Extraire `CommunityResourcePriceRow` de `src/features/search/RecherchePage.tsx` vers `src/features/comparison/CommunityResourcePriceRow.tsx` sans aucun changement de comportement (props, préremplissage, confirmation d'un prix inhabituel, historique), et l'importer depuis `RecherchePage.tsx`
 - [X] T007 Créer `src/features/comparison/PriceEntryField.tsx` reprenant le corps de `renderPriceField` de `RecherchePage.tsx` (valeur saisie locale, écriture au blur seulement si la valeur change, suppression si vide, `CommunityResourcePriceRow` en mode communautaire avec serveur, `ResourcePriceInput` sinon) ; il reçoit `resource`, `quantity`, `priceMode`, `serverId`, l'état du carnet (`data`, `save`, `remove`, `loaded`) et optionnellement `retained` / `subtotalKamas` et `onSaved(resourceId)`, appelé après chaque enregistrement ou suppression dans le carnet ; faire utiliser ce composant par `renderPriceField` dans `RecherchePage.tsx` (dépend de T006)
@@ -50,19 +50,19 @@ décompte, âge des prix, règle « objet utile ») et le plan liste les fichier
 
 ## Phase 3: User Story 1 — Relever les prix d'un HDV d'un seul passage (P1) 🎯 MVP
 
-**Goal**: onglets Ressources / Consommables / Animaux avec un champ de prix par objet.
+**Goal**: onglets Ressources / Consommables / Créatures avec un champ de prix par objet.
 
-**Independent Test**: onglet Animaux, saisir le prix de « Croquette enrichie », vérifier la date
+**Independent Test**: onglet Créatures, saisir le prix de « Croquette enrichie », vérifier la date
 « à l'instant » et la présence du prix après rechargement.
 
 ### Tests
 
 - [X] T012 [P] [US1] Écrire `tests/unit/hdv-items-selection.test.ts` (données factices : type utile absent de la correspondance → erreur qui le nomme, type 97 exclu, type à `null` écarté et compté dans `skipped.outOfScope`, objet non échangeable écarté, id présent deux fois gardé une seule fois, type 209 listé même non utile) et `tests/unit/hdv-items-data.test.ts` : dans `src/data/hdv-items.json`, ids uniques, chaque `typeId` présent dans `types` et rattaché au même `hdv` dans `scripts/data/hdv-type-map.json`, aucun objet de type 97, 18 ni 309 ni d'un type de rune, au moins 30 objets de type 209 dans `animals`, « Croquette enrichie » (20125) présente dans `animals`
-- [X] T013 [P] [US1] Écrire `tests/integration/hdv-page.test.tsx` (US1) : rendu de la page avec un serveur choisi, onglets visibles, onglet Animaux liste « Croquette enrichie » avec son champ de prix ; saisir 1500 puis quitter le champ enregistre le prix dans le carnet du mode personnel et affiche « Dernière mise à jour » ; l'onglet choisi est rouvert après remontage (clé localStorage `craftcheck-hdv-tab`) ; sans serveur, invitation à en choisir un ; données indisponibles → message, pas de liste
+- [X] T013 [P] [US1] Écrire `tests/integration/hdv-page.test.tsx` (US1) : rendu de la page avec un serveur choisi, onglets visibles, onglet Créatures liste « Croquette enrichie » avec son champ de prix ; saisir 1500 puis quitter le champ enregistre le prix dans le carnet du mode personnel et affiche « Dernière mise à jour » ; l'onglet choisi est rouvert après remontage (clé localStorage `craftcheck-hdv-tab`) ; sans serveur, invitation à en choisir un ; données indisponibles → message, pas de liste
 
 ### Implementation
 
-- [X] T014 [US1] Compléter `src/features/hdv/HdvPage.tsx` : titre, onglets `HDV_TABS` (mémorisés dans localStorage `craftcheck-hdv-tab`, lecture et écriture dans try/catch, défaut `resources`), liste de l'onglet via `useHdvItems` + `itemsForHdv`, carnet `useResourcePrices(serverId, idsAffichés, resourcePricesFor(priceMode))` sur les ids **affichés** seulement, une ligne par objet avec `PriceEntryField` (quantity 1) affichant nom, icône et nom du type ; affichage progressif par `useLoadMoreOnScroll` ; états sans serveur, chargement et indisponible (FR-011) ; sur l'onglet Animaux, une courte note : seules les nourritures du tableau d'XP familier servent à la page Familier (FR-004b)
+- [X] T014 [US1] Compléter `src/features/hdv/HdvPage.tsx` : titre, onglets `HDV_TABS` (mémorisés dans localStorage `craftcheck-hdv-tab`, lecture et écriture dans try/catch, défaut `resources`), liste de l'onglet via `useHdvItems` + `itemsForHdv`, carnet `useResourcePrices(serverId, idsAffichés, resourcePricesFor(priceMode))` sur les ids **affichés** seulement, une ligne par objet avec `PriceEntryField` (quantity 1) affichant nom, icône et nom du type ; affichage progressif par `useLoadMoreOnScroll` ; états sans serveur, chargement et indisponible (FR-011) ; sur l'onglet Créatures, une courte note : seules les nourritures du tableau d'XP familier servent à la page Familier (FR-004b)
 - [X] T015 [US1] Styles de la page dans `src/styles/global.css` : onglets, ligne objet (icône avec le fond des cases du jeu comme les autres icônes d'objets, nom, type en texte discret, champ de prix), mise en page mobile sur une colonne sans défilement horizontal
 
 **Checkpoint**: MVP utilisable — on peut relever les prix d'un HDV.
@@ -112,7 +112,7 @@ juste et indépendant des filtres.
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [X] T027 [P] Écrire `tests/e2e/hdv-price-entry.spec.ts` : navigation (entrée HDV entre Prix et Familier, pas d'Accueil, `/accueil` → Recherche), saisie d'un prix dans Animaux conservée après rechargement, même prix visible sur la Recherche
+- [X] T027 [P] Écrire `tests/e2e/hdv-price-entry.spec.ts` : navigation (entrée HDV entre Prix et Familier, pas d'Accueil, `/accueil` → Recherche), saisie d'un prix dans Créatures conservée après rechargement, même prix visible sur la Recherche
 - [X] T028 [P] Vérifier qu'aucun test existant ne dépend du lien « Accueil » ni de `/accueil` (chercher `Accueil`, `accueil` et `ROUTES.home` dans `tests/`, aucun trouvé au 2026-09-28) et adapter ceux qui apparaîtraient
 - [X] T029 Lancer `npm run typecheck`, `npm run lint`, `npx vitest run` et `npx playwright test tests/e2e/hdv-price-entry.spec.ts` ; tout doit passer (hors erreurs `getLatestItemPrice` déjà présentes avant cette fonctionnalité)
 - [ ] T030 Dérouler `specs/023-hdv-price-entry/quickstart.md` sur le serveur de dev (http://localhost:5173/hdv), ordinateur et largeur mobile, en chronométrant la saisie de 20 prix dans un onglet (< 3 min, SC-001) et la mise à jour après un filtre dans Ressources (< 1 s, SC-005)

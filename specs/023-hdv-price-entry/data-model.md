@@ -3,7 +3,7 @@
 ## HdvId
 
 `'resources' | 'consumables' | 'animals'` — les trois onglets, dans cet ordre. Libellés :
-« Ressources », « Consommables », « Animaux ».
+« Ressources », « Consommables », « Créatures ».
 
 ## Correspondance type → HDV (`scripts/data/hdv-type-map.json`)
 

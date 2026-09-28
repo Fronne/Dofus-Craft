@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPriceLookup, CommunityPricesLookup } from '../../src/services/community-price-api';
 
-// specs/023-hdv-price-entry. Real data (src/data/hdv-items.json): the Animaux tab lists the 35
+// specs/023-hdv-price-entry. Real data (src/data/hdv-items.json): the Créatures tab lists the 35
 // exchangeable pet foods, among them Croquette enrichie (20125), which is also in the pet XP table.
 const getCommunityPrice = vi.fn<(id: string, serverId: string) => Promise<CommunityPriceLookup>>();
 const getCommunityPrices = vi.fn<(ids: string[], serverId: string) => Promise<CommunityPricesLookup>>();
@@ -90,7 +90,7 @@ describe('HDV page (specs/023)', () => {
       expect(links.indexOf('Familier')).toBe(links.indexOf('HDV') + 1);
     });
 
-    it('lists the pet foods of the Animaux tab, each with its type and a price field', async () => {
+    it('lists the pet foods of the Créatures tab, each with its type and a price field', async () => {
       await openHdv('personal');
       expect(rows()).toHaveLength(35);
       expect(within(rowOf(CROQUETTE.name)!).getByText('Nourriture pour familier')).toBeInTheDocument();

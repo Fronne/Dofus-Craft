@@ -11,7 +11,7 @@ Relevés faits le 2026-09-28 sur le client Dofus 3 installé du porteur du proje
   champ HDV non plus. Cette liste est envoyée par le serveur quand on ouvre un HDV en jeu ; elle
   n'est lisible ni dans le client ni dans DofusDB.
 - **Constat** : la catégorie DofusDB ne suffit pas : « Nourriture pour familier » (type 209) est en
-  catégorie 2 (Ressources) alors que le porteur du projet la voit à l'HDV Animaux.
+  catégorie 2 (Ressources) alors que le porteur du projet la voit à l'HDV Créatures.
 - **Decision** : une correspondance **écrite à la main et validée en jeu** par le porteur du projet,
   commitée dans `scripts/data/hdv-type-map.json` (type d'objet → `resources` | `consumables` |
   `animals` | `null` = hors périmètre), avec sa source (« relevé en jeu ») et sa date. Règle de départ
@@ -34,7 +34,7 @@ recettes du client, 2 957 ingrédients distincts) ∪ ressources du tableau d'XP
 |---|---|---|
 | Ressources | tous les types de catégorie 2 sauf ceux listés ci-dessous (Ressource diverse 15, Fragment de carte 175, Os 47, Clef 84, Poil 54, Vêtement 164, Peau 59, Ressource de quête 312, Caution 197, Haïku 232, …) | ≈ 2 750 |
 | Consommables | tous les types de catégorie 1 : Fée d'artifice 74, Bière 37, Poisson comestible 49, Friandise 42, Potion 12, Boisson 79, Éklâme 310, Pain 33, Viande comestible 69, Potion de téléportation 43, Objet utilisable 94, Cadeau 89 | ≈ 130 |
-| Animaux | Nourriture pour familier 209 (**toute** celle qui est échangeable, FR-004b) | 35 |
+| Créatures | Nourriture pour familier 209 (**toute** celle qui est échangeable, FR-004b) | 35 |
 | Exclu (FR-004) | Familier 18 (un seul, ingrédient) | 1 |
 | Exclus (inutiles, décision du porteur du projet) | Certificat de Dragodinde 97 | 69 |
 | Hors périmètre (HDV Runes) | Rune de forgemagie 78, Rune de transcendance 211, Rune astrale 233, Potion de forgemagie 26, Orbe de forgemagie 189, Gravure de forgemagie 258 | 206 |
@@ -44,7 +44,7 @@ recettes du client, 2 957 ingrédients distincts) ∪ ressources du tableau d'XP
 - **Constat important pour le porteur du projet** : le tableau d'XP familier ne contient qu'une seule
   croquette (« Croquette enrichie », 500 XP) ; les autres croquettes n'y figurent pas, la page
   Familier ne peut donc pas les recommander. Sans les certificats de dragodinde (exclus à la demande
-  du porteur du projet), l'onglet Animaux ne contiendrait que 2 objets : le porteur du projet a
+  du porteur du projet), l'onglet Créatures ne contiendrait que 2 objets : le porteur du projet a
   choisi d'y lister toute la nourriture pour familier échangeable (35 objets, FR-004b), même si la
   page Familier ne peut utiliser que la Croquette enrichie. Le vrai manque de prix est l'HDV **Consommables** (≈ 130 ingrédients) et
   les 170 ressources du tableau familier qui ne sont l'ingrédient d'aucune recette.

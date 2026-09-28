@@ -26,6 +26,9 @@ nourrissent les familiers à l'HDV Animaux.
 
 ### Session 2026-09-28
 
+- Revision 2026-09-28 (après mise en ligne) : l'onglet et l'HDV « Animaux » sont renommés
+  « Créatures », à la demande du porteur du projet.
+
 - Q: Chaque onglet liste-t-il tous les objets échangeables de l'HDV, ou seulement ceux dont l'app se
   sert ? → A: Seulement les objets utiles à l'app : ingrédients d'au moins une recette, et
   ressources du tableau d'XP de la page Familier.
@@ -35,7 +38,7 @@ nourrissent les familiers à l'HDV Animaux.
   principale ; la page Accueil, peu utile pour l'instant, est retirée de la navigation.
 - Q: Les certificats de dragodinde (ingrédients de 69 recettes) sont-ils listés ? → A: Non, ils ne
   servent à rien pour les joueurs du groupe ; précision donnée pendant le plan.
-- Q: L'onglet Animaux n'aurait que 2 objets (une seule croquette dans le tableau d'XP familier) :
+- Q: L'onglet Créatures n'aurait que 2 objets (une seule croquette dans le tableau d'XP familier) :
   que faire ? → A: Lister toute la nourriture pour familier échangeable (35 objets), même absente
   du tableau d'XP ; son prix est saisissable mais la page Familier ne l'utilise pas.
 
@@ -44,19 +47,19 @@ nourrissent les familiers à l'HDV Animaux.
 ### User Story 1 - Relever les prix d'un HDV d'un seul passage (Priority: P1)
 
 Le joueur est devant un HDV en jeu. Il ouvre la page Saisie HDV, choisit l'onglet de cet HDV
-(Ressources, Consommables ou Animaux) et voit la liste des objets vendus à cet HDV. Il saisit les
+(Ressources, Consommables ou Créatures) et voit la liste des objets vendus à cet HDV. Il saisit les
 prix qu'il lit en jeu, ligne après ligne, sans quitter la page ni ouvrir la recette d'un objet.
 
 **Why this priority**: c'est le besoin exprimé : des objets n'ont aujourd'hui aucun moyen d'avoir
 un prix, faute d'apparaître dans une recette.
 
-**Independent Test**: ouvrir l'onglet Animaux, saisir le prix d'une croquette, puis vérifier que ce
+**Independent Test**: ouvrir l'onglet Créatures, saisir le prix d'une croquette, puis vérifier que ce
 prix est enregistré avec sa date sur le serveur actif et qu'il est toujours là après rechargement.
 
 **Acceptance Scenarios**:
 
-1. **Given** la page Saisie HDV ouverte, **When** le joueur choisit l'onglet Animaux, **Then** la
-   liste montre les objets utiles à l'app vendus à l'HDV Animaux, dont les croquettes, chacun avec son nom, son icône et un champ de prix.
+1. **Given** la page Saisie HDV ouverte, **When** le joueur choisit l'onglet Créatures, **Then** la
+   liste montre les objets utiles à l'app vendus à l'HDV Créatures, dont les croquettes, chacun avec son nom, son icône et un champ de prix.
 2. **Given** un objet sans prix connu, **When** le joueur saisit un prix valide et quitte le champ,
    **Then** le prix est enregistré pour le serveur actif et le mode de prix actif, et la ligne
    affiche « Dernière mise à jour » suivie de la date relative habituelle (quelques secondes).
@@ -163,7 +166,7 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   l'ancienne adresse de l'Accueil mène à la page Recherche, qui reste la page d'arrivée. La page
   Accueil n'est pas supprimée du code, pour pouvoir la remettre plus tard.
 - **FR-002**: La page MUST proposer trois onglets, un par HDV du jeu : Ressources, Consommables,
-  Animaux. L'onglet ouvert est mémorisé sur l'appareil pour la visite suivante.
+  Créatures. L'onglet ouvert est mémorisé sur l'appareil pour la visite suivante.
 - **FR-003**: Chaque onglet MUST lister les objets échangeables vendus à cet HDV en jeu, d'après une
   correspondance entre types d'objets et HDV relevée en jeu par le porteur du projet (ni le client
   ni DofusDB ne la fournissent), avec sa source et sa date. Un objet apparaît dans un seul onglet.
@@ -172,7 +175,7 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   Les autres (parchemins, montures, familiers…) ne sont pas listés, même s'ils se vendent à cet
   HDV, y compris un familier qui figure comme ingrédient. Les certificats de dragodinde ne sont jamais listés, même s'ils figurent comme ingrédients
   dans des recettes du jeu : leur prix ne sert à rien dans l'app.
-- **FR-004b**: Par exception à FR-004, l'onglet Animaux MUST lister toute la nourriture pour
+- **FR-004b**: Par exception à FR-004, l'onglet Créatures MUST lister toute la nourriture pour
   familier échangeable, même celle qui n'est ni un ingrédient ni dans le tableau d'XP familier ; la
   page n'affirme pas que ces prix servent à la page Familier.
 - **FR-005**: Chaque ligne MUST afficher le nom et l'icône de l'objet, son type, et un champ de prix
@@ -197,7 +200,7 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
 
 ### Key Entities
 
-- **HDV**: un hôtel des ventes du jeu (Ressources, Consommables, Animaux) : son nom et les types
+- **HDV**: un hôtel des ventes du jeu (Ressources, Consommables, Créatures) : son nom et les types
   d'objets qu'il vend.
 - **Correspondance type → HDV**: pour chaque type d'objet vendu, l'HDV où il se vend en jeu ; donnée
   fixe relevée en jeu par le porteur du projet, avec sa source et sa date.
@@ -215,18 +218,18 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   dans le bon onglet ; aucun objet n'apparaît dans un onglet où il ne se vend pas.
 - **SC-003**: Un prix saisi sur la page Saisie HDV est visible avec la même valeur et la même date
   sur les pages Recherche, Prix et Familier, sans action supplémentaire.
-- **SC-004**: Après la saisie des prix des onglets Consommables et Animaux, la page Familier
+- **SC-004**: Après la saisie des prix des onglets Consommables et Créatures, la page Familier
   recommande des ressources de son tableau qu'elle écartait auparavant faute de prix.
 - **SC-005**: Filtrer ou rechercher dans un onglet met la liste à jour sans délai perceptible (moins
   d'une seconde).
 
 ## Assumptions
 
-- Les trois HDV couverts sont Ressources, Consommables et Animaux. Les HDV d'équipements, d'armes et
+- Les trois HDV couverts sont Ressources, Consommables et Créatures. Les HDV d'équipements, d'armes et
   les autres HDV sont hors périmètre : le prix HDV d'un objet craftable se saisit déjà depuis la
   page Recherche.
 - La catégorie d'objet donnée par la source actuelle du catalogue ne suffit pas à trouver l'HDV : la
-  nourriture pour familier y est classée en « Ressources » alors qu'elle se vend à l'HDV Animaux. La
+  nourriture pour familier y est classée en « Ressources » alors qu'elle se vend à l'HDV Créatures. La
   correspondance type → HDV vient donc des données du jeu (fichiers du client installé du porteur du
   projet si besoin) ; le plan vérifiera où la trouver.
 - Le prix saisi est un prix unitaire, comme partout dans l'app ; aucun choix de lot n'est proposé,
