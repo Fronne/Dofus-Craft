@@ -28,5 +28,4 @@ Règles :
   projet).
 - `listAllExchangeable` : tous les objets échangeables de ces types sont listés, utiles ou non
   (FR-004b) ; leur valeur dans `types` doit être non nulle.
-- Proposition de départ : research.md §2 ; les types « à confirmer » y restent tant qu'ils n'ont pas
-  été vérifiés en jeu.
+- Contenu : le tableau validé de research.md §2.

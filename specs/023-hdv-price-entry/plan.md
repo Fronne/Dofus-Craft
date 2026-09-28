@@ -106,11 +106,12 @@ tests/
 pages Prix et Familier, la logique pure va dans `src/domain/`, les données figées dans `src/data/`
 générées par un script de `scripts/`, comme `pet-xp-data.json`.
 
-## Étape bloquante avant l'implémentation
+## Correspondance validée
 
-La correspondance de `scripts/data/hdv-type-map.json` (research.md §2) doit être **validée en jeu
-par le porteur du projet**, en particulier les 8 types « à confirmer ». Les tâches doivent prévoir
-cette validation avant de générer `hdv-items.json`.
+Les types incertains ont été tranchés par le porteur du projet le 2026-09-28 (research.md §2) :
+forgemagie (potions, orbes, gravures) → HDV Runes, hors périmètre ; pierres d'âme → HDV Âmes, hors
+périmètre et inutile au groupe ; fragments de carte, ressources de quête, cautions, haïkus → HDV
+Ressources. `scripts/data/hdv-type-map.json` reprend exactement ce tableau.
 
 ## Complexity Tracking
 

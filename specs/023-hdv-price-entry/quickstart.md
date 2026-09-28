@@ -2,7 +2,7 @@
 
 ## Prérequis
 
-- `scripts/data/hdv-type-map.json` validé en jeu (voir [research.md §2](./research.md)).
+- `scripts/data/hdv-type-map.json` conforme au tableau validé de [research.md §2](./research.md).
 - Données générées : `node scripts/build-hdv-items.mjs`, puis relire le résumé affiché (objets par
   HDV, types écartés) avant de commiter `src/data/hdv-items.json`.
 - Serveur de dev : `npm run dev`, puis http://localhost:5173/hdv.
@@ -11,7 +11,7 @@
 
 1. **Navigation** : l'entrée « HDV » apparaît entre Prix et Familier (ordinateur et barre du bas sur
    mobile) ; l'entrée Accueil a disparu ; http://localhost:5173/accueil ouvre la Recherche.
-2. **Onglets** : Ressources ≈ 2 800 objets, Consommables ≈ 130, Animaux ≈ 36 (dont les 35
+2. **Onglets** : Ressources ≈ 2 750 objets, Consommables ≈ 130, Animaux ≈ 36 (dont les 35
    nourritures pour familier). Aucun certificat de dragodinde nulle part. Recharger la page rouvre
    le dernier onglet.
 3. **Saisie (mode personnel)** : onglet Animaux, saisir 1 500 pour « Croquette enrichie », quitter le
