@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPricesLookup } from '../../src/services/community-price-api';
@@ -32,6 +32,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 
 import App from '../../src/app/App';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
+import { PET_FOODS } from '../../src/domain/pet-xp';
 
 const normalize = (value: string | null | undefined) => (value ?? '').replace(/[\u202f\u00a0]/g, ' ');
 const names = () => [...document.querySelectorAll('.pet-food-row .resource-display > span:last-child')].map((span) => span.textContent);
@@ -212,6 +213,69 @@ describe('Familier page (specs/022)', () => {
       type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       expect(await screen.findByText('Aucune recommandation sans prix')).toBeInTheDocument();
+    });
+  });
+  // specs/022 FR-007 (revised 2026-09-28): every priced resource, 25 lines at a time as the end of
+  // the list scrolls into view, with a « Revenir en haut » button — like the Rentabilité page.
+  describe('scrolling list (FR-007, revised)', () => {
+    let reveal: (() => void) | undefined;
+    beforeEach(() => {
+      reveal = undefined;
+      vi.stubGlobal('IntersectionObserver', class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+        observe() {
+          reveal = () => this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+        }
+        disconnect() {}
+      });
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    });
+
+    it('shows 25 lines, then 25 more once the end of the list comes into view, and more than the former 10', async () => {
+      const carnet = resourcePricesFor('personal');
+      for (const [index, food] of PET_FOODS.slice(0, 40).entries()) await carnet.save('mikhal', food.itemId, 10 + index);
+      await openFamilier('personal');
+      type('XP totale du familier', '1703');
+      type('Niveau visé', '60');
+      await waitFor(() => expect(names()).toHaveLength(25));
+      expect(document.querySelector('.profit-list-end')).toBeInTheDocument();
+
+      vi.useFakeTimers();
+      act(() => reveal!());
+      expect(screen.getByText('Chargement…')).toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(1000));
+      vi.useRealTimers();
+      expect(names()).toHaveLength(40);
+      expect(document.querySelector('.profit-list-end')).not.toBeInTheDocument();
+    });
+
+    it('goes back to the first 25 lines when the sort or the search changes', async () => {
+      const carnet = resourcePricesFor('personal');
+      for (const [index, food] of PET_FOODS.slice(0, 40).entries()) await carnet.save('mikhal', food.itemId, 10 + index);
+      await openFamilier('personal');
+      type('XP totale du familier', '1703');
+      type('Niveau visé', '60');
+      await waitFor(() => expect(names()).toHaveLength(25));
+      vi.useFakeTimers();
+      act(() => reveal!());
+      act(() => vi.advanceTimersByTime(1000));
+      vi.useRealTimers();
+      expect(names()).toHaveLength(40);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Trier par XP' }));
+      expect(names()).toHaveLength(25);
+    });
+
+    it('offers « Revenir en haut » once the page is scrolled down', async () => {
+      await openFamilier('personal');
+      expect(screen.queryByRole('button', { name: 'Revenir en haut' })).not.toBeInTheDocument();
+      Object.defineProperty(window, 'scrollY', { value: 800, configurable: true });
+      fireEvent.scroll(window);
+      expect(await screen.findByRole('button', { name: 'Revenir en haut' })).toBeInTheDocument();
+      Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
     });
   });
 });

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useActiveServer } from '../../app/ServerContext';
 import { ROUTES } from '../../app/router';
+import { BackToTopButton } from '../../components/BackToTopButton';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
@@ -101,29 +102,6 @@ function SortHeader({ sort, onSort }: { sort: ProfitSort; onSort: (sort: ProfitS
         );
       })}
     </div>
-  );
-}
-
-// Shown once the player has scrolled down a screen or so: one click back to the top of the page.
-function BackToTopButton() {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 600);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-  if (!visible) return null;
-  return (
-    <button
-      type="button"
-      className="back-to-top"
-      aria-label="Revenir en haut"
-      title="Revenir en haut"
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-    >
-      <Icon name="chevron-down" size={20} />
-    </button>
   );
 }
 

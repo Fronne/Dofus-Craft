@@ -15,6 +15,10 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-28 : à la demande du porteur du projet, la liste n'est plus limitée à 10 ressources : elle
+  affiche toutes les ressources ayant un prix, 25 lignes à la fois, les suivantes apparaissant quand
+  le bas de la liste arrive à l'écran, avec un bouton « Revenir en haut » — comme la page
+  Rentabilité (specs/019 FR-007 révisée). FR-007, FR-007b et le scénario US3-5 sont amendés.
 - 2026-09-28 : à la demande du porteur du projet, les informations en bas de la liste sont retirées
   (nombre de ressources sans prix, source des données d'XP, avertissement « prix communautaires
   indisponibles ») : FR-008 ne demande plus d'indiquer le nombre, FR-009 est retirée. Exception à
@@ -86,8 +90,8 @@ et son coût total sont justes.
 4. **Given** le joueur change de niveau cible, de serveur ou de mode de prix, **When** la page se met
    à jour, **Then** la liste et les coûts sont recalculés.
 5. **Given** la liste affichée, **When** le joueur clique sur l'en-tête « XP par unité », **Then** les
-   10 ressources ayant un prix qui donnent le plus d'XP par unité s'affichent, de la plus forte à la
-   plus faible ; un second clic inverse l'ordre.
+   ressources ayant un prix s'affichent de celle qui donne le plus d'XP par unité à la plus faible
+   (25 d'abord, les suivantes en descendant) ; un second clic inverse l'ordre.
 6. **Given** 1 000 XP à donner et une ressource à 2 XP par unité, **When** le joueur active
    l'interrupteur « Almanax du 23 juillet (+50 % d'XP) », **Then** la ressource affiche 3 XP par
    unité et 334 unités (1 000 ÷ 3, arrondi à l'unité supérieure) au lieu de 500, et son coût total
@@ -146,14 +150,17 @@ sache.
 - **FR-006**: Pour chaque ressource rattachée qui a un prix connu sur le serveur actif et selon le
   mode de prix actif, l'app MUST calculer la quantité à donner (XP nécessaire ÷ XP par unité,
   arrondie à l'unité supérieure) et le coût total (quantité × prix unitaire).
-- **FR-007**: L'app MUST afficher 10 ressources, par défaut les 10 au coût total le plus bas triées
-  par coût total croissant, avec pour chacune : nom, icône, XP par unité, prix unitaire et date de ce
-  prix, quantité et coût total. Un clic sur l'en-tête d'une colonne trie toutes les ressources ayant
-  un prix selon cette colonne avant de garder les 10 premières (premier clic : nom A → Z, XP par
-  unité décroissante, prix / quantité / coût croissants ; second clic : sens inverse ; égalités
-  départagées par coût total puis nom). Le tri n'est pas mémorisé.
+- **FR-007** *(révisée le 2026-09-28)*: L'app MUST afficher toutes les ressources ayant un prix,
+  par défaut triées par coût total croissant, avec pour chacune : nom, icône, XP par unité, prix
+  unitaire et date de ce prix, quantité et coût total. Les 25 premières lignes s'affichent d'abord ;
+  les 25 suivantes apparaissent chaque fois que le bas de la liste arrive à l'écran, et un bouton
+  « Revenir en haut » apparaît une fois la page descendue, comme sur la page Rentabilité. Un clic sur
+  l'en-tête d'une colonne trie toutes les ressources ayant un prix selon cette colonne (premier clic :
+  nom A → Z, XP par unité décroissante, prix / quantité / coût croissants ; second clic : sens
+  inverse ; égalités départagées par coût total puis nom) et revient aux 25 premières lignes. Le tri
+  n'est pas mémorisé.
 - **FR-007b**: Le joueur MUST pouvoir filtrer la liste par nom de ressource (sans tenir compte des
-  accents ni de la casse) ; le filtre s'applique avant le tri et la limite de 10 lignes. Si aucune
+  accents ni de la casse) ; le filtre s'applique avant le tri et revient aux 25 premières lignes. Si aucune
   ressource avec un prix ne correspond, la page le dit et indique combien correspondent sans prix.
 - **FR-008**: L'app MUST exclure les ressources sans prix connu.
 - **FR-009**: *(retirée le 2026-09-28)*

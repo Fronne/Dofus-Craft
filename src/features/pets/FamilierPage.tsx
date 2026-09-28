@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useActiveServer } from '../../app/ServerContext';
 import { ROUTES } from '../../app/router';
+import { BackToTopButton } from '../../components/BackToTopButton';
 import { EmptyState } from '../../components/EmptyState';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { Kamas } from '../prices/PricesPage';
@@ -20,7 +21,6 @@ import {
   ALMANAX_PET_XP_MULTIPLIER,
   isPetXpAlmanaxDay,
   DEFAULT_PET_FOOD_SORT,
-  MAX_RECOMMENDATIONS,
   planPetFood,
   validatePetLevels,
   xpNeeded,
@@ -31,6 +31,7 @@ import {
 } from '../../domain/pet-xp';
 import { getPetLevels, setPetLevels } from '../../persistence/pet-levels-preference';
 import { usePetFoodPrices } from './usePetFoodPrices';
+import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
 
 // specs/022-pet-xp-calculator: the XP a pet still needs to reach a level, and the cheapest resources
 // to feed it with on the active server, in the active price mode.
@@ -167,10 +168,13 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   }, [valid, levels.totalXp, levels.targetLevel]);
 
   const { status, prices } = usePetFoodPrices(serverId, priceMode);
-  // The name search narrows the resources before sorting and keeping the first 10 lines.
+  // The name search narrows the resources before sorting. Every priced resource is listed, shown 25
+  // lines at a time as the end of the list scrolls into view, like Rentabilité (FR-007, revised
+  // 2026-09-28); a new search or sort goes back to the first lines.
   const normalizedQuery = normalizeSearchText(query);
   const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
-  const plan = xp !== undefined ? planPetFood(xp, foods, prices, MAX_RECOMMENDATIONS, sort, almanax ? ALMANAX_PET_XP_MULTIPLIER : 1) : undefined;
+  const plan = xp !== undefined ? planPetFood(xp, foods, prices, Number.POSITIVE_INFINITY, sort, almanax ? ALMANAX_PET_XP_MULTIPLIER : 1) : undefined;
+  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(plan?.recommendations ?? []);
   const unpricedCount = PET_FOODS.filter((food) => !(prices[food.itemId]?.unitPriceKamas > 0)).length;
   const hasAnyPrice = unpricedCount < PET_FOODS.length;
   const serverName = servers.find((server) => server.id === serverId)?.name;
@@ -264,7 +268,10 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                   <input
                     type="search"
                     value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      resetShown();
+                    }}
                     placeholder="Rechercher une ressource..."
                     aria-label="Rechercher une ressource"
                   />
@@ -280,16 +287,25 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                 />
               ) : (
                 <>
-                  <SortHeader sort={sort} onSort={setSort} />
+                  <SortHeader sort={sort} onSort={(next) => {
+                    setSort(next);
+                    resetShown();
+                  }} />
                   <ul className="profit-list">
-                    {plan.recommendations.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
+                    {visible.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
                   </ul>
+                  {visible.length < plan.recommendations.length && (
+                    <div ref={endRef} className="profit-list-end" role="status">
+                      {loadingMore && 'Chargement…'}
+                    </div>
+                  )}
                 </>
               )}
             </>
           )}
         </section>
       )}
+      <BackToTopButton />
     </>
   );
 }
