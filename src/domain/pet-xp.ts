@@ -19,6 +19,8 @@ export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'car
 
 export type PetFoodRecommendation = {
   food: PetFood;
+  /** XP one unit actually gives, bonus included (FR-012). */
+  xpPerUnit: number;
   unitPriceKamas: number;
   priceDate?: string;
   priceOrigin: PetFoodPrice['origin'];
@@ -31,7 +33,7 @@ export type PetFoodSort = { key: PetFoodSortKey; direction: 'asc' | 'desc' };
 export const DEFAULT_PET_FOOD_SORT: PetFoodSort = { key: 'total', direction: 'asc' };
 
 const SORT_VALUE: Record<Exclude<PetFoodSortKey, 'name'>, (line: PetFoodRecommendation) => number> = {
-  xpPerUnit: (line) => line.food.xpPerUnit,
+  xpPerUnit: (line) => line.xpPerUnit,
   unitPrice: (line) => line.unitPriceKamas,
   quantity: (line) => line.quantity,
   total: (line) => line.totalKamas,
@@ -54,6 +56,14 @@ export const PET_XP_SOURCE = { name: petXpData.source, url: petXpData.sourceUrl,
 export const PET_MIN_LEVEL = 0;
 export const PET_MAX_LEVEL = PET_XP_CURVE.length - 1;
 export const MAX_RECOMMENDATIONS = 10;
+
+// specs/022 FR-012: the Almanax of 23 July (the same date every year) gives pets 50 % more XP.
+export const ALMANAX_PET_XP_MULTIPLIER = 1.5;
+
+/** Whether `date` (the device's local date) is 23 July, the day of the pet XP Almanax. */
+export function isPetXpAlmanaxDay(date: Date = new Date()): boolean {
+  return date.getMonth() === 6 && date.getDate() === 23;
+}
 
 const cumulativeXp = (level: number, curve: readonly number[]) => curve[level];
 
@@ -94,8 +104,8 @@ export function xpNeeded(input: PetLevelsInput, curve: readonly number[] = PET_X
 }
 
 /** Units of `food` to give for `xp` points, rounded up so the level is always reached. */
-export function quantityFor(xp: number, food: PetFood): number {
-  const exact = xp / food.xpPerUnit;
+export function quantityFor(xp: number, food: PetFood, xpMultiplier = 1): number {
+  const exact = xp / (food.xpPerUnit * xpMultiplier);
   // xpPerUnit is decimal (0,075, 2,646…): absorb floating-point noise before rounding up.
   return Math.ceil(Math.round(exact * 1e9) / 1e9);
 }
@@ -107,6 +117,8 @@ export function planPetFood(
   prices: Record<string, PetFoodPrice | undefined>,
   limit = MAX_RECOMMENDATIONS,
   sort: PetFoodSort = DEFAULT_PET_FOOD_SORT,
+  /** 1.5 with the Almanax of 23 July (FR-012), 1 otherwise. */
+  xpMultiplier = 1,
 ): PetFoodPlan {
   const priced = foods.filter((food) => (prices[food.itemId]?.unitPriceKamas ?? 0) > 0);
   const unpricedCount = foods.length - priced.length;
@@ -114,9 +126,10 @@ export function planPetFood(
   const recommendations = priced
     .map((food): PetFoodRecommendation => {
       const price = prices[food.itemId]!;
-      const quantity = quantityFor(xp, food);
+      const quantity = quantityFor(xp, food, xpMultiplier);
       return {
         food,
+        xpPerUnit: food.xpPerUnit * xpMultiplier,
         unitPriceKamas: price.unitPriceKamas,
         priceDate: price.date,
         priceOrigin: price.origin,

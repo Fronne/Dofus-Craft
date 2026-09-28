@@ -15,6 +15,8 @@ import {
   PET_MAX_LEVEL,
   PET_MIN_LEVEL,
   PET_XP_SOURCE,
+  ALMANAX_PET_XP_MULTIPLIER,
+  isPetXpAlmanaxDay,
   DEFAULT_PET_FOOD_SORT,
   MAX_RECOMMENDATIONS,
   planPetFood,
@@ -99,7 +101,7 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
       </div>
       <div className="profit-cell">
         <span className="profit-cell-label">XP</span>
-        <b>{numberFormat.format(line.food.xpPerUnit)}</b>
+        <b>{numberFormat.format(line.xpPerUnit)}</b>
       </div>
       <div className="profit-cell">
         <span className="profit-cell-label">Prix unitaire</span>
@@ -126,6 +128,8 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const [text, setText] = useState(() => toText(getPetLevels()));
   const [sort, setSort] = useState<PetFoodSort>(DEFAULT_PET_FOOD_SORT);
   const [query, setQuery] = useState('');
+  // FR-012: on by itself on 23 July, the day of the pet XP Almanax; never remembered.
+  const [almanax, setAlmanax] = useState(() => isPetXpAlmanaxDay());
   const levels: PetLevelsInput = {
     currentLevel: parse(text.currentLevel),
     xpInLevel: text.xpInLevel.trim() === '' ? 0 : parse(text.xpInLevel),
@@ -144,7 +148,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   // The name search narrows the resources before sorting and keeping the first 10 lines.
   const normalizedQuery = normalizeSearchText(query);
   const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
-  const plan = xp !== undefined ? planPetFood(xp, foods, prices, MAX_RECOMMENDATIONS, sort) : undefined;
+  const plan = xp !== undefined ? planPetFood(xp, foods, prices, MAX_RECOMMENDATIONS, sort, almanax ? ALMANAX_PET_XP_MULTIPLIER : 1) : undefined;
   const unpricedCount = PET_FOODS.filter((food) => !(prices[food.itemId]?.unitPriceKamas > 0)).length;
   const hasAnyPrice = unpricedCount < PET_FOODS.length;
   const serverName = servers.find((server) => server.id === serverId)?.name;
@@ -188,6 +192,19 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             )}
           </p>
         )}
+        <label className="pet-almanax-switch">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={almanax}
+            onChange={(event) => setAlmanax(event.target.checked)}
+          />
+          <span className="pet-almanax-switch-track" aria-hidden="true" />
+          <span>
+            Almanax du 23 juillet (+50 % d'XP)
+            {isPetXpAlmanaxDay() && <small> · c'est aujourd'hui</small>}
+          </span>
+        </label>
       </section>
 
       {plan && plan.xpNeeded > 0 && (

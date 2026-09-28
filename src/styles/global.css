@@ -1178,6 +1178,15 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pet-level-field .warning { margin: 0; font-size: .78rem; }
 .pet-xp-needed { margin: var(--space-4) 0 0; font-size: 1.05rem; }
 .pet-xp-needed b { color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+/* specs/022 FR-012: Almanax of 23 July switch (+50 % pet XP). */
+.pet-almanax-switch { position: relative; display: inline-flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); cursor: pointer; font-weight: 600; }
+.pet-almanax-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.pet-almanax-switch-track { position: relative; flex: none; width: 40px; height: 22px; border-radius: 999px; background: var(--border-strong); transition: background .15s; }
+.pet-almanax-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.pet-almanax-switch input:checked + .pet-almanax-switch-track { background: var(--gold-bright); }
+.pet-almanax-switch input:checked + .pet-almanax-switch-track::after { transform: translateX(18px); }
+.pet-almanax-switch input:focus-visible + .pet-almanax-switch-track { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+.pet-almanax-switch small { color: var(--gold-bright); font-weight: 700; }
 .pet-levels-panel { margin-bottom: var(--space-4); }
 .profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
 .profit-row.pet-food-row .profit-row-main { cursor: default; }

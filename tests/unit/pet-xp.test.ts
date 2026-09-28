@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
+import { ALMANAX_PET_XP_MULTIPLIER, isPetXpAlmanaxDay, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
   ({ itemId, name, xpPerUnit, sourceName: name });
@@ -83,5 +83,32 @@ describe('planPetFood', () => {
 
   it('recommends nothing when no XP is needed', () => {
     expect(planPetFood(0, [food('1', 'Rune', 1)], { 1: { unitPriceKamas: 5, origin: 'carnet' } }).recommendations).toEqual([]);
+  });
+});
+
+// specs/022 FR-012: the Almanax of 23 July gives pets 50 % more XP.
+describe('Almanax of 23 July', () => {
+  it('multiplies the XP of each unit by 1.5 before rounding the quantity up', () => {
+    expect(quantityFor(1000, food('1', 'A', 2))).toBe(500);
+    expect(quantityFor(1000, food('1', 'A', 2), ALMANAX_PET_XP_MULTIPLIER)).toBe(334);
+    expect(quantityFor(2859, food('1', 'A', 1), ALMANAX_PET_XP_MULTIPLIER)).toBe(1906);
+  });
+
+  it('shows the boosted XP per unit and recomputes quantity and total, leaving the XP needed unchanged', () => {
+    const plan = planPetFood(1000, [food('1', 'A', 2)], { '1': { unitPriceKamas: 10, origin: 'carnet' } }, 10, undefined, ALMANAX_PET_XP_MULTIPLIER);
+    expect(plan.xpNeeded).toBe(1000);
+    expect(plan.recommendations[0]).toMatchObject({ xpPerUnit: 3, quantity: 334, totalKamas: 3340 });
+  });
+
+  it('keeps the plain XP per unit without the bonus', () => {
+    const plan = planPetFood(1000, [food('1', 'A', 2)], { '1': { unitPriceKamas: 10, origin: 'carnet' } });
+    expect(plan.recommendations[0]).toMatchObject({ xpPerUnit: 2, quantity: 500 });
+  });
+
+  it('recognises 23 July, whatever the year', () => {
+    expect(isPetXpAlmanaxDay(new Date(2026, 6, 23, 0, 5))).toBe(true);
+    expect(isPetXpAlmanaxDay(new Date(2031, 6, 23, 23, 55))).toBe(true);
+    expect(isPetXpAlmanaxDay(new Date(2026, 6, 22))).toBe(false);
+    expect(isPetXpAlmanaxDay(new Date(2026, 5, 23))).toBe(false);
   });
 });

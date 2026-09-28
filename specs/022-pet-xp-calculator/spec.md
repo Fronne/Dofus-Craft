@@ -15,6 +15,9 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-28 : interrupteur « Almanax du 23 juillet » (FR-012). Chaque jour de l'année a un Almanax
+  fixe, identique d'une année à l'autre ; celui du 23 juillet augmente de 50 % l'XP gagnée par les
+  familiers. Quand l'interrupteur est activé, chaque ressource donne 1,5 fois son XP par unité.
 - 2026-09-27 : recherche par nom de ressource (FR-007b).
 - 2026-09-27 : tri de la liste au clic sur l'en-tête d'une colonne (FR-007), comme sur la page Prix.
 - 2026-09-27 : à la demande du porteur du projet, les données Dofus Tool sont entièrement abandonnées.
@@ -73,6 +76,10 @@ et son coût total sont justes.
 5. **Given** la liste affichée, **When** le joueur clique sur l'en-tête « XP par unité », **Then** les
    10 ressources ayant un prix qui donnent le plus d'XP par unité s'affichent, de la plus forte à la
    plus faible ; un second clic inverse l'ordre.
+6. **Given** 1 000 XP à donner et une ressource à 2 XP par unité, **When** le joueur active
+   l'interrupteur « Almanax du 23 juillet (+50 % d'XP) », **Then** la ressource affiche 3 XP par
+   unité et 334 unités (1 000 ÷ 3, arrondi à l'unité supérieure) au lieu de 500, et son coût total
+   est recalculé ; l'XP nécessaire affichée ne change pas.
 
 ---
 
@@ -142,6 +149,11 @@ source des données d'XP et le nombre de ressources sans prix.
   de prix change.
 - **FR-011**: L'app MUST conserver sur l'appareil les derniers niveaux saisis pour les retrouver à la
   prochaine visite.
+- **FR-012**: La page MUST proposer un interrupteur « Almanax du 23 juillet (+50 % d'XP) ». Activé,
+  l'XP par unité de chaque ressource est multipliée par 1,5 pour le calcul de la quantité, du coût
+  total et du tri, et la colonne XP affiche cette valeur augmentée. L'interrupteur est activé
+  d'office le 23 juillet (date de l'appareil) et désactivé les autres jours ; le joueur peut le
+  changer à tout moment, sans que ce choix soit conservé d'une visite à l'autre.
 
 ### Key Entities
 
@@ -179,3 +191,6 @@ source des données d'XP et le nombre de ressources sans prix.
 - Les croquettes et autres aliments achetés en boutique (Kolizétons, Pépites) ne sont pas traités
   différemment : ils ne sont recommandés que s'ils ont un prix HDV connu comme toute ressource.
 - Les bonus de caractéristiques gagnés par le familier selon son niveau sont hors périmètre.
+- Bonus Almanax : + 50 % s'applique à l'XP de chaque unité donnée, sans arrondi par unité (même
+  hypothèse que les valeurs décimales du tableau). Les autres Almanax n'ont pas d'effet sur l'XP des
+  familiers et ne sont pas pris en compte.

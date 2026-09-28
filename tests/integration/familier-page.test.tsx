@@ -131,6 +131,22 @@ describe('Familier page (specs/022)', () => {
       expect(screen.getByRole('link', { name: /Dafous/ })).toHaveAttribute('href', 'https://dafous.app/pet-xp');
     });
 
+    it('recomputes quantities and totals with the Almanax of 23 July switch (FR-012)', async () => {
+      await resourcePricesFor('personal').save('mikhal', '14635', 20); // Pépite, 1 XP / unit
+      await openFamilier('personal');
+      type('Niveau actuel', '50');
+      type('Niveau visé', '60');
+      const almanax = screen.getByRole('switch', { name: /Almanax du 23 juillet/ });
+      if ((almanax as HTMLInputElement).checked) fireEvent.click(almanax);
+      await waitFor(() => expect(normalize(rowOf('Pépite')?.textContent)).toContain('57 180')); // 2 859 × 20
+      fireEvent.click(almanax);
+      const pepite = normalize(rowOf('Pépite')?.textContent);
+      expect(pepite).toContain('1,5'); // XP per unit, boosted
+      expect(pepite).toContain('1 906'); // 2 859 ÷ 1,5, rounded up
+      expect(pepite).toContain('38 120');
+      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 859 XP');
+    });
+
     it('narrows the list by resource name, accents and case ignored', async () => {
       const carnet = resourcePricesFor('personal');
       await carnet.save('mikhal', '8482', 10);
