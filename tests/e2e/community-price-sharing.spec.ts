@@ -148,7 +148,6 @@ test('shows the last known community price as stale, rather than breaking, when 
   await page.getByRole('link', { name: 'Paramètres', exact: true }).click();
   await page.getByRole('link', { name: 'Recherche' }).click();
 
-  await expect(page.getByText(/peut-être daté/).first()).toBeVisible({ timeout: 15_000 });
   // The carnet already holds the value from the earlier successful fetch — the field, driven by
   // that carnet (not by the now-unavailable live fetch), remains fully usable throughout.
   await expect(priceInput).toHaveValue('1 500');

@@ -87,10 +87,6 @@ function CommunityResourcePriceRow({
     onPrefill(communityState.price.medianAmountKamas);
   }, [communityState, hasCarnetEntry, pricesLoaded, onPrefill]);
 
-  const communityMeta = communityState.kind === 'found'
-    ? { stale: communityState.stale }
-    : undefined;
-
   // FR-017/FR-019: called on blur, only once the player has actually changed the value
   // (ResourcePriceInput's own onCommit guard) — submits it as a new contribution. Since specs/004
   // FR-018 (amendée révision 6) / specs/007 FR-012, a successful commit no longer overwrites the
@@ -129,7 +125,6 @@ function CommunityResourcePriceRow({
         quantity={quantity}
         value={value}
         updatedAt={communityState.kind === 'found' && communityState.price.lastContributionAt ? communityState.price.lastContributionAt : updatedAt}
-        communityMeta={communityMeta}
         lockWhenFilled
         onChange={onChange}
         onCommit={handleCommit}

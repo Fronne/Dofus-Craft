@@ -11,7 +11,6 @@ export function ResourcePriceInput({
   quantity,
   value,
   updatedAt,
-  communityMeta,
   lockWhenFilled,
   onChange,
   onBlur,
@@ -24,10 +23,6 @@ export function ResourcePriceInput({
   quantity: number;
   value: string;
   updatedAt?: string;
-  // US5's compact marker when the value shown is potentially stale, rendered by extending the
-  // existing timestamp line below rather than a separate line. The contribution count is no longer
-  // shown (specs/004, révision du 2026-09-25 : FR-007 et FR-019 retirées).
-  communityMeta?: { stale: boolean };
   // Mode communautaire only: once a price is already saved for this resource, the field starts
   // read-only and requires an explicit click on the edit button to modify it, re-locking
   // automatically on blur — guards a pre-filled or already-confirmed community price against an
@@ -58,7 +53,6 @@ export function ResourcePriceInput({
   history?: ReactNode;
 }) {
   const valid = isValidKamas(value);
-  const communityLabel = communityMeta?.stale ? 'peut-être daté' : undefined;
   const [editing, setEditing] = useState(false);
   const locked = Boolean(lockWhenFilled) && Boolean(value) && !editing;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,11 +81,9 @@ export function ResourcePriceInput({
         × {quantity}
         {history}
       </span>
-      {(updatedAt || communityLabel) && (
+      {updatedAt && (
         <small>
-          {updatedAt && `Dernière mise à jour : ${formatRelativeTime(updatedAt)}`}
-          {updatedAt && communityLabel && ' · '}
-          {communityLabel}
+          Dernière mise à jour : {formatRelativeTime(updatedAt)}
           {priceAgeTooltip && (
             <span className="price-age-tooltip" role="tooltip">
               {priceAgeTooltip}

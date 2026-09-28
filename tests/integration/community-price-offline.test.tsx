@@ -103,7 +103,7 @@ describe('Mode communautaire resilience when the community service is unavailabl
 
     const reopenedInput = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(reopenedInput).toHaveValue('1 500'));
-    expect(screen.getByText(/peut-être daté/)).toBeInTheDocument();
+    expect(screen.queryByText(/peut-être daté/)).not.toBeInTheDocument();
   });
 
   it('keeps the craft-cost calculation fully usable from the community-mode carnet regardless of network state', async () => {

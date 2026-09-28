@@ -130,13 +130,12 @@ describe('ResourcePriceInput price age highlighting', () => {
     expect(screen.getByPlaceholderText('Prix unitaire').closest('label')).toHaveClass('price-line--expired');
   });
 
-  it('applies no age class when there is no known price, even with communityMeta set', () => {
+  it('applies no age class when there is no known price', () => {
     render(
       <ResourcePriceInput
         resource={resource}
         quantity={1}
         value=""
-        communityMeta={{ stale: false }}
         onChange={vi.fn()}
       />,
     );
@@ -146,21 +145,6 @@ describe('ResourcePriceInput price age highlighting', () => {
     expect(label).not.toHaveClass('price-line--expired');
   });
 
-  it('keeps the network-staleness label visible alongside the age-based class, without one hiding the other', () => {
-    render(
-      <ResourcePriceInput
-        resource={resource}
-        quantity={1}
-        value="500"
-        updatedAt={daysAgo(10)}
-        communityMeta={{ stale: true }}
-        onChange={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByPlaceholderText('Prix unitaire').closest('label')).toHaveClass('price-line--expired');
-    expect(screen.getByText(/peut-être daté/)).toBeInTheDocument();
-  });
 });
 
 // specs/008-stale-resource-highlight: US3 — hovering a row with an old price explains that it may
