@@ -27,7 +27,7 @@ import { applyDesign, getDesignId, setDesignId } from '../persistence/design-pre
 const NAV_ITEMS = [
   { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true },
   { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
-  { to: ROUTES.prices, label: 'Prix', icon: 'coins' as const, end: false },
+  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false },
   { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
   { to: ROUTES.pets, label: 'Familier', icon: 'paw' as const, end: false },
   { to: ROUTES.settings, label: 'Paramètres', icon: 'settings' as const, end: false },
@@ -125,6 +125,8 @@ export function AppShell() {
             {/* Former address of the Suivis page, kept so existing bookmarks still land on it. */}
             <Route path={ROUTES.legacyPinned} element={<Navigate to={ROUTES.pinned} replace />} />
             <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
+            {/* Former address of the Rentabilité page (named « Prix » until 2026-09-28). */}
+            <Route path={ROUTES.legacyPrices} element={<Navigate to={ROUTES.prices} replace />} />
             <Route path={ROUTES.hdv} element={<HdvPage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
             <Route

@@ -35,7 +35,7 @@ async function openPricesPage(page: Page) {
   await page.getByRole('button', { name: /Amulette du Strigide/ }).click();
   await expect(page.getByRole('heading', { name: 'Amulette du Strigide' })).toBeVisible({ timeout: 30_000 });
   const started = Date.now();
-  await page.getByRole('link', { name: 'Prix' }).click();
+  await page.getByRole('link', { name: 'Rentabilité' }).click();
   const row = page.locator('.profit-row').filter({ hasText: 'Amulette du Strigide' });
   await expect(row).toBeVisible({ timeout: 10_000 });
   return { row, elapsed: Date.now() - started };

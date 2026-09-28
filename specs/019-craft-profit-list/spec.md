@@ -11,6 +11,12 @@ objets avec le bénéfice réalisé si on craft. » Choix du porteur du projet :
 calculables sur le serveur actif ; prix selon le mode actif (comme la page Recherche) ; coût de
 craft calculé comme le choix « Auto » ; la page actuelle est entièrement remplacée.
 
+## Revisions
+
+- 2026-09-28 : la page « Prix » est renommée « Rentabilité » (navigation et titre), à la demande du
+  porteur du projet qui trouvait le nom peu clair ; son adresse devient `/rentabilite`, l'ancienne
+  adresse `/prix` y redirige.
+
 ## Clarifications
 
 ### Session 2026-09-26

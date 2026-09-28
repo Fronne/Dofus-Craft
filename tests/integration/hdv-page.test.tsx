@@ -86,7 +86,7 @@ describe('HDV page (specs/023)', () => {
       await openHdv('personal');
       const links = within(screen.getByRole('navigation', { name: 'Navigation principale' })).getAllByRole('link').map((link) => link.textContent);
       expect(links).not.toContain('Accueil');
-      expect(links.indexOf('HDV')).toBe(links.indexOf('Prix') + 1);
+      expect(links.indexOf('HDV')).toBe(links.indexOf('Rentabilité') + 1);
       expect(links.indexOf('Familier')).toBe(links.indexOf('HDV') + 1);
     });
 

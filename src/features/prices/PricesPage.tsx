@@ -145,7 +145,7 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
   return (
     <>
       <header className="page-header">
-        <h1>Prix</h1>
+        <h1>Rentabilité</h1>
         <p>
           Bénéfice si vous craftez{serverName ? `, serveur ${serverName}` : ''}, {modeLabel}.
         </p>

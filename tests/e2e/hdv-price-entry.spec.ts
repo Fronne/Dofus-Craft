@@ -16,7 +16,7 @@ test.describe('HDV page (specs/023)', () => {
     await openHdv(page);
     const nav = page.getByRole('navigation', { name: 'Navigation principale' });
     await expect(nav.getByRole('link', { name: 'Accueil' })).toHaveCount(0);
-    await expect(nav.getByRole('link')).toContainText(['Recherche', 'Suivis', 'Prix', 'HDV', 'Familier', 'Paramètres']);
+    await expect(nav.getByRole('link')).toContainText(['Recherche', 'Suivis', 'Rentabilité', 'HDV', 'Familier', 'Paramètres']);
     await page.goto('/accueil');
     await expect(page).toHaveURL(/\/$/);
   });

@@ -83,7 +83,7 @@ async function openPrices(mode: 'community' | 'personal') {
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
-  fireEvent.click(screen.getByRole('link', { name: 'Prix' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Rentabilité' }));
 }
 
 describe('Prix page — craft profit (specs/019)', () => {
@@ -127,7 +127,7 @@ describe('Prix page — craft profit (specs/019)', () => {
       await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
       fireEvent.click(screen.getByRole('link', { name: 'Suivis' }));
       getSharedItemPrices.mockResolvedValue({ status: 'found', items: [{ itemId: 'anneau', amountKamas: 13000, contributedAt: recent }] });
-      fireEvent.click(screen.getByRole('link', { name: 'Prix' }));
+      fireEvent.click(screen.getByRole('link', { name: 'Rentabilité' }));
       // Straight away, without « Calcul en cours… »: the list from the previous visit.
       expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
       expect(screen.queryByText(/Calcul en cours/)).not.toBeInTheDocument();
@@ -138,7 +138,7 @@ describe('Prix page — craft profit (specs/019)', () => {
       await openPrices('community');
       await waitFor(() => expect(names()).toContain('Anneau'));
       fireEvent.click(within(rowOf('Anneau')).getByRole('button'));
-      await waitFor(() => expect(window.location.pathname).not.toBe('/prix'));
+      await waitFor(() => expect(window.location.pathname).not.toBe('/rentabilite'));
       expect(window.location.search).toContain('item=anneau');
       expect(new URLSearchParams(window.location.search).get('q')).toBe('Anneau');
     });
