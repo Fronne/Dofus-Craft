@@ -156,6 +156,26 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
 
+  const renderField = (field: (typeof FIELDS)[number]) => (
+    <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
+      <span>
+        {field.label}
+        {field.secondary && <small> (facultatif)</small>}
+      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={field.min}
+        max={field.max}
+        step={1}
+        value={text[field.key]}
+        aria-invalid={errors[field.key] ? true : undefined}
+        onChange={(event) => setText((current) => ({ ...current, [field.key]: clampToMax(event.target.value, field.max) }))}
+      />
+      {errors[field.key] && <small className="warning" role="alert">{errors[field.key]}</small>}
+    </label>
+  );
+
   return (
     <>
       <header className="page-header">
@@ -167,49 +187,40 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
       </header>
 
       <section className="panel pet-levels-panel">
-        <div className="pet-levels">
-          {FIELDS.map((field) => (
-            <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
-              <span>
-                {field.label}
-                {field.secondary && <small> (facultatif)</small>}
-              </span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={field.min}
-                max={field.max}
-                step={1}
-                value={text[field.key]}
-                aria-invalid={errors[field.key] ? true : undefined}
-                onChange={(event) => setText((current) => ({ ...current, [field.key]: clampToMax(event.target.value, field.max) }))}
-              />
-              {errors[field.key] && <small className="warning" role="alert">{errors[field.key]}</small>}
-            </label>
-          ))}
+        {/* Left: what the player types (the two levels first, the optional XP already gained below).
+            Right: the result, with the Almanax switch that changes how it is reached. */}
+        <div className="pet-levels-inputs">
+          <div className="pet-levels">
+            {renderField(FIELDS[0])}
+            <span className="pet-levels-arrow" aria-hidden="true">→</span>
+            {renderField(FIELDS[1])}
+          </div>
+          {renderField(FIELDS[2])}
         </div>
-        {xp !== undefined && (
+        <div className="pet-levels-result">
           <p className="pet-xp-needed" role="status">
-            {xp > 0 ? (
-              <>XP nécessaire : <b>{numberFormat.format(xp)} XP</b></>
+            {xp === undefined ? (
+              <><span>XP nécessaire</span><b>—</b></>
+            ) : xp > 0 ? (
+              <><span>XP nécessaire</span><b>{numberFormat.format(xp)} XP</b></>
             ) : (
               'Aucune XP à donner : le niveau visé est déjà atteint.'
             )}
           </p>
-        )}
-        <label className="pet-almanax-switch">
-          <input
-            type="checkbox"
-            role="switch"
-            checked={almanax}
-            onChange={(event) => setAlmanax(event.target.checked)}
-          />
-          <span className="pet-almanax-switch-track" aria-hidden="true" />
-          <span>
-            Almanax du 23 juillet (+50 % d'XP)
-            {isPetXpAlmanaxDay() && <small> · c'est aujourd'hui</small>}
-          </span>
-        </label>
+          <label className="pet-almanax-switch">
+            <input
+              type="checkbox"
+              role="switch"
+              checked={almanax}
+              onChange={(event) => setAlmanax(event.target.checked)}
+            />
+            <span className="pet-almanax-switch-track" aria-hidden="true" />
+            <span>
+              Almanax du 23 juillet (+50 % d'XP)
+              {isPetXpAlmanaxDay() && <small> · c'est aujourd'hui</small>}
+            </span>
+          </label>
+        </div>
       </section>
 
       {plan && plan.xpNeeded > 0 && (

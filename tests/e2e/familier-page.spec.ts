@@ -29,7 +29,7 @@ async function openFamilier(page: Page) {
 test.describe('Familier page (specs/022)', () => {
   test('shows the XP needed and the cheapest resource', async ({ page }) => {
     await openFamilier(page);
-    await expect(page.getByText(/XP nécessaire/)).toContainText(/2\s859 XP/);
+    await expect(page.locator('.pet-xp-needed')).toContainText(/2\s859 XP/);
     const row = page.locator('li.pet-food-row').filter({ hasText: 'Peau de Rat' });
     await expect(row).toContainText(/10\s810/);
   });

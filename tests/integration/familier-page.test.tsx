@@ -66,9 +66,9 @@ describe('Familier page (specs/022)', () => {
       await openFamilier('personal');
       type('Niveau actuel', '50');
       type('Niveau visé', '60');
-      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 859 XP');
+      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 859 XP');
       type('XP déjà gagnée dans ce niveau (facultatif)', '150');
-      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 709 XP');
+      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 709 XP');
     });
 
     it('says there is no XP to give when the target is not above the current level', async () => {
@@ -144,7 +144,7 @@ describe('Familier page (specs/022)', () => {
       expect(pepite).toContain('1,5'); // XP per unit, boosted
       expect(pepite).toContain('1 906'); // 2 859 ÷ 1,5, rounded up
       expect(pepite).toContain('38 120');
-      expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 859 XP');
+      expect(normalize(document.querySelector('.pet-xp-needed')?.textContent)).toContain('2 859 XP');
     });
 
     it('narrows the list by resource name, accents and case ignored', async () => {
