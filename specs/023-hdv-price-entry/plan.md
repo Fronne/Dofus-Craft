@@ -45,7 +45,7 @@ prix strictement identique à la Recherche (FR-006)
 | Principe | Vérification | Statut |
 |---|---|---|
 | I. Données traçables | Correspondance type → HDV commitée avec source (« relevé en jeu ») et date ; `hdv-items.json` porte sa source, sa date et les types non rattachés ; aucun HDV deviné | ✅ |
-| II. Correction avant optimisation | Filtres, décompte et règle « objet utile » en fonctions pures testées ; script testé sur des cas limites (type non rattaché, certificats exclus, doublons) | ✅ |
+| II. Correction avant optimisation | Filtres, décompte et règle « objet utile » en fonctions pures testées ; sélection du script isolée dans `scripts/hdv-items-selection.mjs` et testée sur des cas limites (type non rattaché, certificats exclus, doublons) | ✅ |
 | III. Décisions explicables | Date et âge de chaque prix ; décompte « N sur M » ; note sur l'onglet Animaux indiquant que la page Familier n'utilise que les nourritures de son tableau | ✅ |
 | IV. Changements petits et cohérents | Extraction du champ de prix de la Recherche sans changement de comportement (nécessaire à FR-006) ; extraction du chargement au défilement de la page Prix (réutilisé) ; retrait de l'Accueil limité à la navigation | ✅ |
 | V. Données utilisateur | Aucune nouvelle donnée ; mêmes carnets et même partage communautaire qu'aujourd'hui | ✅ |
@@ -73,6 +73,7 @@ specs/023-hdv-price-entry/
 ```text
 scripts/
 ├── data/hdv-type-map.json            # NOUVEAU — correspondance validée en jeu
+├── hdv-items-selection.mjs           # NOUVEAU — règle de sélection pure (testée)
 └── build-hdv-items.mjs               # NOUVEAU — génère src/data/hdv-items.json
 
 src/
@@ -98,6 +99,7 @@ src/
 tests/
 ├── unit/hdv-domain.test.ts           # filtres, décompte, prix ancien
 ├── unit/hdv-items-data.test.ts       # cohérence du JSON généré (types rattachés, pas de certificat, pas de doublon)
+├── unit/hdv-items-selection.test.ts  # règle de sélection du script sur données factices
 ├── integration/hdv-page.test.tsx     # saisie → carnet → visible sur Recherche ; navigation
 └── e2e/hdv-price-entry.spec.ts       # parcours complet
 ```

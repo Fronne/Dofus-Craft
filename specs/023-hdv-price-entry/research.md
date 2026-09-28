@@ -34,7 +34,8 @@ recettes du client, 2 957 ingrédients distincts) ∪ ressources du tableau d'XP
 |---|---|---|
 | Ressources | tous les types de catégorie 2 sauf ceux listés ci-dessous (Ressource diverse 15, Fragment de carte 175, Os 47, Clef 84, Poil 54, Vêtement 164, Peau 59, Ressource de quête 312, Caution 197, Haïku 232, …) | ≈ 2 750 |
 | Consommables | tous les types de catégorie 1 : Fée d'artifice 74, Bière 37, Poisson comestible 49, Friandise 42, Potion 12, Boisson 79, Éklâme 310, Pain 33, Viande comestible 69, Potion de téléportation 43, Objet utilisable 94, Cadeau 89 | ≈ 130 |
-| Animaux | Nourriture pour familier 209 (**toute** celle qui est échangeable, FR-004b), Familier 18 (ingrédients seulement) | 35 + 1 |
+| Animaux | Nourriture pour familier 209 (**toute** celle qui est échangeable, FR-004b) | 35 |
+| Exclu (FR-004) | Familier 18 (un seul, ingrédient) | 1 |
 | Exclus (inutiles, décision du porteur du projet) | Certificat de Dragodinde 97 | 69 |
 | Hors périmètre (HDV Runes) | Rune de forgemagie 78, Rune de transcendance 211, Rune astrale 233, Potion de forgemagie 26, Orbe de forgemagie 189, Gravure de forgemagie 258 | 206 |
 | Hors périmètre (HDV Âmes, inutile au groupe) | Pierre d'âme spéciale non transformée 309 | 5 |

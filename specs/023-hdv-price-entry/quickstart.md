@@ -11,11 +11,11 @@
 
 1. **Navigation** : l'entrée « HDV » apparaît entre Prix et Familier (ordinateur et barre du bas sur
    mobile) ; l'entrée Accueil a disparu ; http://localhost:5173/accueil ouvre la Recherche.
-2. **Onglets** : Ressources ≈ 2 750 objets, Consommables ≈ 130, Animaux ≈ 36 (dont les 35
-   nourritures pour familier). Aucun certificat de dragodinde nulle part. Recharger la page rouvre
+2. **Onglets** : Ressources ≈ 2 750 objets, Consommables ≈ 130, Animaux = les 35
+   nourritures pour familier. Aucun certificat de dragodinde nulle part. Recharger la page rouvre
    le dernier onglet.
 3. **Saisie (mode personnel)** : onglet Animaux, saisir 1 500 pour « Croquette enrichie », quitter le
-   champ → « Dernière mise à jour : à l'instant ». Recharger → le prix est toujours là.
+   champ → « Dernière mise à jour » avec la date relative (quelques secondes). Recharger → le prix est toujours là.
 4. **Même prix partout** : saisir un prix pour un consommable ingrédient d'une recette, ouvrir cette
    recette sur la Recherche → même prix et même date. Modifier le prix sur la Recherche, revenir sur
    HDV → prix modifié.
