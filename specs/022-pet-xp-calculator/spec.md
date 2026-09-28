@@ -15,6 +15,11 @@ https://www.dofustool.com/tableau-xp-familier-dofus/ — **remplacées le 2026-0
 
 ## Revisions
 
+- 2026-09-28 : à la demande du porteur du projet, les informations en bas de la liste sont retirées
+  (nombre de ressources sans prix, source des données d'XP, avertissement « prix communautaires
+  indisponibles ») : FR-008 ne demande plus d'indiquer le nombre, FR-009 est retirée. Exception à
+  la constitution (principes I et III) acceptée par le porteur du projet pour ce petit groupe de
+  joueurs ; la source reste tracée dans `src/data/pet-xp-data.json` et dans research.md.
 - 2026-09-28 : le niveau actuel et l'**XP totale** du familier (celle du tableau de référence, 0 à
   179 592) sont deux champs liés, l'XP totale sous le niveau, à la place de l'« XP déjà gagnée dans
   ce niveau » : saisir un niveau remplit l'XP totale avec l'XP cumulée de ce niveau ; saisir une XP
@@ -92,23 +97,21 @@ et son coût total sont justes.
 
 ### User Story 3 - Comprendre d'où viennent les chiffres (Priority: P2)
 
-Le joueur voit la date et l'âge du prix utilisé pour chaque ressource, sait que les valeurs d'XP
-viennent d'un tableau communautaire, et sait combien de ressources du tableau ont été écartées faute
-de prix.
+Le joueur voit la date et l'âge du prix utilisé pour chaque ressource. (Depuis le 2026-09-28, la
+source des valeurs d'XP et le nombre de ressources écartées faute de prix ne sont plus affichés.)
 
 **Why this priority**: la constitution exige des recommandations explicables et des données
 traçables ; sans ce contexte, un prix très ancien pourrait fausser le conseil sans que le joueur le
 sache.
 
-**Independent Test**: vérifier que chaque ligne montre la date de son prix et qu'un texte indique la
-source des données d'XP et le nombre de ressources sans prix.
+**Independent Test**: vérifier que chaque ligne montre la date de son prix.
 
 **Acceptance Scenarios**:
 
 1. **Given** une ressource recommandée, **When** le joueur regarde sa ligne, **Then** il voit la date
    du prix utilisé, avec le même signalement des prix anciens que le reste de l'app.
 2. **Given** des ressources du tableau sans prix connu, **When** la liste s'affiche, **Then** elles n'y
-   figurent pas et la page indique combien ont été écartées.
+   figurent pas.
 
 ---
 
@@ -152,9 +155,8 @@ source des données d'XP et le nombre de ressources sans prix.
 - **FR-007b**: Le joueur MUST pouvoir filtrer la liste par nom de ressource (sans tenir compte des
   accents ni de la casse) ; le filtre s'applique avant le tri et la limite de 10 lignes. Si aucune
   ressource avec un prix ne correspond, la page le dit et indique combien correspondent sans prix.
-- **FR-008**: L'app MUST exclure les ressources sans prix connu et indiquer leur nombre.
-- **FR-009**: L'app MUST indiquer la source des données d'XP (tableau communautaire de
-  Dafous) et que ces valeurs peuvent être incomplètes.
+- **FR-008**: L'app MUST exclure les ressources sans prix connu.
+- **FR-009**: *(retirée le 2026-09-28)*
 - **FR-010**: Les résultats MUST se recalculer dès que l'XP totale, le niveau visé, le serveur ou le
   mode de prix change.
 - **FR-011**: L'app MUST conserver sur l'appareil la dernière XP totale et le dernier niveau visé

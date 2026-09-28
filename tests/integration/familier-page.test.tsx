@@ -31,7 +31,6 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
-import { PET_FOODS } from '../../src/domain/pet-xp';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
 
 const normalize = (value: string | null | undefined) => (value ?? '').replace(/[\u202f\u00a0]/g, ' ');
@@ -122,7 +121,7 @@ describe('Familier page (specs/022)', () => {
   });
 
   describe('US2 / US3 — cheapest resources', () => {
-    it('lists priced resources by total cost with quantity, date, unpriced count and source', async () => {
+    it('lists priced resources by total cost with quantity and date, without the notes below the list', async () => {
       const carnet = resourcePricesFor('personal');
       await carnet.save('mikhal', '8482', 10); // Peau de Rat: 1 081 × 10 = 10 810
       await carnet.save('mikhal', '14635', 20); // Pépite: 2 859 × 20 = 57 180
@@ -136,14 +135,13 @@ describe('Familier page (specs/022)', () => {
       expect(peau).toContain('10 810');
       expect(normalize(rowOf('Pépite')?.textContent)).toContain('57 180');
       expect(rowOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
-      expect(normalize(screen.getByText(/sans prix connu/).textContent)).toContain(`${new Intl.NumberFormat('fr-FR').format(PET_FOODS.length - 3).replace(/[\u202f\u00a0]/g, ' ')} ressources`);
+      expect(screen.queryByText(/sans prix connu|Dafous|indisponibles/)).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Trier par XP' }));
       expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par XP' }));
       expect(names()).toEqual(['Rune Pa Vi', 'Pépite', 'Peau de Rat']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par Ressource' }));
       expect(names()).toEqual(['Peau de Rat', 'Pépite', 'Rune Pa Vi']);
-      expect(screen.getByRole('link', { name: /Dafous/ })).toHaveAttribute('href', 'https://dafous.app/pet-xp');
     });
 
     it('recomputes quantities and totals with the Almanax of 23 July switch (FR-012)', async () => {

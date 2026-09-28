@@ -17,7 +17,6 @@ import {
   PET_XP_CURVE,
   levelForTotalXp,
   maxTotalXp,
-  PET_XP_SOURCE,
   ALMANAX_PET_XP_MULTIPLIER,
   isPetXpAlmanaxDay,
   DEFAULT_PET_FOOD_SORT,
@@ -168,7 +167,7 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valid, levels.totalXp, levels.targetLevel]);
 
-  const { status, prices, communityUnavailable } = usePetFoodPrices(serverId, priceMode);
+  const { status, prices } = usePetFoodPrices(serverId, priceMode);
   // The name search narrows the resources before sorting and keeping the first 10 lines.
   const normalizedQuery = normalizeSearchText(query);
   const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
@@ -289,21 +288,6 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                 </>
               )}
             </>
-          )}
-          {status === 'ready' && (
-            <div className="pet-food-notes">
-              {communityUnavailable && (
-                <p className="warning">Prix communautaires indisponibles pour le moment : seuls vos prix sont utilisés.</p>
-              )}
-              <p>
-                {numberFormat.format(unpricedCount)} {unpricedCount === 1 ? 'ressource sans prix connu n’est pas proposée' : 'ressources sans prix connu ne sont pas proposées'}.
-              </p>
-              <p>
-                XP par ressource : <a href={PET_XP_SOURCE.url} target="_blank" rel="noreferrer">{PET_XP_SOURCE.name}</a>
-                {' '}(relevé du {new Date(PET_XP_SOURCE.retrievedAt).toLocaleDateString('fr-FR')}) ; ces valeurs communautaires peuvent être
-                incomplètes. XP par niveau : fichiers du jeu.
-              </p>
-            </div>
           )}
         </section>
       )}

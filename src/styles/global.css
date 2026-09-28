@@ -1209,8 +1209,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 .profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
 .profit-row.pet-food-row .profit-row-main { cursor: default; }
-.pet-food-notes { margin-top: var(--space-4); font-size: .82rem; color: var(--text-muted); }
-.pet-food-notes p { margin: var(--space-1) 0; }
 @media (max-width: 640px) {
   .profit-row.pet-food-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
