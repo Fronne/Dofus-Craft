@@ -192,8 +192,13 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
       const response = await fetch(`${API_URL}/community-prices?${params.toString()}`, readInit());
       if (!response.ok) return undefined;
       const payload: unknown = await response.json();
-      if (!isRecord(payload) || !Array.isArray(payload.prices) || !payload.prices.every(isCommunityPriceRow)) return undefined;
-      return payload.prices;
+      if (!isRecord(payload) || !Array.isArray(payload.prices)) return undefined;
+      // The Worker gives the server once, at the top of the answer, not on each price: each row
+      // takes the requested server before being checked like a one-resource read. Requiring it on
+      // every row made every batched read "unavailable" in production (fixed 2026-09-28).
+      const prices: unknown[] = payload.prices.map((row) => (isRecord(row) ? { serverId, ...row } : row));
+      if (!prices.every(isCommunityPriceRow)) return undefined;
+      return prices;
     } catch {
       return undefined;
     }

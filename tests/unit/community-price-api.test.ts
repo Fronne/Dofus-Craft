@@ -23,6 +23,22 @@ describe('community price API service (Cloudflare Worker client)', () => {
       await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'unavailable' });
     });
 
+    // The real Worker answer (worker/src/contribution.ts `communityPricesResponse`): the server is
+    // given once at the top, never on each price. Missing it made every batched read unavailable.
+    it('accepts a batched answer whose prices carry no serverId, as the Worker sends it', async () => {
+      const { communityPricesResponse } = await import('../../worker/src/contribution');
+      const { createTestD1 } = await import('../support/sqlite-d1');
+      const { d1, insert } = createTestD1();
+      insert({ resourceId: '11929', amountKamas: 1437, createdAt: new Date(Date.now() - 6 * 86_400_000).toISOString(), deviceId: 'a' });
+      insert({ resourceId: '11929', amountKamas: 1848, createdAt: new Date(Date.now() - 3_600_000).toISOString(), deviceId: 'a' });
+      const { body } = await communityPricesResponse(d1, new URL('https://api.test/community-prices?serverId=mikhal&resourceIds=11929'));
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })));
+
+      const lookup = await getCommunityPrices(['11929'], 'mikhal');
+      expect(lookup.status).toBe('found');
+      expect(lookup.status === 'found' && lookup.prices[0]).toMatchObject({ resourceId: '11929', serverId: 'mikhal', latestAmountKamas: 1848 });
+    });
+
     it('does the same for a batched read (specs/024)', async () => {
       const complete = { resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4, latestAmountKamas: 1100, latestContributionAt: '2026-09-28T13:51:28.940Z' };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ serverId: 's1', prices: [complete] }), { status: 200 })));
