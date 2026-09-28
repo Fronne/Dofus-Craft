@@ -19,7 +19,6 @@ export function ResourcePriceInput({
   subtotalKamas,
   history,
   caption,
-  historyNextToName,
 }: {
   resource: Resource;
   quantity: number;
@@ -55,8 +54,6 @@ export function ResourcePriceInput({
   history?: ReactNode;
   // specs/023: shown instead of « × quantity » where a quantity means nothing (HDV page: the item type).
   caption?: ReactNode;
-  // specs/023: the history button right after the resource name instead of next to the quantity.
-  historyNextToName?: boolean;
 }) {
   const valid = isValidKamas(value);
   const [editing, setEditing] = useState(false);
@@ -81,18 +78,10 @@ export function ResourcePriceInput({
   return (
     <label className={`price-line${priceAgeClass}`} htmlFor={inputId}>
       <span className="price-resource">
-        {historyNextToName ? (
-          <span className="price-resource-name-row">
-            <ResourceDisplay resource={resource} copyable />
-            {history}
-          </span>
-        ) : (
-          <ResourceDisplay resource={resource} copyable />
-        )}
+        <ResourceDisplay resource={resource} copyable />
       </span>
       <span className="price-resource-quantity">
         {caption ?? <>× {quantity}</>}
-        {!historyNextToName && history}
       </span>
       {updatedAt && (
         <small>
@@ -104,64 +93,68 @@ export function ResourcePriceInput({
           )}
         </small>
       )}
-      <span className="kamas-input-wrap">
-        <input
-          id={inputId}
-          ref={inputRef}
-          inputMode="numeric"
-          aria-invalid={!valid}
-          value={formatKamasInput(value)}
-          onChange={(event) => {
-            // Marking as "editing" here too (not just on the edit-button click) matters for a
-            // field that started empty: typing its first character makes `value` truthy, and
-            // without this the very next render would compute `locked = true` and cut the player
-            // off mid-keystroke. Blur is still what re-locks it once they're done.
-            // Capturing the pre-edit value here too (only on the very first keystroke of an edit
-            // session, guarded by `!editing`) lets onBlur below tell a real edit apart from a
-            // no-op one for a field that started empty (FR-020) — `value` here is still the prop
-            // from before this keystroke, since the parent hasn't re-rendered yet.
-            if (lockWhenFilled && !editing) lastCommittedValueRef.current = value;
-            if (lockWhenFilled) setEditing(true);
-            onChange(normalizeKamasInput(event.target.value));
-          }}
-          onBlur={() => {
-            onBlur?.(value);
-            if (!lockWhenFilled) return;
-            setEditing(false);
-            // Only an actual edit session (edit button clicked, or typing started) can commit.
-            // Focusing the locked field alone — e.g. double-clicking the row — must not: its
-            // `lastCommittedValueRef` may still hold the value from mount (often empty, before the
-            // carnet or the community prefill arrived), so comparing against it would treat a
-            // price the player never touched as a new contribution.
-            if (!editing) return;
-            if (value === lastCommittedValueRef.current) return;
-            const previousValue = lastCommittedValueRef.current;
-            const result = onCommit?.(value);
-            if (result) {
-              void result.then((outcome) => {
-                if (outcome === 'rejected') onChange(previousValue);
-              });
-            }
-          }}
-          placeholder="Prix unitaire"
-          readOnly={locked}
-        />
-        {value && !locked && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
-        {locked && (
-          <button
-            type="button"
-            className="kamas-input-edit-button"
-            aria-label="Modifier ce prix"
-            onClick={(event) => {
-              event.preventDefault();
-              lastCommittedValueRef.current = value;
-              setEditing(true);
-              inputRef.current?.focus();
+      {/* The price field, with the price-history button right after it. */}
+      <span className="price-input-cell">
+        <span className="kamas-input-wrap">
+          <input
+            id={inputId}
+            ref={inputRef}
+            inputMode="numeric"
+            aria-invalid={!valid}
+            value={formatKamasInput(value)}
+            onChange={(event) => {
+              // Marking as "editing" here too (not just on the edit-button click) matters for a
+              // field that started empty: typing its first character makes `value` truthy, and
+              // without this the very next render would compute `locked = true` and cut the player
+              // off mid-keystroke. Blur is still what re-locks it once they're done.
+              // Capturing the pre-edit value here too (only on the very first keystroke of an edit
+              // session, guarded by `!editing`) lets onBlur below tell a real edit apart from a
+              // no-op one for a field that started empty (FR-020) — `value` here is still the prop
+              // from before this keystroke, since the parent hasn't re-rendered yet.
+              if (lockWhenFilled && !editing) lastCommittedValueRef.current = value;
+              if (lockWhenFilled) setEditing(true);
+              onChange(normalizeKamasInput(event.target.value));
             }}
-          >
-            <Icon name="edit" size={14} />
-          </button>
-        )}
+            onBlur={() => {
+              onBlur?.(value);
+              if (!lockWhenFilled) return;
+              setEditing(false);
+              // Only an actual edit session (edit button clicked, or typing started) can commit.
+              // Focusing the locked field alone — e.g. double-clicking the row — must not: its
+              // `lastCommittedValueRef` may still hold the value from mount (often empty, before the
+              // carnet or the community prefill arrived), so comparing against it would treat a
+              // price the player never touched as a new contribution.
+              if (!editing) return;
+              if (value === lastCommittedValueRef.current) return;
+              const previousValue = lastCommittedValueRef.current;
+              const result = onCommit?.(value);
+              if (result) {
+                void result.then((outcome) => {
+                  if (outcome === 'rejected') onChange(previousValue);
+                });
+              }
+            }}
+            placeholder="Prix unitaire"
+            readOnly={locked}
+          />
+          {value && !locked && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
+          {locked && (
+            <button
+              type="button"
+              className="kamas-input-edit-button"
+              aria-label="Modifier ce prix"
+              onClick={(event) => {
+                event.preventDefault();
+                lastCommittedValueRef.current = value;
+                setEditing(true);
+                inputRef.current?.focus();
+              }}
+            >
+              <Icon name="edit" size={14} />
+            </button>
+          )}
+        </span>
+        {history}
       </span>
       {subtotalKamas !== undefined
         ? subtotalKamas !== null && <b className="price-resource-formatted">{formatKamas(subtotalKamas)}</b>
