@@ -36,10 +36,12 @@ import { usePetFoodPrices } from './usePetFoodPrices';
 const numberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 });
 
 type Field = keyof PetLevelsInput;
-const FIELDS: { key: Field; label: string; min: number; max?: number }[] = [
+// The two levels come first; the XP already gained, optional and of lesser importance, comes last
+// and is shown more discreetly.
+const FIELDS: { key: Field; label: string; min: number; max?: number; secondary?: boolean }[] = [
   { key: 'currentLevel', label: 'Niveau actuel', min: PET_MIN_LEVEL, max: PET_MAX_LEVEL - 1 },
-  { key: 'xpInLevel', label: 'XP déjà gagnée dans ce niveau', min: 0 },
   { key: 'targetLevel', label: 'Niveau visé', min: PET_MIN_LEVEL + 1, max: PET_MAX_LEVEL },
+  { key: 'xpInLevel', label: 'XP déjà gagnée dans ce niveau', min: 0, secondary: true },
 ];
 
 const toText = (levels: PetLevelsInput): Record<Field, string> => ({
@@ -167,8 +169,11 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
       <section className="panel pet-levels-panel">
         <div className="pet-levels">
           {FIELDS.map((field) => (
-            <label key={field.key} className="pet-level-field">
-              <span>{field.label}</span>
+            <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
+              <span>
+                {field.label}
+                {field.secondary && <small> (facultatif)</small>}
+              </span>
               <input
                 type="number"
                 inputMode="numeric"

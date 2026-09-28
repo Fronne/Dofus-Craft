@@ -1175,10 +1175,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 
 /* specs/022-pet-xp-calculator: the Familier page. */
-.pet-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-3); }
+.pet-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--space-3); align-items: end; }
 .pet-level-field { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
 .pet-level-field input { min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; }
 .pet-level-field .warning { margin: 0; font-size: .78rem; }
+.pet-level-field--secondary { font-size: .78rem; opacity: .75; }
+.pet-level-field--secondary input { min-height: 34px; padding: .3rem .6rem; font-size: .85rem; }
+.pet-level-field--secondary small { display: inline; margin: 0; font-size: inherit; }
 .pet-xp-needed { margin: var(--space-4) 0 0; font-size: 1.05rem; }
 .pet-xp-needed b { color: var(--gold-bright); font-variant-numeric: tabular-nums; }
 /* specs/022 FR-012: Almanax of 23 July switch (+50 % pet XP). */

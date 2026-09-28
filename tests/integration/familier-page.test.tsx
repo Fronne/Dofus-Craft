@@ -67,7 +67,7 @@ describe('Familier page (specs/022)', () => {
       type('Niveau actuel', '50');
       type('Niveau visé', '60');
       expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 859 XP');
-      type('XP déjà gagnée dans ce niveau', '150');
+      type('XP déjà gagnée dans ce niveau (facultatif)', '150');
       expect(normalize(screen.getByText(/XP nécessaire/).textContent)).toContain('2 709 XP');
     });
 
@@ -90,7 +90,7 @@ describe('Familier page (specs/022)', () => {
     it('shows the most XP the current level can hold', async () => {
       await openFamilier('personal');
       type('Niveau actuel', '50');
-      type('XP déjà gagnée dans ce niveau', '500');
+      type('XP déjà gagnée dans ce niveau (facultatif)', '500');
       expect(screen.getByRole('alert')).toHaveTextContent('179');
     });
 
