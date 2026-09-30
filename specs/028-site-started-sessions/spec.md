@@ -24,6 +24,10 @@ Choix faits par le porteur du projet avant la spec :
   session ouverte par salon, comme dans le bot.
 - Q: Dans quel salon le bot ouvre-t-il une session démarrée sur le site ? → A: Le joueur choisit le
   salon à chaque démarrage, parmi les salons que le bot a déjà utilisés, sans session ouverte.
+- Q: Comment le site transmet-il ses demandes au bot (Botomoux, le bot Discord de l'ami du groupe) ?
+  → A: Le bot interroge le site **toutes les 10 secondes** (option retenue face à un appel direct du
+  bot par le site, qui demanderait une adresse publique au bot, ou à un message posté dans Discord).
+  Coût : environ 8 640 requêtes par jour, soit ~9 % de la limite gratuite du Worker.
 
 ## Contexte
 
@@ -221,7 +225,7 @@ dans Discord.
 ### Measurable Outcomes
 
 - **SC-001**: Une session démarrée ou arrêtée sur le site est ouverte ou fermée dans Discord en moins
-  de 30 secondes quand le bot fonctionne.
+  de 15 secondes quand le bot fonctionne (intervalle de 10 secondes, plus le temps d'exécution).
 - **SC-002**: Aucune session n'est ouverte deux fois (une sur le site, une dans Discord) pour une même
   demande : 100 % des cas.
 - **SC-003**: Aucune capture postée après un arrêt sur le site n'est comptée dans la session arrêtée.
@@ -230,7 +234,8 @@ dans Discord.
 
 ## Assumptions
 
-- Le bot interroge le site toutes les 5 à 10 secondes ; il garde son propre état de session comme
+- « Le bot » désigne Botomoux, le bot Discord de l'ami du groupe ; ses modifications sont faites par
+  son auteur. Le bot interroge le site toutes les 10 secondes ; il garde son propre état de session comme
   aujourd'hui (`data.json`) et l'aligne sur les demandes qu'il exécute.
 - Le contrat du bot (specs/025, `contracts/fm-bot-api.md`) évolue sans rien casser : l'événement
   `session-start` gagne un champ `author` (le joueur qui a tapé `/fmstart`) ; un bot pas encore mis à
