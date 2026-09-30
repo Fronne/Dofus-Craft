@@ -70,6 +70,17 @@ Le porteur du projet a explicitement écarté tout calcul de brisage.
 - Q: Comment savoir sur quel serveur Dofus un achat envoyé par le bot a été fait ? → A: Par le
   serveur Dofus choisi sur le profil du joueur (déduit de la réponse sur les profils ; remplace
   la question 3 de la première version de cette spec).
+- Q: Que faire d'un achat envoyé par le bot dont le prix unitaire est très éloigné des relevés du
+  groupe ? → A: Il compte dans les dépenses, mais il est exclu des prix des runes.
+- Q: Un achat qui n'est pas une rune met-il à jour le prix de cet objet ? → A: Oui, s'il s'agit
+  d'une ressource du catalogue au nom exact ; jamais pour un équipement.
+- Q: Combien de temps garder les sessions FM et les achats ? → A: Indéfiniment, jusqu'à ce que le
+  joueur supprime son profil ; les prix qui en sont tirés suivent la règle actuelle des 90 jours.
+- Q: Peut-on corriger ou supprimer sur le site un achat mal lu par le bot ? → A: Non ; le site
+  affiche exactement ce que le bot a compté, et une erreur se corrige dans Discord (`/fmreset`).
+- Q: Sur la page Forgemagie, quel serveur sert à afficher le prix des runes ? → A: Le sélecteur de
+  serveur du site, comme les autres pages ; le serveur du profil ne sert qu'à ranger les achats
+  envoyés par le bot, et il est pré-rempli avec celui du sélecteur à la première connexion.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -178,13 +189,13 @@ Il peut chercher une rune par son nom et filtrer par stat.
 stories 2 et 5 pour être alimenté.
 
 **Independent Test**: après la session d'exemple (joueur dont le serveur de profil est le serveur
-S), la liste des runes du serveur S affiche Rune Do Air à 1 587 kamas, avec la date et l'origine
+S), avec le serveur S choisi dans le sélecteur du site, la liste des runes affiche Rune Do Air à 1 587 kamas, avec la date et l'origine
 « Bot Discord ».
 
 **Acceptance Scenarios**:
 
-1. **Given** une rune achetée pendant une session, **When** un joueur ouvre la liste des runes de
-   ce serveur, **Then** la rune affiche le prix unitaire de cet achat, sa date et son origine.
+1. **Given** une rune achetée pendant une session, **When** un joueur ouvre la liste des runes avec
+   ce serveur choisi dans le sélecteur du site, **Then** la rune affiche le prix unitaire de cet achat, sa date et son origine.
 2. **Given** une rune sans aucun prix, **When** le joueur ouvre la liste, **Then** la ligne est
    affichée sans valeur, jamais avec un prix estimé.
 3. **Given** une rune dont le prix date trop, **When** le joueur ouvre la liste, **Then** elle est
@@ -235,13 +246,20 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
 - **Même capture postée deux fois dans Discord** (deux messages distincts) : le bot la compte deux
   fois, comme aujourd'hui ; le site reflète ce que le bot a compté. Seul un **renvoi** du même
   message est ignoré (FR-020).
-- **Prix très éloigné des relevés du groupe envoyé par le bot** : [NEEDS CLARIFICATION: le bot ne
-  peut pas faire confirmer le prix — l'achat compte-t-il quand même dans le prix de la rune (écart
-  tracé comme aujourd'hui), est-il exclu des prix tout en restant dans les dépenses, ou mis de côté
-  pour qu'un joueur le confirme sur le site ?]
-- **Achat d'un objet qui n'est pas une rune** (même format de ligne) : il compte dans les dépenses
-  de la session, comme dans le bot aujourd'hui ; pour les prix : [NEEDS CLARIFICATION: ignoré, ou
-  enregistré comme prix de cet objet s'il est une ressource connue du catalogue ?]
+- **Prix très éloigné des relevés du groupe envoyé par le bot** (écart de plus de 25 % avec la
+  médiane du groupe, par exemple une erreur de lecture « 158 680 » au lieu de « 15 868 ») : l'achat
+  compte dans les dépenses de la session, mais il ne crée pas de prix de rune (FR-019). Sans médiane
+  connue pour la rune, l'achat crée un prix normalement.
+- **Achat d'un objet qui n'est pas une rune** (même format de ligne, par exemple
+  `10 x [Bois de Frêne] (2 400 kamas)`) : il compte dans les dépenses de la session, comme dans le
+  bot aujourd'hui. S'il s'agit d'une ressource du catalogue au nom exact, il crée aussi un prix de
+  cette ressource, avec les mêmes règles qu'une rune (FR-019). Un achat d'équipement ne crée aucun
+  prix : ses jets varient d'un exemplaire à l'autre.
+- **Achat mal lu par le bot** (quantité ou total faux) : le site l'affiche tel que le bot l'a compté,
+  sans possibilité de le corriger ni de le supprimer sur le site ; la correction se fait dans
+  Discord, en remettant la session à zéro (`/fmreset`) puis en repostant les captures. Un prix de
+  ressource faux qui en découlerait est remplacé par le relevé suivant du groupe, comme tout prix
+  partagé (specs/024).
 - **Nom de rune mal lu par le bot** (« Rune Do Alr ») : l'achat compte dans les dépenses sous ce nom,
   mais ne crée aucun prix de rune, faute de correspondance exacte avec le catalogue.
 - **Joueur qui quitte le serveur Discord du groupe** : il ne peut plus se connecter ; son profil et
@@ -271,7 +289,10 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
 - **FR-004**: Le profil MUST contenir uniquement : l'identifiant Discord, le pseudo et l'avatar
   Discord, le serveur Dofus choisi et le réglage de visibilité. Le système MUST NOT demander ni
   garder d'autre information Discord (adresse e-mail, liste d'amis, messages…).
-- **FR-005**: Le joueur MUST pouvoir choisir et changer son serveur Dofus sur son profil.
+- **FR-005**: Le joueur MUST pouvoir choisir et changer son serveur Dofus sur son profil. Ce serveur
+  MUST servir uniquement à ranger les achats envoyés par le bot et importés sur le site ; il MUST
+  être pré-rempli avec le serveur actif du sélecteur du site à la première connexion. L'affichage
+  des prix MUST suivre le sélecteur du site.
 - **FR-006**: Le profil MUST être public par défaut ; le joueur MUST pouvoir le passer en privé et
   revenir en public à tout moment.
 - **FR-007**: Le joueur MUST pouvoir se déconnecter, et MUST pouvoir supprimer son profil et tous
@@ -289,8 +310,12 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   quantité, le total et le prix moyen par unité.
 - **FR-011**: Les totaux affichés MUST être identiques à ceux que le bot affiche dans Discord pour
   la même session.
-- **FR-012**: Le système MUST conserver les sessions terminées ; une remise à zéro MUST effacer les
-  achats de la session, comme dans le bot.
+- **FR-012**: Le système MUST conserver les sessions terminées et les achats sans limite de durée,
+  jusqu'à la suppression du profil du joueur (FR-007) ; une remise à zéro MUST effacer les achats
+  de la session, comme dans le bot. Les prix de ressource tirés de ces achats MUST suivre la règle
+  de conservation actuelle des prix partagés (90 jours), indépendamment des achats.
+- **FR-012b**: Le site MUST NOT permettre de modifier ni de supprimer un achat reçu du bot, en dehors
+  de la suppression complète du profil (FR-007) ; il MUST afficher exactement ce que le bot a compté.
 - **FR-013**: Un achat d'un joueur Discord qui n'a pas de profil sur le site MUST être conservé et
   rattaché à son identifiant Discord, puis apparaître sur son profil dès sa première connexion.
 
@@ -309,16 +334,20 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
 **Prix des runes**
 
 - **FR-017**: La page MUST lister les runes de forgemagie du catalogue, avec l'icône du jeu, le nom,
-  le dernier prix unitaire sur le serveur Dofus du joueur connecté, sa date et son origine
+  le dernier prix unitaire sur le serveur actif du sélecteur du site (comme les autres pages), sa
+  date et son origine
   (« Bot Discord », « Capture », « Saisie manuelle »). Elle MUST permettre de chercher par nom et de
   filtrer par stat.
 - **FR-018**: Le prix d'une rune MUST être un prix de ressource ordinaire, partagé avec le groupe et
   soumis aux règles existantes : dernier prix (specs/024), prix périmés (specs/008), historique
   (specs/017, specs/018), confirmation d'un prix très différent pour une saisie sur le site
   (specs/007). Il MUST être utilisé par les autres pages qui en ont besoin.
-- **FR-019**: Un achat MUST créer un prix de rune seulement si son nom correspond exactement à une
-  rune du catalogue et si le serveur Dofus du joueur est connu. Le système MUST NOT inventer ni
-  estimer de prix.
+- **FR-019**: Un achat MUST créer un prix de ressource seulement si son nom correspond exactement à
+  une ressource du catalogue (rune ou autre ressource) et si le serveur Dofus du joueur est connu.
+  Un achat d'équipement MUST NOT créer de prix. Un achat envoyé par le bot dont le prix unitaire
+  s'écarte de plus de 25 % de la médiane du groupe pour cette ressource et ce serveur (même seuil
+  que specs/007) MUST NOT créer de prix, mais MUST rester compté dans les dépenses. Le système
+  MUST NOT inventer ni estimer de prix.
 - **FR-020**: Un même événement envoyé plusieurs fois par le bot (même message Discord) MUST NOT
   être compté plusieurs fois, ni dans les dépenses ni dans les prix.
 - **FR-021**: Le système MUST NOT afficher de nombre de contributions sur les lignes de prix (règle
@@ -333,8 +362,8 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
 - **FR-023**: Un joueur connecté MUST pouvoir coller ou déposer une capture sur la page ; le système
   MUST afficher chaque achat lu avant tout enregistrement, et le joueur MUST pouvoir corriger la
   rune, la quantité et le total, écarter une ligne, puis valider.
-- **FR-024**: Le système MUST NOT enregistrer une ligne importée dont la rune n'est pas identifiée
-  par un nom exact ou par un choix du joueur.
+- **FR-024**: Le système MUST NOT enregistrer une ligne importée dont la ressource (rune ou autre
+  ressource) n'est pas identifiée par un nom exact ou par un choix du joueur.
 - **FR-025**: La capture MUST être lue sur l'appareil du joueur et MUST NOT être envoyée ni
   conservée ; seuls les achats validés sont enregistrés, au nom du joueur connecté.
 
