@@ -180,7 +180,8 @@ profil affiche 150 000 kamas au total et les deux sessions avec leur montant.
 
 ### User Story 4 - Consulter le prix des runes (Priority: P2)
 
-La page Forgemagie liste les runes avec leur dernier prix unitaire sur le serveur du joueur, la date
+La page Forgemagie liste les runes avec leur dernier prix unitaire sur le serveur choisi dans le
+sélecteur du site, la date
 de ce prix et son origine (bot Discord, capture sur le site, saisie manuelle). Les prix viennent
 des achats relevés par le bot et par les captures ; le joueur peut aussi saisir un prix à la main.
 Il peut chercher une rune par son nom et filtrer par stat.
@@ -271,6 +272,12 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   aujourd'hui ; les captures traitées pendant la panne ne sont pas sur le site (le bot peut les
   renvoyer plus tard, sans double comptage grâce à FR-020).
 - **Capture illisible ou qui n'est pas une image** : message clair, rien n'est enregistré.
+- **Plusieurs lignes identiques sur une capture** (par exemple quatre fois
+  `10 x [Rune Do Air] (15 868 kamas)`) : ce sont des lots achetés séparément ; chaque ligne compte,
+  sur le site comme dans le bot (40 runes, 63 472 kamas).
+- **Import d'une capture en Mode personnel** : les achats validés comptent dans les dépenses du
+  profil, mais aucun prix n'est partagé avec le groupe ; les prix sont gardés sur l'appareil, comme
+  une saisie manuelle en Mode personnel. Les prix envoyés par le bot restent des prix partagés.
 - **Session très longue ou avec beaucoup de runes** : toutes les runes sont listées, sans limite
   d'affichage (le bot, lui, découpe en blocs de 25).
 
