@@ -135,7 +135,7 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
       setMessage({
         tone: 'error',
         text: result.status === 'error' && result.code === 'no-server'
-          ? 'Choisis d’abord ton serveur Dofus dans l’onglet Profil.'
+          ? 'Choisis d’abord ton serveur Dofus ci-dessus.'
           : 'L’import n’a pas pu être enregistré. Réessaie.',
       });
       return;

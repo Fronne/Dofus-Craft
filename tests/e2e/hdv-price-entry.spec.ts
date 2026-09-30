@@ -44,4 +44,20 @@ test.describe('HDV page (specs/023)', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });
+
+  test('lists the runes in their own tab, without logging in, with the origin of a shared price (specs/026)', async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem('craftcheck-price-mode-choice', 'community'));
+    await page.route('**/community-prices?*', (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ serverId: 'mikhal', prices: [{
+        resourceId: '11663', medianAmountKamas: 1587, sampleSize: 1, lastContributionAt: '2026-09-30T18:05:00.000Z',
+        latestAmountKamas: 1587, latestContributionAt: '2026-09-30T18:05:00.000Z', latestOrigin: 'bot',
+      }] }),
+    }));
+    await openHdv(page);
+    await page.getByRole('tab', { name: 'Runes' }).click();
+    await expect(page.getByText('sur 105')).toBeVisible();
+    await page.getByRole('searchbox', { name: 'Rechercher une rune' }).fill('Rune Do Air');
+    await expect(page.locator('li.hdv-row').filter({ hasText: 'Rune Do Air' }).first()).toContainText('Bot Discord');
+  });
 });

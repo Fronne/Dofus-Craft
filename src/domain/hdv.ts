@@ -6,12 +6,14 @@ import type { ResourcePrice } from './types';
 // src/data/hdv-items.json (research.md §1-§3); everything here is pure so it can be tested on its
 // own (constitution, principe II).
 
-export type HdvId = 'resources' | 'consumables' | 'animals';
+// specs/026-hdv-rune-prices: 'runes' lists src/data/rune-items.json, not the items of hdv-items.json.
+export type HdvId = 'resources' | 'consumables' | 'animals' | 'runes';
 
 export const HDV_TABS: { id: HdvId; label: string }[] = [
   { id: 'resources', label: 'Ressources' },
   { id: 'consumables', label: 'Consommables' },
   { id: 'animals', label: 'Créatures' },
+  { id: 'runes', label: 'Runes' },
 ];
 
 export type HdvItem = { id: string; name: string; imageUrl?: string; typeId: number; hdv: HdvId };
@@ -57,7 +59,7 @@ export type HdvPriceFilter = 'all' | 'missing' | 'old';
  * FR-010: `missing` keeps the items with no entry in the active mode's carnet, `old` those whose
  * price is flagged as old by the same rule as the Recherche page (stale or expired).
  */
-export function filterByPrice(items: HdvItem[], prices: Record<string, ResourcePrice>, filter: HdvPriceFilter, now: Date = new Date()): HdvItem[] {
+export function filterByPrice<T extends { id: string }>(items: T[], prices: Record<string, ResourcePrice>, filter: HdvPriceFilter, now: Date = new Date()): T[] {
   if (filter === 'all') return items;
   if (filter === 'missing') return items.filter((item) => !prices[item.id]);
   return items.filter((item) => {
@@ -69,6 +71,6 @@ export function filterByPrice(items: HdvItem[], prices: Record<string, ResourceP
 }
 
 /** FR-010: how many items of the tab have a price, whatever the filters. */
-export function countPriced(items: HdvItem[], prices: Record<string, ResourcePrice>): { priced: number; total: number } {
+export function countPriced<T extends { id: string }>(items: T[], prices: Record<string, ResourcePrice>): { priced: number; total: number } {
   return { priced: items.filter((item) => prices[item.id]).length, total: items.length };
 }

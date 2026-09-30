@@ -37,16 +37,20 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Objets suivis** : suivre des objets et les ranger en listes.
 - **Bandeau d'information** : un message (Info ou Important, avec une date de fin facultative)
   publié depuis la page d'administration, affiché en haut du site ; chaque joueur peut le fermer.
+- **Page HDV** : relever les prix d'un hôtel des ventes en un seul passage, un onglet par HDV
+  (Ressources, Consommables, Créatures, Runes), avec recherche, filtres et compteur de prix connus.
+  L'onglet Runes filtre par stat et indique l'origine du dernier prix partagé (« Bot Discord »,
+  « Capture », « Saisie manuelle »).
 - **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
   leur compte Discord (le reste du site reste sans compte).
   - Les **sessions FM** du bot Discord du groupe y sont gardées : total, dépense de chaque joueur, et
     détail des runes achetées avec leur prix moyen, les mêmes chiffres que le résumé du bot.
   - Chaque joueur a un **profil** avec ses dépenses. Il est public par défaut ; un profil privé
     n'est visible que par son propriétaire, et son nom est masqué dans les sessions.
-  - Le **prix des runes** est tiré des achats envoyés par le bot, avec sa date et son origine
-    (« Bot Discord », « Capture », « Saisie manuelle »). Un prix trop éloigné des relevés du groupe
-    compte dans les dépenses, mais pas dans les prix.
-  - On peut aussi **coller une capture du chat** sur le site : elle est lue sur l'appareil (jamais
+  - Les achats envoyés par le bot alimentent le **prix des runes**, affiché dans l'onglet Runes de la
+    page HDV. Un prix trop éloigné des relevés du groupe compte dans les dépenses, mais pas dans les
+    prix.
+  - On peut aussi **coller une capture du chat** dans son Profil : elle est lue sur l'appareil (jamais
     envoyée), et les lignes lues sont vérifiées et corrigées avant d'être enregistrées.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.

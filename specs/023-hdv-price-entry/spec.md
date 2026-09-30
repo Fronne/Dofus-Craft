@@ -249,3 +249,10 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
 
 La navigation principale gagne une entrée « Forgemagie », après « XP Familier ». La page HDV ne
 couvre toujours pas l'HDV Runes : le prix des runes est sur la page Forgemagie.
+
+## Révision (2026-09-30) : onglet Runes (specs/026-hdv-rune-prices)
+
+- **FR-002 (amendée)** : la page a quatre onglets — Ressources, Consommables, Créatures et **Runes**.
+  L'onglet Runes liste les runes de `src/data/rune-items.json` (specs/025) et non des objets de
+  `hdv-items.json` ; il filtre par stat au lieu du type, et affiche l'origine du dernier prix partagé
+  en Mode communautaire. Le reste (recherche, filtres de prix, compteur, champ de prix) est commun.

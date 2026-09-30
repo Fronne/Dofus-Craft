@@ -420,3 +420,10 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
 - Les achats importés sur le site ne sont rattachés à aucune session Discord.
 - Hors périmètre : calcul de brisage, simulateur de forgemagie, coût par point de stat, connexion
   obligatoire sur les autres pages, modification du code du bot (fait par son auteur).
+
+## Révision (2026-09-30) : prix des runes dans la page HDV (specs/026-hdv-rune-prices)
+
+- **US4, FR-017 (amendées)** : la liste des prix des runes est un onglet « Runes » de la page HDV,
+  accessible sans connexion ; la page Forgemagie n'a plus d'onglet Runes (onglets Sessions et Profil).
+- **US5 (amendée)** : l'import de capture est dans l'onglet Profil, sur le profil du joueur connecté
+  seulement ; après un import, les dépenses affichées sont relues.

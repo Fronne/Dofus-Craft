@@ -37,7 +37,7 @@ import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mod
 
 const CROQUETTE = { id: '20125', name: 'Croquette enrichie' };
 
-async function openHdv(mode: 'community' | 'personal', tab: 'resources' | 'consumables' | 'animals' = 'animals') {
+async function openHdv(mode: 'community' | 'personal', tab: 'resources' | 'consumables' | 'animals' | 'runes' = 'animals') {
   window.localStorage.setItem('craftcheck-price-mode-choice', mode);
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   window.localStorage.setItem('craftcheck-hdv-tab', tab);
@@ -200,6 +200,56 @@ describe('HDV page (specs/023)', () => {
       await waitFor(() => expect(rows()).toHaveLength(34));
       expect(rowOf(CROQUETTE.name)).toBeUndefined();
       expect(status()).toBe('1 objet sur 35 a un prix');
+    });
+  });
+
+  // specs/026-hdv-rune-prices: 105 rune lines rendered at once in jsdom — more time under load.
+  describe('Runes tab (specs/026)', { timeout: 20_000 }, () => {
+    const DO_AIR = { id: '11663', name: 'Rune Do Air' };
+
+    it('is the fourth tab, after Créatures, and lists every rune with a counter', async () => {
+      await openHdv('personal', 'runes');
+      expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Ressources', 'Consommables', 'Créatures', 'Runes']);
+      expect(screen.getByRole('tab', { name: 'Runes' })).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => expect(rows()).toHaveLength(105));
+      await waitFor(() => expect(status()).toBe('0 objet sur 105 a un prix'));
+    });
+
+    it('searches by name and filters by stat', async () => {
+      await openHdv('personal', 'runes');
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: 'do air' } });
+      await waitFor(() => expect(names().map((name) => name.trim())).toEqual(['Rune Do Air', 'Rune Pa Do Air']));
+
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: '' } });
+      fireEvent.change(screen.getByRole('combobox', { name: 'Stat' }), { target: { value: 'Force' } });
+      await waitFor(() => expect(rows().length).toBeGreaterThan(0));
+      expect(rows().every((row) => row.textContent?.includes('Force'))).toBe(true);
+    });
+
+    it('saves a typed price like the other tabs, and « Sans prix » leaves it out', async () => {
+      await openHdv('personal', 'runes');
+      typePrice(DO_AIR.name, '1587');
+      await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [DO_AIR.id]))[DO_AIR.id]?.unitPriceKamas).toBe(1587));
+      await waitFor(() => expect(status()).toBe('1 objet sur 105 a un prix'));
+      fireEvent.click(screen.getByRole('button', { name: 'Sans prix' }));
+      await waitFor(() => expect(rows()).toHaveLength(104));
+    });
+
+    const sharedByBot = () => getCommunityPrice.mockImplementation(async (id) => (id === DO_AIR.id
+      ? { status: 'found', price: { resourceId: id, serverId: 'mikhal', medianAmountKamas: 1587, sampleSize: 1, latestAmountKamas: 1587, latestContributionAt: new Date().toISOString(), latestOrigin: 'bot' } }
+      : { status: 'not-found' }));
+
+    it('shows the origin of the latest shared price in Mode communautaire', async () => {
+      sharedByBot();
+      await openHdv('community', 'runes');
+      await waitFor(() => expect(rowOf(DO_AIR.name)?.textContent).toContain('Bot Discord'));
+    });
+
+    it('shows no origin in Mode personnel, where nothing is shared', async () => {
+      sharedByBot();
+      await openHdv('personal', 'runes');
+      await waitFor(() => expect(rows()).toHaveLength(105));
+      expect(rowOf(DO_AIR.name)?.textContent).not.toContain('Bot Discord');
     });
   });
 });

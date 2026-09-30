@@ -4,7 +4,6 @@ import type { PriceMode } from '../../domain/price-modes';
 import { fmLoginUrl } from '../../services/fm-api';
 import { PlayerBadge } from './PlayerBadge';
 import { ProfileTab } from './ProfileTab';
-import { RunesTab } from './RunesTab';
 import { SessionDetail } from './SessionDetail';
 import { SessionsTab } from './SessionsTab';
 import { useFmAuth } from './useFmAuth';
@@ -12,12 +11,12 @@ import { useFmAuth } from './useFmAuth';
 // specs/025-rune-purchase-import: the Forgemagie page, for members of the group's Discord server only
 // (FR-001, FR-002). The rest of the site stays anonymous (FR-003).
 
-type FmTab = 'sessions' | 'profile' | 'runes';
+// specs/026-hdv-rune-prices: the rune prices moved to the HDV page; the capture import is in Profil.
+type FmTab = 'sessions' | 'profile';
 
 const TABS: { id: FmTab; label: string }[] = [
   { id: 'sessions', label: 'Sessions' },
   { id: 'profile', label: 'Profil' },
-  { id: 'runes', label: 'Runes' },
 ];
 
 const LOGIN_ERRORS = {
@@ -39,7 +38,7 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
     <>
       <header className="page-header">
         <h1>Forgemagie</h1>
-        <p>Les sessions FM du bot Discord, les dépenses de chacun et le prix des runes.</p>
+        <p>Les sessions FM du bot Discord et les dépenses de chacun.</p>
       </header>
 
       <section className="panel hdv-panel fm-panel">
@@ -55,8 +54,8 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
         {auth.status === 'anonymous' && (
           <div className="fm-login">
             <p>
-              Connecte-toi avec ton compte Discord pour retrouver les sessions FM du bot, ce que chacun a dépensé
-              et le prix des runes relevé par le groupe.
+              Connecte-toi avec ton compte Discord pour retrouver les sessions FM du bot et ce que chacun a
+              dépensé. Le prix des runes est dans la page HDV, onglet Runes.
             </p>
             {auth.loginError && <p className="fm-error" role="alert">{LOGIN_ERRORS[auth.loginError]}</p>}
             <a className="btn btn-primary" href={fmLoginUrl()}>Se connecter avec Discord</a>
@@ -93,9 +92,8 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
               ? <SessionDetail sessionId={openSessionId} onBack={() => setOpenSessionId(undefined)} onUnauthorized={auth.forget} />
               : <SessionsTab onOpen={setOpenSessionId} onUnauthorized={auth.forget} />)}
             {tab === 'profile' && (
-              <ProfileTab me={auth.me} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onUnauthorized={auth.forget} />
+              <ProfileTab me={auth.me} priceMode={priceMode} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onUnauthorized={auth.forget} />
             )}
-            {tab === 'runes' && <RunesTab me={auth.me} priceMode={priceMode} />}
           </>
         )}
       </section>

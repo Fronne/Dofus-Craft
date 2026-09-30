@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
+import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
+import runeItems from '../../data/rune-items.json';
+import { CHARACTERISTIC_ASSET_BY_ID } from '../../domain/characteristic-icons';
+import { filterRunes, PRICE_ORIGIN_LABELS, runeStatLabels, type PriceOrigin, type RuneItem, type RuneItemsData } from '../../domain/forgemagie';
 import {
   countPriced,
   filterByPrice,
@@ -20,12 +24,31 @@ import { PriceEntryField } from '../comparison/PriceEntryField';
 import { useResourcePrices } from '../comparison/useResourcePrices';
 import { useHdvItems } from './useHdvItems';
 import { useHdvPriceSummary } from './useHdvPriceSummary';
+import { useLatestOrigins } from './useLatestOrigins';
 
 // specs/023-hdv-price-entry: record the prices of an in-game HDV in one pass, one tab per HDV, with
 // the very same price field as the Recherche page (same carnet, same Mode personnel / communautaire
 // rules — FR-006/FR-007).
 
 const TAB_STORAGE_KEY = 'craftcheck-hdv-tab';
+
+// specs/026-hdv-rune-prices: the Runes tab lists the runes of the Forgemagie data, not HDV items.
+const RUNES = (runeItems as RuneItemsData).runes;
+const RUNE_STATS = runeStatLabels(RUNES);
+
+/** What one line of any tab needs: the item, and the caption under its name. */
+type HdvLine = { id: string; name: string; imageUrl?: string; rune?: RuneItem; typeId?: number };
+
+function RuneCaption({ rune, origin }: { rune: RuneItem; origin?: PriceOrigin }) {
+  const asset = rune.characteristicId === null ? undefined : CHARACTERISTIC_ASSET_BY_ID[rune.characteristicId];
+  return (
+    <span className="hdv-item-type fm-rune-caption">
+      {asset && <CharacteristicIcon asset={asset} size={16} />}
+      {rune.statLabel}
+      {origin && <span className="fm-origin">{PRICE_ORIGIN_LABELS[origin]}</span>}
+    </span>
+  );
+}
 
 const PRICE_FILTERS: { id: HdvPriceFilter; label: string }[] = [
   { id: 'all', label: 'Tous' },
@@ -56,6 +79,8 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
   const [tab, setTab] = useState<HdvId>(readStoredTab);
   const [query, setQuery] = useState('');
   const [typeId, setTypeId] = useState<number | ''>('');
+  const [stat, setStat] = useState('');
+  const [originsVersion, setOriginsVersion] = useState(0);
   const [priceFilter, setPriceFilter] = useState<HdvPriceFilter>('all');
   const [inputs, setInputs] = useState<Record<string, string>>({});
   // Values typed for one server or mode never carry over to another (same as the Recherche page).
@@ -63,14 +88,28 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
     setInputs({});
   }, [serverId, priceMode]);
 
+  const isRunes = tab === 'runes';
   const data = hdvItems.status === 'ready' ? hdvItems.data : undefined;
-  const tabItems = useMemo(() => (data ? itemsForHdv(data, tab) : []), [data, tab]);
+  const tabItems = useMemo(() => (data && !isRunes ? itemsForHdv(data, tab) : []), [data, tab, isRunes]);
   const tabTypes = useMemo(() => (data ? typesInTab(tabItems, data.types) : []), [data, tabItems]);
-  const summary = useHdvPriceSummary(serverId, priceMode, tabItems.map((item) => item.id));
-  const filtered = filterByPrice(filterHdvItems(tabItems, { query, typeId }), summary.prices, priceFilter);
+  // One list for every tab, so filters, counter and price fields behave the same (specs/026 FR-004/FR-005).
+  const tabLines: HdvLine[] = useMemo(
+    () => (isRunes ? RUNES.map((rune) => ({ id: rune.id, name: rune.name, imageUrl: rune.imageUrl, rune })) : tabItems),
+    [isRunes, tabItems],
+  );
+  const summary = useHdvPriceSummary(serverId, priceMode, tabLines.map((item) => item.id));
+  const byCategory: HdvLine[] = isRunes
+    ? filterRunes(RUNES, { query, stat }).map((rune) => ({ id: rune.id, name: rune.name, imageUrl: rune.imageUrl, rune }))
+    : filterHdvItems(tabItems, { query, typeId });
+  const filtered = filterByPrice(byCategory, summary.prices, priceFilter);
   const { visible, endRef, loadingMore, reset } = useLoadMoreOnScroll(filtered);
   const { data: carnet, save, remove, loaded } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
-  const { priced, total } = countPriced(tabItems, summary.prices);
+  const { priced, total } = countPriced(tabLines, summary.prices);
+  const origins = useLatestOrigins(serverId, priceMode, isRunes ? RUNES.map((rune) => rune.id) : [], originsVersion);
+  const onSaved = () => {
+    summary.refresh();
+    setOriginsVersion((value) => value + 1);
+  };
 
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
@@ -80,6 +119,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
     setTab(next);
     storeTab(next);
     setTypeId('');
+    setStat('');
     reset();
   };
 
@@ -111,9 +151,9 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
 
         {!serverId ? (
           <EmptyState icon="server" title="Aucun serveur choisi" description="Choisissez un serveur pour saisir ses prix." />
-        ) : hdvItems.status === 'loading' ? (
+        ) : !isRunes && hdvItems.status === 'loading' ? (
           <p className="empty" role="status">Chargement des objets…</p>
-        ) : hdvItems.status === 'unavailable' ? (
+        ) : !isRunes && hdvItems.status === 'unavailable' ? (
           <EmptyState icon="info" title="Liste des objets indisponible" description="Les objets de cet HDV n'ont pas pu être chargés. Réessayez plus tard ; vos prix déjà saisis sont conservés." />
         ) : (
           <>
@@ -127,24 +167,39 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                     setQuery(event.target.value);
                     reset();
                   }}
-                  placeholder="Rechercher un objet..."
-                  aria-label="Rechercher un objet"
+                  placeholder={isRunes ? 'Rechercher une rune...' : 'Rechercher un objet...'}
+                  aria-label={isRunes ? 'Rechercher une rune' : 'Rechercher un objet'}
                 />
               </div>
-              <select
-                className="hdv-type-filter"
-                aria-label="Type d'objet"
-                value={typeId}
-                onChange={(event) => {
-                  setTypeId(event.target.value === '' ? '' : Number(event.target.value));
-                  reset();
-                }}
-              >
-                <option value="">Tous les types</option>
-                {tabTypes.map((type) => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-              </select>
+              {isRunes ? (
+                <select
+                  className="hdv-type-filter"
+                  aria-label="Stat"
+                  value={stat}
+                  onChange={(event) => {
+                    setStat(event.target.value);
+                    reset();
+                  }}
+                >
+                  <option value="">Toutes les stats</option>
+                  {RUNE_STATS.map((label) => <option key={label} value={label}>{label}</option>)}
+                </select>
+              ) : (
+                <select
+                  className="hdv-type-filter"
+                  aria-label="Type d'objet"
+                  value={typeId}
+                  onChange={(event) => {
+                    setTypeId(event.target.value === '' ? '' : Number(event.target.value));
+                    reset();
+                  }}
+                >
+                  <option value="">Tous les types</option>
+                  {tabTypes.map((type) => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+              )}
               <div className="hdv-price-filters" role="group" aria-label="Filtrer par prix">
                 {PRICE_FILTERS.map((entry) => (
                   <button
@@ -177,7 +232,11 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
             )}
 
             {filtered.length === 0 ? (
-              <EmptyState icon="search" title="Aucun objet ne correspond à votre recherche" description="Essayez un autre nom, un autre type ou un autre filtre de prix." />
+              <EmptyState
+                icon="search"
+                title={isRunes ? 'Aucune rune ne correspond à votre recherche' : 'Aucun objet ne correspond à votre recherche'}
+                description={`Essayez un autre nom, ${isRunes ? 'une autre stat' : 'un autre type'} ou un autre filtre de prix.`}
+              />
             ) : (
               <>
                 <ul className="hdv-list">
@@ -188,13 +247,15 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                         quantity={1}
                         // A unit price only: no « × 1 » subtotal repeating it.
                         subtotalKamas={null}
-                        caption={<span className="hdv-item-type">{typeNames[String(item.typeId)]}</span>}
+                        caption={item.rune
+                          ? <RuneCaption rune={item.rune} origin={origins[item.id]} />
+                          : <span className="hdv-item-type">{typeNames[String(item.typeId)]}</span>}
                         priceMode={priceMode}
                         serverId={serverId}
                         input={inputs[item.id]}
                         onInput={(value) => setInputs((current) => ({ ...current, [item.id]: value }))}
                         carnet={{ data: carnet, save, remove, loaded }}
-                        onSaved={summary.refresh}
+                        onSaved={onSaved}
                       />
                     </li>
                   ))}

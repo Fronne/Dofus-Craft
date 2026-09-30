@@ -29,13 +29,6 @@ async function mockWorker(page: Page) {
     if (path === '/fm/players/42') return reply({ player: cyril, totalKamas: 63472, importedKamas: 0, items: [], sessions: [] });
     return reply({ error: 'Not found' }, 404);
   });
-  await page.route('**/community-prices?*', (route) => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify({ serverId: 'mikhal', prices: [{
-      resourceId: '11663', medianAmountKamas: 1587, sampleSize: 1, lastContributionAt: '2026-09-30T18:05:00.000Z',
-      latestAmountKamas: 1587, latestContributionAt: '2026-09-30T18:05:00.000Z', latestOrigin: 'bot',
-    }] }),
-  }));
   return authorized;
 }
 
@@ -67,13 +60,10 @@ test.describe('Forgemagie page (specs/025)', () => {
     await expect(page.getByRole('row', { name: /Rune Do Air/ })).toContainText('1 587 kamas/u');
   });
 
-  test('shows the origin of a rune\'s latest shared price', async ({ page }) => {
-    await page.addInitScript(() => window.localStorage.setItem('craftcheck-price-mode-choice', 'community'));
+  test('has only the Sessions and Profil tabs (specs/026)', async ({ page }) => {
     await mockWorker(page);
     await openAsLoggedIn(page);
-    await page.getByRole('tab', { name: 'Runes' }).click();
-    await page.getByRole('searchbox', { name: 'Rechercher une rune' }).fill('Rune Do Air');
-    await expect(page.locator('li.hdv-row').filter({ hasText: 'Rune Do Air' }).first()).toContainText('Bot Discord');
+    await expect(page.getByRole('tab')).toHaveText(['Sessions', 'Profil']);
   });
 
   test('fits a phone screen without horizontal scrolling', async ({ page }) => {

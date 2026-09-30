@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeItemName, parsePurchaseLines, summarizeByItem, unitPriceKamas } from '../../src/domain/forgemagie';
+import { filterRunes, normalizeItemName, parsePurchaseLines, summarizeByItem, unitPriceKamas, type RuneItem } from '../../src/domain/forgemagie';
 
 // specs/025-rune-purchase-import (FR-022): the chat's purchase lines, read exactly like the bot.
 describe('parsePurchaseLines', () => {
@@ -53,5 +53,24 @@ describe('normalizeItemName', () => {
 
   it('keeps accents, so a misread name never matches by accident', () => {
     expect(normalizeItemName('Bois de Frêne')).not.toBe(normalizeItemName('Bois de Frene'));
+  });
+});
+
+// specs/026-hdv-rune-prices: the Runes tab of the HDV page.
+describe('filterRunes', () => {
+  const rune = (id: string, name: string, statLabel: string): RuneItem =>
+    ({ id, name, statLabel, imageUrl: '', level: 1, effectId: null, characteristicId: null });
+  const runes = [rune('1', 'Rune Fo', 'Force'), rune('2', 'Rune Do Air', 'Dommages Air'), rune('3', 'Rune Ré Air', 'Résistances Air'), rune('4', 'Rune Pa Fo', 'Force')];
+  const names = (list: RuneItem[]) => list.map((entry) => entry.name);
+
+  it('searches names without case or accents, keeping the order', () => {
+    expect(names(filterRunes(runes, { query: 'DO AIR', stat: '' }))).toEqual(['Rune Do Air']);
+    expect(names(filterRunes(runes, { query: 're air', stat: '' }))).toEqual(['Rune Ré Air']);
+  });
+
+  it('keeps only the chosen stat, alone or with a search', () => {
+    expect(names(filterRunes(runes, { query: '', stat: 'Force' }))).toEqual(['Rune Fo', 'Rune Pa Fo']);
+    expect(names(filterRunes(runes, { query: 'pa', stat: 'Force' }))).toEqual(['Rune Pa Fo']);
+    expect(filterRunes(runes, { query: '', stat: '' })).toEqual(runes);
   });
 });

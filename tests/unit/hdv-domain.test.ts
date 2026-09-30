@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countPriced, filterByPrice, filterHdvItems, isHdvId, itemsForHdv, typesInTab, type HdvItem, type HdvItemsData } from '../../src/domain/hdv';
+import { countPriced, filterByPrice, filterHdvItems, HDV_TABS, isHdvId, itemsForHdv, typesInTab, type HdvItem, type HdvItemsData } from '../../src/domain/hdv';
 import { PRICE_AGE_EXPIRED_DAYS, PRICE_AGE_STALE_DAYS } from '../../src/domain/price-age';
 import type { ResourcePrice } from '../../src/domain/types';
 
@@ -21,10 +21,23 @@ describe('HDV tabs', () => {
     expect(itemsForHdv(data, 'consumables').map((entry) => entry.name)).toEqual(['Bière', 'Potion de Soin']);
   });
 
-  it('recognises only the three HDV ids', () => {
+  it('recognises the three HDV ids and the Runes tab (specs/026)', () => {
     expect(isHdvId('animals')).toBe(true);
-    expect(isHdvId('runes')).toBe(false);
+    expect(isHdvId('runes')).toBe(true);
+    expect(isHdvId('equipment')).toBe(false);
     expect(isHdvId(null)).toBe(false);
+  });
+
+  it('ends with the Runes tab, whose items are not read from hdv-items.json (specs/026)', () => {
+    expect(HDV_TABS.map((tab) => tab.label)).toEqual(['Ressources', 'Consommables', 'Créatures', 'Runes']);
+    expect(itemsForHdv({ items: [beer, potion] } as HdvItemsData, 'runes')).toEqual([]);
+  });
+
+  it('counts and filters any list of priced entries, runes included (specs/026)', () => {
+    const runes = [{ id: 'r1', name: 'Rune Fo' }, { id: 'r2', name: 'Rune Sa' }];
+    const prices = { r1: price('r1', daysAgo(1)) };
+    expect(countPriced(runes, prices)).toEqual({ priced: 1, total: 2 });
+    expect(filterByPrice(runes, prices, 'missing', NOW)).toEqual([runes[1]]);
   });
 });
 

@@ -206,59 +206,38 @@ describe('Forgemagie page — sessions (US2, US3)', () => {
   });
 });
 
-// The 105 runes' price lines make these tests heavier than the others: more time under a loaded machine.
-describe('Forgemagie page — runes (US4, US5)', { timeout: 20_000 }, () => {
-  async function openRunes() {
+// specs/026-hdv-rune-prices: the rune prices moved to the HDV page; the capture import is in Profil.
+describe('Forgemagie page — tabs and capture import (specs/026)', () => {
+  it('has only the Sessions and Profil tabs', async () => {
     writeFmSessionToken(TOKEN);
     await openForgemagie();
-    fireEvent.click(await screen.findByRole('tab', { name: 'Runes' }));
-    await waitFor(() => expect(document.querySelectorAll('li.hdv-row').length).toBeGreaterThan(100));
-  }
-  const rowOf = (name: string) => [...document.querySelectorAll<HTMLElement>('li.hdv-row')]
-    .find((row) => row.querySelector('.resource-display')?.textContent?.trim().startsWith(name) && row.textContent?.includes(name));
-
-  it('lists every rune, searchable by name and filterable by stat', async () => {
-    await openRunes();
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: 'Do Air' } });
-    await waitFor(() => expect(document.querySelectorAll('li.hdv-row')).toHaveLength(2));
-
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: '' } });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Stat' }), { target: { value: 'Force' } });
-    await waitFor(() => expect([...document.querySelectorAll('li.hdv-row')].every((row) => row.textContent?.includes('Force'))).toBe(true));
+    await screen.findByRole('tab', { name: 'Sessions' });
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Sessions', 'Profil']);
   });
 
-  it('shows the origin of each rune\'s latest shared price', async () => {
-    getCommunityPrices.mockResolvedValue({ status: 'found', prices: [{
-      resourceId: '11663', serverId: 'mikhal', medianAmountKamas: 1587, sampleSize: 1,
-      latestAmountKamas: 1587, latestContributionAt: '2026-09-30T18:00:00.000Z', latestOrigin: 'bot',
-    }] });
-    await openRunes();
-    await waitFor(() => expect(rowOf('Rune Do Air')?.textContent).toContain('Bot Discord'));
-  });
-
-  it('proposes the lines read on a capture and records nothing before « Valider »', async () => {
+  it('imports a capture from the Profil tab, recording nothing before « Valider », then rereads the spending', async () => {
     readCapture.mockResolvedValue({ status: 'ok', lines: [
       { itemName: 'Rune Do Air', quantity: 10, totalKamas: 15868, resource: { id: '11663', name: 'Rune Do Air' } },
       { itemName: 'Rune Do Alr', quantity: 10, totalKamas: 15868, resource: null },
     ] });
     fm.importFmCapture.mockResolvedValue(ok({ captureId: 'c1', lines: [] }));
-    await openRunes();
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+    await waitFor(() => expect(document.querySelector('.fm-import')).not.toBeNull());
+    const readsBefore = fm.getFmPlayer.mock.calls.length;
 
-    // Queries stay inside the import table: role queries over the whole page (105 runes, ~2 800
-    // suggested names) are slow in jsdom.
     const section = document.querySelector<HTMLElement>('.fm-import')!;
     const file = new File(['x'], 'capture.png', { type: 'image/png' });
     fireEvent.drop(section.querySelector('.fm-dropzone')!, { dataTransfer: { files: [file] } });
     await waitFor(() => expect(section.querySelector('.fm-import-lines')).not.toBeNull());
-    const table = () => section.querySelector<HTMLElement>('.fm-import-lines')!;
-    const rowOfLine = (name: string) => [...table().querySelectorAll('tbody tr')].find((row) => row.querySelector('th')?.textContent?.includes(name))!;
+    const rowOfLine = (name: string) => [...section.querySelectorAll('.fm-import-lines tbody tr')].find((row) => row.querySelector('th')?.textContent?.includes(name))!;
     expect(fm.importFmCapture).not.toHaveBeenCalled();
 
     // The misread line blocks the validation until it is unchecked (or its item chosen).
     const validate = within(section).getByText('Valider').closest('button')!;
     expect(validate).toBeDisabled();
     fireEvent.click(within(section).getByLabelText('Garder Rune Do Alr'));
-
     fireEvent.change(within(section).getByLabelText('Total de Rune Do Air'), { target: { value: '16000' } });
     expect(normalize(rowOfLine('Rune Do Air').textContent)).toContain('1 600 kamas/u');
 
@@ -268,5 +247,18 @@ describe('Forgemagie page — runes (US4, US5)', { timeout: 20_000 }, () => {
       true,
     ));
     await waitFor(() => expect(section.textContent).toContain('1 achat enregistré.'));
+    await waitFor(() => expect(fm.getFmPlayer.mock.calls.length).toBeGreaterThan(readsBefore));
+  });
+
+  it('offers no import on another member\'s profile', async () => {
+    fm.getFmPlayers.mockResolvedValue(ok({ players: [{ discordUserId: '7', displayName: 'Bob', avatarUrl: null, private: false, totalKamas: 10 }] }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+    await waitFor(() => expect(document.querySelector('.fm-import')).not.toBeNull());
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Voir le profil de' }), { target: { value: '7' } });
+    await waitFor(() => expect(document.querySelector('.fm-import')).toBeNull());
+    expect(fm.getFmPlayer).toHaveBeenLastCalledWith('7');
   });
 });
+

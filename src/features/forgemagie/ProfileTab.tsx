@@ -3,12 +3,15 @@ import { useActiveServer } from '../../app/ServerContext';
 import { EmptyState } from '../../components/EmptyState';
 import { formatFmDate, type FmMe, type FmPlayerSpend, type FmProfile } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
+import type { PriceMode } from '../../domain/price-modes';
 import { deleteFmMe, getFmPlayer, getFmPlayers } from '../../services/fm-api';
+import { CaptureImport } from './CaptureImport';
 import { PlayerBadge } from './PlayerBadge';
 import { ItemSummaryTable } from './SessionDetail';
 
 // specs/025-rune-purchase-import: the player's settings (US1 — server, visibility), the spending of a
 // player (US3 — theirs, or a public member's) and the deletion of the profile (FR-007).
+// specs/026-hdv-rune-prices (FR-010, FR-011): the capture import, on the player's own profile only.
 
 function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean> }) {
   const { servers } = useActiveServer();
@@ -134,8 +137,9 @@ function Spending({ profile, onOpenSession }: { profile: FmProfile; onOpenSessio
   );
 }
 
-export function ProfileTab({ me, updateMe, onDeleted, onOpenSession, onUnauthorized }: {
+export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, onUnauthorized }: {
   me: FmMe;
+  priceMode: PriceMode;
   updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean>;
   onDeleted: () => void;
   onOpenSession: (sessionId: string) => void;
@@ -144,6 +148,8 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSession, onUnauthori
   const [players, setPlayers] = useState<FmPlayerSpend[]>([]);
   const [shownId, setShownId] = useState(me.discordUserId);
   const [profile, setProfile] = useState<{ status: 'loading' | 'missing' | 'unavailable' } | { status: 'ready'; profile: FmProfile }>({ status: 'loading' });
+  // Bumped after an import, to reread the spending it just added.
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     void getFmPlayers().then((result) => {
@@ -153,7 +159,8 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSession, onUnauthori
 
   useEffect(() => {
     let cancelled = false;
-    setProfile({ status: 'loading' });
+    // An import rereads in place: the spending already shown stays until the new one arrives.
+    if (version === 0) setProfile({ status: 'loading' });
     void getFmPlayer(shownId).then((result) => {
       if (cancelled) return;
       if (result.status === 'unauthorized') onUnauthorized();
@@ -163,7 +170,7 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSession, onUnauthori
     return () => {
       cancelled = true;
     };
-  }, [shownId, me.isPrivate, onUnauthorized]);
+  }, [shownId, me.isPrivate, onUnauthorized, version]);
 
   const isMine = shownId === me.discordUserId;
   const others = players.filter((player) => player.discordUserId && player.discordUserId !== me.discordUserId);
@@ -181,6 +188,7 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSession, onUnauthori
       )}
 
       {isMine && <ProfileSettings me={me} updateMe={updateMe} />}
+      {isMine && <CaptureImport me={me} priceMode={priceMode} onImported={() => setVersion((value) => value + 1)} />}
       {!isMine && profile.status === 'ready' && <h2 className="fm-section-title"><PlayerBadge player={profile.profile.player} /></h2>}
 
       {profile.status === 'loading' && <p className="empty" role="status">Chargement des dépenses…</p>}
