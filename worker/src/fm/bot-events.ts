@@ -18,7 +18,8 @@ type CaptureEvent = CommonEvent & {
 };
 
 type LineAnswer = { index: number; name: string; unitPriceKamas: number | null; priceStatus: ResolvedLine['priceStatus'] | 'invalid' };
-type EventAnswer = { status: 'ok' | 'ignored'; sessionId?: string; duplicate: boolean; lines?: LineAnswer[] };
+type EventAnswer = { status: 'ok' | 'ignored'; reason?: 'session-closed'; sessionId?: string; duplicate: boolean; lines?: LineAnswer[] };
+type Author = { id: string; displayName: string; avatarUrl: string | null };
 
 const nonEmpty = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 
@@ -31,18 +32,24 @@ function parseCommon(body: unknown): CommonEvent | undefined {
   return { type: type as EventType, eventId, channelId, channelName, occurredAt: date.toISOString() };
 }
 
-function parseCapture(common: CommonEvent, body: Record<string, unknown>): CaptureEvent | undefined {
-  const { author, spentKamas, lines } = body;
+function parseAuthor(author: unknown): Author | undefined {
   if (!isRecord(author) || !nonEmpty(author.id) || !nonEmpty(author.displayName)) return undefined;
   if (author.avatarUrl !== undefined && author.avatarUrl !== null && typeof author.avatarUrl !== 'string') return undefined;
-  if (!isKamasInteger(spentKamas, 0) || !Array.isArray(lines) || lines.length > MAX_LINES) return undefined;
-  return {
-    ...common,
-    author: { id: author.id, displayName: author.displayName.trim(), avatarUrl: (author.avatarUrl as string | null | undefined) || null },
-    spentKamas,
-    lines,
-  };
+  return { id: author.id, displayName: author.displayName.trim(), avatarUrl: (author.avatarUrl as string | null | undefined) || null };
 }
+
+function parseCapture(common: CommonEvent, body: Record<string, unknown>): CaptureEvent | undefined {
+  const { spentKamas, lines } = body;
+  const author = parseAuthor(body.author);
+  if (!author) return undefined;
+  if (!isKamasInteger(spentKamas, 0) || !Array.isArray(lines) || lines.length > MAX_LINES) return undefined;
+  return { ...common, author, spentKamas, lines };
+}
+
+// specs/028 (FR-009, research R3): a close requested from the site that the bot hasn't run yet.
+const pendingClose = async (db: FmDb, channelId: string) =>
+  (await db.prepare("SELECT 1 AS pending FROM fm_bot_commands WHERE channel_id = ? AND type = 'close' AND status = 'pending' LIMIT 1")
+    .bind(channelId).first()) !== null;
 
 function parseLine(value: unknown): PurchaseLineInput | undefined {
   if (!isRecord(value) || !isItemName(value.name) || !isKamasInteger(value.qty, 1) || !isKamasInteger(value.price, 1)) return undefined;
@@ -57,9 +64,9 @@ async function openSessionId(db: FmDb, channelId: string): Promise<string | unde
 const closeOpenSession = (db: FmDb, channelId: string, at: string) =>
   db.prepare("UPDATE fm_sessions SET status = 'closed', closed_at = ? WHERE channel_id = ? AND status = 'open'").bind(at, channelId);
 
-const openSession = (db: FmDb, id: string, event: CommonEvent) =>
-  db.prepare("INSERT INTO fm_sessions (id, channel_id, channel_name, status, opened_at) VALUES (?, ?, ?, 'open', ?)")
-    .bind(id, event.channelId, event.channelName, event.occurredAt);
+const openSession = (db: FmDb, id: string, event: CommonEvent, ownerId: string | null = null) =>
+  db.prepare("INSERT INTO fm_sessions (id, channel_id, channel_name, status, opened_at, owner_discord_user_id) VALUES (?, ?, ?, 'open', ?, ?)")
+    .bind(id, event.channelId, event.channelName, event.occurredAt, ownerId);
 
 const processedStatement = (db: FmDb, event: CommonEvent, answer: EventAnswer) =>
   db.prepare('INSERT INTO fm_processed_events (event_id, type, response, received_at) VALUES (?, ?, ?, ?)')
@@ -70,6 +77,11 @@ async function handleCapture(db: FmDb, event: CaptureEvent): Promise<{ answer: E
   // No open session (the Worker was unreachable during /fmstart, or the session predates the bot's
   // update): open one at the capture's date, so nothing the bot counted is lost (research R4).
   let sessionId = await openSessionId(db, event.channelId);
+  // specs/028 FR-009: the session was stopped from the site and the bot hasn't closed it yet — the
+  // capture must not reopen one.
+  if (!sessionId && await pendingClose(db, event.channelId)) {
+    return { answer: { status: 'ignored', reason: 'session-closed', duplicate: false }, statements: [] };
+  }
   if (!sessionId) {
     sessionId = crypto.randomUUID();
     statements.push(openSession(db, sessionId, event));
@@ -101,18 +113,27 @@ async function handleCapture(db: FmDb, event: CaptureEvent): Promise<{ answer: E
   return { answer: { status: 'ok', sessionId, duplicate: false, lines: answers }, statements };
 }
 
-async function handleSessionChange(db: FmDb, event: CommonEvent): Promise<{ answer: EventAnswer; statements: FmStatement[] }> {
+async function handleSessionChange(db: FmDb, event: CommonEvent, author?: Author): Promise<{ answer: EventAnswer; statements: FmStatement[] }> {
   if (event.type === 'session-start') {
     const sessionId = crypto.randomUUID();
+    // specs/028 FR-005: whoever typed /fmstart owns the session (optional for an older bot).
     return {
       answer: { status: 'ok', sessionId, duplicate: false },
-      statements: [closeOpenSession(db, event.channelId, event.occurredAt), openSession(db, sessionId, event)],
+      statements: [
+        ...(author ? [upsertPlayerStatement(db, { discordUserId: author.id, displayName: author.displayName, avatarUrl: author.avatarUrl }, event.occurredAt)] : []),
+        closeOpenSession(db, event.channelId, event.occurredAt),
+        openSession(db, sessionId, event, author?.id ?? null),
+      ],
     };
   }
+  // specs/028 FR-012: /fmstop makes any close still queued for this channel pointless.
+  const cancelCloses = event.type === 'session-stop'
+    ? [db.prepare("UPDATE fm_bot_commands SET status = 'cancelled', acknowledged_at = ? WHERE channel_id = ? AND type = 'close' AND status = 'pending'").bind(nowIso(), event.channelId)]
+    : [];
   const sessionId = await openSessionId(db, event.channelId);
-  if (!sessionId) return { answer: { status: 'ignored', duplicate: false }, statements: [] };
+  if (!sessionId) return { answer: { status: 'ignored', duplicate: false }, statements: cancelCloses };
   if (event.type === 'session-stop') {
-    return { answer: { status: 'ok', sessionId, duplicate: false }, statements: [closeOpenSession(db, event.channelId, event.occurredAt)] };
+    return { answer: { status: 'ok', sessionId, duplicate: false }, statements: [closeOpenSession(db, event.channelId, event.occurredAt), ...cancelCloses] };
   }
   // session-reset: like the bot's empty_session(), the session's purchases are gone; it stays open.
   return {
@@ -136,12 +157,15 @@ export async function handleBotEvent(request: Request, env: FmEnv): Promise<Resp
   if (common.type === 'capture' && !capture) {
     return json({ error: `a capture needs author.id, author.displayName, spentKamas and at most ${MAX_LINES} lines` }, 400);
   }
+  const rawAuthor = common.type === 'session-start' ? (body as Record<string, unknown>).author : undefined;
+  const startAuthor = rawAuthor === undefined || rawAuthor === null ? undefined : parseAuthor(rawAuthor);
+  if (rawAuthor !== undefined && rawAuthor !== null && !startAuthor) return json({ error: 'author needs an id and a displayName' }, 400);
 
   // FR-020: a resend of the same Discord message or interaction changes nothing.
   const processed = await env.DB.prepare('SELECT response FROM fm_processed_events WHERE event_id = ?').bind(common.eventId).first<{ response: string }>();
   if (processed) return json({ ...(JSON.parse(processed.response) as EventAnswer), duplicate: true });
 
-  const { answer, statements } = capture ? await handleCapture(env.DB, capture) : await handleSessionChange(env.DB, common);
+  const { answer, statements } = capture ? await handleCapture(env.DB, capture) : await handleSessionChange(env.DB, common, startAuthor);
   await env.DB.batch([...statements, processedStatement(env.DB, common, answer)]);
   return json(answer);
 }

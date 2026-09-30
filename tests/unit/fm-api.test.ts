@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachFmSession, getFmMe, getFmSessions } from '../../src/services/fm-api';
+import { attachFmSession, getFmMe, getFmSessions, startFmSession } from '../../src/services/fm-api';
 import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/fm-session-token';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): the site's client of the /fm/* routes.
@@ -59,6 +59,14 @@ describe('fm-api', () => {
   it('reads a session from an older Worker, without fmItem, as not attached', async () => {
     const session = { id: 's1', channelName: 'fm', status: 'open', openedAt: '2026-09-30T18:00:00Z', closedAt: null, totalKamas: 0, players: [] };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ sessions: [session], nextBefore: null })));
-    await expect(getFmSessions()).resolves.toEqual({ status: 'ok', data: { sessions: [{ ...session, fmItem: null }], nextBefore: null } });
+    await expect(getFmSessions()).resolves.toEqual({ status: 'ok', data: {
+      sessions: [{ ...session, fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false }], nextBefore: null,
+    } });
+  });
+
+  // specs/028-site-started-sessions.
+  it('gives the reason a session could not be started', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'channel-busy' }, { status: 409 })));
+    await expect(startFmSession('c1', null)).resolves.toEqual({ status: 'error', code: 'channel-busy' });
   });
 });

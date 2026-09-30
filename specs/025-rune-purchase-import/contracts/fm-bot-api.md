@@ -116,3 +116,9 @@ réponse d'origine. Deux messages Discord différents avec la même capture rest
 
 - Au plus 200 lignes par `capture`, et des nombres entiers de 0 à 2 000 000 000.
 - `name` : 1 à 80 caractères.
+
+## Suite : demandes du site (specs/028)
+
+Depuis specs/028, le site peut aussi démarrer et arrêter des sessions : le bot récupère ces demandes
+toutes les 10 secondes et les confirme, et `session-start` accepte un champ `author`. Tout est décrit
+dans [fm-bot-commands.md](../../028-site-started-sessions/contracts/fm-bot-commands.md).

@@ -98,7 +98,7 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
 
             {tab === 'sessions' && (openSessionId
               ? <SessionDetail sessionId={openSessionId} me={auth.me} onBack={() => setOpenSessionId(undefined)} onUnauthorized={auth.forget} onGoToProfile={goToProfile} />
-              : <SessionsTab onOpen={setOpenSessionId} onUnauthorized={auth.forget} />)}
+              : <SessionsTab me={auth.me} onOpen={setOpenSessionId} onUnauthorized={auth.forget} />)}
             {tab === 'profile' && (openItemId
               ? <FmItemRecap itemId={openItemId} onBack={() => setOpenItemId(undefined)} onOpenSession={openSession} onUnauthorized={auth.forget} />
               : <ProfileTab me={auth.me} priceMode={priceMode} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onOpenItem={setOpenItemId} onUnauthorized={auth.forget} />)}

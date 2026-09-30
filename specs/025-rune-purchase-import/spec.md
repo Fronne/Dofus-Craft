@@ -434,3 +434,13 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   privé), et le détail d'une session `canAttach` et `canDetach` ; le profil gagne `fmItems`.
 - **FR-007 (précisée)** : la suppression du profil supprime aussi ses objets en FM ; leurs sessions
   restent, non rattachées.
+
+## Révision (2026-09-30) : sessions démarrées depuis le site (specs/028-site-started-sessions)
+
+- L'événement `session-start` du bot gagne un champ facultatif `author` : le joueur qui a tapé
+  `/fmstart`, propriétaire de la session.
+- Une `capture` pour un salon dont la session vient d'être arrêtée depuis le site (fermeture pas encore
+  exécutée par le bot) répond `ignored` (`reason: "session-closed"`) au lieu d'ouvrir une session.
+- L'import d'une capture sur le site (US5) accepte `sessionId` : une session ouverte du joueur.
+- Le bot récupère aussi les demandes du site : voir
+  [contracts/fm-bot-commands.md](../028-site-started-sessions/contracts/fm-bot-commands.md).

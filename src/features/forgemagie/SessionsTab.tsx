@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { EmptyState } from '../../components/EmptyState';
-import { formatFmDate, type FmSession } from '../../domain/forgemagie';
+import { formatFmDate, type FmMe, type FmSession } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
 import { getFmSessions } from '../../services/fm-api';
 import { sessionItemLabel } from './SessionDetail';
+import { StartSession, SyncBadge } from './StartSession';
 import { PlayerBadge } from './PlayerBadge';
 
 // specs/025-rune-purchase-import (US2, FR-010): the FM sessions the Discord bot sent, most recent first.
@@ -14,7 +15,7 @@ export function SessionStatus({ session }: { session: Pick<FmSession, 'status'> 
   );
 }
 
-export function SessionsTab({ onOpen, onUnauthorized }: { onOpen: (sessionId: string) => void; onUnauthorized: () => void }) {
+export function SessionsTab({ me, onOpen, onUnauthorized }: { me: FmMe; onOpen: (sessionId: string) => void; onUnauthorized: () => void }) {
   const [sessions, setSessions] = useState<FmSession[]>([]);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
@@ -43,12 +44,20 @@ export function SessionsTab({ onOpen, onUnauthorized }: { onOpen: (sessionId: st
   if (state === 'unavailable') {
     return <EmptyState icon="info" title="Sessions indisponibles" description="Le service ne répond pas. Réessayez plus tard." />;
   }
+  // specs/028: starting a session from the site opens its detail right away.
+  const start = <StartSession me={me} onStarted={onOpen} />;
   if (sessions.length === 0) {
-    return <EmptyState icon="anvil" title="Aucune session pour l'instant" description="Lancez /fmstart dans Discord : la session du bot apparaîtra ici." />;
+    return (
+      <>
+        {start}
+        <EmptyState icon="anvil" title="Aucune session pour l'instant" description="Démarre une session ici, ou lance /fmstart dans Discord." />
+      </>
+    );
   }
 
   return (
     <>
+      {start}
       <ul className="fm-session-list">
         {sessions.map((session) => (
           <li key={session.id}>
@@ -61,6 +70,7 @@ export function SessionsTab({ onOpen, onUnauthorized }: { onOpen: (sessionId: st
                 {formatFmDate(session.openedAt)}
                 {session.fmItem && <> · <span className="fm-session-item-name">{sessionItemLabel(session.fmItem)}</span></>}
               </span>
+              {session.sync && session.status === 'open' && <SyncBadge sync={session.sync} />}
               <span className="fm-session-total">{formatKamas(session.totalKamas)}</span>
               <span className="fm-session-players">
                 {session.players.map((row, index) => (

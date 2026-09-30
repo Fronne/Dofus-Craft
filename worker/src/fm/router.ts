@@ -2,6 +2,8 @@ import { handleCallback, handleLogin, handleLogout } from './auth';
 import { handleBotEvent } from './bot-events';
 import { json, requireSession, unauthorized, type FmEnv } from './http';
 import { handleImport } from './imports';
+import { acknowledgeCommand, listCommands } from './bot-commands';
+import { listChannels, resendSession, startSession, stopSession } from './site-sessions';
 import { attachSession, createItem, deleteItem, detachSession, readItemRecap, renameItem } from './items';
 import { deleteMe, getMe, patchMe } from './me';
 import { listPlayers, playerProfile, sessionDetail, sessionsPage } from './reads';
@@ -13,6 +15,10 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
   const method = request.method;
 
   if (method === 'POST' && pathname === '/fm/bot/events') return handleBotEvent(request, env);
+  // specs/028-site-started-sessions: the bot's queue, behind its own key.
+  if (method === 'GET' && pathname === '/fm/bot/commands') return listCommands(request, env);
+  const ackMatch = /^\/fm\/bot\/commands\/([^/]+)\/ack$/.exec(pathname);
+  if (method === 'POST' && ackMatch) return acknowledgeCommand(request, env, decodeURIComponent(ackMatch[1]));
   if (method === 'GET' && pathname === '/fm/auth/login') return handleLogin(url, env);
   if (method === 'GET' && pathname === '/fm/auth/callback') return handleCallback(url, env);
   if (method === 'POST' && pathname === '/fm/auth/logout') return handleLogout(request, env);
@@ -25,8 +31,15 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
     if (method === 'PATCH') return patchMe(request, env.DB, viewerId);
     if (method === 'DELETE') return deleteMe(env.DB, viewerId);
   }
+  if (method === 'GET' && pathname === '/fm/channels') return listChannels(env.DB);
+  if (method === 'POST' && pathname === '/fm/sessions') return startSession(request, env.DB, viewerId);
+  const sessionActionMatch = /^\/fm\/sessions\/([^/]+)\/(stop|resend)$/.exec(pathname);
+  if (method === 'POST' && sessionActionMatch) {
+    const sessionId = decodeURIComponent(sessionActionMatch[1]);
+    return sessionActionMatch[2] === 'stop' ? stopSession(env.DB, viewerId, sessionId) : resendSession(env.DB, viewerId, sessionId);
+  }
   if (method === 'GET' && pathname === '/fm/sessions') {
-    return json(await sessionsPage(env.DB, viewerId, url.searchParams.get('before')));
+    return json(await sessionsPage(env.DB, viewerId, url.searchParams.get('before'), url.searchParams.get('mine')));
   }
   const sessionMatch = /^\/fm\/sessions\/([^/]+)$/.exec(pathname);
   if (method === 'GET' && sessionMatch) {

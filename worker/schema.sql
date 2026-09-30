@@ -131,7 +131,13 @@ CREATE TABLE IF NOT EXISTS fm_sessions (
   opened_at TEXT NOT NULL,
   closed_at TEXT,
   -- specs/027-fm-item-recap: the one item this session is attached to, if any (FR-006).
-  fm_item_id TEXT REFERENCES fm_items (id)
+  fm_item_id TEXT REFERENCES fm_items (id),
+  -- specs/028-site-started-sessions: who started it (site) or typed /fmstart; NULL for older sessions.
+  owner_discord_user_id TEXT REFERENCES fm_players (discord_user_id),
+  origin TEXT NOT NULL DEFAULT 'discord' CHECK (origin IN ('discord', 'site')),
+  -- For a session started on the site: whether the bot opened it in Discord yet.
+  sync_status TEXT CHECK (sync_status IN ('pending', 'opened', 'failed', 'cancelled')),
+  sync_error TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_fm_sessions_open_channel ON fm_sessions (channel_id) WHERE status = 'open';
@@ -179,3 +185,19 @@ CREATE TABLE IF NOT EXISTS fm_processed_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_fm_sessions_item ON fm_sessions (fm_item_id);
+
+-- specs/028-site-started-sessions: requests to the Discord bot (open / close a session), which it
+-- fetches every 10 seconds and acknowledges; an acknowledged request is never handed out again.
+CREATE TABLE IF NOT EXISTS fm_bot_commands (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL CHECK (type IN ('open', 'close')),
+  session_id TEXT NOT NULL REFERENCES fm_sessions (id),
+  channel_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'done', 'failed', 'cancelled')),
+  error TEXT,
+  created_at TEXT NOT NULL,
+  acknowledged_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_fm_bot_commands_status ON fm_bot_commands (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_fm_bot_commands_channel ON fm_bot_commands (channel_id, status);

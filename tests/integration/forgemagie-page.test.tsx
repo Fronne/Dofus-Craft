@@ -21,6 +21,10 @@ const fm = vi.hoisted(() => ({
   getFmItem: vi.fn(),
   attachFmSession: vi.fn(),
   detachFmSession: vi.fn(),
+  getFmChannels: vi.fn(),
+  startFmSession: vi.fn(),
+  stopFmSession: vi.fn(),
+  resendFmSession: vi.fn(),
 }));
 vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: () => 'https://api.test/fm/auth/login' }));
 
@@ -66,11 +70,11 @@ const hidden = { discordUserId: null, displayName: null, avatarUrl: null, privat
 
 const openSession: FmSession = {
   id: 's2', channelName: 'fm-cape', status: 'open', openedAt: '2026-09-30T18:00:00.000Z', closedAt: null, totalKamas: 68472,
-  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }], fmItem: null,
+  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }], fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false,
 };
 const closedSession: FmSession = {
   id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: '2026-09-29T18:00:00.000Z', closedAt: '2026-09-29T19:00:00.000Z', totalKamas: 1000,
-  players: [{ player: alice, spentKamas: 1000 }], fmItem: null,
+  players: [{ player: alice, spentKamas: 1000 }], fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false,
 };
 const ok = <T,>(data: T) => ({ status: 'ok', data });
 
@@ -91,7 +95,9 @@ beforeEach(() => {
   fm.getFmMe.mockResolvedValue(ok(me));
   fm.updateFmMe.mockImplementation(async (changes: Partial<FmMe>) => ok({ ...me, ...changes }));
   fm.logoutFm.mockResolvedValue(ok(undefined));
-  fm.getFmSessions.mockResolvedValue(ok({ sessions: [openSession, closedSession], nextBefore: null }));
+  // specs/028: « mine=open » (the capture import) lists no session by default.
+  fm.getFmSessions.mockImplementation(async (_before?: string | null, filter?: { mine?: string }) =>
+    ok(filter?.mine ? { sessions: [], nextBefore: null } : { sessions: [openSession, closedSession], nextBefore: null }));
   fm.getFmPlayers.mockResolvedValue(ok({ players: [] }));
   fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], fmItems: [], sessions: [
     { sessionId: 's2', channelName: 'fm-cape', openedAt: '2026-09-30T18:00:00.000Z', spentKamas: 100000 },
@@ -252,6 +258,7 @@ describe('Forgemagie page — tabs and capture import (specs/026)', () => {
     await waitFor(() => expect(fm.importFmCapture).toHaveBeenCalledWith(
       [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 10, totalKamas: 16000 }],
       true,
+      undefined,
     ));
     await waitFor(() => expect(section.textContent).toContain('1 achat enregistré.'));
     await waitFor(() => expect(fm.getFmPlayer.mock.calls.length).toBeGreaterThan(readsBefore));
@@ -369,5 +376,73 @@ describe('Forgemagie page — items in FM (specs/027)', () => {
     fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
     fireEvent.click(await screen.findByRole('button', { name: 'Créer un objet en FM' }));
     expect(await screen.findByRole('tab', { name: 'Profil' })).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
+// specs/028-site-started-sessions: starting, following and stopping a session from the site.
+describe('Forgemagie page — sessions started from the site (specs/028)', () => {
+  const siteSession = {
+    ...openSession, id: 's9', channelName: 'fm-anneau', origin: 'site' as const, owner: alice,
+    sync: { status: 'pending' as const, error: null }, canStop: true, items: [], canAttach: false, canDetach: false,
+  };
+
+  it('starts a session in a free channel with an item, then opens its detail', async () => {
+    fm.getFmChannels.mockResolvedValue(ok({ channels: [
+      { channelId: 'c1', channelName: 'fm-anneau', busy: false },
+      { channelId: 'c2', channelName: 'fm-cape', busy: true },
+    ] }));
+    fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 0, importedKamas: 0, items: [], sessions: [], fmItems: [
+      { id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA', owner: alice, totalKamas: 0, sessionCount: 0 },
+    ] }));
+    fm.startFmSession.mockResolvedValue(ok(siteSession));
+    fm.getFmSession.mockResolvedValue(ok(siteSession));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une session' }));
+    const channel = await screen.findByRole('combobox', { name: 'Salon Discord' });
+    expect(within(channel).getByRole('option', { name: /fm-cape/ })).toBeDisabled();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Objet en FM' }), { target: { value: 'i1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    await waitFor(() => expect(fm.startFmSession).toHaveBeenCalledWith('c1', 'i1'));
+    expect(await screen.findByText('En attente de Discord…')).toBeInTheDocument();
+  });
+
+  it('offers to resend a request not transmitted, and to stop only after a confirmation', async () => {
+    const stale = { ...siteSession, sync: { status: 'stale' as const, error: null } };
+    fm.getFmSessions.mockImplementation(async (_before?: string | null, filter?: { mine?: string }) =>
+      ok(filter?.mine ? { sessions: [], nextBefore: null } : { sessions: [stale], nextBefore: null }));
+    fm.getFmSession.mockResolvedValue(ok(stale));
+    fm.resendFmSession.mockResolvedValue(ok(siteSession));
+    fm.stopFmSession.mockResolvedValue(ok({ ...siteSession, status: 'closed', canStop: false, sync: { status: 'cancelled', error: null } }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('button', { name: /#fm-anneau/ }));
+    expect(await screen.findByText('Non transmise à Discord')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Relancer' }));
+    await waitFor(() => expect(fm.resendFmSession).toHaveBeenCalledWith('s9'));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Arrêter la session' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Annuler' }).at(-1)!);
+    expect(fm.stopFmSession).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Arrêter la session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Arrêter' }));
+    await waitFor(() => expect(fm.stopFmSession).toHaveBeenCalledWith('s9'));
+    expect(await screen.findByText('Terminée')).toBeInTheDocument();
+  });
+
+  it('sends a capture imported on the site into the open session', async () => {
+    fm.getFmSessions.mockImplementation(async (_before?: string | null, filter?: { mine?: string }) =>
+      ok(filter?.mine ? { sessions: [siteSession], nextBefore: null } : { sessions: [], nextBefore: null }));
+    readCapture.mockResolvedValue({ status: 'ok', lines: [{ itemName: 'Rune Do Air', quantity: 10, totalKamas: 15868, resource: { id: '11663', name: 'Rune Do Air' } }] });
+    fm.importFmCapture.mockResolvedValue(ok({ captureId: 'c1', lines: [] }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+    await waitFor(() => expect(document.querySelector('.fm-import')).not.toBeNull());
+    const section = document.querySelector<HTMLElement>('.fm-import')!;
+    fireEvent.drop(section.querySelector('.fm-dropzone')!, { dataTransfer: { files: [new File(['x'], 'c.png', { type: 'image/png' })] } });
+    await waitFor(() => expect(within(section).getByLabelText("Session de l'import")).toHaveValue('s9'));
+    fireEvent.click(within(section).getByText('Valider').closest('button')!);
+    await waitFor(() => expect(fm.importFmCapture).toHaveBeenCalledWith(expect.any(Array), true, 's9'));
   });
 });

@@ -23,6 +23,7 @@
     "worker:db:migrate-contribution-kind": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0005_add_contribution_kind.sql --remote",
     "worker:db:migrate-forgemagie": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0007_add_forgemagie.sql --remote",
     "worker:db:migrate-fm-items": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0008_add_fm_items.sql --remote",
+    "worker:db:migrate-site-sessions": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0009_add_site_sessions.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",
     "admin:deploy": "wrangler deploy --config admin-worker/wrangler.toml"

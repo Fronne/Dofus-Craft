@@ -1,5 +1,5 @@
 import { isRecord, json, noContent, nowIso, readJson, type FmDb } from './http';
-import { ITEMS_SELECT, itemSummaries, ownedItems, placeholders, sessionDetail, withPlayers, type ItemRow } from './reads';
+import { ITEMS_SELECT, itemSummaries, ownedItems, placeholders, SESSION_COLUMNS, sessionDetail, withPlayers, type ItemRow, type SessionRow } from './reads';
 
 // specs/027-fm-item-recap (contracts/fm-items-api.md): the items a player forgemages ("objets en FM"),
 // their recap, and attaching a session to one of them. Only the owner changes an item (FR-002); a
@@ -75,8 +75,8 @@ export async function readItemRecap(db: FmDb, viewerId: string, id: string): Pro
   const [item] = await ownedItems(db, viewerId, 'i.id = ? AND (p.is_private = 0 OR p.discord_user_id = ?)', id, viewerId);
   if (!item) return notFound();
   const { results: sessionRows } = await db.prepare(
-    `SELECT id, channel_name, status, opened_at, closed_at, fm_item_id FROM fm_sessions WHERE fm_item_id = ? ORDER BY opened_at DESC, id DESC`,
-  ).bind(id).all<{ id: string; channel_name: string; status: 'open' | 'closed'; opened_at: string; closed_at: string | null; fm_item_id: string | null }>();
+    `SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE fm_item_id = ? ORDER BY opened_at DESC, id DESC`,
+  ).bind(id).all<SessionRow>();
   const sessions = await withPlayers(db, sessionRows, viewerId);
   const ids = sessionRows.map((session) => session.id);
   const { results: itemRows } = ids.length === 0

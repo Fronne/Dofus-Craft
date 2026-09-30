@@ -88,7 +88,18 @@ export type FmSession = {
   totalKamas: number;
   players: { player: FmPlayer; spentKamas: number }[];
   fmItem: FmSessionItem | null;
+  /** specs/028: who started it (site) or typed /fmstart; null for older sessions. */
+  owner: FmPlayer | null;
+  origin: 'discord' | 'site';
+  /** specs/028 FR-011: for a session started on the site, whether the bot opened it in Discord. */
+  sync: FmSessionSync | null;
+  canStop: boolean;
 };
+
+export type FmSessionSync = { status: 'pending' | 'opened' | 'failed' | 'cancelled' | 'stale'; error: string | null };
+
+/** specs/028 FR-003: a Discord channel the bot has used; `busy` when a session is open in it. */
+export type FmChannel = { channelId: string; channelName: string; busy: boolean };
 
 export type FmItemSummary = { itemName: string; itemId: string | null; quantity: number; totalKamas: number; averageUnitKamas: number };
 

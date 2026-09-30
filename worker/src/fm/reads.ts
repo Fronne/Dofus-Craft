@@ -16,7 +16,16 @@ export function playerView(row: PlayerRow, viewerId: string): PlayerView {
   return { discordUserId: row.discord_user_id, displayName: row.display_name, avatarUrl: row.avatar_url, private: row.is_private === 1 };
 }
 
-type SessionRow = { id: string; channel_name: string; status: 'open' | 'closed'; opened_at: string; closed_at: string | null; fm_item_id: string | null };
+export type SessionRow = {
+  id: string; channel_name: string; status: 'open' | 'closed'; opened_at: string; closed_at: string | null; fm_item_id: string | null;
+  // specs/028-site-started-sessions.
+  owner_discord_user_id: string | null; origin: 'discord' | 'site'; sync_status: 'pending' | 'opened' | 'failed' | 'cancelled' | null; sync_error: string | null;
+};
+
+export const SESSION_COLUMNS = 'id, channel_name, status, opened_at, closed_at, fm_item_id, owner_discord_user_id, origin, sync_status, sync_error';
+
+// specs/028 FR-011: a request the bot hasn't acknowledged after 10 minutes reads as « not transmitted ».
+export const STALE_AFTER_MS = 10 * 60 * 1000;
 type SpendRow = PlayerRow & { session_id: string; spent_kamas: number };
 export type ItemRow = { item_name: string; item_id: string | null; quantity: number; total_kamas: number };
 
@@ -51,6 +60,18 @@ export async function withPlayers(db: FmDb, sessions: SessionRow[], viewerId: st
      ORDER BY spent_kamas DESC, p.discord_user_id`,
   ).bind(...sessions.map((session) => session.id)).all<SpendRow>();
   const items = await sessionItems(db, [...new Set(sessions.flatMap((session) => (session.fm_item_id ? [session.fm_item_id] : [])))], viewerId);
+  const ownerIds = [...new Set(sessions.flatMap((session) => (session.owner_discord_user_id ? [session.owner_discord_user_id] : [])))];
+  const { results: ownerRows } = ownerIds.length === 0 ? { results: [] as PlayerRow[] } : await db.prepare(
+    `SELECT discord_user_id, display_name, avatar_url, is_private FROM fm_players WHERE discord_user_id IN (${placeholders(ownerIds.length)})`,
+  ).bind(...ownerIds).all<PlayerRow>();
+  const owners = new Map(ownerRows.map((row) => [row.discord_user_id, playerView(row, viewerId)]));
+  const pendingIds = sessions.filter((session) => session.sync_status === 'pending').map((session) => session.id);
+  const { results: pendingRows } = pendingIds.length === 0 ? { results: [] as { session_id: string; created_at: string }[] } : await db.prepare(
+    `SELECT session_id, MIN(created_at) AS created_at FROM fm_bot_commands
+     WHERE type = 'open' AND status = 'pending' AND session_id IN (${placeholders(pendingIds.length)}) GROUP BY session_id`,
+  ).bind(...pendingIds).all<{ session_id: string; created_at: string }>();
+  const staleBefore = new Date(Date.now() - STALE_AFTER_MS).toISOString();
+  const stale = new Set(pendingRows.filter((row) => row.created_at < staleBefore).map((row) => row.session_id));
 
   return sessions.map((session) => {
     const spends = results.filter((row) => row.session_id === session.id);
@@ -63,6 +84,12 @@ export async function withPlayers(db: FmDb, sessions: SessionRow[], viewerId: st
       totalKamas: spends.reduce((total, row) => total + row.spent_kamas, 0),
       players: spends.map((row) => ({ player: playerView(row, viewerId), spentKamas: row.spent_kamas })),
       fmItem: session.fm_item_id ? items.get(session.fm_item_id) ?? null : null,
+      owner: session.owner_discord_user_id ? owners.get(session.owner_discord_user_id) ?? null : null,
+      origin: session.origin,
+      sync: session.origin === 'site' && session.sync_status
+        ? { status: stale.has(session.id) ? 'stale' as const : session.sync_status, error: session.sync_error }
+        : null,
+      canStop: session.status === 'open' && session.owner_discord_user_id === viewerId,
     };
   });
 }
@@ -80,9 +107,16 @@ export function itemSummaries(rows: ItemRow[]) {
 export const ITEMS_SELECT = `SELECT l.item_name, MAX(l.item_id) AS item_id, SUM(l.quantity) AS quantity, SUM(l.total_kamas) AS total_kamas
   FROM fm_purchase_lines l JOIN fm_captures c ON c.id = l.capture_id`;
 
-export async function sessionsPage(db: FmDb, viewerId: string, before: string | null) {
+export async function sessionsPage(db: FmDb, viewerId: string, before: string | null, mine: string | null = null) {
+  // specs/028 (research R7): the viewer's open sessions, for the capture import.
+  if (mine === 'open') {
+    const { results } = await db.prepare(
+      `SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE status = 'open' AND owner_discord_user_id = ? ORDER BY opened_at DESC, id DESC`,
+    ).bind(viewerId).all<SessionRow>();
+    return { sessions: await withPlayers(db, results, viewerId), nextBefore: null };
+  }
   const { results } = await db.prepare(
-    `SELECT id, channel_name, status, opened_at, closed_at, fm_item_id FROM fm_sessions
+    `SELECT ${SESSION_COLUMNS} FROM fm_sessions
      WHERE opened_at < ? ORDER BY opened_at DESC, id DESC LIMIT ?`,
   ).bind(before ?? '9999', SESSIONS_PAGE_SIZE + 1).all<SessionRow>();
   const page = results.slice(0, SESSIONS_PAGE_SIZE);
@@ -93,7 +127,7 @@ export async function sessionsPage(db: FmDb, viewerId: string, before: string | 
 }
 
 export async function sessionDetail(db: FmDb, viewerId: string, sessionId: string) {
-  const session = await db.prepare('SELECT id, channel_name, status, opened_at, closed_at, fm_item_id FROM fm_sessions WHERE id = ?')
+  const session = await db.prepare(`SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE id = ?`)
     .bind(sessionId).first<SessionRow>();
   if (!session) return undefined;
   const [summary] = await withPlayers(db, [session], viewerId);

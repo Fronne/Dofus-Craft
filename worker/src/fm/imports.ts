@@ -24,6 +24,18 @@ export async function handleImport(request: Request, db: FmDb, discordUserId: st
   const lines = body.lines.map(parseImportLine);
   if (lines.some((line) => !line)) return json({ error: 'each line needs itemName, a known itemId, a quantity and a total' }, 400);
 
+  // specs/028 FR-013: optionally into one of the player's open sessions instead of « hors session ».
+  let sessionId: string | null = null;
+  if (body.sessionId !== undefined && body.sessionId !== null) {
+    if (typeof body.sessionId !== 'string') return json({ error: 'sessionId must be a string' }, 400);
+    const session = await db.prepare('SELECT status, owner_discord_user_id FROM fm_sessions WHERE id = ?')
+      .bind(body.sessionId).first<{ status: string; owner_discord_user_id: string | null }>();
+    if (!session) return json({ error: 'Not found' }, 404);
+    if (session.owner_discord_user_id !== discordUserId) return json({ error: 'Forbidden' }, 403);
+    if (session.status !== 'open') return json({ error: 'session-not-open' }, 409);
+    sessionId = body.sessionId;
+  }
+
   const player = await db.prepare('SELECT server_id FROM fm_players WHERE discord_user_id = ?').bind(discordUserId).first<{ server_id: string | null }>();
   const serverId = player?.server_id;
   if (!serverId) return json({ error: 'no-server' }, 409);
@@ -51,8 +63,8 @@ export async function handleImport(request: Request, db: FmDb, discordUserId: st
   const captureId = crypto.randomUUID();
   const spentKamas = resolved.reduce((total, line) => total + line.totalKamas, 0);
   await db.batch([
-    db.prepare(`INSERT INTO fm_captures (id, session_id, discord_user_id, origin, spent_kamas, server_id, created_at) VALUES (?, NULL, ?, 'capture', ?, ?, ?)`)
-      .bind(captureId, discordUserId, spentKamas, serverId, nowIso()),
+    db.prepare(`INSERT INTO fm_captures (id, session_id, discord_user_id, origin, spent_kamas, server_id, created_at) VALUES (?, ?, ?, 'capture', ?, ?, ?)`)
+      .bind(captureId, sessionId, discordUserId, spentKamas, serverId, nowIso()),
     ...purchaseLineStatements(db, captureId, resolved),
   ]);
   return json({

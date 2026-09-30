@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import {
-  normalizeItemName, unitPriceKamas, type FmMe, type PriceableResource, type ProposedLine, type ResourceNameIndex,
+  normalizeItemName, unitPriceKamas, type FmMe, type FmSession, type PriceableResource, type ProposedLine, type ResourceNameIndex,
 } from '../../domain/forgemagie';
 import { formatKamas, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
@@ -9,7 +9,7 @@ import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { loadResourceIndex, readCapture, type CaptureReading } from '../../services/capture-ocr';
 import { getCommunityPrices } from '../../services/community-price-api';
-import { importFmCapture } from '../../services/fm-api';
+import { getFmSessions, importFmCapture } from '../../services/fm-api';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
 
 // specs/025-rune-purchase-import (US5): paste or drop a chat capture, check and correct what was read on
@@ -55,6 +55,21 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
+  // specs/028 FR-013: the player's open sessions the import can go into; the most recent by default.
+  const [openSessions, setOpenSessions] = useState<FmSession[]>([]);
+  const [targetSessionId, setTargetSessionId] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void getFmSessions(null, { mine: 'open' }).then((result) => {
+      if (cancelled || result.status !== 'ok') return;
+      setOpenSessions(result.data.sessions);
+      setTargetSessionId(result.data.sessions[0]?.id ?? '');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     void loadResourceIndex().then(setIndex).catch(() => undefined);
@@ -128,7 +143,7 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
       itemId: line.resource!.id,
       quantity: values.quantity,
       totalKamas: values.totalKamas,
-    })), priceMode === 'community');
+    })), priceMode === 'community', targetSessionId || undefined);
 
     if (result.status !== 'ok') {
       setStatus('review');
@@ -136,7 +151,9 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
         tone: 'error',
         text: result.status === 'error' && result.code === 'no-server'
           ? 'Choisis d’abord ton serveur Dofus ci-dessus.'
-          : 'L’import n’a pas pu être enregistré. Réessaie.',
+          : result.status === 'error' && result.code === 'session-not-open'
+            ? 'Cette session vient d’être arrêtée. Choisis-en une autre, ou « Hors session ».'
+            : 'L’import n’a pas pu être enregistré. Réessaie.',
       });
       return;
     }
@@ -242,6 +259,15 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
           </table>
           <p className="fm-note">Prix unitaire = total ÷ quantité, arrondi au kama le plus proche. Chaque ligne est un lot acheté.</p>
           {blocked && <p className="fm-error" role="alert">Choisis l'objet de chaque ligne non reconnue, ou décoche-la.</p>}
+          {openSessions.length > 0 && (
+            <label className="fm-field">
+              <span className="fm-field-label">Ajouter à</span>
+              <select className="hdv-type-filter" value={targetSessionId} onChange={(event) => setTargetSessionId(event.target.value)} aria-label="Session de l'import">
+                {openSessions.map((session) => <option key={session.id} value={session.id}>La session en cours #{session.channelName}</option>)}
+                <option value="">Hors session</option>
+              </select>
+            </label>
+          )}
           <div className="fm-import-actions">
             <button type="button" className="btn btn-secondary" onClick={() => { setLines([]); setStatus('idle'); }} disabled={status === 'saving'}>
               Annuler

@@ -1,9 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import { fmItemDisplayName, formatFmDate, type FmItemSummary, type FmMe, type FmOwnedItem, type FmSessionDetail, type FmSessionItem } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
-import { attachFmSession, detachFmSession, getFmPlayer, getFmSession } from '../../services/fm-api';
+import { attachFmSession, detachFmSession, getFmPlayer, getFmSession, resendFmSession, stopFmSession } from '../../services/fm-api';
+import { SyncBadge } from './StartSession';
+
+// specs/028: while the bot hasn't confirmed, the detail rereads the session at the bot's pace.
+const SYNC_REFRESH_MS = 10_000;
+
+// specs/028-site-started-sessions (US2, FR-011): stop the session from the site, or resend a request
+// the bot didn't pick up.
+function SessionControls({ session, onChanged }: { session: FmSessionDetail; onChanged: (session: FmSessionDetail) => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+  const canResend = session.canStop && session.sync !== null && ['stale', 'failed'].includes(session.sync.status);
+
+  const act = async (action: () => ReturnType<typeof stopFmSession>) => {
+    setBusy(true);
+    setError(undefined);
+    const result = await action();
+    setBusy(false);
+    dialogRef.current?.close();
+    if (result.status === 'ok') onChanged(result.data);
+    else setError('L\u2019opération a échoué. Recharge la session et réessaie.');
+  };
+
+  if (!session.canStop && !canResend) return null;
+  return (
+    <div className="fm-session-controls">
+      {canResend && (
+        <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={() => void act(() => resendFmSession(session.id))}>
+          Relancer
+        </button>
+      )}
+      {session.canStop && (
+        <button type="button" className="btn btn-secondary btn-small fm-delete" disabled={busy} onClick={() => dialogRef.current?.showModal()}>
+          Arrêter la session
+        </button>
+      )}
+      {error && <p className="fm-error" role="alert">{error}</p>}
+      <dialog ref={dialogRef} className="outlier-confirm-dialog" aria-label="Arrêter la session">
+        <p><b>Arrêter la session #{session.channelName} ?</b></p>
+        <p>La session sera aussi fermée dans Discord, et les captures postées ensuite ne compteront plus.</p>
+        <div className="outlier-confirm-dialog-actions">
+          <button type="button" onClick={() => dialogRef.current?.close()}>Annuler</button>
+          <button type="button" className="outlier-confirm-dialog-confirm" disabled={busy} onClick={() => void act(() => stopFmSession(session.id))}>
+            Arrêter
+          </button>
+        </div>
+      </dialog>
+    </div>
+  );
+}
 import { PlayerBadge } from './PlayerBadge';
 import { SessionStatus } from './SessionsTab';
 
@@ -120,18 +170,28 @@ export function SessionDetail({ sessionId, me, onBack, onUnauthorized, onGoToPro
 }) {
   const [state, setState] = useState<{ status: 'loading' } | { status: 'missing' | 'unavailable' } | { status: 'ready'; session: FmSessionDetail }>({ status: 'loading' });
 
+  const [refresh, setRefresh] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     void getFmSession(sessionId).then((result) => {
       if (cancelled) return;
       if (result.status === 'unauthorized') onUnauthorized();
       else if (result.status === 'ok') setState({ status: 'ready', session: result.data });
-      else setState({ status: result.status === 'not-found' ? 'missing' : 'unavailable' });
+      // A failed reread keeps what is shown; only the first read reports an error.
+      else if (refresh === 0) setState({ status: result.status === 'not-found' ? 'missing' : 'unavailable' });
     });
     return () => {
       cancelled = true;
     };
-  }, [sessionId, onUnauthorized]);
+  }, [sessionId, onUnauthorized, refresh]);
+
+  const waitingForBot = state.status === 'ready' && state.session.status === 'open' && state.session.sync?.status === 'pending';
+  useEffect(() => {
+    if (!waitingForBot) return;
+    const timer = window.setTimeout(() => setRefresh((value) => value + 1), SYNC_REFRESH_MS);
+    return () => window.clearTimeout(timer);
+  }, [waitingForBot, refresh]);
 
   return (
     <div className="fm-session-detail">
@@ -150,6 +210,8 @@ export function SessionDetail({ sessionId, me, onBack, onUnauthorized, onGoToPro
             Ouverte le {formatFmDate(state.session.openedAt)}
             {state.session.closedAt ? ` · fermée le ${formatFmDate(state.session.closedAt)}` : ''}
           </p>
+          {state.session.sync && <p><SyncBadge sync={state.session.sync} /></p>}
+          <SessionControls session={state.session} onChanged={(session) => setState({ status: 'ready', session })} />
           <SessionItem
             session={state.session}
             me={me}

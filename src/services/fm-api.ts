@@ -1,5 +1,5 @@
 import type {
-  FmItemRecap, FmMe, FmOwnedItem, FmPlayerSpend, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
+  FmChannel, FmItemRecap, FmMe, FmOwnedItem, FmPlayerSpend, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
 } from '../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken } from '../persistence/fm-session-token';
 
@@ -68,7 +68,15 @@ function mapOk<T, U>(result: FmResult<T>, map: (data: T) => U): FmResult<U> {
 
 // specs/027: a Worker from before the item recap sends no `fmItem`, `canAttach`, `canDetach` or
 // `fmItems`: they read as « not attached », « no action » and « no item ».
-const withSessionItem = <T extends FmSession>(session: T): T => ({ ...session, fmItem: session.fmItem ?? null });
+// specs/028: nor `owner`, `origin`, `sync` or `canStop` (a Discord session nobody can stop from the site).
+const withSessionItem = <T extends FmSession>(session: T): T => ({
+  ...session,
+  fmItem: session.fmItem ?? null,
+  owner: session.owner ?? null,
+  origin: session.origin === 'site' ? 'site' : 'discord',
+  sync: session.sync ?? null,
+  canStop: session.canStop === true,
+});
 const withDetailActions = (session: FmSessionDetail): FmSessionDetail => ({
   ...withSessionItem(session),
   canAttach: session.canAttach === true,
@@ -148,8 +156,11 @@ export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean }) 
 export const deleteFmMe = () => request('DELETE', '/fm/me', isNothing);
 export const logoutFm = () => request('POST', '/fm/auth/logout', isNothing);
 
-export async function getFmSessions(before?: string | null) {
-  const query = before ? `?before=${encodeURIComponent(before)}` : '';
+export async function getFmSessions(before?: string | null, filter: { mine?: 'open' } = {}) {
+  const params = new URLSearchParams();
+  if (before) params.set('before', before);
+  if (filter.mine) params.set('mine', filter.mine);
+  const query = params.size > 0 ? `?${params.toString()}` : '';
   return mapOk(await request('GET', `/fm/sessions${query}`, isSessionsPage), (page) => ({ ...page, sessions: page.sessions.map(withSessionItem) }));
 }
 
@@ -172,6 +183,22 @@ export const attachFmSession = async (sessionId: string, fmItemId: string) =>
 export const detachFmSession = async (sessionId: string) =>
   mapOk(await request('DELETE', `${sessionPath(sessionId)}/item`, isSessionDetail), withDetailActions);
 
-export function importFmCapture(lines: ImportLineRequest[], sharePrices: boolean) {
-  return request('POST', '/fm/imports', isImportAnswer, { sharePrices, lines });
+export function importFmCapture(lines: ImportLineRequest[], sharePrices: boolean, sessionId?: string) {
+  return request('POST', '/fm/imports', isImportAnswer, { sharePrices, lines, ...(sessionId ? { sessionId } : {}) });
 }
+
+// specs/028-site-started-sessions (contracts/fm-site-sessions-api.md).
+function isChannels(value: unknown): value is { channels: FmChannel[] } {
+  return isRecord(value) && Array.isArray(value.channels) && value.channels.every((channel) =>
+    isRecord(channel) && typeof channel.channelId === 'string' && typeof channel.channelName === 'string' && typeof channel.busy === 'boolean');
+}
+
+export const getFmChannels = () => request('GET', '/fm/channels', isChannels);
+/** Errors: `channel-busy` (409). */
+export const startFmSession = async (channelId: string, fmItemId: string | null) =>
+  mapOk(await request('POST', '/fm/sessions', isSessionDetail, { channelId, fmItemId }), withDetailActions);
+/** Errors: `not-open` (409). */
+export const stopFmSession = async (sessionId: string) =>
+  mapOk(await request('POST', `${sessionPath(sessionId)}/stop`, isSessionDetail), withDetailActions);
+export const resendFmSession = async (sessionId: string) =>
+  mapOk(await request('POST', `${sessionPath(sessionId)}/resend`, isSessionDetail), withDetailActions);
