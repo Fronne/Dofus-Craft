@@ -35,6 +35,7 @@ describe('summarizeContributions', () => {
       lastContributionAt: '2026-09-21T11:00:00Z',
       latestAmountKamas: 2000,
       latestContributionAt: '2026-09-21T11:00:00Z',
+      latestOrigin: 'manual',
     });
   });
 

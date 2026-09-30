@@ -27,3 +27,16 @@ namespace_id = "1001"
 # COMMUNITY_API_KEY is a secret, not declared here — set it with:
 #   wrangler secret put COMMUNITY_API_KEY --config worker/wrangler.toml
 # It must match VITE_COMMUNITY_API_KEY in the frontend's .env.local.
+
+# specs/025-rune-purchase-import (page Forgemagie). Where the Discord login sends the player back
+# (research R3). For local work, override it in worker/.dev.vars: SITE_URL=http://localhost:5173
+[vars]
+SITE_URL = "https://dofus-craft.dofus-craft.workers.dev"
+
+# Forgemagie secrets, not declared here — set each one with:
+#   wrangler secret put <NAME> --config worker/wrangler.toml
+# and put the same values in worker/.dev.vars (not committed) for `npm run worker:dev`.
+# - DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET: the Discord application used for the login (research R2)
+# - DISCORD_GUILD_ID: the group's Discord server; only its members can log in (FR-002)
+# - FM_BOT_API_KEY: the key the Discord bot sends with its events (contracts/fm-bot-api.md). Unlike
+#   COMMUNITY_API_KEY, it never appears in the site's bundle.

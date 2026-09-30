@@ -1,4 +1,5 @@
 import type { CommunityPrice } from '../domain/types';
+import { isPriceOrigin } from '../domain/forgemagie';
 import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
@@ -46,6 +47,13 @@ function isCommunityPriceRow(value: unknown): value is CommunityPrice {
     typeof value.latestContributionAt === 'string';
 }
 
+// specs/025-rune-purchase-import: `latestOrigin` is optional (an older Worker doesn't send it) and an
+// unknown value is dropped rather than shown — the page then shows it as a manual entry.
+function withKnownOrigin(price: CommunityPrice): CommunityPrice {
+  if (price.latestOrigin === undefined || isPriceOrigin(price.latestOrigin)) return price;
+  return { ...price, latestOrigin: undefined };
+}
+
 export type CommunityPriceLookup =
   | { status: 'found'; price: CommunityPrice }
   | { status: 'not-found' }
@@ -71,7 +79,7 @@ export async function getCommunityPrice(resourceId: string, serverId: string): P
     return { status: 'unavailable' };
   }
   if (!isCommunityPriceRow(payload)) return { status: 'unavailable' };
-  return { status: 'found', price: payload };
+  return { status: 'found', price: withKnownOrigin(payload) };
 }
 
 // specs/016-shared-item-prices: an item's shared HDV price — the latest contribution of the group
@@ -198,7 +206,7 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
       // every row made every batched read "unavailable" in production (fixed 2026-09-28).
       const prices: unknown[] = payload.prices.map((row) => (isRecord(row) ? { serverId, ...row } : row));
       if (!prices.every(isCommunityPriceRow)) return undefined;
-      return prices;
+      return prices.map(withKnownOrigin);
     } catch {
       return undefined;
     }

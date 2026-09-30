@@ -593,3 +593,12 @@ Amendée par [specs/024-latest-community-price](../024-latest-community-price/sp
 - **FR-006 (remplacée)** : un prix gardé sur l'appareil est remplacé par le dernier prix partagé
   quand celui-ci est plus récent (comparaison des dates), jamais pendant une saisie en cours ; un
   prix gardé plus récent est conservé.
+
+## Révision (2026-09-30) : origine des prix et page Forgemagie (specs/025-rune-purchase-import)
+
+- **FR-010 (précisée)** : la table des prix reste sans donnée identifiant le joueur. Les prix tirés
+  des achats de la page Forgemagie y sont enregistrés sous un identifiant pseudonyme par joueur
+  (`fm:` + début du SHA-256 de l'identifiant Discord). Les identifiants Discord sont seulement dans
+  les tables `fm_*`, régies par specs/025.
+- Chaque contribution garde son **origine** (`manual`, `capture` ou `bot`). Toutes les contributions
+  envoyées par la route publique sont des saisies manuelles.

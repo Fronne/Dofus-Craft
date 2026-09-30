@@ -1,4 +1,4 @@
-import { summarizeContributions, type ContributionsSummary } from './median';
+import { summarizeContributions, type ContributionRow, type ContributionsSummary, type PriceOrigin } from './median';
 import { retentionCutoff } from './retention';
 import { resolveOutlierFields } from './outlier';
 import { readLatestContribution } from './latest';
@@ -10,7 +10,9 @@ export const MAX_AMOUNT_KAMAS = 2_000_000_000;
 // specs/016: 'item' for an item's shared HDV price, 'resource' (the default, and every row before
 // this feature) for a resource price.
 export type ContributionKind = 'resource' | 'item';
-export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind };
+// specs/025-rune-purchase-import: `origin` is 'manual' for everything posted by the site's public route
+// (the client can't claim another one); only the Forgemagie routes record 'capture' or 'bot'.
+export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind; origin: PriceOrigin };
 
 // The D1 calls these need, typed structurally (like retention.ts) so the module also compiles in
 // the app's test setup, which doesn't load the Workers types. D1Database is assignable to it.
@@ -44,6 +46,7 @@ export function parseContributionPayload(value: unknown): Contribution | undefin
     amountKamas: record.amountKamas as number,
     deviceId: record.deviceId as string,
     kind: record.kind === 'item' ? 'item' : 'resource',
+    origin: 'manual',
   };
 }
 
@@ -55,15 +58,16 @@ export async function fetchCurrentMedian(
   serverId: string,
 ): Promise<ContributionsSummary | undefined> {
   const { results } = await db.prepare(
-    `SELECT amount_kamas, created_at, device_id FROM community_price_contributions
+    `SELECT amount_kamas, created_at, device_id, origin FROM community_price_contributions
      WHERE resource_id = ? AND server_id = ? AND created_at >= ? AND kind = 'resource'
      ORDER BY created_at, rowid`,
-  ).bind(resourceId, serverId, retentionCutoff()).all<{ amount_kamas: number; created_at: string; device_id: string }>();
+  ).bind(resourceId, serverId, retentionCutoff()).all<{ amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin }>();
 
   return summarizeContributions(results.map((row) => ({
     amountKamas: row.amount_kamas,
     createdAt: row.created_at,
     deviceId: row.device_id,
+    origin: row.origin,
   })));
 }
 
@@ -81,15 +85,15 @@ export async function fetchCurrentMedians(
   if (resourceIds.length === 0) return medians;
   const placeholders = resourceIds.map(() => '?').join(', ');
   const { results } = await db.prepare(
-    `SELECT resource_id, amount_kamas, created_at, device_id FROM community_price_contributions
+    `SELECT resource_id, amount_kamas, created_at, device_id, origin FROM community_price_contributions
      WHERE resource_id IN (${placeholders}) AND server_id = ? AND created_at >= ? AND kind = 'resource'
      ORDER BY created_at, rowid`,
-  ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string }>();
+  ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin }>();
 
-  const byResource = new Map<string, { amountKamas: number; createdAt: string; deviceId: string }[]>();
+  const byResource = new Map<string, ContributionRow[]>();
   for (const row of results) {
     const rows = byResource.get(row.resource_id) ?? [];
-    rows.push({ amountKamas: row.amount_kamas, createdAt: row.created_at, deviceId: row.device_id });
+    rows.push({ amountKamas: row.amount_kamas, createdAt: row.created_at, deviceId: row.device_id, origin: row.origin });
     byResource.set(row.resource_id, rows);
   }
   for (const [resourceId, rows] of byResource) {
@@ -124,7 +128,7 @@ export async function communityPricesResponse(db: ContributionDb, url: URL): Pro
 // is compared against (the community median for a resource, the latest shared price for an item) and
 // the resulting deviation are resolved here, never trusted from the client, before the insert.
 export async function insertContribution(db: ContributionDb, contribution: Contribution): Promise<string> {
-  const { resourceId, serverId, amountKamas, deviceId, kind } = contribution;
+  const { resourceId, serverId, amountKamas, deviceId, kind, origin } = contribution;
   const reference = kind === 'item'
     ? await readLatestContribution(db, resourceId, serverId).then((latest) =>
       (latest ? { medianAmountKamas: latest.amountKamas } : undefined))
@@ -132,7 +136,7 @@ export async function insertContribution(db: ContributionDb, contribution: Contr
   const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, reference);
   const id = crypto.randomUUID();
   await db.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind).run();
+    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin).run();
   return id;
 }

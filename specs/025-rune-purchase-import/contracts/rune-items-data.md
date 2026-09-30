@@ -19,8 +19,12 @@ Généré par `node scripts/build-rune-items.mjs`, relu et commité à la main (
 
 - `runes` : tous les objets DofusDB du type 78, triés par `statLabel` puis par `level`.
 - `characteristicId` : champ `characteristic` de l'effet dans `GET /effects` ; `null` si
-  l'effet n'a pas de caractéristique. `statLabel` vaut alors « Autre ».
-- `statLabel` : nom français de la caractéristique (`GET /characteristics`), ou « Autre ».
+  l'effet n'a pas de caractéristique.
+- `statLabel` : tiré de la description française de l'effet (`GET /effects`, champ `description`),
+  débarrassée de ses marqueurs (« #1{{~1~2 à }}#2 Dommage{{~ps}}{{~zs}} Air » → « Dommages Air »,
+  « …#2% Résistance Air » → « Résistance Air (%) »). À défaut de description, nom français de la
+  caractéristique (`GET /characteristics`), sinon « Autre ». Les noms de caractéristique seuls ne
+  distinguent pas les dommages des résistances d'un même élément.
 - Le script s'arrête avec une erreur si DofusDB ne répond pas ; il n'écrit jamais de fichier
   partiel.
 

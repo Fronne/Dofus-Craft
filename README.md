@@ -37,6 +37,17 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Objets suivis** : suivre des objets et les ranger en listes.
 - **Bandeau d'information** : un message (Info ou Important, avec une date de fin facultative)
   publié depuis la page d'administration, affiché en haut du site ; chaque joueur peut le fermer.
+- **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
+  leur compte Discord (le reste du site reste sans compte).
+  - Les **sessions FM** du bot Discord du groupe y sont gardées : total, dépense de chaque joueur, et
+    détail des runes achetées avec leur prix moyen, les mêmes chiffres que le résumé du bot.
+  - Chaque joueur a un **profil** avec ses dépenses. Il est public par défaut ; un profil privé
+    n'est visible que par son propriétaire, et son nom est masqué dans les sessions.
+  - Le **prix des runes** est tiré des achats envoyés par le bot, avec sa date et son origine
+    (« Bot Discord », « Capture », « Saisie manuelle »). Un prix trop éloigné des relevés du groupe
+    compte dans les dépenses, mais pas dans les prix.
+  - On peut aussi **coller une capture du chat** sur le site : elle est lue sur l'appareil (jamais
+    envoyée), et les lignes lues sont vérifiées et corrigées avant d'être enregistrées.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
 - **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)
@@ -48,13 +59,13 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 | Partie | Dossier | Rôle |
 |---|---|---|
 | Site | `src/` | React 19, TypeScript, Vite. Servi par le Worker Cloudflare `dofus-craft` (fichiers statiques de `dist/`). |
-| API communautaire | `worker/` | Worker `dofus-craft-community-price-api` + base Cloudflare D1 : prix partagés, médianes, compteurs de joueurs (lecture), comptage anonyme des visites. |
+| API communautaire | `worker/` | Worker `dofus-craft-community-price-api` + base Cloudflare D1 : prix partagés, médianes, compteurs de joueurs (lecture), comptage anonyme des visites, et la page Forgemagie (connexion Discord, sessions du bot, profils — `worker/src/fm/`). |
 | Administration | `admin/`, `admin-worker/` | Page et Worker `dofus-craft-admin`, protégés par Cloudflare Access, pour gérer les compteurs de joueurs. |
 | Spécifications | `specs/`, `.specify/` | Une spec Speckit par fonctionnalité (spec, plan, tâches). |
 | Tests | `tests/` | Unitaires et intégration (Vitest), bout en bout (Playwright). |
 
 Sur l'appareil, le catalogue et les prix sont dans IndexedDB, les préférences dans le localStorage.
-Il n'y a pas de compte joueur.
+Il n'y a pas de compte joueur, sauf la connexion Discord de la page Forgemagie.
 
 ## Démarrer
 
@@ -95,6 +106,9 @@ l'administration (Cloudflare Access, secret `OWNER_EMAIL`) dans
 - Les contributions sont limitées (60 par minute et par IP, montant plafonné) et supprimées au bout
   de 90 jours.
 - Les visites sont comptées une fois par appareil et par jour, sans donnée identifiante.
+- Page Forgemagie : seuls l'identifiant, le pseudo et l'avatar Discord du joueur sont gardés, avec
+  son serveur et ses achats. Jamais d'e-mail. Chaque joueur peut passer son profil en privé, ou le
+  supprimer avec tous ses achats. Les prix tirés des achats restent anonymes.
 
 ## Contribuer
 

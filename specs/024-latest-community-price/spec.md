@@ -226,3 +226,9 @@ confirmation s'affiche avec le prix saisi, sans médiane ni pourcentage d'écart
 - Le prix HDV des objets (specs/016) n'est pas modifié : il est déjà le dernier prix partagé.
 - La correction des données déjà en base (reclassement du 2026-09-28) est hors du périmètre de cette
   spec.
+
+## Révision (2026-09-30) : origine du dernier prix (specs/025-rune-purchase-import)
+
+Les réponses de `GET /community-price` et `GET /community-prices` gagnent `latestOrigin`, l'origine
+du dernier prix partagé (« Saisie manuelle », « Capture » ou « Bot Discord »), affichée sur la page
+Forgemagie. La règle du dernier prix (FR-001) ne change pas, quelle que soit l'origine.

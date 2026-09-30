@@ -69,6 +69,7 @@ Index unique partiel : un seul `status = 'open'` par `channel_id`.
 |---|---|---|
 | `id` | TEXT PK | UUID |
 | `capture_id` | TEXT NOT NULL | → `fm_captures` (suppression en cascade) |
+| `position` | INTEGER NOT NULL | Rang de la ligne dans l'envoi (ordre d'affichage et de réponse au bot) |
 | `item_name` | TEXT NOT NULL | Nom tel que lu (ou choisi sur le site) |
 | `item_id` | TEXT | Ressource reconnue (R5), ou NULL |
 | `quantity` | INTEGER NOT NULL > 0 | |

@@ -34,7 +34,10 @@ export function computeCommunityMedian(amounts: number[]): { medianAmountKamas: 
   };
 }
 
-export type ContributionRow = { amountKamas: number; createdAt: string; deviceId: string };
+// specs/025-rune-purchase-import: who or what recorded a price. Rows read without it count as manual.
+export type PriceOrigin = 'manual' | 'capture' | 'bot';
+
+export type ContributionRow = { amountKamas: number; createdAt: string; deviceId: string; origin?: PriceOrigin };
 
 // specs/004-community-price-sharing FR-023 (révision 7): a device that corrects its price several
 // times counts once, with its latest value — otherwise one player re-typing a price would show as
@@ -60,6 +63,8 @@ export type ContributionsSummary = {
   lastContributionAt: string;
   latestAmountKamas: number;
   latestContributionAt: string;
+  // specs/025-rune-purchase-import (FR-011): the origin of that latest contribution.
+  latestOrigin: PriceOrigin;
 };
 
 // What GET /community-price returns: the median over one contribution per device, and the date of
@@ -76,5 +81,11 @@ export function summarizeContributions(rows: ContributionRow[]): ContributionsSu
     .filter((row) => row.amountKamas >= low && row.amountKamas <= high)
     .reduce((latest, row) => (row.createdAt > latest ? row.createdAt : latest), '');
   const latest = rows.reduce((current, row) => (row.createdAt >= current.createdAt ? row : current));
-  return { ...median, lastContributionAt, latestAmountKamas: latest.amountKamas, latestContributionAt: latest.createdAt };
+  return {
+    ...median,
+    lastContributionAt,
+    latestAmountKamas: latest.amountKamas,
+    latestContributionAt: latest.createdAt,
+    latestOrigin: latest.origin ?? 'manual',
+  };
 }

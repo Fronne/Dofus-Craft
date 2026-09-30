@@ -5,19 +5,21 @@ import { itemPricesResponse, latestPriceResponse } from './latest';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
 import { cachedRead, clearReadCache } from './read-cache';
+import { CORS_HEADERS } from './cors';
+import { handleFm } from './fm/router';
 
 export interface Env {
   DB: D1Database;
   COMMUNITY_API_KEY: string;
   // Optional so local runs without the binding keep working (see wrangler.toml [[ratelimits]]).
   CONTRIBUTION_LIMITER?: RateLimit;
+  // specs/025-rune-purchase-import: the Forgemagie page's secrets and site URL (wrangler.toml).
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
+  DISCORD_GUILD_ID?: string;
+  FM_BOT_API_KEY?: string;
+  SITE_URL?: string;
 }
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-};
 
 function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -58,6 +60,8 @@ async function communityPriceResponse(url: URL, env: Env): Promise<{ status: num
       // specs/024-latest-community-price: the price the site shows (contracts/community-price-api.md).
       latestAmountKamas: median.latestAmountKamas,
       latestContributionAt: median.latestContributionAt,
+      // specs/025-rune-purchase-import: the origin of that latest price (contracts/fm-site-api.md).
+      latestOrigin: median.latestOrigin,
     },
   };
 }
@@ -154,6 +158,10 @@ export default {
     if (request.method === 'GET' && url.pathname === '/player-counters') {
       return json(await readPlayerCounters(env.DB));
     }
+
+    // specs/025-rune-purchase-import: the Forgemagie routes authenticate on their own (the bot's key or
+    // the site's session token), so they are routed before the shared app key check below.
+    if (url.pathname.startsWith('/fm/')) return handleFm(request, url, env);
 
     // Writes (contribute) require the shared app key, a light deterrent against requests from
     // outside this app — never a player identity (FR-010 still holds: the key is the same for

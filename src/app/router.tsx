@@ -7,5 +7,6 @@ export const ROUTES = {
   legacyPrices: '/prix',
   pets: '/familier',
   hdv: '/hdv',
+  forgemagie: '/forgemagie',
   settings: '/parametres',
 } as const;

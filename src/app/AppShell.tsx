@@ -11,6 +11,7 @@ import { ParametresPage } from '../features/settings/ParametresPage';
 import { PricesPage } from '../features/prices/PricesPage';
 import { FamilierPage } from '../features/pets/FamilierPage';
 import { HdvPage } from '../features/hdv/HdvPage';
+import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import type { AccentColorId } from '../domain/accent-colors';
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false },
   { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
   { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false },
+  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false },
 ];
 
 export function AppShell() {
@@ -137,6 +139,7 @@ export function AppShell() {
             <Route path={ROUTES.legacyPrices} element={<Navigate to={ROUTES.prices} replace />} />
             <Route path={ROUTES.hdv} element={<HdvPage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
+            <Route path={ROUTES.forgemagie} element={<ForgemagiePage priceMode={priceMode} />} />
             <Route
               path={ROUTES.settings}
               element={

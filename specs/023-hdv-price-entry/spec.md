@@ -244,3 +244,8 @@ vérifier que seuls les objets sans prix connu restent affichés, avec le bon d�
   préchargement discret de la page Prix (specs/021) ne dépend pas de la page ouverte.
 - Le groupe d'utilisateurs est petit (une dizaine à une vingtaine de joueurs) ; aucune contrainte de
   volume particulière.
+
+## Révision (2026-09-30) : entrée « Forgemagie » (specs/025-rune-purchase-import)
+
+La navigation principale gagne une entrée « Forgemagie », après « XP Familier ». La page HDV ne
+couvre toujours pas l'HDV Runes : le prix des runes est sur la page Forgemagie.

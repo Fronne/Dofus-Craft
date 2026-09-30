@@ -25,12 +25,25 @@ export function createTestD1() {
       };
       return { bind: (...params: unknown[]) => bound(params), ...bound([]) };
     },
+    // D1's batch: the statements run in order inside one transaction, all or nothing (specs/025).
+    async batch(statements: { run(): Promise<unknown> }[]) {
+      db.exec('BEGIN');
+      try {
+        const results = [];
+        for (const statement of statements) results.push(await statement.run());
+        db.exec('COMMIT');
+        return results;
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    },
   };
-  const insert = (row: { resourceId: string; serverId?: string; amountKamas: number; createdAt: string; kind?: 'item' | 'resource'; deviceId?: string }) =>
-    db.prepare(`INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, created_at, kind)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), row.resourceId, row.serverId ?? 'mikhal', row.amountKamas,
-      row.deviceId ?? 'device-a', row.createdAt, row.kind ?? 'resource');
+  const insert = (row: { resourceId: string; serverId?: string; amountKamas: number; createdAt: string; kind?: 'item' | 'resource'; deviceId?: string; origin?: 'manual' | 'capture' | 'bot' }) =>
+    db.prepare(`INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, created_at, kind, origin)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(crypto.randomUUID(), row.resourceId, row.serverId ?? 'mikhal', row.amountKamas,
+      row.deviceId ?? 'device-a', row.createdAt, row.kind ?? 'resource', row.origin ?? 'manual');
   const rows = () => db.prepare('SELECT resource_id, server_id, amount_kamas, kind, created_at, median_at_submission_kamas, deviation_percent FROM community_price_contributions ORDER BY created_at')
     .all() as { resource_id: string; server_id: string; amount_kamas: number; kind: string; created_at: string; median_at_submission_kamas: number | null; deviation_percent: number | null }[];
-  return { d1, insert, rows };
+  return { d1, insert, rows, sqlite: db };
 }

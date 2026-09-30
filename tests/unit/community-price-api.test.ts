@@ -15,6 +15,20 @@ describe('community price API service (Cloudflare Worker client)', () => {
       await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'found', price });
     });
 
+    it('reads the origin of the latest price, and ignores an unknown one (specs/025)', async () => {
+      const base = {
+        resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4,
+        latestAmountKamas: 1100, latestContributionAt: '2026-09-28T13:51:28.940Z',
+      };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...base, latestOrigin: 'bot' }), { status: 200 })));
+      await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'found', price: { ...base, latestOrigin: 'bot' } });
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...base, latestOrigin: 'robot' }), { status: 200 })));
+      const lookup = await getCommunityPrice('r1', 's1');
+      expect(lookup.status).toBe('found');
+      expect(lookup.status === 'found' && lookup.price.latestOrigin).toBeUndefined();
+    });
+
     it('resolves unavailable when the answer has no latest price (specs/024)', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(
         { resourceId: 'r1', serverId: 's1', medianAmountKamas: 1200, sampleSize: 4 },

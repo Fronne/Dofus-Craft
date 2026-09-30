@@ -1,0 +1,952 @@
+{
+  "source": "DofusDB (objets du type 78 « Rune de forgemagie », effets, caractéristiques)",
+  "sourceUrl": "https://api.dofusdb.fr",
+  "retrievedAt": "2026-09-30",
+  "runes": [
+    {
+      "id": "1524",
+      "name": "Rune Age",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78046.png",
+      "level": 1,
+      "effectId": 119,
+      "characteristicId": 14,
+      "statLabel": "Agilité"
+    },
+    {
+      "id": "1549",
+      "name": "Rune Pa Age",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78047.png",
+      "level": 5,
+      "effectId": 119,
+      "characteristicId": 14,
+      "statLabel": "Agilité"
+    },
+    {
+      "id": "1555",
+      "name": "Rune Ra Age",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78048.png",
+      "level": 10,
+      "effectId": 119,
+      "characteristicId": 14,
+      "statLabel": "Agilité"
+    },
+    {
+      "id": "10057",
+      "name": "Rune de chasse",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78059.png",
+      "level": 10,
+      "effectId": 795,
+      "characteristicId": 0,
+      "statLabel": "Arme de chasse"
+    },
+    {
+      "id": "7508",
+      "name": "Rune de Signature",
+      "imageUrl": "https://api.dofusdb.fr/img/items/50037.png",
+      "level": 100,
+      "effectId": null,
+      "characteristicId": null,
+      "statLabel": "Autre"
+    },
+    {
+      "id": "1525",
+      "name": "Rune Cha",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78040.png",
+      "level": 1,
+      "effectId": 123,
+      "characteristicId": 13,
+      "statLabel": "Chance"
+    },
+    {
+      "id": "1550",
+      "name": "Rune Pa Cha",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78041.png",
+      "level": 5,
+      "effectId": 123,
+      "characteristicId": 13,
+      "statLabel": "Chance"
+    },
+    {
+      "id": "1556",
+      "name": "Rune Ra Cha",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78042.png",
+      "level": 10,
+      "effectId": 123,
+      "characteristicId": 13,
+      "statLabel": "Chance"
+    },
+    {
+      "id": "7433",
+      "name": "Rune Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78014.png",
+      "level": 80,
+      "effectId": 115,
+      "characteristicId": 18,
+      "statLabel": "Critique (%)"
+    },
+    {
+      "id": "7435",
+      "name": "Rune Do",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78015.png",
+      "level": 50,
+      "effectId": 112,
+      "characteristicId": 16,
+      "statLabel": "Dommages"
+    },
+    {
+      "id": "11663",
+      "name": "Rune Do Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78067.png",
+      "level": 40,
+      "effectId": 428,
+      "characteristicId": 91,
+      "statLabel": "Dommages Air"
+    },
+    {
+      "id": "11664",
+      "name": "Rune Pa Do Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78068.png",
+      "level": 45,
+      "effectId": 428,
+      "characteristicId": 91,
+      "statLabel": "Dommages Air"
+    },
+    {
+      "id": "18722",
+      "name": "Rune Do Per So",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78094.png",
+      "level": 50,
+      "effectId": 2812,
+      "characteristicId": 123,
+      "statLabel": "Dommages aux sorts (%)"
+    },
+    {
+      "id": "11653",
+      "name": "Rune Do Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78073.png",
+      "level": 40,
+      "effectId": 418,
+      "characteristicId": 86,
+      "statLabel": "Dommages Critiques"
+    },
+    {
+      "id": "11654",
+      "name": "Rune Pa Do Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78074.png",
+      "level": 45,
+      "effectId": 418,
+      "characteristicId": 86,
+      "statLabel": "Dommages Critiques"
+    },
+    {
+      "id": "18721",
+      "name": "Rune Do Per Ar",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78093.png",
+      "level": 50,
+      "effectId": 2808,
+      "characteristicId": 122,
+      "statLabel": "Dommages d'armes (%)"
+    },
+    {
+      "id": "18720",
+      "name": "Rune Do Per Di",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78091.png",
+      "level": 50,
+      "effectId": 2804,
+      "characteristicId": 120,
+      "statLabel": "Dommages distance (%)"
+    },
+    {
+      "id": "11661",
+      "name": "Rune Do Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78061.png",
+      "level": 40,
+      "effectId": 426,
+      "characteristicId": 90,
+      "statLabel": "Dommages Eau"
+    },
+    {
+      "id": "11662",
+      "name": "Rune Pa Do Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78062.png",
+      "level": 45,
+      "effectId": 426,
+      "characteristicId": 90,
+      "statLabel": "Dommages Eau"
+    },
+    {
+      "id": "11659",
+      "name": "Rune Do Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78063.png",
+      "level": 40,
+      "effectId": 424,
+      "characteristicId": 89,
+      "statLabel": "Dommages Feu"
+    },
+    {
+      "id": "11660",
+      "name": "Rune Pa Do Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78064.png",
+      "level": 45,
+      "effectId": 424,
+      "characteristicId": 89,
+      "statLabel": "Dommages Feu"
+    },
+    {
+      "id": "18719",
+      "name": "Rune Do Per Mé",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78092.png",
+      "level": 50,
+      "effectId": 2800,
+      "characteristicId": 125,
+      "statLabel": "Dommages mêlée (%)"
+    },
+    {
+      "id": "11665",
+      "name": "Rune Do Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78069.png",
+      "level": 40,
+      "effectId": 430,
+      "characteristicId": 92,
+      "statLabel": "Dommages Neutre"
+    },
+    {
+      "id": "11666",
+      "name": "Rune Pa Do Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78070.png",
+      "level": 45,
+      "effectId": 430,
+      "characteristicId": 92,
+      "statLabel": "Dommages Neutre"
+    },
+    {
+      "id": "7446",
+      "name": "Rune Do Pi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78268.png",
+      "level": 40,
+      "effectId": 225,
+      "characteristicId": 70,
+      "statLabel": "Dommages Pièges"
+    },
+    {
+      "id": "10613",
+      "name": "Rune Pa Do Pi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78023.png",
+      "level": 45,
+      "effectId": 225,
+      "characteristicId": 70,
+      "statLabel": "Dommages Pièges"
+    },
+    {
+      "id": "11649",
+      "name": "Rune Do Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78081.png",
+      "level": 40,
+      "effectId": 414,
+      "characteristicId": 84,
+      "statLabel": "Dommages Poussée"
+    },
+    {
+      "id": "11650",
+      "name": "Rune Pa Do Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78082.png",
+      "level": 45,
+      "effectId": 414,
+      "characteristicId": 84,
+      "statLabel": "Dommages Poussée"
+    },
+    {
+      "id": "29684",
+      "name": "Rune Ra Do Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78273.png",
+      "level": 50,
+      "effectId": 414,
+      "characteristicId": 84,
+      "statLabel": "Dommages Poussée"
+    },
+    {
+      "id": "7437",
+      "name": "Rune Do Ren",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78017.png",
+      "level": 40,
+      "effectId": 220,
+      "characteristicId": 50,
+      "statLabel": "Dommages Renvoyés"
+    },
+    {
+      "id": "30942",
+      "name": "Rune Pa Do Ren",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78017.png",
+      "level": 45,
+      "effectId": 220,
+      "characteristicId": 50,
+      "statLabel": "Dommages Renvoyés"
+    },
+    {
+      "id": "11657",
+      "name": "Rune Do Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78065.png",
+      "level": 40,
+      "effectId": 422,
+      "characteristicId": 88,
+      "statLabel": "Dommages Terre"
+    },
+    {
+      "id": "11658",
+      "name": "Rune Pa Do Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78066.png",
+      "level": 45,
+      "effectId": 422,
+      "characteristicId": 88,
+      "statLabel": "Dommages Terre"
+    },
+    {
+      "id": "11641",
+      "name": "Rune Ré Pa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78083.png",
+      "level": 65,
+      "effectId": 160,
+      "characteristicId": 27,
+      "statLabel": "Esquive PA"
+    },
+    {
+      "id": "11642",
+      "name": "Rune Pa Ré Pa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78084.png",
+      "level": 70,
+      "effectId": 160,
+      "characteristicId": 27,
+      "statLabel": "Esquive PA"
+    },
+    {
+      "id": "11643",
+      "name": "Rune Ré Pme",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78085.png",
+      "level": 65,
+      "effectId": 161,
+      "characteristicId": 28,
+      "statLabel": "Esquive PM"
+    },
+    {
+      "id": "11644",
+      "name": "Rune Pa Ré Pme",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78086.png",
+      "level": 70,
+      "effectId": 161,
+      "characteristicId": 28,
+      "statLabel": "Esquive PM"
+    },
+    {
+      "id": "1519",
+      "name": "Rune Fo",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78043.png",
+      "level": 1,
+      "effectId": 118,
+      "characteristicId": 10,
+      "statLabel": "Force"
+    },
+    {
+      "id": "1545",
+      "name": "Rune Pa Fo",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78044.png",
+      "level": 5,
+      "effectId": 118,
+      "characteristicId": 10,
+      "statLabel": "Force"
+    },
+    {
+      "id": "1551",
+      "name": "Rune Ra Fo",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78045.png",
+      "level": 10,
+      "effectId": 118,
+      "characteristicId": 10,
+      "statLabel": "Force"
+    },
+    {
+      "id": "11637",
+      "name": "Rune Fui",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78076.png",
+      "level": 55,
+      "effectId": 752,
+      "characteristicId": 78,
+      "statLabel": "Fuite"
+    },
+    {
+      "id": "11638",
+      "name": "Rune Pa Fui",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78075.png",
+      "level": 60,
+      "effectId": 752,
+      "characteristicId": 78,
+      "statLabel": "Fuite"
+    },
+    {
+      "id": "7448",
+      "name": "Rune Ini",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78025.png",
+      "level": 1,
+      "effectId": 174,
+      "characteristicId": 44,
+      "statLabel": "Initiative"
+    },
+    {
+      "id": "7449",
+      "name": "Rune Pa Ini",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78026.png",
+      "level": 5,
+      "effectId": 174,
+      "characteristicId": 44,
+      "statLabel": "Initiative"
+    },
+    {
+      "id": "7450",
+      "name": "Rune Ra Ini",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78027.png",
+      "level": 10,
+      "effectId": 174,
+      "characteristicId": 44,
+      "statLabel": "Initiative"
+    },
+    {
+      "id": "1522",
+      "name": "Rune Ine",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78037.png",
+      "level": 1,
+      "effectId": 126,
+      "characteristicId": 15,
+      "statLabel": "Intelligence"
+    },
+    {
+      "id": "1547",
+      "name": "Rune Pa Ine",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78038.png",
+      "level": 5,
+      "effectId": 126,
+      "characteristicId": 15,
+      "statLabel": "Intelligence"
+    },
+    {
+      "id": "1553",
+      "name": "Rune Ra Ine",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78039.png",
+      "level": 10,
+      "effectId": 126,
+      "characteristicId": 15,
+      "statLabel": "Intelligence"
+    },
+    {
+      "id": "7442",
+      "name": "Rune Invo",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78019.png",
+      "level": 85,
+      "effectId": 182,
+      "characteristicId": 26,
+      "statLabel": "Invocations"
+    },
+    {
+      "id": "1557",
+      "name": "Rune Ga Pa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78055.png",
+      "level": 100,
+      "effectId": 111,
+      "characteristicId": 1,
+      "statLabel": "PA"
+    },
+    {
+      "id": "1558",
+      "name": "Rune Ga Pme",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78056.png",
+      "level": 95,
+      "effectId": 128,
+      "characteristicId": 23,
+      "statLabel": "PM"
+    },
+    {
+      "id": "7443",
+      "name": "Rune Pod",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78020.png",
+      "level": 1,
+      "effectId": 158,
+      "characteristicId": 40,
+      "statLabel": "Pods"
+    },
+    {
+      "id": "7444",
+      "name": "Rune Pa Pod",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78021.png",
+      "level": 5,
+      "effectId": 158,
+      "characteristicId": 40,
+      "statLabel": "Pods"
+    },
+    {
+      "id": "7445",
+      "name": "Rune Ra Pod",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78022.png",
+      "level": 10,
+      "effectId": 158,
+      "characteristicId": 40,
+      "statLabel": "Pods"
+    },
+    {
+      "id": "7438",
+      "name": "Rune Po",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78018.png",
+      "level": 90,
+      "effectId": 117,
+      "characteristicId": 19,
+      "statLabel": "Portée"
+    },
+    {
+      "id": "7451",
+      "name": "Rune Prospe",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78036.png",
+      "level": 15,
+      "effectId": 176,
+      "characteristicId": 48,
+      "statLabel": "Prospection"
+    },
+    {
+      "id": "10662",
+      "name": "Rune Pa Prospe",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78271.png",
+      "level": 20,
+      "effectId": 176,
+      "characteristicId": 48,
+      "statLabel": "Prospection"
+    },
+    {
+      "id": "7436",
+      "name": "Rune Pui",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78016.png",
+      "level": 15,
+      "effectId": 138,
+      "characteristicId": 25,
+      "statLabel": "Puissance"
+    },
+    {
+      "id": "10618",
+      "name": "Rune Pa Pui",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78269.png",
+      "level": 20,
+      "effectId": 138,
+      "characteristicId": 25,
+      "statLabel": "Puissance"
+    },
+    {
+      "id": "10619",
+      "name": "Rune Ra Pui",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78270.png",
+      "level": 25,
+      "effectId": 138,
+      "characteristicId": 25,
+      "statLabel": "Puissance"
+    },
+    {
+      "id": "7447",
+      "name": "Rune Per Pi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78024.png",
+      "level": 15,
+      "effectId": 226,
+      "characteristicId": 69,
+      "statLabel": "Puissance Pièges"
+    },
+    {
+      "id": "10615",
+      "name": "Rune Pa Per Pi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78266.png",
+      "level": 20,
+      "effectId": 226,
+      "characteristicId": 69,
+      "statLabel": "Puissance Pièges"
+    },
+    {
+      "id": "10616",
+      "name": "Rune Ra Per Pi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78267.png",
+      "level": 25,
+      "effectId": 226,
+      "characteristicId": 69,
+      "statLabel": "Puissance Pièges"
+    },
+    {
+      "id": "7458",
+      "name": "Rune Ré Per Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78033.png",
+      "level": 75,
+      "effectId": 212,
+      "characteristicId": 36,
+      "statLabel": "Résistance Air (%)"
+    },
+    {
+      "id": "18724",
+      "name": "Rune Ré Per Di",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78096.png",
+      "level": 50,
+      "effectId": 2807,
+      "characteristicId": 121,
+      "statLabel": "Résistance distance (%)"
+    },
+    {
+      "id": "7560",
+      "name": "Rune Ré Per Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78031.png",
+      "level": 75,
+      "effectId": 211,
+      "characteristicId": 35,
+      "statLabel": "Résistance Eau (%)"
+    },
+    {
+      "id": "7457",
+      "name": "Rune Ré Per Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78029.png",
+      "level": 75,
+      "effectId": 213,
+      "characteristicId": 34,
+      "statLabel": "Résistance Feu (%)"
+    },
+    {
+      "id": "18723",
+      "name": "Rune Ré Per Mé",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78095.png",
+      "level": 50,
+      "effectId": 2803,
+      "characteristicId": 124,
+      "statLabel": "Résistance mêlée (%)"
+    },
+    {
+      "id": "7460",
+      "name": "Rune Ré Per Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78058.png",
+      "level": 75,
+      "effectId": 214,
+      "characteristicId": 37,
+      "statLabel": "Résistance Neutre (%)"
+    },
+    {
+      "id": "7459",
+      "name": "Rune Ré Per Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78035.png",
+      "level": 75,
+      "effectId": 210,
+      "characteristicId": 33,
+      "statLabel": "Résistance Terre (%)"
+    },
+    {
+      "id": "7453",
+      "name": "Rune Ré Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78032.png",
+      "level": 30,
+      "effectId": 242,
+      "characteristicId": 57,
+      "statLabel": "Résistances Air"
+    },
+    {
+      "id": "19338",
+      "name": "Rune Pa Ré Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78100.png",
+      "level": 35,
+      "effectId": 242,
+      "characteristicId": 57,
+      "statLabel": "Résistances Air"
+    },
+    {
+      "id": "30700",
+      "name": "Rune Ra Ré Air",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78297.png",
+      "level": 40,
+      "effectId": 242,
+      "characteristicId": 57,
+      "statLabel": "Résistances Air"
+    },
+    {
+      "id": "11655",
+      "name": "Rune Ré Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78071.png",
+      "level": 30,
+      "effectId": 420,
+      "characteristicId": 87,
+      "statLabel": "Résistances Critiques"
+    },
+    {
+      "id": "11656",
+      "name": "Rune Pa Ré Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78072.png",
+      "level": 35,
+      "effectId": 420,
+      "characteristicId": 87,
+      "statLabel": "Résistances Critiques"
+    },
+    {
+      "id": "30699",
+      "name": "Rune Ra Ré Cri",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78292.png",
+      "level": 40,
+      "effectId": 420,
+      "characteristicId": 87,
+      "statLabel": "Résistances Critiques"
+    },
+    {
+      "id": "7454",
+      "name": "Rune Ré Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78030.png",
+      "level": 30,
+      "effectId": 241,
+      "characteristicId": 56,
+      "statLabel": "Résistances Eau"
+    },
+    {
+      "id": "19339",
+      "name": "Rune Pa Ré Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78101.png",
+      "level": 35,
+      "effectId": 241,
+      "characteristicId": 56,
+      "statLabel": "Résistances Eau"
+    },
+    {
+      "id": "30698",
+      "name": "Rune Ra Ré Eau",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78296.png",
+      "level": 40,
+      "effectId": 241,
+      "characteristicId": 56,
+      "statLabel": "Résistances Eau"
+    },
+    {
+      "id": "7452",
+      "name": "Rune Ré Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78028.png",
+      "level": 30,
+      "effectId": 243,
+      "characteristicId": 55,
+      "statLabel": "Résistances Feu"
+    },
+    {
+      "id": "19340",
+      "name": "Rune Pa Ré Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78102.png",
+      "level": 35,
+      "effectId": 243,
+      "characteristicId": 55,
+      "statLabel": "Résistances Feu"
+    },
+    {
+      "id": "30697",
+      "name": "Rune Ra Ré Feu",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78295.png",
+      "level": 40,
+      "effectId": 243,
+      "characteristicId": 55,
+      "statLabel": "Résistances Feu"
+    },
+    {
+      "id": "7456",
+      "name": "Rune Ré Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78057.png",
+      "level": 30,
+      "effectId": 244,
+      "characteristicId": 58,
+      "statLabel": "Résistances Neutre"
+    },
+    {
+      "id": "19341",
+      "name": "Rune Pa Ré Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78103.png",
+      "level": 35,
+      "effectId": 244,
+      "characteristicId": 58,
+      "statLabel": "Résistances Neutre"
+    },
+    {
+      "id": "30696",
+      "name": "Rune Ra Ré Neutre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78293.png",
+      "level": 40,
+      "effectId": 244,
+      "characteristicId": 58,
+      "statLabel": "Résistances Neutre"
+    },
+    {
+      "id": "11651",
+      "name": "Rune Ré Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78079.png",
+      "level": 30,
+      "effectId": 416,
+      "characteristicId": 85,
+      "statLabel": "Résistances Poussée"
+    },
+    {
+      "id": "11652",
+      "name": "Rune Pa Ré Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78080.png",
+      "level": 35,
+      "effectId": 416,
+      "characteristicId": 85,
+      "statLabel": "Résistances Poussée"
+    },
+    {
+      "id": "29683",
+      "name": "Rune Ra Ré Pou",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78272.png",
+      "level": 40,
+      "effectId": 416,
+      "characteristicId": 85,
+      "statLabel": "Résistances Poussée"
+    },
+    {
+      "id": "7455",
+      "name": "Rune Ré Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78034.png",
+      "level": 30,
+      "effectId": 240,
+      "characteristicId": 54,
+      "statLabel": "Résistances Terre"
+    },
+    {
+      "id": "19342",
+      "name": "Rune Pa Ré Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78104.png",
+      "level": 35,
+      "effectId": 240,
+      "characteristicId": 54,
+      "statLabel": "Résistances Terre"
+    },
+    {
+      "id": "30695",
+      "name": "Rune Ra Ré Terre",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78294.png",
+      "level": 40,
+      "effectId": 240,
+      "characteristicId": 54,
+      "statLabel": "Résistances Terre"
+    },
+    {
+      "id": "11645",
+      "name": "Rune Ret Pa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78087.png",
+      "level": 65,
+      "effectId": 410,
+      "characteristicId": 82,
+      "statLabel": "Retrait PA"
+    },
+    {
+      "id": "11646",
+      "name": "Rune Pa Ret Pa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78088.png",
+      "level": 70,
+      "effectId": 410,
+      "characteristicId": 82,
+      "statLabel": "Retrait PA"
+    },
+    {
+      "id": "11647",
+      "name": "Rune Ret Pme",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78089.png",
+      "level": 65,
+      "effectId": 412,
+      "characteristicId": 83,
+      "statLabel": "Retrait PM"
+    },
+    {
+      "id": "11648",
+      "name": "Rune Pa Ret Pme",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78090.png",
+      "level": 70,
+      "effectId": 412,
+      "characteristicId": 83,
+      "statLabel": "Retrait PM"
+    },
+    {
+      "id": "1521",
+      "name": "Rune Sa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78049.png",
+      "level": 15,
+      "effectId": 124,
+      "characteristicId": 12,
+      "statLabel": "Sagesse"
+    },
+    {
+      "id": "1546",
+      "name": "Rune Pa Sa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78050.png",
+      "level": 20,
+      "effectId": 124,
+      "characteristicId": 12,
+      "statLabel": "Sagesse"
+    },
+    {
+      "id": "1552",
+      "name": "Rune Ra Sa",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78051.png",
+      "level": 25,
+      "effectId": 124,
+      "characteristicId": 12,
+      "statLabel": "Sagesse"
+    },
+    {
+      "id": "7434",
+      "name": "Rune So",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78013.png",
+      "level": 80,
+      "effectId": 178,
+      "characteristicId": 49,
+      "statLabel": "Soins"
+    },
+    {
+      "id": "19337",
+      "name": "Rune Pa So",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78099.png",
+      "level": 90,
+      "effectId": 178,
+      "characteristicId": 49,
+      "statLabel": "Soins"
+    },
+    {
+      "id": "11639",
+      "name": "Rune Tac",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78077.png",
+      "level": 55,
+      "effectId": 753,
+      "characteristicId": 79,
+      "statLabel": "Tacle"
+    },
+    {
+      "id": "11640",
+      "name": "Rune Pa Tac",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78078.png",
+      "level": 60,
+      "effectId": 753,
+      "characteristicId": 79,
+      "statLabel": "Tacle"
+    },
+    {
+      "id": "1523",
+      "name": "Rune Vi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78052.png",
+      "level": 1,
+      "effectId": 125,
+      "characteristicId": 11,
+      "statLabel": "Vitalité"
+    },
+    {
+      "id": "1548",
+      "name": "Rune Pa Vi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78053.png",
+      "level": 5,
+      "effectId": 125,
+      "characteristicId": 11,
+      "statLabel": "Vitalité"
+    },
+    {
+      "id": "1554",
+      "name": "Rune Ra Vi",
+      "imageUrl": "https://api.dofusdb.fr/img/items/78054.png",
+      "level": 10,
+      "effectId": 125,
+      "characteristicId": 11,
+      "statLabel": "Vitalité"
+    }
+  ]
+}

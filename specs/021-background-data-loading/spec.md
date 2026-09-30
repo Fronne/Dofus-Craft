@@ -178,3 +178,9 @@ demande de prix partagés pour les 8 ressources, avec des valeurs identiques à 
   vieille liste affichée après un rechargement pourrait induire en erreur.
 - La lecture ressource par ressource existante reste disponible pour la compatibilité.
 - La saisie de prix, le mode personnel et les pages non citées ne changent pas de comportement.
+
+## Révision (2026-09-30) : origine du dernier prix (specs/025-rune-purchase-import)
+
+Chaque entrée de `GET /community-prices` gagne le champ optionnel `latestOrigin` (`manual`, `capture`
+ou `bot`), l'origine de la contribution la plus récente. Le site le lit sans l'exiger : absent, il
+vaut `manual`. Rien d'autre ne change dans la réponse.

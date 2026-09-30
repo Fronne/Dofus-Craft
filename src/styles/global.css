@@ -1483,6 +1483,83 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   .hdv-tab { flex: 1 1 0; padding: var(--space-2) var(--space-1); font-size: .9rem; }
 }
 
+/* ---------- Forgemagie (specs/025) ---------- */
+
+.fm-login { display: grid; justify-items: start; gap: var(--space-3); max-width: 620px; }
+.fm-login p { margin: 0; }
+.fm-note { margin: var(--space-2) 0 0; color: var(--text-muted); font-size: .85rem; }
+.fm-error { margin: var(--space-2) 0 0; color: var(--danger); font-size: .9rem; }
+.fm-account { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); flex-wrap: wrap; }
+
+.fm-player { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.fm-player-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.fm-player--private .fm-player-name { color: var(--text-muted); font-style: italic; font-weight: 400; }
+.fm-avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+.fm-avatar--empty { display: inline-grid; place-items: center; background: var(--gold-soft); color: var(--gold-bright); font-size: .75rem; font-weight: 700; }
+.fm-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.fm-status { padding: .1rem .55rem; border-radius: var(--radius-pill); font-size: .75rem; font-weight: 700; }
+.fm-status--open { background: var(--gold-soft); color: var(--gold-bright); }
+.fm-status--closed { border: 1px solid var(--border); color: var(--text-muted); }
+
+.fm-session-list { display: grid; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+.fm-session-card { display: grid; gap: var(--space-2); width: 100%; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-strong); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.fm-session-card:hover { border-color: var(--border-strong); }
+.fm-session-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.fm-session-channel { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-session-date, .fm-session-dates { color: var(--text-muted); font-size: .85rem; }
+.fm-session-total { color: var(--gold-bright); font-weight: 700; font-variant-numeric: tabular-nums; }
+.fm-session-players { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.fm-session-player { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; font-size: .9rem; }
+.fm-load-more { margin-top: var(--space-4); }
+
+.fm-back { margin-bottom: var(--space-3); }
+.fm-back-icon { transform: rotate(90deg); }
+.fm-section-title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-1); }
+.fm-subtitle { margin: var(--space-4) 0 var(--space-2); font-size: 1rem; }
+.fm-total { margin: var(--space-2) 0 0; }
+.fm-total strong { color: var(--gold-bright); }
+.fm-spend-list { display: grid; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.fm-spend-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+.fm-link { padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; text-decoration: underline; text-decoration-color: var(--border-strong); cursor: pointer; }
+.fm-link:hover { color: var(--gold-bright); }
+
+.fm-items { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.fm-items th, .fm-items td { padding: var(--space-2); border-bottom: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
+.fm-items th:first-child, .fm-items thead th { text-align: left; }
+.fm-items tbody th { font-weight: 700; }
+.fm-items thead th { color: var(--text-muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+
+.fm-settings { display: grid; gap: var(--space-4); margin-bottom: var(--space-4); }
+.fm-field { display: grid; justify-items: start; gap: var(--space-1); }
+.fm-field-label { font-weight: 700; }
+.fm-profile-picker { margin-bottom: var(--space-4); }
+.fm-danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.fm-delete { color: var(--danger); }
+
+.fm-rune-caption { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); white-space: normal; }
+.fm-origin { flex-basis: 100%; color: var(--gold-bright); font-size: .78rem; }
+
+.fm-import { margin-bottom: var(--space-4); }
+.fm-dropzone { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-3) var(--space-4); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); color: var(--text-muted); }
+.fm-dropzone p { flex: 1 1 240px; margin: 0; font-size: .9rem; }
+.fm-dropzone b { color: var(--text); }
+.fm-dropzone--active { border-color: var(--gold-bright); background: var(--gold-soft); }
+.fm-import-lines { margin-top: var(--space-3); }
+.fm-import-lines td:first-child { text-align: center; }
+.fm-line--skipped { opacity: .5; }
+.fm-number { width: 7rem; min-height: 36px; padding: .3rem .5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.fm-unknown { display: grid; gap: var(--space-1); }
+.fm-unknown input { min-height: 36px; padding: .3rem .5rem; }
+.fm-import-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); }
+
+@media (max-width: 640px) {
+  .fm-items { font-size: .82rem; }
+  .fm-items th, .fm-items td { padding: var(--space-1); }
+  .fm-number { width: 5rem; }
+  .fm-import-lines { display: block; overflow-x: auto; }
+}
+
 /* specs/022 FR-008b: « Quantité max » of the XP Familier list, next to the name search. */
 .pet-max-quantity { display: inline-flex; align-items: center; gap: var(--space-2); font-size: .85rem; color: var(--text-muted); white-space: nowrap; }
 .pet-max-quantity input { width: 9rem; min-height: 40px; padding: .4rem .7rem; font-variant-numeric: tabular-nums; appearance: textfield; -moz-appearance: textfield; }

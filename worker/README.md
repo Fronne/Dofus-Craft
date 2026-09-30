@@ -31,6 +31,26 @@ npm run worker:deploy
 Then set `VITE_COMMUNITY_API_URL` in the frontend's `.env.local` to the deployed Worker's URL
 (printed by the deploy command), and `VITE_COMMUNITY_API_KEY` to the secret set above.
 
+## Forgemagie (specs/025-rune-purchase-import)
+
+The `/fm/*` routes (`src/fm/`) serve the Forgemagie page: Discord login, the Discord bot's FM
+sessions, player profiles and capture imports. Setup, once:
+
+```bash
+npm run worker:db:migrate-forgemagie        # migration 0007, before deploying the Worker that uses it
+npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
+npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
+npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
+npx wrangler secret put FM_BOT_API_KEY --config worker/wrangler.toml
+```
+
+The Discord application needs `{worker URL}/fm/auth/callback` as a redirect URL. For local work, the
+same values go in `worker/.dev.vars` (not committed), with `SITE_URL=http://localhost:5173`. The bot's
+side is described in `../specs/025-rune-purchase-import/contracts/fm-bot-api.md` — the document to
+give the bot's author, with the `FM_BOT_API_KEY` value (privately). After a DofusDB catalogue change,
+`node scripts/build-rune-items.mjs` rebuilds the rune list and the item-name index
+(`src/fm/priceable-items.json`).
+
 ## Files
 
 - `src/index.ts` — the routes: anonymous reads `GET /community-price`, `GET /latest-price`
@@ -41,6 +61,11 @@ Then set `VITE_COMMUNITY_API_URL` in the frontend's `.env.local` to the deployed
   per window, no device id (specs/018), unit-tested via `tests/unit/price-history-aggregation.test.ts`.
 - `src/median.ts` — pure statistics (median + outlier exclusion), unit-tested from the repo root
   via `tests/unit/community-price-median.test.ts`.
+- `src/fm/` — the Forgemagie routes (specs/025): `router.ts` (every `/fm/*` path, routed before the
+  `COMMUNITY_API_KEY` check), `auth.ts` (Discord login, hashed session tokens), `bot-events.ts`
+  (`POST /fm/bot/events`), `reads.ts` (sessions, players, private players masked), `me.ts`,
+  `imports.ts`, `purchases.ts` (the prices purchases create). Tested from the repo root via
+  `tests/unit/fm-*.test.ts`.
 - `schema.sql` — D1 table definition, applied with `npm run worker:db:init`.
 
 See `../specs/004-community-price-sharing/quickstart.md` for the full manual verification

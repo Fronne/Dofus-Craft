@@ -23,9 +23,21 @@ export type IconName =
   | 'copy'
   | 'chart'
   | 'paw'
-  | 'store';
+  | 'store'
+  | 'anvil'
+  | 'image';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  // An anvil, for the Forgemagie page (specs/025).
+  anvil: {
+    children:
+      '<path d="M3 7h13a5 5 0 0 1-5 5H9v2.5L6.5 17h11L15 14.5V12"/><path d="M16 7h5v2a3 3 0 0 1-3 3"/><path d="M5 20h14"/>',
+  },
+  // A picture, for importing a chat capture (specs/025).
+  image: {
+    children:
+      '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
+  },
   // A market stall (awning over a counter), for the HDV price-entry page (specs/023).
   store: {
     children:
