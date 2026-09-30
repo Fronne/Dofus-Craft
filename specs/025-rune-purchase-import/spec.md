@@ -427,3 +427,10 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   accessible sans connexion ; la page Forgemagie n'a plus d'onglet Runes (onglets Sessions et Profil).
 - **US5 (amendée)** : l'import de capture est dans l'onglet Profil, sur le profil du joueur connecté
   seulement ; après un import, les dépenses affichées sont relues.
+
+## Révision (2026-09-30) : objets en FM (specs/027-fm-item-recap)
+
+- Les réponses des sessions gagnent `fmItem` (l'objet en FM rattaché, masqué pour un propriétaire
+  privé), et le détail d'une session `canAttach` et `canDetach` ; le profil gagne `fmItems`.
+- **FR-007 (précisée)** : la suppression du profil supprime aussi ses objets en FM ; leurs sessions
+  restent, non rattachées.

@@ -76,6 +76,9 @@ export type FmPlayer = { discordUserId: string | null; displayName: string | nul
 
 export type FmSessionStatus = 'open' | 'closed';
 
+/** specs/027: the item a session is attached to, or `{ private: true }` for a private owner's item. */
+export type FmSessionItem = { id: string; name: string; owner: FmPlayer } | { private: true };
+
 export type FmSession = {
   id: string;
   channelName: string;
@@ -84,11 +87,40 @@ export type FmSession = {
   closedAt: string | null;
   totalKamas: number;
   players: { player: FmPlayer; spentKamas: number }[];
+  fmItem: FmSessionItem | null;
 };
 
 export type FmItemSummary = { itemName: string; itemId: string | null; quantity: number; totalKamas: number; averageUnitKamas: number };
 
-export type FmSessionDetail = FmSession & { items: FmItemSummary[] };
+export type FmSessionDetail = FmSession & {
+  items: FmItemSummary[];
+  /** specs/027 FR-005: not attached yet, and the viewer spent in it. */
+  canAttach: boolean;
+  /** specs/027 FR-007: attached to one of the viewer's items. */
+  canDetach: boolean;
+};
+
+/** specs/027: an item a player forgemages ("objet en FM"), with the total of its attached sessions. */
+export type FmOwnedItem = {
+  id: string;
+  itemId: string;
+  itemName: string;
+  imageUrl: string | null;
+  label: string | null;
+  owner: FmPlayer;
+  totalKamas: number;
+  sessionCount: number;
+};
+
+/** specs/027 FR-009 to FR-012: an item's recap — no share per player. */
+export type FmItemRecap = FmOwnedItem & {
+  sessions: { id: string; channelName: string; status: FmSessionStatus; openedAt: string; totalKamas: number }[];
+  items: FmItemSummary[];
+};
+
+export function fmItemDisplayName(item: { label: string | null; itemName: string }): string {
+  return item.label ?? item.itemName;
+}
 
 export type FmSessionsPage = { sessions: FmSession[]; nextBefore: string | null };
 
@@ -109,6 +141,8 @@ export type FmProfile = {
   sessions: { sessionId: string; channelName: string; openedAt: string; spentKamas: number }[];
   importedKamas: number;
   items: FmItemSummary[];
+  /** specs/027 FR-014. */
+  fmItems: FmOwnedItem[];
 };
 
 /** Why a purchase line created a price, or not (contracts/fm-bot-api.md). */

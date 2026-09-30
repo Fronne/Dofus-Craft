@@ -2,6 +2,7 @@ import { handleCallback, handleLogin, handleLogout } from './auth';
 import { handleBotEvent } from './bot-events';
 import { json, requireSession, unauthorized, type FmEnv } from './http';
 import { handleImport } from './imports';
+import { attachSession, createItem, deleteItem, detachSession, readItemRecap, renameItem } from './items';
 import { deleteMe, getMe, patchMe } from './me';
 import { listPlayers, playerProfile, sessionDetail, sessionsPage } from './reads';
 
@@ -39,6 +40,22 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
     return profile ? json(profile) : json({ error: 'Not found' }, 404);
   }
   if (method === 'POST' && pathname === '/fm/imports') return handleImport(request, env.DB, viewerId);
+
+  // specs/027-fm-item-recap (contracts/fm-items-api.md).
+  if (method === 'POST' && pathname === '/fm/items') return createItem(request, env.DB, viewerId);
+  const itemMatch = /^\/fm\/items\/([^/]+)$/.exec(pathname);
+  if (itemMatch) {
+    const id = decodeURIComponent(itemMatch[1]);
+    if (method === 'GET') return readItemRecap(env.DB, viewerId, id);
+    if (method === 'PATCH') return renameItem(request, env.DB, viewerId, id);
+    if (method === 'DELETE') return deleteItem(env.DB, viewerId, id);
+  }
+  const sessionItemMatch = /^\/fm\/sessions\/([^/]+)\/item$/.exec(pathname);
+  if (sessionItemMatch) {
+    const sessionId = decodeURIComponent(sessionItemMatch[1]);
+    if (method === 'PUT') return attachSession(request, env.DB, viewerId, sessionId);
+    if (method === 'DELETE') return detachSession(env.DB, viewerId, sessionId);
+  }
 
   return json({ error: 'Not found' }, 404);
 }

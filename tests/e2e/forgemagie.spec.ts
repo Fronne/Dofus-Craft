@@ -8,9 +8,12 @@ const TOKEN = 'b'.repeat(64);
 const me = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: '2026-09-30T10:00:00.000Z' };
 const cyril = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false };
 const hidden = { discordUserId: null, displayName: null, avatarUrl: null, private: true };
+// specs/027-fm-item-recap: an item in FM, with the session above attached.
+const rtograf = { id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA', owner: cyril, totalKamas: 68472, sessionCount: 1 };
 const session = {
   id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: '2026-09-30T18:00:00.000Z', closedAt: '2026-09-30T19:00:00.000Z',
   totalKamas: 68472, players: [{ player: cyril, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }],
+  fmItem: { id: 'i1', name: 'Rtograf PA', owner: cyril },
 };
 
 async function mockWorker(page: Page) {
@@ -26,7 +29,11 @@ async function mockWorker(page: Page) {
       return reply({ ...session, items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] });
     }
     if (path === '/fm/players') return reply({ players: [{ ...cyril, totalKamas: 63472 }] });
-    if (path === '/fm/players/42') return reply({ player: cyril, totalKamas: 63472, importedKamas: 0, items: [], sessions: [] });
+    if (path === '/fm/players/42') return reply({ player: cyril, totalKamas: 63472, importedKamas: 0, items: [], sessions: [], fmItems: [rtograf] });
+    if (path === '/fm/items/i1') {
+      return reply({ ...rtograf, sessions: [{ id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: session.openedAt, totalKamas: 68472 }],
+        items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] });
+    }
     return reply({ error: 'Not found' }, 404);
   });
   return authorized;
@@ -64,6 +71,17 @@ test.describe('Forgemagie page (specs/025)', () => {
     await mockWorker(page);
     await openAsLoggedIn(page);
     await expect(page.getByRole('tab')).toHaveText(['Sessions', 'Profil']);
+  });
+
+  test('opens the recap of an item in FM from the profile (specs/027)', async ({ page }) => {
+    await mockWorker(page);
+    await openAsLoggedIn(page);
+    await page.getByRole('tab', { name: 'Profil' }).click();
+    await page.getByRole('button', { name: /Rtograf PA/ }).click();
+    await expect(page.getByText('Total dépensé')).toContainText('68 472 kamas');
+    await expect(page.getByRole('row', { name: /Rune Do Air/ })).toContainText('1 587 kamas/u');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 
   test('fits a phone screen without horizontal scrolling', async ({ page }) => {

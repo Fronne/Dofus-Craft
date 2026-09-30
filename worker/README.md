@@ -38,6 +38,7 @@ sessions, player profiles and capture imports. Setup, once:
 
 ```bash
 npm run worker:db:migrate-forgemagie        # migration 0007, before deploying the Worker that uses it
+npm run worker:db:migrate-fm-items          # migration 0008 (specs/027: items in FM), same rule
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
@@ -64,7 +65,8 @@ give the bot's author, with the `FM_BOT_API_KEY` value (privately). After a Dofu
 - `src/fm/` — the Forgemagie routes (specs/025): `router.ts` (every `/fm/*` path, routed before the
   `COMMUNITY_API_KEY` check), `auth.ts` (Discord login, hashed session tokens), `bot-events.ts`
   (`POST /fm/bot/events`), `reads.ts` (sessions, players, private players masked), `me.ts`,
-  `imports.ts`, `purchases.ts` (the prices purchases create). Tested from the repo root via
+  `imports.ts`, `purchases.ts` (the prices purchases create), `items.ts` (specs/027: items in FM,
+  attaching a session, an item's recap). Tested from the repo root via
   `tests/unit/fm-*.test.ts`.
 - `schema.sql` — D1 table definition, applied with `npm run worker:db:init`.
 

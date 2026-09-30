@@ -15,6 +15,12 @@ const fm = vi.hoisted(() => ({
   getFmPlayers: vi.fn(),
   getFmPlayer: vi.fn(),
   importFmCapture: vi.fn(),
+  createFmItem: vi.fn(),
+  renameFmItem: vi.fn(),
+  deleteFmItem: vi.fn(),
+  getFmItem: vi.fn(),
+  attachFmSession: vi.fn(),
+  detachFmSession: vi.fn(),
 }));
 vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: () => 'https://api.test/fm/auth/login' }));
 
@@ -50,6 +56,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
+import { searchItems } from '../../src/data/catalogue-repository';
 import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/fm-session-token';
 
 const TOKEN = 'a'.repeat(64);
@@ -59,11 +66,11 @@ const hidden = { discordUserId: null, displayName: null, avatarUrl: null, privat
 
 const openSession: FmSession = {
   id: 's2', channelName: 'fm-cape', status: 'open', openedAt: '2026-09-30T18:00:00.000Z', closedAt: null, totalKamas: 68472,
-  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }],
+  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }], fmItem: null,
 };
 const closedSession: FmSession = {
   id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: '2026-09-29T18:00:00.000Z', closedAt: '2026-09-29T19:00:00.000Z', totalKamas: 1000,
-  players: [{ player: alice, spentKamas: 1000 }],
+  players: [{ player: alice, spentKamas: 1000 }], fmItem: null,
 };
 const ok = <T,>(data: T) => ({ status: 'ok', data });
 
@@ -86,7 +93,7 @@ beforeEach(() => {
   fm.logoutFm.mockResolvedValue(ok(undefined));
   fm.getFmSessions.mockResolvedValue(ok({ sessions: [openSession, closedSession], nextBefore: null }));
   fm.getFmPlayers.mockResolvedValue(ok({ players: [] }));
-  fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], sessions: [
+  fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], fmItems: [], sessions: [
     { sessionId: 's2', channelName: 'fm-cape', openedAt: '2026-09-30T18:00:00.000Z', spentKamas: 100000 },
     { sessionId: 's1', channelName: 'fm-coiffe', openedAt: '2026-09-29T18:00:00.000Z', spentKamas: 50000 },
   ] }));
@@ -262,3 +269,105 @@ describe('Forgemagie page — tabs and capture import (specs/026)', () => {
   });
 });
 
+// specs/027-fm-item-recap: items in FM, attaching a session, the recap.
+describe('Forgemagie page — items in FM (specs/027)', () => {
+  const rtograf = {
+    id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA',
+    owner: alice, totalKamas: 150000, sessionCount: 2,
+  };
+  const withItems = (fmItems: unknown[]) => ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], sessions: [], fmItems });
+
+  async function openProfile() {
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+  }
+
+  it('adds an item chosen in the equipment catalogue, with an optional name', async () => {
+    vi.mocked(searchItems).mockResolvedValue({ total: 2, limit: 40, skip: 0, data: [
+      { id: '8237', name: 'Anneau Rtograf', kind: 'Equipment', categoryId: 'ring', level: 200 },
+      { id: '1', name: 'Rtograf ressource', kind: 'Resource', categoryId: 'res' },
+    ] });
+    fm.createFmItem.mockResolvedValue(ok(rtograf));
+    await openProfile();
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajouter un objet' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un équipement' }), { target: { value: 'rtograf' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Anneau Rtograf/ }, { timeout: 2000 }));
+    expect(screen.queryByRole('button', { name: /Rtograf ressource/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: "Nom de l'objet" }), { target: { value: '  Rtograf PA ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter' }));
+    await waitFor(() => expect(fm.createFmItem).toHaveBeenCalledWith({ itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA' }));
+  });
+
+  it('opens an item\'s recap with its total, sessions and runes', async () => {
+    fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    fm.getFmItem.mockResolvedValue(ok({
+      ...rtograf,
+      sessions: [{ id: 's2', channelName: 'fm-anneau', status: 'closed', openedAt: '2026-09-30T18:00:00.000Z', totalKamas: 150000 }],
+      items: [{ itemName: 'Rune Pa Ga', itemId: '1', quantity: 12, totalKamas: 96000, averageUnitKamas: 8000 }],
+    }));
+    await openProfile();
+    fireEvent.click(await screen.findByRole('button', { name: /Rtograf PA/ }));
+    await waitFor(() => expect(normalize(screen.getByText(/Total dépensé/).textContent)).toContain('150 000 kamas'));
+    expect(screen.getByRole('button', { name: /#fm-anneau/ })).toBeInTheDocument();
+    expect(normalize(screen.getByRole('rowheader', { name: 'Rune Pa Ga' }).closest('tr')!.textContent)).toContain('8 000 kamas/u');
+    expect(fm.getFmItem).toHaveBeenCalledWith('i1');
+  });
+
+  it('deletes an item only after an explicit confirmation', async () => {
+    fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    fm.deleteFmItem.mockResolvedValue(ok(undefined));
+    await openProfile();
+    fireEvent.click(await screen.findByRole('button', { name: 'Supprimer' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Annuler' }).at(-1)!);
+    expect(fm.deleteFmItem).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+    fireEvent.click(screen.getByRole('button', { name: "Supprimer l'objet" }));
+    await waitFor(() => expect(fm.deleteFmItem).toHaveBeenCalledWith('i1'));
+  });
+
+  it('shows another member\'s items read only', async () => {
+    fm.getFmPlayers.mockResolvedValue(ok({ players: [{ discordUserId: '7', displayName: 'Bob', avatarUrl: null, private: false, totalKamas: 10 }] }));
+    fm.getFmPlayer.mockImplementation(async (id: string) => withItems(id === '7' ? [{ ...rtograf, owner: { ...alice, discordUserId: '7', displayName: 'Bob' } }] : []));
+    await openProfile();
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Voir le profil de' }), { target: { value: '7' } });
+    await screen.findByRole('button', { name: /Rtograf PA/ });
+    expect(screen.queryByRole('button', { name: 'Ajouter un objet' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Renommer' })).not.toBeInTheDocument();
+  });
+
+  it('attaches a session to one of the player\'s items from its detail, then offers to detach it', async () => {
+    const detail = { ...closedSession, items: [], canAttach: true, canDetach: false };
+    fm.getFmSession.mockResolvedValue(ok(detail));
+    fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    fm.attachFmSession.mockResolvedValue(ok({ ...detail, fmItem: { id: 'i1', name: 'Rtograf PA', owner: alice }, canAttach: false, canDetach: true }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Rattacher' }));
+    await waitFor(() => expect(fm.attachFmSession).toHaveBeenCalledWith('s1', 'i1'));
+    expect(await screen.findByText('Rtograf PA (Cyril)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Détacher' })).toBeInTheDocument();
+  });
+
+  it('explains a session attached meanwhile by someone else', async () => {
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: true, canDetach: false }));
+    fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    fm.attachFmSession.mockResolvedValue({ status: 'error', code: 'already-attached' });
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Rattacher' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('vient d’être rattachée à un autre objet');
+  });
+
+  it('offers to create an item when the player has none yet', async () => {
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: true, canDetach: false }));
+    fm.getFmPlayer.mockResolvedValue(withItems([]));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Créer un objet en FM' }));
+    expect(await screen.findByRole('tab', { name: 'Profil' })).toHaveAttribute('aria-selected', 'true');
+  });
+});

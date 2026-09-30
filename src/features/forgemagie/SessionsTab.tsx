@@ -3,6 +3,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { formatFmDate, type FmSession } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
 import { getFmSessions } from '../../services/fm-api';
+import { sessionItemLabel } from './SessionDetail';
 import { PlayerBadge } from './PlayerBadge';
 
 // specs/025-rune-purchase-import (US2, FR-010): the FM sessions the Discord bot sent, most recent first.
@@ -56,7 +57,10 @@ export function SessionsTab({ onOpen, onUnauthorized }: { onOpen: (sessionId: st
                 <span className="fm-session-channel">#{session.channelName}</span>
                 <SessionStatus session={session} />
               </span>
-              <span className="fm-session-date">{formatFmDate(session.openedAt)}</span>
+              <span className="fm-session-date">
+                {formatFmDate(session.openedAt)}
+                {session.fmItem && <> · <span className="fm-session-item-name">{sessionItemLabel(session.fmItem)}</span></>}
+              </span>
               <span className="fm-session-total">{formatKamas(session.totalKamas)}</span>
               <span className="fm-session-players">
                 {session.players.map((row, index) => (

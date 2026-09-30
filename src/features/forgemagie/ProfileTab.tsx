@@ -6,6 +6,7 @@ import { formatKamas } from '../../domain/kamas';
 import type { PriceMode } from '../../domain/price-modes';
 import { deleteFmMe, getFmPlayer, getFmPlayers } from '../../services/fm-api';
 import { CaptureImport } from './CaptureImport';
+import { FmItemsSection } from './FmItemsSection';
 import { PlayerBadge } from './PlayerBadge';
 import { ItemSummaryTable } from './SessionDetail';
 
@@ -137,12 +138,13 @@ function Spending({ profile, onOpenSession }: { profile: FmProfile; onOpenSessio
   );
 }
 
-export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, onUnauthorized }: {
+export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, onOpenItem, onUnauthorized }: {
   me: FmMe;
   priceMode: PriceMode;
   updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean>;
   onDeleted: () => void;
   onOpenSession: (sessionId: string) => void;
+  onOpenItem: (itemId: string) => void;
   onUnauthorized: () => void;
 }) {
   const [players, setPlayers] = useState<FmPlayerSpend[]>([]);
@@ -194,6 +196,9 @@ export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, 
       {profile.status === 'loading' && <p className="empty" role="status">Chargement des dépenses…</p>}
       {profile.status === 'missing' && <EmptyState icon="info" title="Profil introuvable" description="Ce joueur a peut-être passé son profil en privé." />}
       {profile.status === 'unavailable' && <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas. Réessayez plus tard." />}
+      {profile.status === 'ready' && (
+        <FmItemsSection items={profile.profile.fmItems} isMine={isMine} onOpenItem={onOpenItem} onChanged={() => setVersion((value) => value + 1)} />
+      )}
       {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSession={onOpenSession} />}
 
       {isMine && <DeleteProfile onDeleted={onDeleted} />}

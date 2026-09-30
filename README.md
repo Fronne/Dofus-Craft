@@ -45,6 +45,9 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   leur compte Discord (le reste du site reste sans compte).
   - Les **sessions FM** du bot Discord du groupe y sont gardées : total, dépense de chaque joueur, et
     détail des runes achetées avec leur prix moyen, les mêmes chiffres que le résumé du bot.
+  - Chaque joueur déclare ses **objets en FM** (par exemple son Anneau Rtograf) et y rattache les
+    sessions où il a dépensé : le **récap** d'un objet donne le total dépensé, ses sessions et le détail
+    des runes.
   - Chaque joueur a un **profil** avec ses dépenses. Il est public par défaut ; un profil privé
     n'est visible que par son propriétaire, et son nom est masqué dans les sessions.
   - Les achats envoyés par le bot alimentent le **prix des runes**, affiché dans l'onglet Runes de la

@@ -108,6 +108,20 @@ CREATE TABLE IF NOT EXISTS fm_oauth_states (
   expires_at TEXT NOT NULL
 );
 
+-- specs/027-fm-item-recap: the items a player forgemages ("objets en FM"). The catalogue equipment
+-- chosen at creation is kept as it was then (FR-003); `label` tells two copies apart (FR-001).
+CREATE TABLE IF NOT EXISTS fm_items (
+  id TEXT PRIMARY KEY,
+  owner_discord_user_id TEXT NOT NULL REFERENCES fm_players (discord_user_id),
+  item_id TEXT NOT NULL,
+  item_name TEXT NOT NULL,
+  item_image_url TEXT,
+  label TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_fm_items_owner ON fm_items (owner_discord_user_id);
+
 -- An FM session of a Discord channel: at most one open session per channel, like the bot.
 CREATE TABLE IF NOT EXISTS fm_sessions (
   id TEXT PRIMARY KEY,
@@ -115,7 +129,9 @@ CREATE TABLE IF NOT EXISTS fm_sessions (
   channel_name TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('open', 'closed')),
   opened_at TEXT NOT NULL,
-  closed_at TEXT
+  closed_at TEXT,
+  -- specs/027-fm-item-recap: the one item this session is attached to, if any (FR-006).
+  fm_item_id TEXT REFERENCES fm_items (id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_fm_sessions_open_channel ON fm_sessions (channel_id) WHERE status = 'open';
@@ -161,3 +177,5 @@ CREATE TABLE IF NOT EXISTS fm_processed_events (
   response TEXT NOT NULL,
   received_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
+
+CREATE INDEX IF NOT EXISTS idx_fm_sessions_item ON fm_sessions (fm_item_id);

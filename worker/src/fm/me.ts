@@ -50,6 +50,9 @@ export async function deleteMe(db: FmDb, discordUserId: string): Promise<Respons
     db.prepare('DELETE FROM fm_auth_sessions WHERE discord_user_id = ?').bind(discordUserId),
     db.prepare('DELETE FROM fm_purchase_lines WHERE capture_id IN (SELECT id FROM fm_captures WHERE discord_user_id = ?)').bind(discordUserId),
     db.prepare('DELETE FROM fm_captures WHERE discord_user_id = ?').bind(discordUserId),
+    // specs/027 FR-015: their items in FM go too; the sessions stay, no longer attached.
+    db.prepare('UPDATE fm_sessions SET fm_item_id = NULL WHERE fm_item_id IN (SELECT id FROM fm_items WHERE owner_discord_user_id = ?)').bind(discordUserId),
+    db.prepare('DELETE FROM fm_items WHERE owner_discord_user_id = ?').bind(discordUserId),
     db.prepare('DELETE FROM fm_players WHERE discord_user_id = ?').bind(discordUserId),
   ]);
   return noContent();

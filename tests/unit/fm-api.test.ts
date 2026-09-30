@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getFmMe, getFmSessions } from '../../src/services/fm-api';
+import { attachFmSession, getFmMe, getFmSessions } from '../../src/services/fm-api';
 import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/fm-session-token';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): the site's client of the /fm/* routes.
@@ -46,5 +46,19 @@ describe('fm-api', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'no-server' }, { status: 409 })));
     const { importFmCapture } = await import('../../src/services/fm-api');
     await expect(importFmCapture([], true)).resolves.toEqual({ status: 'error', code: 'no-server' });
+  });
+
+  // specs/027-fm-item-recap.
+  it('gives the reason a session could not be attached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'already-attached' }, { status: 409 })));
+    await expect(attachFmSession('s1', 'i1')).resolves.toEqual({ status: 'error', code: 'already-attached' });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'not-participant' }, { status: 403 })));
+    await expect(attachFmSession('s1', 'i1')).resolves.toEqual({ status: 'error', code: 'not-participant' });
+  });
+
+  it('reads a session from an older Worker, without fmItem, as not attached', async () => {
+    const session = { id: 's1', channelName: 'fm', status: 'open', openedAt: '2026-09-30T18:00:00Z', closedAt: null, totalKamas: 0, players: [] };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ sessions: [session], nextBefore: null })));
+    await expect(getFmSessions()).resolves.toEqual({ status: 'ok', data: { sessions: [{ ...session, fmItem: null }], nextBefore: null } });
   });
 });

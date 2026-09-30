@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { EmptyState } from '../../components/EmptyState';
+import { FmItemRecap } from './FmItemRecap';
 import type { PriceMode } from '../../domain/price-modes';
 import { fmLoginUrl } from '../../services/fm-api';
 import { PlayerBadge } from './PlayerBadge';
@@ -28,10 +29,16 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
   const auth = useFmAuth();
   const [tab, setTab] = useState<FmTab>('sessions');
   const [openSessionId, setOpenSessionId] = useState<string | undefined>(undefined);
+  // specs/027-fm-item-recap: the recap of an item in FM, opened from the Profil tab.
+  const [openItemId, setOpenItemId] = useState<string | undefined>(undefined);
 
   const openSession = (sessionId: string) => {
     setOpenSessionId(sessionId);
     setTab('sessions');
+  };
+  const goToProfile = () => {
+    setOpenItemId(undefined);
+    setTab('profile');
   };
 
   return (
@@ -81,6 +88,7 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
                   onClick={() => {
                     setTab(entry.id);
                     if (entry.id === 'sessions') setOpenSessionId(undefined);
+                    if (entry.id === 'profile') setOpenItemId(undefined);
                   }}
                 >
                   {entry.label}
@@ -89,11 +97,11 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
             </div>
 
             {tab === 'sessions' && (openSessionId
-              ? <SessionDetail sessionId={openSessionId} onBack={() => setOpenSessionId(undefined)} onUnauthorized={auth.forget} />
+              ? <SessionDetail sessionId={openSessionId} me={auth.me} onBack={() => setOpenSessionId(undefined)} onUnauthorized={auth.forget} onGoToProfile={goToProfile} />
               : <SessionsTab onOpen={setOpenSessionId} onUnauthorized={auth.forget} />)}
-            {tab === 'profile' && (
-              <ProfileTab me={auth.me} priceMode={priceMode} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onUnauthorized={auth.forget} />
-            )}
+            {tab === 'profile' && (openItemId
+              ? <FmItemRecap itemId={openItemId} onBack={() => setOpenItemId(undefined)} onOpenSession={openSession} onUnauthorized={auth.forget} />
+              : <ProfileTab me={auth.me} priceMode={priceMode} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onOpenItem={setOpenItemId} onUnauthorized={auth.forget} />)}
           </>
         )}
       </section>
