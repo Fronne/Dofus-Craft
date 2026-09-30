@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Page Forgemagie — prix des runes relevés depuis les achats en jeu
+# Specification Quality Checklist: Page Forgemagie — profils Discord, sessions FM et prix des runes
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-29
@@ -31,6 +31,7 @@
 
 ## Notes
 
-- 3 marqueurs [NEEDS CLARIFICATION] en attente de réponse du porteur du projet : prix aberrant
-  envoyé par le bot (US3 scénario 5), achats d'objets autres que des runes (Edge Cases), serveur
-  d'un achat du bot (FR-024).
+- Révision 2026-09-30 : spec réécrite après lecture du bot Discord (sessions FM, profils Discord).
+- 2 marqueurs [NEEDS CLARIFICATION] restent ouverts (Edge Cases) : prix très éloigné envoyé par le
+  bot, et achats d'objets qui ne sont pas des runes. Ils ne concernent que l'alimentation des prix
+  et peuvent être tranchés pendant `/speckit-clarify`.
