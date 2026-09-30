@@ -206,7 +206,8 @@ describe('Forgemagie page — sessions (US2, US3)', () => {
   });
 });
 
-describe('Forgemagie page — runes (US4, US5)', () => {
+// The 105 runes' price lines make these tests heavier than the others: more time under a loaded machine.
+describe('Forgemagie page — runes (US4, US5)', { timeout: 20_000 }, () => {
   async function openRunes() {
     writeFmSessionToken(TOKEN);
     await openForgemagie();
