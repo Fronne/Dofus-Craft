@@ -1,151 +1,225 @@
-# Feature Specification: Propriétaire d'un salon Discord sur le site
+# Feature Specification: Salons FM personnels créés par le bot
 
 **Feature Branch**: `029-channel-ownership`
 
 **Created**: 2026-09-30
 
+**Revised**: 2026-09-30 — remplace la première version (« le salon appartient au premier joueur qui
+l'a utilisé »), jamais implémentée, par la deuxième solution proposée par le porteur du projet.
+
 **Status**: Draft
 
-**Input**: User description: « Je ne veux pas que quelqu'un puisse rentrer des infos de prix dans mon
-salon. »
+**Input**: User description : « Je ne veux pas que quelqu'un puisse rentrer des infos de prix dans mon
+salon. » Puis, deuxième solution : « Mettre un salon accessible à tous qui permettra de démarrer une
+nouvelle séance de forgemagie : ça crée automatiquement un salon textuel accessible uniquement au bot
+et à la personne qui l'a créé. Dedans, l'utilisateur pourra faire ses /fmstart, /fmstop, etc., avec une
+limite de 5 salons par utilisateur pour éviter l'abus. »
 
-Choix faits par le porteur du projet avant la spec :
-- un salon appartient au **premier joueur qui l'a utilisé** ;
-- les captures postées **dans Discord** par d'autres joueurs continuent de compter comme aujourd'hui :
-  qui peut poster dans un salon se règle avec les permissions Discord.
+## Clarifications
+
+### Session 2026-09-30
+
+- Le joueur **nomme son salon librement** (pas un nom d'objet : une faute de frappe ne correspondrait
+  à rien sur le site).
+- La création d'un salon **démarre automatiquement une session**.
+- Un salon se clôture avec **`/fmarchive`** : il est archivé (lecture seule), pas supprimé ; la limite
+  de **5** porte sur les salons actifs ; archivage automatique après une période d'inactivité.
+- Le salon d'accueil est **en lecture seule**, avec un **bouton** « Nouvelle séance de FM » au lieu
+  d'une commande ; le bot répond par un **message éphémère** (visible par le seul joueur).
+- Le site est branché : « Démarrer une séance » y crée aussi un salon ; le bot indique au site qui a
+  créé chaque salon.
+- Un **salon entier peut être rattaché à un objet en FM** sur le site : toutes ses sessions, passées et
+  futures, comptent alors pour cet objet.
 
 ## Contexte
 
-Depuis specs/028, un joueur peut démarrer une session depuis le site dans n'importe quel salon que le
-bot a déjà utilisé, s'il est libre. Il en devient le propriétaire. Un autre membre peut donc :
+Aujourd'hui (specs/025, 027, 028), les sessions FM vivent dans des salons Discord ordinaires : n'importe
+qui peut y poster, et depuis le site n'importe quel membre peut démarrer une session dans le salon d'un
+autre, y importer ses captures ou la rattacher à son objet. Il n'y a pas de FM de groupe : chaque joueur
+fait sa FM seul.
 
-1. démarrer depuis le site une session dans le salon d'un joueur ;
-2. y importer ses propres captures depuis le site ;
-3. la rattacher, dès le démarrage, à un de ses objets en FM (specs/027) — si le joueur habituel du
-   salon poste ensuite ses captures dans Discord, ses dépenses finissent dans le récap de l'objet d'un
-   autre.
+Avec des **salons personnels**, créés par le bot et visibles seulement par leur propriétaire et le bot,
+les permissions Discord empêchent quiconque d'y poster, et le site sait à qui appartient chaque salon.
 
-Il n'y a pas de FM de groupe : chaque joueur fait sa FM dans ses propres sessions. Le site doit donc
-réserver le démarrage depuis le site au joueur à qui le salon appartient.
+Cette spec **remplace** la règle de specs/028 FR-003 (choisir un salon connu au démarrage) et
+**étend** specs/027 (rattachement par salon). Les modifications du bot sont faites par son auteur.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Seul le propriétaire d'un salon y démarre une session depuis le site (Priority: P1)
+### User Story 1 - Créer son salon FM depuis Discord (Priority: P1)
 
-Cyril fait sa FM dans le salon `#fm-cyril`, qu'il a été le premier à utiliser. Quand Bob démarre une
-session depuis le site, `#fm-cyril` ne lui est pas proposé, et une tentative directe est refusée.
-Cyril, lui, peut toujours y démarrer ses sessions depuis le site.
+Dans le salon d'accueil (lecture seule), Cyril clique sur « ➕ Nouvelle séance de FM ». Une petite
+fenêtre lui demande le nom du salon ; il tape « mon rtograf ». Le bot crée `#fm-cyril-mon-rtograf` dans
+la catégorie Forgemagie, visible seulement par Cyril et le bot, y démarre une session, et répond à Cyril
+par un message éphémère avec le lien. Cyril y poste ses captures ; `/fmstop`, `/fmstart`, `/fmreset`,
+`/fmtotal` y fonctionnent comme aujourd'hui.
 
-**Why this priority**: c'est la demande : personne d'autre ne peut ouvrir de session depuis le site
-dans le salon d'un joueur, donc ni y importer ses captures ni y rattacher son objet.
+**Why this priority**: c'est le cœur de la solution : un salon à soi, protégé par Discord.
 
-**Independent Test**: `#fm-cyril` a été utilisé d'abord par Cyril ; avec le compte de Bob, la liste
-des salons au démarrage ne contient pas `#fm-cyril`, et un démarrage forcé dans ce salon est refusé ;
-avec le compte de Cyril, le démarrage réussit.
+**Independent Test**: cliquer sur le bouton, saisir un nom : le salon est créé, invisible pour un autre
+membre, une session y est ouverte, et la session apparaît sur le site au nom de Cyril.
 
 **Acceptance Scenarios**:
 
-1. **Given** un salon qui appartient à Cyril, **When** Bob ouvre le formulaire de démarrage, **Then**
-   ce salon n'est pas proposé.
-2. **Given** le même salon, **When** Bob tente quand même d'y démarrer une session, **Then** le site
-   refuse avec un message clair (« Ce salon appartient à un autre joueur ») et rien n'est créé : ni
-   session, ni demande au bot.
-3. **Given** le même salon, **When** Cyril y démarre une session depuis le site, **Then** elle est
-   créée comme dans specs/028.
-4. **Given** un salon connu qui n'appartient encore à personne, **When** un joueur y démarre une
-   session depuis le site, **Then** le salon lui appartient désormais.
-5. **Given** la liste des salons au démarrage, **When** un joueur l'ouvre, **Then** elle ne montre que
-   ses salons et les salons sans propriétaire, et indique lesquels sont à lui.
+1. **Given** le salon d'accueil, **When** un membre veut y écrire, **Then** il ne peut pas : seul le
+   bouton est utilisable.
+2. **Given** un joueur qui a moins de 5 salons FM actifs, **When** il clique sur le bouton et saisit un
+   nom, **Then** le bot crée le salon (nom nettoyé, préfixé par son pseudo), lui en donne l'accès à lui
+   seul (et au bot), y ouvre une session et lui répond par un message éphémère avec le lien.
+3. **Given** un autre membre du serveur, **When** il parcourt les salons, **Then** il ne voit pas le
+   salon de Cyril.
+4. **Given** un joueur qui a déjà 5 salons actifs, **When** il clique sur le bouton, **Then** le bot lui
+   répond par un message éphémère qu'il a atteint la limite et qu'il peut en archiver un avec
+   `/fmarchive`.
+5. **Given** un nom vide ou trop long (plus de 30 caractères), **When** le joueur valide, **Then** le
+   bot le refuse avec un message éphémère, sans rien créer.
+6. **Given** le bot redémarre, **When** un joueur clique sur le bouton, **Then** le bouton fonctionne
+   toujours.
 
 ---
 
-### User Story 2 - Le propriétaire d'un salon est le premier à l'avoir utilisé (Priority: P1)
+### User Story 2 - Archiver un salon (Priority: P1)
 
-Le premier joueur qui lance une session dans un salon — par `/fmstart` (quand le bot indique qui a
-tapé la commande) ou depuis le site — en devient le propriétaire, sans rien régler. Pour les salons
-déjà utilisés avant cette fonctionnalité, le site retrouve ce premier joueur à partir de l'historique.
+Quand la FM d'un objet est finie, Cyril tape `/fmarchive` dans son salon. La session en cours est
+fermée (avec son résumé), le salon passe en lecture seule dans la catégorie « Archives FM », et une
+place se libère.
 
-**Why this priority**: sans propriétaire, la règle d'US1 ne s'applique à rien.
-
-**Independent Test**: dans un salon jamais utilisé, Cyril tape `/fmstart` : le salon est à lui ; Bob
-tape ensuite `/fmstart` dans le même salon : le salon reste à Cyril.
+**Why this priority**: sans archivage, la limite de 5 bloque vite le joueur.
 
 **Acceptance Scenarios**:
 
-1. **Given** un salon jamais utilisé, **When** Cyril y lance la première session (Discord ou site),
-   **Then** le salon lui appartient.
-2. **Given** un salon qui appartient à Cyril, **When** Bob tape `/fmstart` dans ce salon, **Then** la
-   session de Bob fonctionne comme aujourd'hui dans Discord, mais le salon reste à Cyril.
-3. **Given** un salon utilisé avant cette fonctionnalité, **When** le site détermine son propriétaire,
-   **Then** c'est le joueur de la première session qui avait un propriétaire, sinon le premier joueur
-   à y avoir posté une capture ; à défaut, le salon n'a pas de propriétaire.
-4. **Given** un salon sans aucune session connue d'un joueur (anciennes sessions sans auteur ni
-   capture), **When** un joueur y démarre une session depuis le site, **Then** il en devient le
-   propriétaire (US1, scénario 4).
+1. **Given** un salon actif de Cyril avec une session ouverte, **When** il tape `/fmarchive`, **Then**
+   la session est fermée comme par `/fmstop`, le salon devient lecture seule pour lui, part dans les
+   archives, et ne compte plus dans sa limite.
+2. **Given** un salon sans activité (ni capture ni commande) depuis 14 jours, **When** le bot le
+   constate, **Then** il l'archive de la même façon et le signale dans le salon.
+3. **Given** un salon archivé, **When** le site l'affiche, **Then** ses sessions restent consultables et
+   comptent toujours dans les récaps.
+4. **Given** `/fmarchive` tapé ailleurs que dans un salon FM personnel, ou par quelqu'un d'autre que son
+   propriétaire, **When** le bot le reçoit, **Then** il refuse sans rien faire.
+
+---
+
+### User Story 3 - Créer son salon depuis le site (Priority: P2)
+
+Sur la page Forgemagie, « Démarrer une séance » demande un nom de salon (et, facultativement, un objet
+en FM). Le site transmet la demande au bot, qui crée le salon comme depuis Discord et y ouvre la
+session ; le site l'affiche aussitôt « en attente de Discord », puis « ouverte dans Discord ».
+
+**Why this priority**: « synchronisé des deux côtés » (specs/028) ; remplace le choix d'un salon existant.
+
+**Acceptance Scenarios**:
+
+1. **Given** un joueur connecté avec moins de 5 salons actifs, **When** il démarre une séance depuis le
+   site en nommant son salon, **Then** la session apparaît sur le site, et le bot crée le salon et y
+   ouvre la session dans les secondes qui suivent.
+2. **Given** un joueur avec déjà 5 salons actifs, **When** il démarre une séance depuis le site, **Then**
+   le site refuse avec le même message que le bot.
+3. **Given** un de ses salons actifs, **When** le joueur démarre une session depuis le site dans ce salon
+   (au lieu d'en créer un), **Then** cela fonctionne comme dans specs/028 ; les salons des autres ne lui
+   sont jamais proposés.
+
+---
+
+### User Story 4 - Rattacher un salon entier à un objet en FM (Priority: P2)
+
+Sur le site, Cyril rattache son salon `#fm-cyril-mon-rtograf` à son objet « Rtograf PA » (choisi dans sa
+liste, donc sans faute). Toutes les sessions de ce salon, passées et futures, comptent alors pour cet
+objet, y compris celles lancées par `/fmstart`.
+
+**Why this priority**: évite de rattacher chaque session à la main (le salon ne porte pas le nom de
+l'objet, choix du porteur du projet).
+
+**Acceptance Scenarios**:
+
+1. **Given** un salon de Cyril avec deux sessions non rattachées, **When** il rattache le salon à
+   « Rtograf PA », **Then** les deux sessions comptent pour cet objet, et son récap les liste.
+2. **Given** un salon rattaché, **When** une nouvelle session y est ouverte (Discord ou site), **Then**
+   elle compte pour l'objet sans action.
+3. **Given** un salon rattaché, **When** Cyril le détache, **Then** ses sessions ne comptent plus pour
+   l'objet (sauf celles rattachées une à une, qui restent rattachées).
+4. **Given** le salon d'un autre joueur, **When** Cyril consulte le site, **Then** il ne peut pas le
+   rattacher.
 
 ---
 
 ### Edge Cases
 
-- **Le propriétaire supprime son profil** (specs/025, FR-007) : ses salons n'appartiennent plus à
-  personne ; le prochain joueur qui y démarre une session depuis le site ou y lance la première
-  session par `/fmstart` en devient propriétaire.
-- **Session en cours dans le salon d'un autre, démarrée avant cette fonctionnalité** : elle continue
-  normalement ; seules les nouvelles sessions démarrées depuis le site sont concernées.
-- **Captures postées dans Discord par un autre joueur** dans mon salon : elles comptent comme
-  aujourd'hui, à son nom (choix du porteur du projet) ; les permissions Discord du salon règlent qui
-  peut y poster.
-- **Rattacher une session à un objet** (specs/027) : la règle actuelle suffit (seul un joueur qui a
-  dépensé dans la session peut la rattacher à ses objets) ; le rattachement au démarrage (specs/028)
-  n'est possible que dans ses propres salons, donc pour ses propres sessions.
-- **Deux joueurs démarrent en même temps dans un salon sans propriétaire** : le premier enregistré
-  l'emporte ; l'autre reçoit le refus d'US1, scénario 2.
+- **Joueur qui quitte le serveur Discord** : ses salons actifs sont archivés.
+- **Salon supprimé à la main dans Discord** : le bot le signale au site ; ses sessions restent sur le
+  site ; il ne compte plus dans la limite.
+- **Anciens salons ordinaires** (avant cette fonctionnalité) : leurs sessions restent sur le site ; ils
+  n'ont pas de propriétaire et ne sont plus proposés au démarrage depuis le site.
+- **Deux clics rapides sur le bouton** : un seul salon est créé par saisie validée ; la limite reste
+  respectée.
+- **Nom déjà pris par un autre salon du joueur** : le bot ajoute un numéro (`-2`).
+- **Nom avec caractères interdits** : nettoyés (minuscules, espaces → tirets, accents retirés si besoin,
+  caractères non autorisés supprimés) ; un nom vide après nettoyage est refusé.
+- **Administrateurs du serveur** : ils voient les salons FM selon leurs droits Discord habituels ; le bot
+  ne leur retire rien.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Chaque salon connu MUST avoir au plus un propriétaire : le premier joueur qui y a lancé
-  une session dont on connaît le joueur (par `/fmstart` avec auteur, ou depuis le site), ou, tant
-  qu'aucun ne l'a fait, le premier joueur à y avoir posté une capture. Une fois fixé, il ne change
-  plus (sauf FR-007).
-- **FR-002**: Le propriétaire d'un salon MUST NOT changer quand un autre joueur y lance une session
-  par `/fmstart`.
-- **FR-003**: Pour les salons utilisés avant cette fonctionnalité, le propriétaire MUST être déduit de
-  l'historique : joueur de la première session qui a un propriétaire, sinon premier joueur ayant posté
-  une capture dans ce salon ; sinon aucun.
-- **FR-004**: Le démarrage d'une session depuis le site (specs/028) MUST être refusé dans un salon qui
-  appartient à un autre joueur, sans créer de session ni de demande au bot. *(amende specs/028 FR-001,
-  FR-003)*
-- **FR-005**: Un démarrage depuis le site dans un salon sans propriétaire MUST en faire le propriétaire
-  du joueur qui démarre.
-- **FR-006**: La liste des salons proposée au démarrage MUST ne contenir que les salons du joueur et
-  les salons sans propriétaire, en distinguant les deux. *(amende specs/028 FR-003)*
-- **FR-007**: La suppression d'un profil (specs/025, FR-007) MUST rendre ses salons sans propriétaire.
-- **FR-008**: `/fmstart`, `/fmstop`, `/fmreset` et les captures postées dans Discord MUST continuer de
-  fonctionner comme aujourd'hui, quel que soit le propriétaire du salon.
+**Discord (bot, modifié par son auteur)**
+
+- **FR-001**: Le bot MUST publier dans un salon d'accueil en lecture seule un message fixe avec un bouton
+  « Nouvelle séance de FM », qui reste fonctionnel après un redémarrage du bot.
+- **FR-002**: Le bouton MUST ouvrir une fenêtre demandant le nom du salon (1 à 30 caractères) ; à la
+  validation, le bot MUST créer un salon textuel dans la catégorie Forgemagie, nommé d'après la saisie
+  nettoyée et le pseudo du joueur, visible et utilisable uniquement par le joueur et le bot, y ouvrir une
+  session, et répondre au joueur par un message éphémère contenant le lien.
+- **FR-003**: Un joueur MUST avoir au plus 5 salons FM actifs ; au-delà, la création MUST être refusée
+  avec un message indiquant `/fmarchive`.
+- **FR-004**: `/fmarchive`, tapé par le propriétaire dans son salon, MUST fermer la session ouverte (comme
+  `/fmstop`), rendre le salon lecture seule, le déplacer dans « Archives FM » et le retirer du décompte.
+- **FR-005**: Un salon actif sans capture ni commande depuis 14 jours MUST être archivé automatiquement
+  de la même façon, avec un message dans le salon.
+- **FR-006**: `/fmstart`, `/fmstop`, `/fmreset`, `/fmtotal` et les captures MUST fonctionner dans un salon
+  FM personnel comme aujourd'hui.
+- **FR-007**: Le bot MUST informer le site de la création d'un salon (identifiant, nom, propriétaire), de
+  son archivage et de sa suppression.
+
+**Site**
+
+- **FR-008**: Le site MUST connaître pour chaque salon FM personnel son propriétaire et son état (actif,
+  archivé, supprimé).
+- **FR-009**: « Démarrer une séance » sur le site MUST permettre soit de créer un nouveau salon (nom
+  libre, 1 à 30 caractères), soit de démarrer une session dans un de ses salons actifs ; la création
+  MUST respecter la limite de 5 salons actifs. *(remplace specs/028 FR-003)*
+- **FR-010**: Le site MUST NOT proposer ni accepter un démarrage de session dans le salon d'un autre
+  joueur, ni dans un salon archivé ou ancien (sans propriétaire).
+- **FR-011**: Le propriétaire d'un salon MUST pouvoir le rattacher à un de ses objets en FM et l'en
+  détacher ; les sessions d'un salon rattaché comptent pour cet objet, passées et futures, dans le récap
+  (specs/027). *(étend specs/027)*
+- **FR-012**: Une session rattachée à la main à un objet (specs/027) MUST garder ce rattachement même si
+  son salon est rattaché à un autre objet ou détaché.
+- **FR-013**: Le site MUST afficher, dans le Profil, les salons FM du joueur (actifs et archivés), avec
+  l'objet auquel chacun est rattaché.
 
 ### Key Entities
 
-- **Salon** : un salon Discord connu du site (déjà utilisé par le bot), avec son nom et, désormais,
-  son **propriétaire** (un joueur, ou personne).
+- **Salon FM personnel** : identifiant Discord, nom, propriétaire, état (actif, archivé, supprimé),
+  objet en FM rattaché (facultatif), date de création, date de dernière activité.
+- **Demande au bot** (specs/028) : gagne le type « créer un salon » (nom demandé, joueur, objet
+  facultatif).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: 100 % des tentatives de démarrer depuis le site une session dans le salon d'un autre
-  joueur sont refusées, sans aucune trace (ni session, ni demande au bot).
-- **SC-002**: Un joueur voit dans la liste de démarrage tous ses salons, et aucun salon d'un autre
-  joueur.
-- **SC-003**: Après la mise en ligne, chaque salon déjà utilisé a le propriétaire attendu d'après
-  l'historique (vérifiable sur la base actuelle).
+- **SC-001**: Un joueur crée son salon FM et commence à y poster en moins de 30 secondes.
+- **SC-002**: Aucun autre membre ne peut voir ni écrire dans le salon FM d'un joueur (hors
+  administrateurs du serveur selon leurs droits Discord).
+- **SC-003**: Aucun joueur ne dépasse 5 salons FM actifs.
+- **SC-004**: Après le rattachement d'un salon à un objet, 100 % de ses sessions comptent dans le récap
+  de cet objet.
 
 ## Assumptions
 
-- Pas de FM de groupe : un salon sert à un seul joueur ; le partage ou le transfert d'un salon est
-  hors périmètre (un joueur peut supprimer son profil pour libérer ses salons, cas limite).
-- Aucun réglage manuel des salons n'est ajouté (réclamer, libérer, renommer) : hors périmètre.
-- Aucun changement du bot n'est nécessaire au-delà de specs/028 (auteur de `/fmstart`) ; sans cet
-  auteur, un salon utilisé seulement par `/fmstart` prend comme propriétaire le premier joueur qui y
-  poste une capture.
+- Le bot a le droit « Gérer les salons » sur le serveur, et l'administrateur a créé (ou laisse le bot
+  créer) les catégories « Forgemagie » et « Archives FM » et le salon d'accueil.
+- Le délai d'archivage automatique est de 14 jours, réglable côté bot.
+- Pas de FM de groupe : un salon FM personnel n'est jamais partagé.
+- La première version de cette spec (propriétaire = premier joueur à utiliser un salon) est abandonnée.

@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Propriétaire d'un salon Discord sur le site
+# Specification Quality Checklist: Salons FM personnels créés par le bot
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-30
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Les deux choix structurants (premier à utiliser le salon ; captures Discord des autres inchangées)
-  ont été faits par le porteur du projet avant la spec.
+- Révision du 2026-09-30 : spec réécrite pour la deuxième solution du porteur du projet (salons
+  personnels créés par le bot, bouton, `/fmarchive`, limite de 5, rattachement d'un salon à un objet).
