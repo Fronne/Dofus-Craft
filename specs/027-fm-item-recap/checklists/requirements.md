@@ -33,5 +33,5 @@
 
 - Les quatre choix structurants (association sur le site, exemplaire, un objet par session, contenu du
   récap) ont été faits par le porteur du projet avant la spec.
-- Hypothèse à confirmer au besoin : tout membre connecté peut rattacher une session non rattachée à
-  ses propres objets, même sans y avoir dépensé (FR-005, Assumptions).
+- Clarification du 2026-09-30 : pas de FM de groupe ; seul un joueur qui a dépensé dans une session
+  peut la rattacher à ses objets (FR-005).

@@ -18,6 +18,14 @@ Choix faits par le porteur du projet avant la spec :
 - le récap contient le **total dépensé**, la **liste des sessions** et le **détail par rune**, sans
   part par joueur.
 
+## Clarifications
+
+### Session 2026-09-30
+
+- Q: Un membre peut-il rattacher à ses objets une session où il n'a rien dépensé (FM de groupe) ?
+  → A: Non, il n'y a pas de FM de groupe dans le groupe : chaque joueur paie la FM de ses propres
+  objets. Seul un joueur qui a dépensé dans une session peut la rattacher à un de ses objets.
+
 ## Contexte
 
 La page Forgemagie (specs/025) garde les sessions FM du bot Discord : pour chacune, la dépense de
@@ -26,7 +34,8 @@ rien ne relie aujourd'hui les sessions entre elles : impossible de savoir combie
 l'Anneau Rtograf de Cyril.
 
 Cette fonctionnalité ajoute les **objets en FM** : un joueur déclare les objets qu'il forgemage, y
-rattache les sessions correspondantes, et obtient un récap de coût par objet.
+rattache les sessions correspondantes, et obtient un récap de coût par objet. Dans le groupe, il n'y a pas de FM de groupe : chaque joueur paie la FM de
+ses propres objets, dans ses propres sessions.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -54,11 +63,11 @@ mention disparaît.
    **Then** la session est rattachée à cet objet et le détail l'indique.
 4. **Given** une session rattachée à un objet du joueur, **When** il la détache, **Then** elle n'est
    plus rattachée à aucun objet et ne compte plus dans le récap.
-5. **Given** une session déjà rattachée à l'objet d'un autre joueur, **When** le joueur ouvre son
-   détail, **Then** il voit à quel objet elle est rattachée, mais ne peut ni la détacher ni la
-   rattacher à un de ses objets.
-6. **Given** un joueur sans objet en FM, **When** il ouvre le détail d'une session, **Then** on lui
-   propose de créer un objet en FM pour pouvoir rattacher la session.
+5. **Given** une session où le joueur n'a rien dépensé, **When** il ouvre son détail, **Then** il ne
+   peut pas la rattacher à ses objets ; si elle est rattachée à l'objet d'un autre joueur, il voit
+   lequel, sans pouvoir la détacher.
+6. **Given** un joueur sans objet en FM, **When** il ouvre le détail d'une session où il a dépensé,
+   **Then** on lui propose de créer un objet en FM pour pouvoir rattacher la session.
 
 ---
 
@@ -78,8 +87,8 @@ quantités et des totaux des deux sessions.
 
 1. **Given** deux sessions rattachées de 100 000 et 50 000 kamas, **When** le joueur ouvre le récap
    de l'objet, **Then** le total est 150 000 kamas.
-2. **Given** une session rattachée où deux joueurs ont dépensé 60 000 et 40 000 kamas, **When** le
-   récap est affiché, **Then** la session compte pour 100 000 kamas, sans part par joueur.
+2. **Given** une session rattachée de 100 000 kamas, **When** le récap est affiché, **Then** elle
+   compte pour son total, tel qu'affiché dans son détail, sans part par joueur.
 3. **Given** la Rune Do Air achetée 20 fois pour 31 736 kamas dans une session et 10 fois pour
    16 000 kamas dans une autre, **When** le récap est affiché, **Then** la ligne Rune Do Air indique
    30, 47 736 kamas et un prix moyen de 1 591 kamas (arrondi).
@@ -124,16 +133,17 @@ récap ; passer le profil de Bob en privé : ses objets ne sont plus visibles pa
   redeviennent non rattachées.
 - **Session remise à zéro** (`/fmreset`) alors qu'elle est rattachée : elle reste rattachée, avec les
   nouveaux montants (0 kamas jusqu'aux captures suivantes).
-- **Session sans achat** (ouverte puis fermée sans capture) : elle peut être rattachée, et compte pour
-  0 kamas.
 - **Achat d'un joueur qui a supprimé son profil** : il a disparu de la session (specs/025) et ne
   compte donc plus dans le récap.
 - **Captures importées sur le site** (hors session, specs/025 US5) : elles ne sont pas rattachables à
   un objet et n'entrent pas dans les récaps.
 - **Équipement retiré du catalogue** plus tard : l'objet garde le nom et l'icône enregistrés à sa
   création.
-- **Deux joueurs qui veulent la même session** : le premier qui la rattache l'emporte ; l'autre voit à
-  quel objet elle est rattachée, et doit demander au propriétaire de la détacher.
+- **Session où plusieurs joueurs ont dépensé** (cas inhabituel, puisqu'il n'y a pas de FM de groupe,
+  par exemple deux joueurs dans le même salon) : chacun d'eux peut la rattacher à un de ses objets ;
+  le premier qui la rattache l'emporte, et le total du récap reste celui de la session.
+- **Session sans aucun achat** (ouverte puis fermée sans capture) : personne n'y a dépensé, elle ne
+  peut donc pas être rattachée.
 
 ## Requirements *(mandatory)*
 
@@ -152,8 +162,9 @@ récap ; passer le profil de Bob en privé : ses objets ne sont plus visibles pa
 **Rattachement**
 
 - **FR-005**: Depuis le détail d'une session non rattachée, un joueur connecté MUST pouvoir la
-  rattacher à un de ses objets en FM, que la session soit en cours ou terminée, et qu'il y ait
-  participé ou non.
+  rattacher à un de ses objets en FM, que la session soit en cours ou terminée, **seulement s'il a
+  dépensé dans cette session** (au moins une capture du bot à son nom). Sinon, le rattachement MUST
+  être refusé.
 - **FR-006**: Une session MUST être rattachée à au plus un objet en FM. Tenter de rattacher une
   session déjà rattachée MUST échouer avec un message qui indique qu'elle l'est déjà.
 - **FR-007**: Le propriétaire de l'objet MUST pouvoir détacher une session de cet objet.
@@ -205,8 +216,8 @@ récap ; passer le profil de Bob en privé : ses objets ne sont plus visibles pa
 
 ## Assumptions
 
-- N'importe quel membre connecté peut rattacher une session non rattachée à **ses** objets, même
-  s'il n'y a pas dépensé : dans une FM de groupe, les autres paient souvent pour l'objet d'un seul.
+- Il n'y a pas de FM de groupe : un joueur forgemage ses propres objets et paie ses propres sessions
+  (clarification du 2026-09-30).
 - Le catalogue d'équipements est celui de la page Recherche (DofusDB) ; seuls les équipements
   (pas les ressources) peuvent devenir un objet en FM.
 - Pas d'état « terminé » pour un objet en FM, ni de jets ou de stats obtenus : hors périmètre.
