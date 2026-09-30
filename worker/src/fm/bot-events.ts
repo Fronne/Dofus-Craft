@@ -7,7 +7,7 @@ import {
 // specs/025-rune-purchase-import (contracts/fm-bot-api.md, research R4): POST /fm/bot/events. The bot
 // sends one event per command or processed message. Like the bot, one open session per channel.
 
-const EVENT_TYPES = ['session-start', 'capture', 'session-reset', 'session-stop'] as const;
+const EVENT_TYPES = ['session-start', 'capture', 'session-reset', 'session-stop', 'channel-created', 'channel-archived', 'channel-deleted'] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
 type CommonEvent = { type: EventType; eventId: string; channelId: string; channelName: string; occurredAt: string };
@@ -145,6 +145,41 @@ async function handleSessionChange(db: FmDb, event: CommonEvent, author?: Author
   };
 }
 
+// specs/029-channel-ownership (contracts/fm-channels-api.md): the personal FM channels the bot creates.
+async function handleChannelEvent(db: FmDb, event: CommonEvent, author: Author | undefined, commandId: string | undefined): Promise<{ answer: EventAnswer; statements: FmStatement[] }> {
+  if (event.type === 'channel-created') {
+    // A channel created for a request of the site gets the item chosen there — if it's the owner's.
+    let fmItemId: string | null = null;
+    if (commandId) {
+      const command = await db.prepare(
+        `SELECT c.fm_item_id FROM fm_bot_commands c JOIN fm_items i ON i.id = c.fm_item_id
+         WHERE c.id = ? AND c.type = 'create-channel' AND i.owner_discord_user_id = ?`,
+      ).bind(commandId, author!.id).first<{ fm_item_id: string }>();
+      fmItemId = command?.fm_item_id ?? null;
+    }
+    return {
+      answer: { status: 'ok', duplicate: false },
+      statements: [
+        upsertPlayerStatement(db, { discordUserId: author!.id, displayName: author!.displayName, avatarUrl: author!.avatarUrl }, event.occurredAt),
+        db.prepare(
+          `INSERT INTO fm_channels (channel_id, channel_name, owner_discord_user_id, status, fm_item_id, created_at) VALUES (?, ?, ?, 'active', ?, ?)
+           ON CONFLICT (channel_id) DO UPDATE SET channel_name = excluded.channel_name, owner_discord_user_id = excluded.owner_discord_user_id,
+             status = 'active', archived_at = NULL, fm_item_id = COALESCE(excluded.fm_item_id, fm_channels.fm_item_id)`,
+        ).bind(event.channelId, event.channelName, author!.id, fmItemId, event.occurredAt),
+        ...(commandId
+          ? [db.prepare("UPDATE fm_bot_commands SET result_channel_id = ? WHERE id = ? AND type = 'create-channel'").bind(event.channelId, commandId)]
+          : []),
+      ],
+    };
+  }
+  const status = event.type === 'channel-archived' ? 'archived' : 'deleted';
+  return {
+    answer: { status: 'ok', duplicate: false },
+    statements: [db.prepare('UPDATE fm_channels SET status = ?, archived_at = COALESCE(archived_at, ?) WHERE channel_id = ?')
+      .bind(status, event.occurredAt, event.channelId)],
+  };
+}
+
 export async function handleBotEvent(request: Request, env: FmEnv): Promise<Response> {
   // A key of its own, never the site's public COMMUNITY_API_KEY (FR-009).
   const key = env.FM_BOT_API_KEY ?? '';
@@ -157,15 +192,22 @@ export async function handleBotEvent(request: Request, env: FmEnv): Promise<Resp
   if (common.type === 'capture' && !capture) {
     return json({ error: `a capture needs author.id, author.displayName, spentKamas and at most ${MAX_LINES} lines` }, 400);
   }
-  const rawAuthor = common.type === 'session-start' ? (body as Record<string, unknown>).author : undefined;
+  const rawAuthor = common.type === 'session-start' || common.type === 'channel-created' ? (body as Record<string, unknown>).author : undefined;
   const startAuthor = rawAuthor === undefined || rawAuthor === null ? undefined : parseAuthor(rawAuthor);
   if (rawAuthor !== undefined && rawAuthor !== null && !startAuthor) return json({ error: 'author needs an id and a displayName' }, 400);
+  if (common.type === 'channel-created' && !startAuthor) return json({ error: 'channel-created needs an author' }, 400);
+  const rawCommandId = (body as Record<string, unknown>).commandId;
+  const commandId = typeof rawCommandId === 'string' && rawCommandId ? rawCommandId : undefined;
 
   // FR-020: a resend of the same Discord message or interaction changes nothing.
   const processed = await env.DB.prepare('SELECT response FROM fm_processed_events WHERE event_id = ?').bind(common.eventId).first<{ response: string }>();
   if (processed) return json({ ...(JSON.parse(processed.response) as EventAnswer), duplicate: true });
 
-  const { answer, statements } = capture ? await handleCapture(env.DB, capture) : await handleSessionChange(env.DB, common, startAuthor);
+  const { answer, statements } = capture
+    ? await handleCapture(env.DB, capture)
+    : common.type.startsWith('channel-')
+      ? await handleChannelEvent(env.DB, common, startAuthor, commandId)
+      : await handleSessionChange(env.DB, common, startAuthor);
   await env.DB.batch([...statements, processedStatement(env.DB, common, answer)]);
   return json(answer);
 }

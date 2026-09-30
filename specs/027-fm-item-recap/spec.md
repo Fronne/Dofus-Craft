@@ -224,3 +224,10 @@ récap ; passer le profil de Bob en privé : ses objets ne sont plus visibles pa
 - Aucun changement du bot Discord : le rattachement se fait uniquement sur le site.
 - Les objets en FM sont gardés tant que le propriétaire ne les supprime pas (même règle que les
   sessions, specs/025 FR-012).
+
+## Révision (2026-09-30) : objet d'un salon (specs/029-channel-ownership)
+
+Un salon FM personnel peut être rattaché à un objet en FM. L'objet d'une session est désormais celui
+rattaché à la main à la session, sinon celui de son salon ; « Rattacher » n'est proposé que pour une
+session sans objet, et « Détacher » ne retire qu'un rattachement manuel. Les totaux et le récap
+utilisent cet objet.

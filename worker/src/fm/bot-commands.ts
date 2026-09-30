@@ -13,33 +13,33 @@ export function isBotAuthorized(request: Request, env: FmEnv): boolean {
 }
 
 type CommandRow = {
-  id: string; type: 'open' | 'close'; session_id: string; channel_id: string; channel_name: string;
-  owner_discord_user_id: string | null; display_name: string | null; label: string | null; item_name: string | null;
+  id: string; type: 'open' | 'close' | 'create-channel'; channel_id: string | null; channel_name: string | null;
+  player_id: string | null; display_name: string | null; label: string | null; item_name: string | null; requested_name: string | null;
 };
 
 export async function listCommands(request: Request, env: FmEnv): Promise<Response> {
   if (!isBotAuthorized(request, env)) return unauthorized();
+  // open / close: the session's owner and item; create-channel (specs/029): the requester and the item chosen.
   const { results } = await env.DB.prepare(
-    `SELECT c.id, c.type, c.session_id, c.channel_id, s.channel_name, s.owner_discord_user_id, p.display_name, i.label, i.item_name
+    `SELECT c.id, c.type, c.channel_id, s.channel_name, c.requested_name,
+            COALESCE(s.owner_discord_user_id, c.requester_discord_user_id) AS player_id, p.display_name,
+            i.label, i.item_name
      FROM fm_bot_commands c
-     JOIN fm_sessions s ON s.id = c.session_id
-     LEFT JOIN fm_players p ON p.discord_user_id = s.owner_discord_user_id
-     LEFT JOIN fm_items i ON i.id = s.fm_item_id
+     LEFT JOIN fm_sessions s ON s.id = c.session_id
+     LEFT JOIN fm_players p ON p.discord_user_id = COALESCE(s.owner_discord_user_id, c.requester_discord_user_id)
+     LEFT JOIN fm_items i ON i.id = COALESCE(s.fm_item_id, c.fm_item_id)
      WHERE c.status = 'pending'
      ORDER BY c.created_at, c.rowid`,
   ).all<CommandRow>();
+  const player = (row: CommandRow) => (row.player_id ? { id: row.player_id, displayName: row.display_name } : null);
+  const item = (row: CommandRow) => (row.item_name ? { name: row.label ?? row.item_name } : null);
   return json({
     pollAfterSeconds: POLL_AFTER_SECONDS,
-    commands: results.map((row) => (row.type === 'open'
-      ? {
-        id: row.id,
-        type: row.type,
-        channelId: row.channel_id,
-        channelName: row.channel_name,
-        player: row.owner_discord_user_id ? { id: row.owner_discord_user_id, displayName: row.display_name } : null,
-        item: row.item_name ? { name: row.label ?? row.item_name } : null,
-      }
-      : { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name })),
+    commands: results.map((row) => {
+      if (row.type === 'create-channel') return { id: row.id, type: row.type, name: row.requested_name, player: player(row), item: item(row) };
+      if (row.type === 'open') return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name, player: player(row), item: item(row) };
+      return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name };
+    }),
   });
 }
 
@@ -51,7 +51,9 @@ export async function acknowledgeCommand(request: Request, env: FmEnv, commandId
   const error = status === 'failed' && isRecord(body) && typeof body.error === 'string' ? body.error.trim().slice(0, MAX_ERROR_LENGTH) || null : null;
 
   const command = await env.DB.prepare('SELECT id, type, session_id, status FROM fm_bot_commands WHERE id = ?')
-    .bind(commandId).first<{ id: string; type: 'open' | 'close'; session_id: string; status: string }>();
+    .bind(commandId).first<{ id: string; type: 'open' | 'close' | 'create-channel'; session_id: string | null; status: string }>();
+  // specs/029: a created channel's id, given back with a successful create-channel.
+  const channelId = isRecord(body) && typeof body.channelId === 'string' && body.channelId ? body.channelId : null;
   if (!command) return json({ error: 'Not found' }, 404);
   // A repeated acknowledgement, or one for a request cancelled meanwhile, changes nothing.
   if (command.status !== 'pending') return json({ id: command.id, status: command.status });
@@ -60,7 +62,10 @@ export async function acknowledgeCommand(request: Request, env: FmEnv, commandId
   const statements = [
     env.DB.prepare('UPDATE fm_bot_commands SET status = ?, error = ?, acknowledged_at = ? WHERE id = ? AND status = \'pending\'').bind(status, error, at, commandId),
   ];
-  if (command.type === 'open') {
+  if (command.type === 'create-channel' && channelId) {
+    statements.push(env.DB.prepare('UPDATE fm_bot_commands SET result_channel_id = COALESCE(result_channel_id, ?) WHERE id = ?').bind(channelId, commandId));
+  }
+  if (command.type === 'open' && command.session_id) {
     statements.push(env.DB.prepare('UPDATE fm_sessions SET sync_status = ?, sync_error = ? WHERE id = ?')
       .bind(status === 'done' ? 'opened' : 'failed', error, command.session_id));
   }

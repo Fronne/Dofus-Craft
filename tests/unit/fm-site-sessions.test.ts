@@ -17,11 +17,12 @@ async function setup() {
   const fm = createFmWorker();
   const cyril = await fm.login('42', { displayName: 'Cyril' });
   const bob = await fm.login('7', { displayName: 'Bob' });
-  // Channels become known once the bot has used them.
+  // specs/029: Cyril's personal channels, created by the bot; Bob has one too.
+  const cyrilAuthor = { id: '42', displayName: 'Cyril', avatarUrl: null };
   for (const channelId of ['c-anneau', 'c-cape']) {
-    await fm.botEvent('session-start', { channelId, channelName: channelId.replace('c-', 'fm-') });
-    await fm.botEvent('session-stop', { channelId, channelName: channelId.replace('c-', 'fm-') });
+    await fm.botEvent('channel-created', { channelId, channelName: channelId.replace('c-', 'fm-'), author: cyrilAuthor });
   }
+  await fm.botEvent('channel-created', { channelId: 'c-bob', channelName: 'fm-bob', author: { id: '7', displayName: 'Bob', avatarUrl: null } });
   const start = (body: object, token = cyril) => fm.call('POST', '/fm/sessions', { token, body });
   const commands = async () => ((await (await fm.call('GET', '/fm/bot/commands', { authorization: `Bearer ${BOT_KEY}` })).json()) as { pollAfterSeconds: number; commands: Command[] });
   const ack = (id: string, body: object = { status: 'done' }) => fm.call('POST', `/fm/bot/commands/${id}/ack`, { authorization: `Bearer ${BOT_KEY}`, body });
@@ -30,13 +31,13 @@ async function setup() {
 }
 
 describe('starting a session from the site (US1)', () => {
-  it('lists the channels the bot has used, busy when a session is open there', async () => {
+  it('lists the player\'s own active channels, busy when a session is open there', async () => {
     const { fm, cyril, start } = await setup();
     await start({ channelId: 'c-anneau' });
     const { channels } = await (await fm.call('GET', '/fm/channels', { token: cyril })).json() as { channels: { channelId: string; channelName: string; busy: boolean }[] };
     expect(channels).toEqual([
-      { channelId: 'c-anneau', channelName: 'fm-anneau', busy: true },
-      { channelId: 'c-cape', channelName: 'fm-cape', busy: false },
+      { channelId: 'c-anneau', channelName: 'fm-anneau', status: 'active', fmItem: null, busy: true },
+      { channelId: 'c-cape', channelName: 'fm-cape', status: 'active', fmItem: null, busy: false },
     ]);
   });
 
@@ -53,13 +54,16 @@ describe('starting a session from the site (US1)', () => {
     expect(queued).toEqual([{ id: expect.any(String), type: 'open', channelId: 'c-anneau', channelName: 'fm-anneau', player: { id: '42', displayName: 'Cyril' }, item: { name: 'Rtograf PA' } }]);
   });
 
-  it('refuses an unknown channel, another player\'s item, or a busy channel', async () => {
+  it('refuses an unknown channel, another player\'s channel or item, or a busy channel', async () => {
     const { fm, bob, start } = await setup();
-    expect((await start({ channelId: 'unknown' })).status).toBe(404);
+    expect((await start({ channelId: 'unknown' })).status).toBe(403);
+    const notMine = await start({ channelId: 'c-anneau' }, bob);
+    expect(notMine.status).toBe(403);
+    expect(await notMine.json()).toEqual({ error: 'not-your-channel' });
     const bobItem = await (await fm.call('POST', '/fm/items', { token: bob, body: { itemId: '1', itemName: 'Coiffe', imageUrl: null } })).json() as { id: string };
     expect((await start({ channelId: 'c-anneau', fmItemId: bobItem.id })).status).toBe(404);
     await start({ channelId: 'c-anneau' });
-    const busy = await start({ channelId: 'c-anneau' }, bob);
+    const busy = await start({ channelId: 'c-anneau' });
     expect(busy.status).toBe(409);
     expect(await busy.json()).toEqual({ error: 'channel-busy' });
   });
@@ -224,7 +228,7 @@ describe('captures imported on the site (US3)', () => {
   it('lists only the player\'s open sessions for the import', async () => {
     const { fm, cyril, bob, start } = await setup();
     await start({ channelId: 'c-anneau' });
-    await start({ channelId: 'c-cape' }, bob);
+    await start({ channelId: 'c-bob' }, bob);
     const { sessions } = await (await fm.call('GET', '/fm/sessions?mine=open', { token: cyril })).json() as { sessions: { channelName: string }[] };
     expect(sessions.map((session) => session.channelName)).toEqual(['fm-anneau']);
   });

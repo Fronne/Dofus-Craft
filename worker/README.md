@@ -40,6 +40,7 @@ sessions, player profiles and capture imports. Setup, once:
 npm run worker:db:migrate-forgemagie        # migration 0007, before deploying the Worker that uses it
 npm run worker:db:migrate-fm-items          # migration 0008 (specs/027: items in FM), same rule
 npm run worker:db:migrate-site-sessions     # migration 0009 (specs/028: sessions started from the site)
+npm run worker:db:migrate-fm-channels       # migration 0010 (specs/029: personal FM channels)
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
@@ -67,7 +68,7 @@ give the bot's author, with the `FM_BOT_API_KEY` value (privately). After a Dofu
   `COMMUNITY_API_KEY` check), `auth.ts` (Discord login, hashed session tokens), `bot-events.ts`
   (`POST /fm/bot/events`), `reads.ts` (sessions, players, private players masked), `me.ts`,
   `imports.ts`, `purchases.ts` (the prices purchases create), `items.ts` (specs/027: items in FM,
-  attaching a session, an item's recap), `site-sessions.ts` and `bot-commands.ts` (specs/028: sessions
+  attaching a session, an item's recap), `channels.ts` (specs/029: personal channels created by the bot), `site-sessions.ts` and `bot-commands.ts` (specs/028: sessions
   started or stopped from the site, and the queue the bot polls every 10 seconds — see
   `../specs/028-site-started-sessions/contracts/fm-bot-commands.md`). Tested from the repo root via
   `tests/unit/fm-*.test.ts`.

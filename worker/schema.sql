@@ -188,16 +188,35 @@ CREATE INDEX IF NOT EXISTS idx_fm_sessions_item ON fm_sessions (fm_item_id);
 
 -- specs/028-site-started-sessions: requests to the Discord bot (open / close a session), which it
 -- fetches every 10 seconds and acknowledges; an acknowledged request is never handed out again.
+-- specs/029-channel-ownership: plus 'create-channel', which has no session nor channel yet.
 CREATE TABLE IF NOT EXISTS fm_bot_commands (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('open', 'close')),
-  session_id TEXT NOT NULL REFERENCES fm_sessions (id),
-  channel_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('open', 'close', 'create-channel')),
+  session_id TEXT REFERENCES fm_sessions (id),
+  channel_id TEXT,
   status TEXT NOT NULL CHECK (status IN ('pending', 'done', 'failed', 'cancelled')),
   error TEXT,
   created_at TEXT NOT NULL,
-  acknowledged_at TEXT
+  acknowledged_at TEXT,
+  requested_name TEXT,
+  requester_discord_user_id TEXT,
+  fm_item_id TEXT,
+  result_channel_id TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_fm_bot_commands_status ON fm_bot_commands (status, created_at);
 CREATE INDEX IF NOT EXISTS idx_fm_bot_commands_channel ON fm_bot_commands (channel_id, status);
+
+-- specs/029-channel-ownership: the personal FM channels the Discord bot creates, one owner each. Filled
+-- only by the bot's events; an item attached here counts for every session of the channel (FR-011).
+CREATE TABLE IF NOT EXISTS fm_channels (
+  channel_id TEXT PRIMARY KEY,
+  channel_name TEXT NOT NULL,
+  owner_discord_user_id TEXT REFERENCES fm_players (discord_user_id),
+  status TEXT NOT NULL CHECK (status IN ('active', 'archived', 'deleted')),
+  fm_item_id TEXT REFERENCES fm_items (id),
+  created_at TEXT NOT NULL,
+  archived_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_fm_channels_owner ON fm_channels (owner_discord_user_id, status);

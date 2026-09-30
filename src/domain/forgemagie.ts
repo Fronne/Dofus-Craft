@@ -88,6 +88,8 @@ export type FmSession = {
   totalKamas: number;
   players: { player: FmPlayer; spentKamas: number }[];
   fmItem: FmSessionItem | null;
+  /** specs/029: whether the item comes from the session's channel or was attached by hand. */
+  fmItemSource: 'session' | 'channel' | null;
   /** specs/028: who started it (site) or typed /fmstart; null for older sessions. */
   owner: FmPlayer | null;
   origin: 'discord' | 'site';
@@ -98,8 +100,17 @@ export type FmSession = {
 
 export type FmSessionSync = { status: 'pending' | 'opened' | 'failed' | 'cancelled' | 'stale'; error: string | null };
 
-/** specs/028 FR-003: a Discord channel the bot has used; `busy` when a session is open in it. */
-export type FmChannel = { channelId: string; channelName: string; busy: boolean };
+/** specs/029: a player's personal FM channel; `busy` when a session is open in it (own channels list only). */
+export type FmChannel = {
+  channelId: string;
+  channelName: string;
+  status: 'active' | 'archived' | 'deleted';
+  fmItem: { id: string; name: string } | null;
+  busy?: boolean;
+};
+
+/** specs/029: a channel the site asked the bot to create. */
+export type FmChannelRequest = { id: string; status: 'pending' | 'done' | 'failed'; error: string | null; channelId: string | null; sessionId: string | null };
 
 export type FmItemSummary = { itemName: string; itemId: string | null; quantity: number; totalKamas: number; averageUnitKamas: number };
 
@@ -154,6 +165,8 @@ export type FmProfile = {
   items: FmItemSummary[];
   /** specs/027 FR-014. */
   fmItems: FmOwnedItem[];
+  /** specs/029 FR-013. */
+  fmChannels: FmChannel[];
 };
 
 /** Why a purchase line created a price, or not (contracts/fm-bot-api.md). */

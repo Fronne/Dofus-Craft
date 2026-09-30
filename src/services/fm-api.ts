@@ -1,5 +1,5 @@
 import type {
-  FmChannel, FmItemRecap, FmMe, FmOwnedItem, FmPlayerSpend, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
+  FmChannel, FmChannelRequest, FmItemRecap, FmMe, FmOwnedItem, FmPlayerSpend, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
 } from '../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken } from '../persistence/fm-session-token';
 
@@ -72,6 +72,7 @@ function mapOk<T, U>(result: FmResult<T>, map: (data: T) => U): FmResult<U> {
 const withSessionItem = <T extends FmSession>(session: T): T => ({
   ...session,
   fmItem: session.fmItem ?? null,
+  fmItemSource: session.fmItemSource ?? (session.fmItem ? 'session' : null),
   owner: session.owner ?? null,
   origin: session.origin === 'site' ? 'site' : 'discord',
   sync: session.sync ?? null,
@@ -168,7 +169,7 @@ const sessionPath = (sessionId: string) => `/fm/sessions/${encodeURIComponent(se
 export const getFmSession = async (sessionId: string) => mapOk(await request('GET', sessionPath(sessionId), isSessionDetail), withDetailActions);
 export const getFmPlayers = () => request('GET', '/fm/players', isPlayers);
 export const getFmPlayer = async (discordUserId: string) =>
-  mapOk(await request('GET', `/fm/players/${encodeURIComponent(discordUserId)}`, isProfile), (profile) => ({ ...profile, fmItems: profile.fmItems ?? [] }));
+  mapOk(await request('GET', `/fm/players/${encodeURIComponent(discordUserId)}`, isProfile), (profile) => ({ ...profile, fmItems: profile.fmItems ?? [], fmChannels: profile.fmChannels ?? [] }));
 
 // specs/027-fm-item-recap (contracts/fm-items-api.md).
 const itemPath = (id: string) => `/fm/items/${encodeURIComponent(id)}`;
@@ -188,10 +189,26 @@ export function importFmCapture(lines: ImportLineRequest[], sharePrices: boolean
 }
 
 // specs/028-site-started-sessions (contracts/fm-site-sessions-api.md).
-function isChannels(value: unknown): value is { channels: FmChannel[] } {
-  return isRecord(value) && Array.isArray(value.channels) && value.channels.every((channel) =>
-    isRecord(channel) && typeof channel.channelId === 'string' && typeof channel.channelName === 'string' && typeof channel.busy === 'boolean');
+function isChannel(value: unknown): value is FmChannel {
+  return isRecord(value) && typeof value.channelId === 'string' && typeof value.channelName === 'string' &&
+    typeof value.status === 'string' && (value.fmItem === null || isRecord(value.fmItem));
 }
+
+function isChannels(value: unknown): value is { channels: FmChannel[] } {
+  return isRecord(value) && Array.isArray(value.channels) && value.channels.every(isChannel);
+}
+
+function isChannelRequest(value: unknown): value is FmChannelRequest {
+  return isRecord(value) && typeof value.id === 'string' && (value.status === 'pending' || value.status === 'done' || value.status === 'failed');
+}
+
+// specs/029-channel-ownership (contracts/fm-channels-api.md).
+/** Errors: `channel-limit` (409). */
+export const createFmChannel = (name: string, fmItemId: string | null) =>
+  request('POST', '/fm/channels', (value): value is { requestId: string } => isRecord(value) && typeof value.requestId === 'string', { name, fmItemId });
+export const getFmChannelRequest = (id: string) => request('GET', `/fm/channel-requests/${encodeURIComponent(id)}`, isChannelRequest);
+export const attachFmChannel = (channelId: string, fmItemId: string | null) =>
+  request('PUT', `/fm/channels/${encodeURIComponent(channelId)}/item`, isChannel, { fmItemId });
 
 export const getFmChannels = () => request('GET', '/fm/channels', isChannels);
 /** Errors: `channel-busy` (409). */

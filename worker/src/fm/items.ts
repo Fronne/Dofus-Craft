@@ -1,5 +1,5 @@
 import { isRecord, json, noContent, nowIso, readJson, type FmDb } from './http';
-import { ITEMS_SELECT, itemSummaries, ownedItems, placeholders, SESSION_COLUMNS, sessionDetail, withPlayers, type ItemRow, type SessionRow } from './reads';
+import { effectiveItemSql, ITEMS_SELECT, itemSummaries, ownedItems, placeholders, SESSION_COLUMNS, sessionDetail, withPlayers, type ItemRow, type SessionRow } from './reads';
 
 // specs/027-fm-item-recap (contracts/fm-items-api.md): the items a player forgemages ("objets en FM"),
 // their recap, and attaching a session to one of them. Only the owner changes an item (FR-002); a
@@ -64,6 +64,7 @@ export async function deleteItem(db: FmDb, viewerId: string, id: string): Promis
   if (!(await ownItem(db, viewerId, id))) return notFound();
   await db.batch([
     db.prepare('UPDATE fm_sessions SET fm_item_id = NULL WHERE fm_item_id = ?').bind(id),
+    db.prepare('UPDATE fm_channels SET fm_item_id = NULL WHERE fm_item_id = ?').bind(id),
     db.prepare('DELETE FROM fm_items WHERE id = ? AND owner_discord_user_id = ?').bind(id, viewerId),
   ]);
   return noContent();
@@ -75,7 +76,7 @@ export async function readItemRecap(db: FmDb, viewerId: string, id: string): Pro
   const [item] = await ownedItems(db, viewerId, 'i.id = ? AND (p.is_private = 0 OR p.discord_user_id = ?)', id, viewerId);
   if (!item) return notFound();
   const { results: sessionRows } = await db.prepare(
-    `SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE fm_item_id = ? ORDER BY opened_at DESC, id DESC`,
+    `SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE ${effectiveItemSql('fm_sessions')} = ? ORDER BY opened_at DESC, id DESC`,
   ).bind(id).all<SessionRow>();
   const sessions = await withPlayers(db, sessionRows, viewerId);
   const ids = sessionRows.map((session) => session.id);
@@ -104,6 +105,11 @@ export async function attachSession(request: Request, db: FmDb, viewerId: string
   if (!session || !(await ownItem(db, viewerId, fmItemId))) return notFound();
   // FR-006: an attached session, even to this very item, is refused.
   if (session.fm_item_id !== null) return json({ error: 'already-attached' }, 409);
+  // specs/029: a session of a channel attached to an item already counts for that item.
+  const channelItem = await db.prepare(
+    'SELECT ch.fm_item_id FROM fm_channels ch JOIN fm_sessions s ON s.channel_id = ch.channel_id WHERE s.id = ? AND ch.fm_item_id IS NOT NULL',
+  ).bind(sessionId).first();
+  if (channelItem) return json({ error: 'already-attached' }, 409);
 
   const spent = await db.prepare('SELECT 1 AS spent FROM fm_captures WHERE session_id = ? AND discord_user_id = ? LIMIT 1')
     .bind(sessionId, viewerId).first<{ spent: number }>();

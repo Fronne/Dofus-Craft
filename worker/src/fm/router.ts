@@ -3,7 +3,8 @@ import { handleBotEvent } from './bot-events';
 import { json, requireSession, unauthorized, type FmEnv } from './http';
 import { handleImport } from './imports';
 import { acknowledgeCommand, listCommands } from './bot-commands';
-import { listChannels, resendSession, startSession, stopSession } from './site-sessions';
+import { resendSession, startSession, stopSession } from './site-sessions';
+import { attachChannelItem, listMyChannels, readChannelRequest, requestChannel } from './channels';
 import { attachSession, createItem, deleteItem, detachSession, readItemRecap, renameItem } from './items';
 import { deleteMe, getMe, patchMe } from './me';
 import { listPlayers, playerProfile, sessionDetail, sessionsPage } from './reads';
@@ -31,7 +32,13 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
     if (method === 'PATCH') return patchMe(request, env.DB, viewerId);
     if (method === 'DELETE') return deleteMe(env.DB, viewerId);
   }
-  if (method === 'GET' && pathname === '/fm/channels') return listChannels(env.DB);
+  // specs/029-channel-ownership (contracts/fm-channels-api.md).
+  if (method === 'GET' && pathname === '/fm/channels') return listMyChannels(env.DB, viewerId);
+  if (method === 'POST' && pathname === '/fm/channels') return requestChannel(request, env.DB, viewerId);
+  const channelRequestMatch = /^\/fm\/channel-requests\/([^/]+)$/.exec(pathname);
+  if (method === 'GET' && channelRequestMatch) return readChannelRequest(env.DB, viewerId, decodeURIComponent(channelRequestMatch[1]));
+  const channelItemMatch = /^\/fm\/channels\/([^/]+)\/item$/.exec(pathname);
+  if (method === 'PUT' && channelItemMatch) return attachChannelItem(request, env.DB, viewerId, decodeURIComponent(channelItemMatch[1]));
   if (method === 'POST' && pathname === '/fm/sessions') return startSession(request, env.DB, viewerId);
   const sessionActionMatch = /^\/fm\/sessions\/([^/]+)\/(stop|resend)$/.exec(pathname);
   if (method === 'POST' && sessionActionMatch) {

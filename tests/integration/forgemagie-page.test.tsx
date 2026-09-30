@@ -25,6 +25,9 @@ const fm = vi.hoisted(() => ({
   startFmSession: vi.fn(),
   stopFmSession: vi.fn(),
   resendFmSession: vi.fn(),
+  createFmChannel: vi.fn(),
+  getFmChannelRequest: vi.fn(),
+  attachFmChannel: vi.fn(),
 }));
 vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: () => 'https://api.test/fm/auth/login' }));
 
@@ -70,11 +73,11 @@ const hidden = { discordUserId: null, displayName: null, avatarUrl: null, privat
 
 const openSession: FmSession = {
   id: 's2', channelName: 'fm-cape', status: 'open', openedAt: '2026-09-30T18:00:00.000Z', closedAt: null, totalKamas: 68472,
-  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }], fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false,
+  players: [{ player: alice, spentKamas: 63472 }, { player: hidden, spentKamas: 5000 }], fmItem: null, fmItemSource: null, owner: null, origin: 'discord', sync: null, canStop: false,
 };
 const closedSession: FmSession = {
   id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: '2026-09-29T18:00:00.000Z', closedAt: '2026-09-29T19:00:00.000Z', totalKamas: 1000,
-  players: [{ player: alice, spentKamas: 1000 }], fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false,
+  players: [{ player: alice, spentKamas: 1000 }], fmItem: null, fmItemSource: null, owner: null, origin: 'discord', sync: null, canStop: false,
 };
 const ok = <T,>(data: T) => ({ status: 'ok', data });
 
@@ -99,7 +102,7 @@ beforeEach(() => {
   fm.getFmSessions.mockImplementation(async (_before?: string | null, filter?: { mine?: string }) =>
     ok(filter?.mine ? { sessions: [], nextBefore: null } : { sessions: [openSession, closedSession], nextBefore: null }));
   fm.getFmPlayers.mockResolvedValue(ok({ players: [] }));
-  fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], fmItems: [], sessions: [
+  fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], fmChannels: [], fmItems: [], sessions: [
     { sessionId: 's2', channelName: 'fm-cape', openedAt: '2026-09-30T18:00:00.000Z', spentKamas: 100000 },
     { sessionId: 's1', channelName: 'fm-coiffe', openedAt: '2026-09-29T18:00:00.000Z', spentKamas: 50000 },
   ] }));
@@ -282,7 +285,7 @@ describe('Forgemagie page — items in FM (specs/027)', () => {
     id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA',
     owner: alice, totalKamas: 150000, sessionCount: 2,
   };
-  const withItems = (fmItems: unknown[]) => ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], sessions: [], fmItems });
+  const withItems = (fmItems: unknown[]) => ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], sessions: [], fmChannels: [], fmItems });
 
   async function openProfile() {
     writeFmSessionToken(TOKEN);
@@ -386,20 +389,20 @@ describe('Forgemagie page — sessions started from the site (specs/028)', () =>
     sync: { status: 'pending' as const, error: null }, canStop: true, items: [], canAttach: false, canDetach: false,
   };
 
-  it('starts a session in a free channel with an item, then opens its detail', async () => {
+  it('starts a session in one of the player\'s free channels with an item, then opens its detail', async () => {
     fm.getFmChannels.mockResolvedValue(ok({ channels: [
-      { channelId: 'c1', channelName: 'fm-anneau', busy: false },
-      { channelId: 'c2', channelName: 'fm-cape', busy: true },
+      { channelId: 'c1', channelName: 'fm-anneau', status: 'active', fmItem: null, busy: false },
+      { channelId: 'c2', channelName: 'fm-cape', status: 'active', fmItem: null, busy: true },
     ] }));
-    fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 0, importedKamas: 0, items: [], sessions: [], fmItems: [
+    fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 0, importedKamas: 0, items: [], sessions: [], fmChannels: [], fmItems: [
       { id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA', owner: alice, totalKamas: 0, sessionCount: 0 },
     ] }));
     fm.startFmSession.mockResolvedValue(ok(siteSession));
     fm.getFmSession.mockResolvedValue(ok(siteSession));
     writeFmSessionToken(TOKEN);
     await openForgemagie();
-    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une session' }));
-    const channel = await screen.findByRole('combobox', { name: 'Salon Discord' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une séance' }));
+    const channel = await screen.findByRole('combobox', { name: 'Mon salon' });
     expect(within(channel).getByRole('option', { name: /fm-cape/ })).toBeDisabled();
     fireEvent.change(screen.getByRole('combobox', { name: 'Objet en FM' }), { target: { value: 'i1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
@@ -444,5 +447,46 @@ describe('Forgemagie page — sessions started from the site (specs/028)', () =>
     await waitFor(() => expect(within(section).getByLabelText("Session de l'import")).toHaveValue('s9'));
     fireEvent.click(within(section).getByText('Valider').closest('button')!);
     await waitFor(() => expect(fm.importFmCapture).toHaveBeenCalledWith(expect.any(Array), true, 's9'));
+  });
+});
+
+// specs/029-channel-ownership: personal channels created by the bot.
+describe('Forgemagie page — personal channels (specs/029)', () => {
+  it('asks the bot for a new channel, waits for it, then opens its session', async () => {
+    fm.getFmChannels.mockResolvedValue(ok({ channels: [] }));
+    fm.createFmChannel.mockResolvedValue(ok({ requestId: 'r1' }));
+    fm.getFmChannelRequest.mockResolvedValue(ok({ id: 'r1', status: 'done', error: null, channelId: 'c9', sessionId: 's1' }));
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: false, canDetach: false }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une séance' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Nom du salon' }), { target: { value: 'mon rtograf' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    await waitFor(() => expect(fm.createFmChannel).toHaveBeenCalledWith('mon rtograf', null));
+    expect(await screen.findByText(/Création du salon dans Discord/)).toBeInTheDocument();
+    await waitFor(() => expect(fm.getFmSession).toHaveBeenCalledWith('s1'), { timeout: 5000 });
+  });
+
+  it('explains the limit of 5 active channels', async () => {
+    fm.getFmChannels.mockResolvedValue(ok({ channels: [] }));
+    fm.createFmChannel.mockResolvedValue({ status: 'error', code: 'channel-limit' });
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une séance' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Nom du salon' }), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Démarrer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('/fmarchive');
+  });
+
+  it('attaches a whole channel to an item from the profile', async () => {
+    const rtograf = { id: 'i1', itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null, label: 'Rtograf PA', owner: alice, totalKamas: 0, sessionCount: 0 };
+    fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 0, importedKamas: 0, items: [], sessions: [], fmItems: [rtograf],
+      fmChannels: [{ channelId: 'c1', channelName: 'fm-cyril-rtograf', status: 'active', fmItem: null }] }));
+    fm.attachFmChannel.mockResolvedValue(ok({ channelId: 'c1', channelName: 'fm-cyril-rtograf', status: 'active', fmItem: { id: 'i1', name: 'Rtograf PA' } }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Objet du salon #fm-cyril-rtograf' }), { target: { value: 'i1' } });
+    await waitFor(() => expect(fm.attachFmChannel).toHaveBeenCalledWith('c1', 'i1'));
   });
 });

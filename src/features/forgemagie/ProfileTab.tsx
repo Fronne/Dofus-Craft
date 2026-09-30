@@ -7,6 +7,7 @@ import type { PriceMode } from '../../domain/price-modes';
 import { deleteFmMe, getFmPlayer, getFmPlayers } from '../../services/fm-api';
 import { CaptureImport } from './CaptureImport';
 import { FmItemsSection } from './FmItemsSection';
+import { FmChannelsSection } from './FmChannelsSection';
 import { PlayerBadge } from './PlayerBadge';
 import { ItemSummaryTable } from './SessionDetail';
 
@@ -198,6 +199,14 @@ export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, 
       {profile.status === 'unavailable' && <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas. Réessayez plus tard." />}
       {profile.status === 'ready' && (
         <FmItemsSection items={profile.profile.fmItems} isMine={isMine} onOpenItem={onOpenItem} onChanged={() => setVersion((value) => value + 1)} />
+      )}
+      {profile.status === 'ready' && (
+        <FmChannelsSection
+          channels={profile.profile.fmChannels}
+          items={profile.profile.fmItems}
+          isMine={isMine}
+          onChanged={() => setVersion((value) => value + 1)}
+        />
       )}
       {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSession={onOpenSession} />}
 

@@ -60,7 +60,7 @@ describe('fm-api', () => {
     const session = { id: 's1', channelName: 'fm', status: 'open', openedAt: '2026-09-30T18:00:00Z', closedAt: null, totalKamas: 0, players: [] };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ sessions: [session], nextBefore: null })));
     await expect(getFmSessions()).resolves.toEqual({ status: 'ok', data: {
-      sessions: [{ ...session, fmItem: null, owner: null, origin: 'discord', sync: null, canStop: false }], nextBefore: null,
+      sessions: [{ ...session, fmItem: null, fmItemSource: null, owner: null, origin: 'discord', sync: null, canStop: false }], nextBefore: null,
     } });
   });
 

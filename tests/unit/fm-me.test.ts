@@ -88,4 +88,12 @@ describe('DELETE /fm/me', () => {
     expect(sessions[0].players).toHaveLength(1);
     expect((await fm.call('GET', '/fm/me', { token })).status).toBe(401);
   });
+
+  it('works for a player who owns sessions (specs/028), which stay with no owner', async () => {
+    const fm = createFmWorker();
+    const token = await fm.login('42');
+    await fm.botEvent('session-start', { author: { id: '42', displayName: 'Cyril', avatarUrl: null } });
+    expect((await fm.call('DELETE', '/fm/me', { token })).status).toBe(204);
+    expect(fm.query('SELECT owner_discord_user_id FROM fm_sessions')).toEqual([{ owner_discord_user_id: null }]);
+  });
 });

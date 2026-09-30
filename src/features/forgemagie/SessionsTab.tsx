@@ -50,7 +50,7 @@ export function SessionsTab({ me, onOpen, onUnauthorized }: { me: FmMe; onOpen: 
     return (
       <>
         {start}
-        <EmptyState icon="anvil" title="Aucune session pour l'instant" description="Démarre une session ici, ou lance /fmstart dans Discord." />
+        <EmptyState icon="anvil" title="Aucune session pour l'instant" description="Démarre une séance ici, ou avec le bouton « Nouvelle séance de FM » dans Discord." />
       </>
     );
   }

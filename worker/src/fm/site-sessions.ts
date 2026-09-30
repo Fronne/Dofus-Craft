@@ -11,20 +11,10 @@ const openCommand = (db: FmDb, sessionId: string, channelId: string, at: string)
   db.prepare(`INSERT INTO fm_bot_commands (id, type, session_id, channel_id, status, created_at) VALUES (?, 'open', ?, ?, 'pending', ?)`)
     .bind(crypto.randomUUID(), sessionId, channelId, at);
 
-// FR-003: the channels the bot has used, with their latest name; busy when a session is open there.
-export async function listChannels(db: FmDb): Promise<Response> {
-  const { results } = await db.prepare(
-    `SELECT s.channel_id,
-            (SELECT channel_name FROM fm_sessions latest WHERE latest.channel_id = s.channel_id ORDER BY opened_at DESC, id DESC LIMIT 1) AS channel_name,
-            MAX(CASE WHEN s.status = 'open' THEN 1 ELSE 0 END) AS busy
-     FROM fm_sessions s GROUP BY s.channel_id ORDER BY channel_name`,
-  ).all<{ channel_id: string; channel_name: string; busy: number }>();
-  return json({ channels: results.map((row) => ({ channelId: row.channel_id, channelName: row.channel_name, busy: row.busy === 1 })) });
-}
-
-async function channelName(db: FmDb, channelId: string): Promise<string | undefined> {
-  const row = await db.prepare('SELECT channel_name FROM fm_sessions WHERE channel_id = ? ORDER BY opened_at DESC, id DESC LIMIT 1')
-    .bind(channelId).first<{ channel_name: string }>();
+// specs/029 (FR-010): a session starts from the site only in one of the player's own active channels.
+async function myActiveChannelName(db: FmDb, viewerId: string, channelId: string): Promise<string | undefined> {
+  const row = await db.prepare("SELECT channel_name FROM fm_channels WHERE channel_id = ? AND owner_discord_user_id = ? AND status = 'active'")
+    .bind(channelId, viewerId).first<{ channel_name: string }>();
   return row?.channel_name;
 }
 
@@ -38,8 +28,8 @@ export async function startSession(request: Request, db: FmDb, viewerId: string)
   }
   const channelId = body.channelId;
   const fmItemId = (body.fmItemId as string | null | undefined) ?? null;
-  const name = await channelName(db, channelId);
-  if (!name) return notFound();
+  const name = await myActiveChannelName(db, viewerId, channelId);
+  if (!name) return json({ error: 'not-your-channel' }, 403);
   if (fmItemId) {
     const item = await db.prepare('SELECT 1 AS mine FROM fm_items WHERE id = ? AND owner_discord_user_id = ?').bind(fmItemId, viewerId).first();
     if (!item) return notFound();

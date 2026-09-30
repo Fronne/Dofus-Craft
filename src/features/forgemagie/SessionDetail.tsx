@@ -137,6 +137,7 @@ function SessionItem({ session, me, onChanged, onGoToProfile }: {
     <div className="fm-session-item">
       <p>
         Objet : {session.fmItem ? <b>{sessionItemLabel(session.fmItem)}</b> : <span className="fm-note">non rattachée</span>}
+        {session.fmItemSource === 'channel' && <span className="fm-note"> (via le salon)</span>}
       </p>
       {session.canDetach && (
         <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={() => void act(() => detachFmSession(session.id))}>

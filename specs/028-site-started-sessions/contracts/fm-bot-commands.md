@@ -104,3 +104,9 @@ def ack(command_id, status, error=None):
 ```
 
 `requests` est bloquant : pour un bot plus réactif, l'appeler via `asyncio.to_thread` (ou `aiohttp`).
+
+## Suite : salons personnels (specs/029)
+
+Le bot crée aussi les salons FM personnels (bouton, demande `create-channel` du site) et en informe le
+site (`channel-created`, `channel-archived`, `channel-deleted`) : voir
+[fm-channels-api.md](../../029-channel-ownership/contracts/fm-channels-api.md).

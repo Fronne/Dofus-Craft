@@ -1,4 +1,5 @@
 import type { FmDb } from './http';
+import { playerChannels } from './channels';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): sessions, players and profiles. Totals are
 // computed here from the captures, never stored (data-model.md, "Règles dérivées"), and a private
@@ -20,9 +21,17 @@ export type SessionRow = {
   id: string; channel_name: string; status: 'open' | 'closed'; opened_at: string; closed_at: string | null; fm_item_id: string | null;
   // specs/028-site-started-sessions.
   owner_discord_user_id: string | null; origin: 'discord' | 'site'; sync_status: 'pending' | 'opened' | 'failed' | 'cancelled' | null; sync_error: string | null;
+  // specs/029: the item the session's channel is attached to, if any.
+  channel_item_id: string | null;
 };
 
-export const SESSION_COLUMNS = 'id, channel_name, status, opened_at, closed_at, fm_item_id, owner_discord_user_id, origin, sync_status, sync_error';
+// specs/029 (research R6): a session's item is the one attached to it by hand, else its channel's. The
+// SQL form, for queries on `fm_sessions` aliased `s` (or unaliased, with the `fm_sessions` table name).
+export const effectiveItemSql = (alias: string) =>
+  `COALESCE(${alias}.fm_item_id, (SELECT ch.fm_item_id FROM fm_channels ch WHERE ch.channel_id = ${alias}.channel_id))`;
+
+export const SESSION_COLUMNS = `id, channel_name, status, opened_at, closed_at, fm_item_id, owner_discord_user_id, origin, sync_status, sync_error,
+  (SELECT ch.fm_item_id FROM fm_channels ch WHERE ch.channel_id = fm_sessions.channel_id) AS channel_item_id`;
 
 // specs/028 FR-011: a request the bot hasn't acknowledged after 10 minutes reads as « not transmitted ».
 export const STALE_AFTER_MS = 10 * 60 * 1000;
@@ -59,7 +68,8 @@ export async function withPlayers(db: FmDb, sessions: SessionRow[], viewerId: st
      GROUP BY c.session_id, p.discord_user_id
      ORDER BY spent_kamas DESC, p.discord_user_id`,
   ).bind(...sessions.map((session) => session.id)).all<SpendRow>();
-  const items = await sessionItems(db, [...new Set(sessions.flatMap((session) => (session.fm_item_id ? [session.fm_item_id] : [])))], viewerId);
+  const effectiveItem = (session: SessionRow) => session.fm_item_id ?? session.channel_item_id;
+  const items = await sessionItems(db, [...new Set(sessions.flatMap((session) => (effectiveItem(session) ? [effectiveItem(session)!] : [])))], viewerId);
   const ownerIds = [...new Set(sessions.flatMap((session) => (session.owner_discord_user_id ? [session.owner_discord_user_id] : [])))];
   const { results: ownerRows } = ownerIds.length === 0 ? { results: [] as PlayerRow[] } : await db.prepare(
     `SELECT discord_user_id, display_name, avatar_url, is_private FROM fm_players WHERE discord_user_id IN (${placeholders(ownerIds.length)})`,
@@ -83,7 +93,9 @@ export async function withPlayers(db: FmDb, sessions: SessionRow[], viewerId: st
       closedAt: session.closed_at,
       totalKamas: spends.reduce((total, row) => total + row.spent_kamas, 0),
       players: spends.map((row) => ({ player: playerView(row, viewerId), spentKamas: row.spent_kamas })),
-      fmItem: session.fm_item_id ? items.get(session.fm_item_id) ?? null : null,
+      fmItem: effectiveItem(session) ? items.get(effectiveItem(session)!) ?? null : null,
+      // specs/029: whether the item comes from the channel or was attached to this session by hand.
+      fmItemSource: session.fm_item_id ? 'session' as const : session.channel_item_id ? 'channel' as const : null,
       owner: session.owner_discord_user_id ? owners.get(session.owner_discord_user_id) ?? null : null,
       origin: session.origin,
       sync: session.origin === 'site' && session.sync_status
@@ -142,7 +154,7 @@ export async function sessionDetail(db: FmDb, viewerId: string, sessionId: strin
   return {
     ...summary,
     items: itemSummaries(results),
-    canAttach: session.fm_item_id === null && spent !== null,
+    canAttach: session.fm_item_id === null && session.channel_item_id === null && spent !== null,
     canDetach: owner?.owner_discord_user_id === viewerId,
   };
 }
@@ -158,8 +170,8 @@ export async function ownedItems(db: FmDb, viewerId: string, where: string, ...p
   const { results } = await db.prepare(
     `SELECT i.id, i.item_id, i.item_name, i.item_image_url, i.label,
             p.discord_user_id, p.display_name, p.avatar_url, p.is_private,
-            (SELECT COALESCE(SUM(c.spent_kamas), 0) FROM fm_captures c JOIN fm_sessions s ON s.id = c.session_id WHERE s.fm_item_id = i.id) AS total_kamas,
-            (SELECT COUNT(*) FROM fm_sessions s WHERE s.fm_item_id = i.id) AS session_count
+            (SELECT COALESCE(SUM(c.spent_kamas), 0) FROM fm_captures c JOIN fm_sessions s ON s.id = c.session_id WHERE ${effectiveItemSql('s')} = i.id) AS total_kamas,
+            (SELECT COUNT(*) FROM fm_sessions s WHERE ${effectiveItemSql('s')} = i.id) AS session_count
      FROM fm_items i JOIN fm_players p ON p.discord_user_id = i.owner_discord_user_id
      WHERE ${where}
      ORDER BY i.created_at DESC, i.id`,
@@ -220,5 +232,7 @@ export async function playerProfile(db: FmDb, viewerId: string, discordUserId: s
     items: itemSummaries(items),
     // specs/027 FR-014: the profile's visibility already let the viewer this far.
     fmItems: await ownedItems(db, viewerId, 'i.owner_discord_user_id = ?', discordUserId),
+    // specs/029 FR-013.
+    fmChannels: await playerChannels(db, discordUserId),
   };
 }

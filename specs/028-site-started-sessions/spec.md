@@ -245,3 +245,9 @@ dans Discord.
 - Un joueur sans session ouverte n'a rien à arrêter ; les sessions sans propriétaire (anciennes, ou
   d'un bot non mis à jour) ne peuvent être arrêtées que depuis Discord.
 - Pas de FM de groupe : le propriétaire d'une session est celui qui y fait sa FM.
+
+## Révision (2026-09-30) : salons personnels (specs/029-channel-ownership)
+
+**FR-003 remplacée** : au démarrage depuis le site, le joueur choisit un de **ses** salons FM personnels
+actifs, ou demande au bot d'en créer un (demande `create-channel`). Les salons ordinaires utilisés avant
+ne sont plus proposés, et un salon d'un autre joueur est refusé (`403 not-your-channel`).
