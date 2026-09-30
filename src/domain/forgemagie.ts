@@ -114,8 +114,21 @@ export type FmChannelRequest = { id: string; status: 'pending' | 'done' | 'faile
 
 export type FmItemSummary = { itemName: string; itemId: string | null; quantity: number; totalKamas: number; averageUnitKamas: number };
 
+/** specs/031-fm-session-captures: one capture read during a session, with its own recap. */
+export type FmCapture = {
+  id: string;
+  createdAt: string;
+  /** `bot`: posted in Discord and read by the bot; `capture`: imported on the site. */
+  origin: 'bot' | 'capture';
+  player: FmPlayer;
+  spentKamas: number;
+  items: FmItemSummary[];
+};
+
 export type FmSessionDetail = FmSession & {
   items: FmItemSummary[];
+  /** specs/031: oldest first; empty from an older Worker. */
+  captures: FmCapture[];
   /** specs/027 FR-005: not attached yet, and the viewer spent in it. */
   canAttach: boolean;
   /** specs/027 FR-007: attached to one of the viewer's items. */
@@ -142,6 +155,21 @@ export type FmItemRecap = FmOwnedItem & {
 
 export function fmItemDisplayName(item: { label: string | null; itemName: string }): string {
   return item.label ?? item.itemName;
+}
+
+/** specs/031: what the session is attached to — one of the player's items, or a new one for an equipment. */
+export type FmAttachTarget =
+  | { fmItemId: string }
+  | { item: { itemId: string; itemName: string; imageUrl: string | null } };
+
+const foldForSearch = (text: string) =>
+  text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** specs/031 FR-009: an item in FM whose name or equipment contains the query, ignoring case and accents. */
+export function matchesItemQuery(item: { label: string | null; itemName: string }, query: string): boolean {
+  const folded = foldForSearch(query);
+  if (folded === '') return false;
+  return [item.label ?? '', item.itemName].some((name) => foldForSearch(name).includes(folded));
 }
 
 export type FmSessionsPage = { sessions: FmSession[]; nextBefore: string | null };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
-import { fmItemDisplayName, formatFmDate, type FmItemSummary, type FmMe, type FmOwnedItem, type FmSessionDetail, type FmSessionItem } from '../../domain/forgemagie';
+import { formatFmDate, type FmAttachTarget, type FmItemSummary, type FmMe, type FmOwnedItem, type FmSessionDetail, type FmSessionItem } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
 import { attachFmSession, detachFmSession, getFmPlayer, getFmSession, resendFmSession, stopFmSession } from '../../services/fm-api';
 import { SyncBadge } from './StartSession';
@@ -55,12 +55,14 @@ function SessionControls({ session, onChanged }: { session: FmSessionDetail; onC
   );
 }
 import { PlayerBadge } from './PlayerBadge';
+import { SessionCaptures } from './SessionCaptures';
+import { SessionItemSearch } from './SessionItemSearch';
 import { SessionStatus } from './SessionsTab';
 
 // specs/025-rune-purchase-import (US2, FR-010): one session — who spent what, and each item bought with
 // its quantity, total and average unit price, the same figures as the bot's summary.
 
-export function ItemSummaryTable({ items }: { items: FmItemSummary[] }) {
+export function ItemSummaryTable({ items, showNote = true }: { items: FmItemSummary[]; showNote?: boolean }) {
   if (items.length === 0) return <p className="empty">Aucun achat détaillé.</p>;
   return (
     <>
@@ -84,7 +86,7 @@ export function ItemSummaryTable({ items }: { items: FmItemSummary[] }) {
           ))}
         </tbody>
       </table>
-      <p className="fm-note">Prix moyen = total ÷ quantité, arrondi au kama le plus proche.</p>
+      {showNote && <p className="fm-note">Prix moyen = total ÷ quantité, arrondi au kama le plus proche.</p>}
     </>
   );
 }
@@ -100,14 +102,13 @@ const ATTACH_ERRORS: Record<string, string> = {
 };
 
 // specs/027-fm-item-recap (US1): which item the session goes to, and attaching or detaching it.
-function SessionItem({ session, me, onChanged, onGoToProfile }: {
+// specs/031 (US2): attached by typing a name — one of the player's items, or a new one for an equipment.
+function SessionItem({ session, me, onChanged }: {
   session: FmSessionDetail;
   me: FmMe;
   onChanged: (session: FmSessionDetail) => void;
-  onGoToProfile: () => void;
 }) {
   const [myItems, setMyItems] = useState<FmOwnedItem[] | undefined>(undefined);
-  const [chosen, setChosen] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
 
@@ -115,9 +116,7 @@ function SessionItem({ session, me, onChanged, onGoToProfile }: {
     if (!session.canAttach) return;
     let cancelled = false;
     void getFmPlayer(me.discordUserId).then((result) => {
-      if (cancelled || result.status !== 'ok') return;
-      setMyItems(result.data.fmItems);
-      setChosen(result.data.fmItems[0]?.id ?? '');
+      if (!cancelled) setMyItems(result.status === 'ok' ? result.data.fmItems : []);
     });
     return () => {
       cancelled = true;
@@ -144,30 +143,23 @@ function SessionItem({ session, me, onChanged, onGoToProfile }: {
           Détacher
         </button>
       )}
-      {session.canAttach && myItems && myItems.length === 0 && (
-        <button type="button" className="btn btn-secondary btn-small" onClick={onGoToProfile}>Créer un objet en FM</button>
-      )}
-      {session.canAttach && myItems && myItems.length > 0 && (
-        <span className="fm-attach">
-          <select className="hdv-type-filter" value={chosen} onChange={(event) => setChosen(event.target.value)} aria-label="Objet à rattacher">
-            {myItems.map((item) => <option key={item.id} value={item.id}>{fmItemDisplayName(item)}</option>)}
-          </select>
-          <button type="button" className="btn btn-primary btn-small" disabled={busy || !chosen} onClick={() => void act(() => attachFmSession(session.id, chosen))}>
-            Rattacher
-          </button>
-        </span>
+      {session.canAttach && myItems && (
+        <SessionItemSearch
+          myItems={myItems}
+          disabled={busy}
+          onPick={(target: FmAttachTarget) => void act(() => attachFmSession(session.id, target))}
+        />
       )}
       {error && <p className="fm-error" role="alert">{error}</p>}
     </div>
   );
 }
 
-export function SessionDetail({ sessionId, me, onBack, onUnauthorized, onGoToProfile }: {
+export function SessionDetail({ sessionId, me, onBack, onUnauthorized }: {
   sessionId: string;
   me: FmMe;
   onBack: () => void;
   onUnauthorized: () => void;
-  onGoToProfile: () => void;
 }) {
   const [state, setState] = useState<{ status: 'loading' } | { status: 'missing' | 'unavailable' } | { status: 'ready'; session: FmSessionDetail }>({ status: 'loading' });
 
@@ -213,12 +205,7 @@ export function SessionDetail({ sessionId, me, onBack, onUnauthorized, onGoToPro
           </p>
           {state.session.sync && <p><SyncBadge sync={state.session.sync} /></p>}
           <SessionControls session={state.session} onChanged={(session) => setState({ status: 'ready', session })} />
-          <SessionItem
-            session={state.session}
-            me={me}
-            onChanged={(session) => setState({ status: 'ready', session })}
-            onGoToProfile={onGoToProfile}
-          />
+          <SessionItem session={state.session} me={me} onChanged={(session) => setState({ status: 'ready', session })} />
           <p className="fm-total">Total : <strong>{formatKamas(state.session.totalKamas)}</strong></p>
 
           <h3 className="fm-subtitle">Dépense par joueur</h3>
@@ -233,6 +220,8 @@ export function SessionDetail({ sessionId, me, onBack, onUnauthorized, onGoToPro
 
           <h3 className="fm-subtitle">Achats</h3>
           <ItemSummaryTable items={state.session.items} />
+
+          <SessionCaptures captures={state.session.captures} />
         </>
       )}
     </div>

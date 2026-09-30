@@ -176,13 +176,45 @@ describe('Forgemagie page — sessions (US2, US3)', () => {
 
   it('details a session with each item', async () => {
     writeFmSessionToken(TOKEN);
-    fm.getFmSession.mockResolvedValue(ok({ ...openSession, items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] }));
+    fm.getFmSession.mockResolvedValue(ok({ ...openSession, captures: [], items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] }));
     await openForgemagie();
     fireEvent.click((await screen.findAllByRole('button', { name: /#fm-cape/ }))[0]);
     const row = (await screen.findByRole('rowheader', { name: 'Rune Do Air' })).closest('tr')!;
     expect(normalize(row.textContent)).toContain('40');
     expect(normalize(row.textContent)).toContain('63 472 kamas');
     expect(normalize(row.textContent)).toContain('1 587 kamas/u');
+  });
+
+  // specs/031-fm-session-captures (US1): each capture of the session with its own recap.
+  it('lists each capture of a session with its origin, author, amount and runes', async () => {
+    writeFmSessionToken(TOKEN);
+    fm.getFmSession.mockResolvedValue(ok({
+      ...openSession,
+      items: [],
+      captures: [
+        { id: 'c1', createdAt: '2026-09-30T18:02:00.000Z', origin: 'bot', player: alice, spentKamas: 63472,
+          items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] },
+        { id: 'c2', createdAt: '2026-09-30T18:05:00.000Z', origin: 'capture', player: hidden, spentKamas: 5000,
+          items: [{ itemName: 'Rune Fo', itemId: '1519', quantity: 10, totalKamas: 5000, averageUnitKamas: 500 }] },
+      ],
+    }));
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-cape/ }))[0]);
+    const section = await screen.findByRole('region', { name: 'Captures' });
+    expect(within(section).getByRole('heading', { name: 'Captures (2)' })).toBeInTheDocument();
+    const [first, second] = within(section).getAllByRole('listitem');
+    expect(normalize(first.textContent)).toMatch(/Capture 1.*Discord.*Cyril.*63 472 kamas/);
+    expect(normalize(within(first).getByRole('rowheader', { name: 'Rune Do Air' }).closest('tr')!.textContent)).toContain('1 587 kamas/u');
+    expect(normalize(second.textContent)).toMatch(/Capture 2.*Site.*Joueur privé.*5 000 kamas/);
+    expect(within(second).getByRole('rowheader', { name: 'Rune Fo' })).toBeInTheDocument();
+  });
+
+  it('says when no capture has been read yet', async () => {
+    writeFmSessionToken(TOKEN);
+    fm.getFmSession.mockResolvedValue(ok({ ...openSession, items: [], captures: [] }));
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-cape/ }))[0]);
+    expect(await screen.findByText('Aucune capture n\'a encore été lue.')).toBeInTheDocument();
   });
 
   it('loads the next page of sessions', async () => {
@@ -341,39 +373,59 @@ describe('Forgemagie page — items in FM (specs/027)', () => {
     await waitFor(() => expect(fm.deleteFmItem).toHaveBeenCalledWith('i1'));
   });
 
-  it('attaches a session to one of the player\'s items from its detail, then offers to detach it', async () => {
-    const detail = { ...closedSession, items: [], canAttach: true, canDetach: false };
+  // specs/031-fm-session-captures (US2): attached by typing a name.
+  async function openAttachableSession() {
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
+    return screen.findByRole('searchbox', { name: 'Rattacher à un objet' });
+  }
+
+  it('attaches a session to one of the player\'s items found by its name, then offers to detach it', async () => {
+    const detail = { ...closedSession, items: [], captures: [], canAttach: true, canDetach: false };
     fm.getFmSession.mockResolvedValue(ok(detail));
     fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    vi.mocked(searchItems).mockResolvedValue({ total: 1, limit: 40, skip: 0, data: [{ id: '8237', name: 'Anneau Rtograf', kind: 'Equipment', categoryId: 'ring', level: 200 }] });
     fm.attachFmSession.mockResolvedValue(ok({ ...detail, fmItem: { id: 'i1', name: 'Rtograf PA', owner: alice }, canAttach: false, canDetach: true }));
-    writeFmSessionToken(TOKEN);
-    await openForgemagie();
-    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Rattacher' }));
-    await waitFor(() => expect(fm.attachFmSession).toHaveBeenCalledWith('s1', 'i1'));
+    fireEvent.change(await openAttachableSession(), { target: { value: 'rtôg' } });
+    // The player's own item comes first, before the catalogue's equipment.
+    const mine = await screen.findByRole('button', { name: /Rtograf PA/ });
+    const equipment = await screen.findByRole('button', { name: /^Anneau Rtograf Niv/ }, { timeout: 2000 });
+    expect(mine.compareDocumentPosition(equipment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(mine);
+    await waitFor(() => expect(fm.attachFmSession).toHaveBeenCalledWith('s1', { fmItemId: 'i1' }));
     expect(await screen.findByText('Rtograf PA (Cyril)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Détacher' })).toBeInTheDocument();
+    expect(screen.queryByRole('searchbox', { name: 'Rattacher à un objet' })).not.toBeInTheDocument();
   });
 
-  it('explains a session attached meanwhile by someone else', async () => {
-    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: true, canDetach: false }));
+  it('creates the item of an equipment of the catalogue when the player has none', async () => {
+    const detail = { ...closedSession, items: [], captures: [], canAttach: true, canDetach: false };
+    fm.getFmSession.mockResolvedValue(ok(detail));
+    fm.getFmPlayer.mockResolvedValue(withItems([]));
+    vi.mocked(searchItems).mockResolvedValue({ total: 1, limit: 40, skip: 0, data: [{ id: '2411', name: 'Coiffe Bouftou', kind: 'Equipment', categoryId: 'hat', level: 10 }] });
+    fm.attachFmSession.mockResolvedValue(ok({ ...detail, fmItem: { id: 'i9', name: 'Coiffe Bouftou', owner: alice }, canAttach: false, canDetach: true }));
+    fireEvent.change(await openAttachableSession(), { target: { value: 'bouftou' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Coiffe Bouftou/ }, { timeout: 2000 }));
+    await waitFor(() => expect(fm.attachFmSession).toHaveBeenCalledWith('s1', { item: { itemId: '2411', itemName: 'Coiffe Bouftou', imageUrl: null } }));
+    expect(await screen.findByText('Coiffe Bouftou (Cyril)')).toBeInTheDocument();
+  });
+
+  it('says when nothing matches the name typed', async () => {
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], captures: [], canAttach: true, canDetach: false }));
+    fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
+    vi.mocked(searchItems).mockResolvedValue({ total: 0, limit: 40, skip: 0, data: [] });
+    fireEvent.change(await openAttachableSession(), { target: { value: 'zzz' } });
+    expect(await screen.findByText('Aucun objet ne correspond.', undefined, { timeout: 2000 })).toBeInTheDocument();
+  });
+
+  it('explains a session attached meanwhile', async () => {
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], captures: [], canAttach: true, canDetach: false }));
     fm.getFmPlayer.mockResolvedValue(withItems([rtograf]));
     fm.attachFmSession.mockResolvedValue({ status: 'error', code: 'already-attached' });
-    writeFmSessionToken(TOKEN);
-    await openForgemagie();
-    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Rattacher' }));
+    fireEvent.change(await openAttachableSession(), { target: { value: 'rtograf' } });
+    fireEvent.click(await screen.findByRole('button', { name: /Rtograf PA/ }));
     expect(await screen.findByRole('alert')).toHaveTextContent('vient d’être rattachée à un autre objet');
-  });
-
-  it('offers to create an item when the player has none yet', async () => {
-    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: true, canDetach: false }));
-    fm.getFmPlayer.mockResolvedValue(withItems([]));
-    writeFmSessionToken(TOKEN);
-    await openForgemagie();
-    fireEvent.click((await screen.findAllByRole('button', { name: /#fm-coiffe/ }))[0]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Créer un objet en FM' }));
-    expect(await screen.findByRole('tab', { name: 'Profil' })).toHaveAttribute('aria-selected', 'true');
   });
 });
 
@@ -381,7 +433,7 @@ describe('Forgemagie page — items in FM (specs/027)', () => {
 describe('Forgemagie page — sessions started from the site (specs/028)', () => {
   const siteSession = {
     ...openSession, id: 's9', channelName: 'fm-anneau', origin: 'site' as const, owner: alice,
-    sync: { status: 'pending' as const, error: null }, canStop: true, items: [], canAttach: false, canDetach: false,
+    sync: { status: 'pending' as const, error: null }, canStop: true, items: [], captures: [], canAttach: false, canDetach: false,
   };
 
   it('starts a session in one of the player\'s free channels with an item, then opens its detail', async () => {
@@ -451,7 +503,7 @@ describe('Forgemagie page — personal channels (specs/029)', () => {
     fm.getFmChannels.mockResolvedValue(ok({ channels: [] }));
     fm.createFmChannel.mockResolvedValue(ok({ requestId: 'r1' }));
     fm.getFmChannelRequest.mockResolvedValue(ok({ id: 'r1', status: 'done', error: null, channelId: 'c9', sessionId: 's1' }));
-    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], canAttach: false, canDetach: false }));
+    fm.getFmSession.mockResolvedValue(ok({ ...closedSession, items: [], captures: [], canAttach: false, canDetach: false }));
     writeFmSessionToken(TOKEN);
     await openForgemagie();
     fireEvent.click(await screen.findByRole('button', { name: 'Démarrer une séance' }));

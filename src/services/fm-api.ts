@@ -1,5 +1,5 @@
 import type {
-  FmChannel, FmChannelRequest, FmItemRecap, FmMe, FmOwnedItem, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
+  FmAttachTarget, FmCapture, FmChannel, FmChannelRequest, FmItemRecap, FmMe, FmOwnedItem, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
 } from '../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken } from '../persistence/fm-session-token';
 
@@ -82,7 +82,15 @@ const withDetailActions = (session: FmSessionDetail): FmSessionDetail => ({
   ...withSessionItem(session),
   canAttach: session.canAttach === true,
   canDetach: session.canDetach === true,
+  // specs/031: a Worker from before the captures sends none.
+  captures: session.captures ?? [],
 });
+
+function isCapture(value: unknown): value is FmCapture {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.createdAt === 'string' &&
+    (value.origin === 'bot' || value.origin === 'capture') && isPlayer(value.player) &&
+    typeof value.spentKamas === 'number' && isItemSummaries(value.items);
+}
 
 function isSessionItem(value: unknown): boolean {
   return value === undefined || value === null ||
@@ -131,7 +139,8 @@ function isSessionsPage(value: unknown): value is FmSessionsPage {
 }
 
 function isSessionDetail(value: unknown): value is FmSessionDetail {
-  return isSession(value) && isRecord(value) && isItemSummaries(value.items);
+  return isSession(value) && isRecord(value) && isItemSummaries(value.items) &&
+    (value.captures === undefined || (Array.isArray(value.captures) && value.captures.every(isCapture)));
 }
 
 function isProfile(value: unknown): value is FmProfile {
@@ -178,9 +187,9 @@ export const createFmItem = (item: { itemId: string; itemName: string; imageUrl:
 export const renameFmItem = (id: string, label: string | null) => request('PATCH', itemPath(id), isOwnedItem, { label });
 export const deleteFmItem = (id: string) => request('DELETE', itemPath(id), isNothing);
 export const getFmItem = (id: string) => request('GET', itemPath(id), isItemRecap);
-/** Errors: `not-participant` (403), `already-attached` (409). */
-export const attachFmSession = async (sessionId: string, fmItemId: string) =>
-  mapOk(await request('PUT', `${sessionPath(sessionId)}/item`, isSessionDetail, { fmItemId }), withDetailActions);
+/** Errors: `not-participant` (403), `already-attached` (409). specs/031: `{ item }` creates the item too. */
+export const attachFmSession = async (sessionId: string, target: FmAttachTarget) =>
+  mapOk(await request('PUT', `${sessionPath(sessionId)}/item`, isSessionDetail, target), withDetailActions);
 export const detachFmSession = async (sessionId: string) =>
   mapOk(await request('DELETE', `${sessionPath(sessionId)}/item`, isSessionDetail), withDetailActions);
 

@@ -101,11 +101,13 @@ export async function readItemRecap(db: FmDb, viewerId: string, id: string): Pro
 export async function attachSession(request: Request, db: FmDb, viewerId: string, sessionId: string): Promise<Response> {
   const body = await readJson(request);
   const fmItemId = isRecord(body) && typeof body.fmItemId === 'string' ? body.fmItemId : undefined;
-  if (!fmItemId) return json({ error: 'fmItemId is required' }, 400);
+  // specs/031-fm-session-captures (FR-011): or an equipment, for which a new item is created.
+  const newItem = isRecord(body) && fmItemId === undefined && isRecord(body.item) ? parseItemInput({ ...body.item, label: null }) : undefined;
+  if (!fmItemId && !newItem) return json({ error: 'fmItemId, or item (itemId, itemName and imageUrl as for a new item), is required' }, 400);
   // specs/030 FR-004: the viewer attaches only their own session, to their own item.
   const session = await db.prepare('SELECT id, fm_item_id FROM fm_sessions WHERE id = ? AND owner_discord_user_id = ?')
     .bind(sessionId, viewerId).first<{ id: string; fm_item_id: string | null }>();
-  if (!session || !(await ownItem(db, viewerId, fmItemId))) return notFound();
+  if (!session || (fmItemId && !(await ownItem(db, viewerId, fmItemId)))) return notFound();
   // FR-006: an attached session, even to this very item, is refused.
   if (session.fm_item_id !== null) return json({ error: 'already-attached' }, 409);
   // specs/029: a session of a channel attached to an item already counts for that item.
@@ -115,9 +117,26 @@ export async function attachSession(request: Request, db: FmDb, viewerId: string
   if (channelItem) return json({ error: 'already-attached' }, 409);
 
   // research R2: the condition in the same statement makes « the first one to attach wins » safe.
-  await db.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ? AND fm_item_id IS NULL').bind(fmItemId, sessionId).run();
+  const attachStatement = (id: string) => db.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ? AND fm_item_id IS NULL').bind(id, sessionId);
+  let targetId: string;
+  if (fmItemId) {
+    targetId = fmItemId;
+    await attachStatement(targetId).run();
+  } else {
+    // specs/031 (research R4, FR-012): one batch — a transaction — creates the item, attaches the
+    // session, and removes the item again if the session was attached in the meantime.
+    targetId = crypto.randomUUID();
+    const item = newItem!;
+    await db.batch([
+      db.prepare(
+        `INSERT INTO fm_items (id, owner_discord_user_id, item_id, item_name, item_image_url, label, created_at) VALUES (?, ?, ?, ?, ?, NULL, ?)`,
+      ).bind(targetId, viewerId, item.itemId, item.itemName, item.imageUrl, nowIso()),
+      attachStatement(targetId),
+      db.prepare('DELETE FROM fm_items WHERE id = ? AND NOT EXISTS (SELECT 1 FROM fm_sessions WHERE fm_item_id = ?)').bind(targetId, targetId),
+    ]);
+  }
   const attached = await db.prepare('SELECT fm_item_id FROM fm_sessions WHERE id = ?').bind(sessionId).first<{ fm_item_id: string | null }>();
-  if (attached?.fm_item_id !== fmItemId) return json({ error: 'already-attached' }, 409);
+  if (attached?.fm_item_id !== targetId) return json({ error: 'already-attached' }, 409);
   return json(await sessionDetail(db, viewerId, sessionId));
 }
 

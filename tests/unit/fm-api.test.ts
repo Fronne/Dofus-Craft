@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { attachFmSession, getFmMe, getFmSessions, startFmSession } from '../../src/services/fm-api';
+import { attachFmSession, getFmMe, getFmSession, getFmSessions, startFmSession } from '../../src/services/fm-api';
 import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/fm-session-token';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): the site's client of the /fm/* routes.
@@ -51,9 +51,9 @@ describe('fm-api', () => {
   // specs/027-fm-item-recap.
   it('gives the reason a session could not be attached', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'already-attached' }, { status: 409 })));
-    await expect(attachFmSession('s1', 'i1')).resolves.toEqual({ status: 'error', code: 'already-attached' });
+    await expect(attachFmSession('s1', { fmItemId: 'i1' })).resolves.toEqual({ status: 'error', code: 'already-attached' });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'not-participant' }, { status: 403 })));
-    await expect(attachFmSession('s1', 'i1')).resolves.toEqual({ status: 'error', code: 'not-participant' });
+    await expect(attachFmSession('s1', { fmItemId: 'i1' })).resolves.toEqual({ status: 'error', code: 'not-participant' });
   });
 
   it('reads a session from an older Worker, without fmItem, as not attached', async () => {
@@ -62,6 +62,36 @@ describe('fm-api', () => {
     await expect(getFmSessions()).resolves.toEqual({ status: 'ok', data: {
       sessions: [{ ...session, fmItem: null, fmItemSource: null, owner: null, origin: 'discord', sync: null, canStop: false }], nextBefore: null,
     } });
+  });
+
+  // specs/031-fm-session-captures.
+  const detail = { id: 's1', channelName: 'fm', status: 'open', openedAt: '2026-09-30T18:00:00Z', closedAt: null, totalKamas: 1200, players: [], items: [] };
+  const capture = {
+    id: 'c1', createdAt: '2026-09-30T18:01:00Z', origin: 'bot', spentKamas: 1200,
+    player: { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false },
+    items: [{ itemName: 'Rune Fo', itemId: '1519', quantity: 3, totalKamas: 1200, averageUnitKamas: 400 }],
+  };
+
+  it('reads the captures of a session, and none from an older Worker', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ ...detail, captures: [capture] })));
+    const withCaptures = await getFmSession('s1');
+    expect(withCaptures.status === 'ok' && withCaptures.data.captures).toEqual([capture]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(detail)));
+    const older = await getFmSession('s1');
+    expect(older.status === 'ok' && older.data.captures).toEqual([]);
+  });
+
+  it('refuses a malformed capture', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ ...detail, captures: [{ ...capture, origin: 'fax' }] })));
+    await expect(getFmSession('s1')).resolves.toEqual({ status: 'unavailable' });
+  });
+
+  it('sends the equipment to create when attaching a session to a new item', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ ...detail, captures: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const item = { itemId: '8237', itemName: 'Anneau Rtograf', imageUrl: null };
+    await attachFmSession('s1', { item });
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({ item });
   });
 
   // specs/028-site-started-sessions.

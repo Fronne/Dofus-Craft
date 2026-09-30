@@ -142,6 +142,76 @@ describe('attaching a session (US1)', () => {
   });
 });
 
+// specs/031-fm-session-captures (US2, contracts/fm-session-captures-api.md): attaching a session to an
+// equipment typed on the session, which creates the item in the same step.
+describe('attaching a session to a new item', () => {
+  const coiffe = { itemId: '2411', itemName: 'Coiffe Bouftou', imageUrl: 'https://api.dofusdb.fr/img/items/16010.png' };
+  const attachNew = (fm: ReturnType<typeof createFmWorker>, sessionId: string, token: string, item: object = coiffe) =>
+    fm.call('PUT', `/fm/sessions/${sessionId}/item`, { token, body: { item } });
+  const itemCount = (fm: ReturnType<typeof createFmWorker>) => fm.query<{ n: number }>('SELECT COUNT(*) AS n FROM fm_items')[0].n;
+
+  it('creates the item, without a name of its own, and attaches the session to it', async () => {
+    const { fm, cyril, session } = await setup();
+    const sessionId = await session('42', 1000);
+
+    const response = await attachNew(fm, sessionId, cyril);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou', owner: { displayName: 'Cyril' } }, canAttach: false, canDetach: true });
+    const profile = await (await fm.call('GET', '/fm/players/42', { token: cyril })).json() as { fmItems: Item[] };
+    expect(profile.fmItems).toMatchObject([{ itemName: 'Coiffe Bouftou', label: null, totalKamas: 1000, sessionCount: 1 }]);
+  });
+
+  it('refuses an invalid equipment', async () => {
+    const { fm, cyril, session } = await setup();
+    const sessionId = await session('42', 1000);
+    for (const item of [{ ...coiffe, itemId: 'x' }, { ...coiffe, itemName: '' }, { ...coiffe, imageUrl: 'https://evil.test/a.png' }]) {
+      expect((await attachNew(fm, sessionId, cyril, item)).status).toBe(400);
+    }
+    expect((await fm.call('PUT', `/fm/sessions/${sessionId}/item`, { token: cyril, body: {} })).status).toBe(400);
+    expect(itemCount(fm)).toBe(0);
+  });
+
+  it('creates nothing for a session already attached, by hand or through its channel', async () => {
+    const { fm, cyril, createItem, session, attach } = await setup();
+    const item = await createItem();
+    const attached = await session('42', 1000);
+    await attach(attached, item.id);
+    const conflict = await attachNew(fm, attached, cyril);
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toEqual({ error: 'already-attached' });
+
+    const inChannel = await session('42', 1000, [doAirLine], 'channel-perso');
+    fm.sqlite.prepare("INSERT INTO fm_channels (channel_id, channel_name, owner_discord_user_id, status, fm_item_id, created_at) VALUES ('channel-perso', 'fm-perso', '42', 'active', ?, '2026-09-30T10:00:00.000Z')").run(item.id);
+    expect((await attachNew(fm, inChannel, cyril)).status).toBe(409);
+    expect(itemCount(fm)).toBe(1);
+  });
+
+  // research R4, FR-012: attached by another click between the checks and the batch.
+  it('removes the new item again when the session was attached in the meantime', async () => {
+    const { fm, cyril, createItem, session } = await setup();
+    const item = await createItem();
+    const sessionId = await session('42', 1000);
+    const batch = fm.d1.batch.bind(fm.d1);
+    fm.d1.batch = async (statements) => {
+      fm.sqlite.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ?').run(item.id, sessionId);
+      return batch(statements);
+    };
+
+    const conflict = await attachNew(fm, sessionId, cyril);
+    expect(conflict.status).toBe(409);
+    expect(fm.query<{ id: string }>('SELECT id FROM fm_items')).toEqual([{ id: item.id }]);
+  });
+
+  it('creates nothing for another player\'s session, answered like an unknown one', async () => {
+    const { fm, bob, session } = await setup();
+    const sessionId = await session('42', 1000);
+    const refused = await attachNew(fm, sessionId, bob);
+    expect(refused.status).toBe(404);
+    expect(await refused.text()).toBe(await (await attachNew(fm, 'unknown', bob)).text());
+    expect(itemCount(fm)).toBe(0);
+  });
+});
+
 describe('item recap (US2)', () => {
   it('adds up the attached sessions, with each rune over all of them, and no share per player', async () => {
     const { fm, cyril, createItem, session, attach } = await setup();

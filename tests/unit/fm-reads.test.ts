@@ -106,6 +106,63 @@ describe('GET /fm/sessions/{id}', () => {
   });
 });
 
+// specs/031-fm-session-captures (US1): each capture of the session with its own recap.
+type CaptureAnswer = {
+  id: string;
+  createdAt: string;
+  origin: 'bot' | 'capture';
+  player: { displayName: string | null; private: boolean };
+  spentKamas: number;
+  items: { itemName: string; quantity: number; totalKamas: number; averageUnitKamas: number }[];
+};
+
+describe('GET /fm/sessions/{id} captures', () => {
+  const captures = async (fm: ReturnType<typeof createFmWorker>, token: string) => {
+    const [session] = await listSessions(fm, token);
+    const detail = await (await fm.call('GET', `/fm/sessions/${session.id}`, { token })).json() as SessionAnswer & { captures: CaptureAnswer[] };
+    return { session: detail, captures: detail.captures };
+  };
+
+  it('lists each capture oldest first, with its author, origin, amount and lines grouped by item', async () => {
+    const { fm, token } = await sessionWithTwoPlayers();
+    const { session, captures: list } = await captures(fm, token);
+
+    expect(list.map((capture) => [capture.player.displayName, capture.origin, capture.spentKamas])).toEqual([
+      ['Alice', 'bot', 63472],
+      ['Bob', 'bot', 5000],
+    ]);
+    expect(list[0].createdAt < list[1].createdAt).toBe(true);
+    // Four lots of Rune Do Air read on one capture make one line.
+    expect(list[0].items).toEqual([{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }]);
+    expect(list[1].items).toEqual([{ itemName: 'Rune Fo', itemId: '1519', quantity: 10, totalKamas: 4000, averageUnitKamas: 400 }]);
+    // FR-004: the captures add up to the session.
+    expect(list.reduce((total, capture) => total + capture.spentKamas, 0)).toBe(session.totalKamas);
+  });
+
+  it('keeps a capture without a readable line, with an empty recap', async () => {
+    const fm = createFmWorker();
+    const token = await fm.login('1', { displayName: 'Alice' });
+    await fm.startSession('1');
+    await fm.capture('1', 1200, []);
+    const { captures: list } = await captures(fm, token);
+    expect(list).toMatchObject([{ spentKamas: 1200, items: [] }]);
+  });
+
+  it('masks the author of a capture who is private', async () => {
+    const { fm, token } = await sessionWithTwoPlayers();
+    await fm.call('PATCH', '/fm/me', { token: 'token-2', body: { isPrivate: true } });
+    const { captures: list } = await captures(fm, token);
+    expect(list[1].player).toEqual({ discordUserId: null, displayName: null, avatarUrl: null, private: true });
+  });
+
+  it('are gone with the purchases after /fmreset', async () => {
+    const { fm, token } = await sessionWithTwoPlayers();
+    await fm.botEvent('session-reset');
+    const { captures: list } = await captures(fm, token);
+    expect(list).toEqual([]);
+  });
+});
+
 describe('private players', () => {
   it('are masked in the owner\'s session, but still counted in the total', async () => {
     const { fm, token } = await sessionWithTwoPlayers();

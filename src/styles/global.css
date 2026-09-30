@@ -1591,3 +1591,15 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .pet-max-quantity input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .pet-max-quantity input[aria-invalid="true"] { border-color: var(--danger); }
 .pet-max-quantity-note { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: .82rem; }
+
+/* specs/031-fm-session-captures: the captures of a session, and attaching it by typing a name. */
+.fm-captures { margin-top: var(--space-4); }
+.fm-capture-list { display: grid; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.fm-capture { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); }
+.fm-capture summary { display: flex; align-items: center; gap: var(--space-2) var(--space-3); flex-wrap: wrap; cursor: pointer; }
+.fm-capture-heading { display: grid; flex: 1 1 12rem; min-width: 0; }
+.fm-capture-heading .fm-note { margin: 0; }
+.fm-capture[open] summary { margin-bottom: var(--space-2); }
+.fm-item-search { flex: 1 1 100%; max-width: 32rem; }
+.fm-item-search-group { margin: var(--space-2) 0 0; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); }
+.fm-item-search-group .fm-note { text-transform: none; letter-spacing: 0; font-weight: 400; }

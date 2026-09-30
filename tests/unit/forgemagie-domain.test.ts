@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterRunes, normalizeItemName, parsePurchaseLines, summarizeByItem, unitPriceKamas, type RuneItem } from '../../src/domain/forgemagie';
+import { filterRunes, matchesItemQuery, normalizeItemName, parsePurchaseLines, summarizeByItem, unitPriceKamas, type RuneItem } from '../../src/domain/forgemagie';
 
 // specs/025-rune-purchase-import (FR-022): the chat's purchase lines, read exactly like the bot.
 describe('parsePurchaseLines', () => {
@@ -72,5 +72,22 @@ describe('filterRunes', () => {
     expect(names(filterRunes(runes, { query: '', stat: 'Force' }))).toEqual(['Rune Fo', 'Rune Pa Fo']);
     expect(names(filterRunes(runes, { query: 'pa', stat: 'Force' }))).toEqual(['Rune Pa Fo']);
     expect(filterRunes(runes, { query: '', stat: '' })).toEqual(runes);
+  });
+});
+
+// specs/031-fm-session-captures (FR-009): the player's items matched by the session's item search.
+describe('matchesItemQuery', () => {
+  const rtograf = { label: 'Mon Rtograf PA', itemName: 'Anneau Rtograf' };
+
+  it('finds an item by its own name or its equipment, ignoring case and accents', () => {
+    expect(matchesItemQuery(rtograf, 'rtog')).toBe(true);
+    expect(matchesItemQuery(rtograf, 'ANNEAU')).toBe(true);
+    expect(matchesItemQuery({ label: null, itemName: 'Épée de Boisaille' }, 'epee  de')).toBe(true);
+    expect(matchesItemQuery({ label: null, itemName: 'Coiffe Bouftou' }, 'bouftôu')).toBe(true);
+  });
+
+  it('matches nothing for another name or an empty query', () => {
+    expect(matchesItemQuery(rtograf, 'bouftou')).toBe(false);
+    expect(matchesItemQuery(rtograf, '   ')).toBe(false);
   });
 });

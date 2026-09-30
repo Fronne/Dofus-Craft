@@ -139,6 +139,31 @@ export async function sessionsPage(db: FmDb, viewerId: string, before: string | 
   };
 }
 
+type CaptureRow = PlayerRow & { id: string; created_at: string; origin: 'bot' | 'capture'; spent_kamas: number };
+
+// specs/031-fm-session-captures (FR-001 to FR-003): each capture of a session, oldest first, with its
+// lines grouped by item like the session's own recap, so that the captures add up to the session.
+async function sessionCaptures(db: FmDb, viewerId: string, sessionId: string) {
+  const { results: captures } = await db.prepare(
+    `SELECT c.id, c.created_at, c.origin, c.spent_kamas, p.discord_user_id, p.display_name, p.avatar_url, p.is_private
+     FROM fm_captures c JOIN fm_players p ON p.discord_user_id = c.discord_user_id
+     WHERE c.session_id = ? ORDER BY c.created_at, c.id`,
+  ).bind(sessionId).all<CaptureRow>();
+  const { results: grouped } = await db.prepare(
+    `SELECT l.capture_id, l.item_name, MAX(l.item_id) AS item_id, SUM(l.quantity) AS quantity, SUM(l.total_kamas) AS total_kamas
+     FROM fm_purchase_lines l JOIN fm_captures c ON c.id = l.capture_id
+     WHERE c.session_id = ? GROUP BY l.capture_id, l.item_name ORDER BY total_kamas DESC, l.item_name`,
+  ).bind(sessionId).all<ItemRow & { capture_id: string }>();
+  return captures.map((capture) => ({
+    id: capture.id,
+    createdAt: capture.created_at,
+    origin: capture.origin,
+    player: playerView(capture, viewerId),
+    spentKamas: capture.spent_kamas,
+    items: itemSummaries(grouped.filter((row) => row.capture_id === capture.id)),
+  }));
+}
+
 export async function sessionDetail(db: FmDb, viewerId: string, sessionId: string) {
   // specs/030 FR-002, FR-003: another player's session, or one without an owner, is not found.
   const session = await db.prepare(`SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE id = ? AND owner_discord_user_id = ?`)
@@ -154,6 +179,7 @@ export async function sessionDetail(db: FmDb, viewerId: string, sessionId: strin
   return {
     ...summary,
     items: itemSummaries(results),
+    captures: await sessionCaptures(db, viewerId, sessionId),
     canAttach: session.fm_item_id === null && session.channel_item_id === null,
     canDetach: owner?.owner_discord_user_id === viewerId,
   };
