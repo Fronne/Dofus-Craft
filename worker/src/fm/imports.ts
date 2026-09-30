@@ -30,8 +30,8 @@ export async function handleImport(request: Request, db: FmDb, discordUserId: st
     if (typeof body.sessionId !== 'string') return json({ error: 'sessionId must be a string' }, 400);
     const session = await db.prepare('SELECT status, owner_discord_user_id FROM fm_sessions WHERE id = ?')
       .bind(body.sessionId).first<{ status: string; owner_discord_user_id: string | null }>();
-    if (!session) return json({ error: 'Not found' }, 404);
-    if (session.owner_discord_user_id !== discordUserId) return json({ error: 'Forbidden' }, 403);
+    // specs/030-private-fm-sessions (SC-003): another player's session is not found, like a missing one.
+    if (!session || session.owner_discord_user_id !== discordUserId) return json({ error: 'Not found' }, 404);
     if (session.status !== 'open') return json({ error: 'session-not-open' }, 409);
     sessionId = body.sessionId;
   }

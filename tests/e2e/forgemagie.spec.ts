@@ -28,8 +28,11 @@ async function mockWorker(page: Page) {
     if (path === '/fm/sessions/s1') {
       return reply({ ...session, items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] });
     }
-    if (path === '/fm/players') return reply({ players: [{ ...cyril, totalKamas: 63472 }] });
-    if (path === '/fm/players/42') return reply({ player: cyril, totalKamas: 63472, importedKamas: 0, items: [], sessions: [], fmItems: [rtograf] });
+    // specs/030-private-fm-sessions: only the player's own profile exists for them.
+    if (path === '/fm/players/42') {
+      return reply({ player: cyril, totalKamas: 63472, importedKamas: 0, items: [], fmItems: [rtograf],
+        sessions: [{ sessionId: 's1', channelName: 'fm-coiffe', openedAt: session.openedAt, spentKamas: 63472, canOpen: true }] });
+    }
     if (path === '/fm/items/i1') {
       return reply({ ...rtograf, sessions: [{ id: 's1', channelName: 'fm-coiffe', status: 'closed', openedAt: session.openedAt, totalKamas: 68472 }],
         items: [{ itemName: 'Rune Do Air', itemId: '11663', quantity: 40, totalKamas: 63472, averageUnitKamas: 1587 }] });

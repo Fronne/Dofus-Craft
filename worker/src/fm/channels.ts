@@ -97,8 +97,8 @@ export async function attachChannelItem(request: Request, db: FmDb, viewerId: st
     return json({ error: 'fmItemId (or null) is required' }, 400);
   }
   const channel = await db.prepare('SELECT owner_discord_user_id FROM fm_channels WHERE channel_id = ?').bind(channelId).first<{ owner_discord_user_id: string | null }>();
-  if (!channel) return notFound();
-  if (channel.owner_discord_user_id !== viewerId) return json({ error: 'Forbidden' }, 403);
+  // specs/030-private-fm-sessions (FR-008): another player's channel is not found.
+  if (!channel || channel.owner_discord_user_id !== viewerId) return notFound();
   const fmItemId = body.fmItemId as string | null;
   if (fmItemId && !(await ownItem(db, viewerId, fmItemId))) return notFound();
   await db.prepare('UPDATE fm_channels SET fm_item_id = ? WHERE channel_id = ?').bind(fmItemId, channelId).run();

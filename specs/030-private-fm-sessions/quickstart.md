@@ -6,7 +6,7 @@
 npx vitest run tests/unit/fm-reads.test.ts tests/unit/fm-items.test.ts tests/unit/fm-site-sessions.test.ts \
   tests/unit/fm-channels.test.ts tests/integration/forgemagie-page.test.tsx
 npx vitest run && npx tsc -b --noEmit && npx tsc -p worker --noEmit && npx eslint src tests
-npx playwright test tests/e2e/forgemagie.spec.ts --project=chromium
+npx playwright test tests/e2e/forgemagie.spec.ts --project=desktop
 ```
 
 Attendu : tout passe. Les tests couvrent deux joueurs, A et B, chacun avec une séance :

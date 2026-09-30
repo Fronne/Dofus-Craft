@@ -53,6 +53,12 @@ export function createFmWorker() {
     },
   });
 
+  // specs/030-private-fm-sessions: a session only its owner sees — /fmstart typed by `ownerId`.
+  const startSession = (ownerId: string, fields: Record<string, unknown> = {}) => {
+    const known = test.sqlite.prepare('SELECT display_name FROM fm_players WHERE discord_user_id = ?').get(ownerId) as { display_name: string } | undefined;
+    return botEvent('session-start', { author: { id: ownerId, displayName: known?.display_name ?? `Joueur ${ownerId}`, avatarUrl: null }, ...fields });
+  };
+
   // The author keeps the name they already have (as Discord would send it), `Joueur <id>` otherwise.
   const capture = (authorId: string, spentKamas: number, lines: { name: string; qty: number; price: number }[], fields: Record<string, unknown> = {}) => {
     const known = test.sqlite.prepare('SELECT display_name FROM fm_players WHERE discord_user_id = ?').get(authorId) as { display_name: string } | undefined;
@@ -62,7 +68,7 @@ export function createFmWorker() {
 
   const query = <T>(sql: string, ...params: (string | number | null)[]) => test.sqlite.prepare(sql).all(...params) as T[];
 
-  return { ...test, env, call, login, botEvent, capture, query };
+  return { ...test, env, call, login, botEvent, startSession, capture, query };
 }
 
 export const doAirLine = { name: 'Rune Do Air', qty: 10, price: 15868 };

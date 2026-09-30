@@ -155,12 +155,12 @@ export type FmMe = {
   firstLoginAt: string | null;
 };
 
-export type FmPlayerSpend = FmPlayer & { totalKamas: number };
 
 export type FmProfile = {
   player: FmPlayer;
   totalKamas: number;
-  sessions: { sessionId: string; channelName: string; openedAt: string; spentKamas: number }[];
+  // specs/030-private-fm-sessions (research R5): a session the player posted in but doesn't own won't open.
+  sessions: { sessionId: string; channelName: string; openedAt: string; spentKamas: number; canOpen: boolean }[];
   importedKamas: number;
   items: FmItemSummary[];
   /** specs/027 FR-014. */

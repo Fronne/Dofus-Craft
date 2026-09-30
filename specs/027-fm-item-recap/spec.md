@@ -161,6 +161,8 @@ récap ; passer le profil de Bob en privé : ses objets ne sont plus visibles pa
 
 **Rattachement**
 
+> **Amendé par specs/030-private-fm-sessions** : seul le propriétaire de la séance peut la rattacher à l'un de ses objets en FM ; le récap d'un objet n'est visible que par son propriétaire.
+
 - **FR-005**: Depuis le détail d'une session non rattachée, un joueur connecté MUST pouvoir la
   rattacher à un de ses objets en FM, que la session soit en cours ou terminée, **seulement s'il a
   dépensé dans cette session** (au moins une capture du bot à son nom). Sinon, le rattachement MUST

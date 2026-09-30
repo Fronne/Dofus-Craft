@@ -60,8 +60,8 @@ type OwnedSession = { id: string; channel_id: string; status: 'open' | 'closed';
 async function ownedSession(db: FmDb, viewerId: string, sessionId: string): Promise<OwnedSession | Response> {
   const session = await db.prepare('SELECT id, channel_id, status, owner_discord_user_id, origin, sync_status FROM fm_sessions WHERE id = ?')
     .bind(sessionId).first<OwnedSession>();
-  if (!session) return notFound();
-  if (session.owner_discord_user_id !== viewerId) return json({ error: 'Forbidden' }, 403);
+  // specs/030-private-fm-sessions (SC-003): another player's session is not found, like a missing one.
+  if (!session || session.owner_discord_user_id !== viewerId) return notFound();
   if (session.status !== 'open') return json({ error: 'not-open' }, 409);
   return session;
 }

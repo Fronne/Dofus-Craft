@@ -149,6 +149,8 @@ avec le joueur et ses 15 868 kamas, et la ligne Rune Do Air : 10, 15 868 kamas, 
 
 ---
 
+> **Amendé par specs/030-private-fm-sessions** : un joueur ne voit plus que son propre profil ; les profils des autres membres, publics ou privés, ne sont plus consultables.
+
 ### User Story 3 - Voir ses dépenses de forgemagie (Priority: P2)
 
 Sur son profil, un joueur voit ce qu'il a dépensé en forgemagie : au total, par session, et par
@@ -300,6 +302,8 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   MUST servir uniquement à ranger les achats envoyés par le bot et importés sur le site ; il MUST
   être pré-rempli avec le serveur actif du sélecteur du site à la première connexion. L'affichage
   des prix MUST suivre le sélecteur du site.
+> **Amendé par specs/030-private-fm-sessions** : le réglage public / privé est conservé mais n'a plus d'effet sur la visibilité ; il est gardé pour un futur affichage public.
+
 - **FR-006**: Le profil MUST être public par défaut ; le joueur MUST pouvoir le passer en privé et
   revenir en public à tout moment.
 - **FR-007**: Le joueur MUST pouvoir se déconnecter, et MUST pouvoir supprimer son profil et tous
@@ -327,6 +331,8 @@ dépense apparaît sur le profil et le prix dans la liste des runes.
   rattaché à son identifiant Discord, puis apparaître sur son profil dès sa première connexion.
 
 **Visibilité**
+
+> **Amendé par specs/030-private-fm-sessions** : un profil n'est consultable que par son propriétaire, qu'il soit public ou privé ; les séances ne sont visibles que par le joueur qui les a démarrées.
 
 - **FR-014**: Un profil public MUST être consultable par tout membre connecté ; un profil privé
   MUST être consultable uniquement par son propriétaire.

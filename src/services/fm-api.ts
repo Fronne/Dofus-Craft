@@ -1,5 +1,5 @@
 import type {
-  FmChannel, FmChannelRequest, FmItemRecap, FmMe, FmOwnedItem, FmPlayerSpend, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
+  FmChannel, FmChannelRequest, FmItemRecap, FmMe, FmOwnedItem, FmProfile, FmSession, FmSessionDetail, FmSessionsPage, PriceStatus,
 } from '../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken } from '../persistence/fm-session-token';
 
@@ -134,11 +134,6 @@ function isSessionDetail(value: unknown): value is FmSessionDetail {
   return isSession(value) && isRecord(value) && isItemSummaries(value.items);
 }
 
-function isPlayers(value: unknown): value is { players: FmPlayerSpend[] } {
-  return isRecord(value) && Array.isArray(value.players) &&
-    value.players.every((player) => isPlayer(player) && isRecord(player) && typeof player.totalKamas === 'number');
-}
-
 function isProfile(value: unknown): value is FmProfile {
   return isRecord(value) && isPlayer(value.player) && typeof value.totalKamas === 'number' &&
     typeof value.importedKamas === 'number' && Array.isArray(value.sessions) && isItemSummaries(value.items) &&
@@ -167,9 +162,14 @@ export async function getFmSessions(before?: string | null, filter: { mine?: 'op
 
 const sessionPath = (sessionId: string) => `/fm/sessions/${encodeURIComponent(sessionId)}`;
 export const getFmSession = async (sessionId: string) => mapOk(await request('GET', sessionPath(sessionId), isSessionDetail), withDetailActions);
-export const getFmPlayers = () => request('GET', '/fm/players', isPlayers);
 export const getFmPlayer = async (discordUserId: string) =>
-  mapOk(await request('GET', `/fm/players/${encodeURIComponent(discordUserId)}`, isProfile), (profile) => ({ ...profile, fmItems: profile.fmItems ?? [], fmChannels: profile.fmChannels ?? [] }));
+  mapOk(await request('GET', `/fm/players/${encodeURIComponent(discordUserId)}`, isProfile), (profile) => ({
+    ...profile,
+    // specs/030: a session without `canOpen` (an older API) is not offered as a link.
+    sessions: profile.sessions.map((session) => ({ ...session, canOpen: session.canOpen === true })),
+    fmItems: profile.fmItems ?? [],
+    fmChannels: profile.fmChannels ?? [],
+  }));
 
 // specs/027-fm-item-recap (contracts/fm-items-api.md).
 const itemPath = (id: string) => `/fm/items/${encodeURIComponent(id)}`;

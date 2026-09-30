@@ -69,6 +69,18 @@ describe('POST /fm/bot/events', () => {
     expect(session).toMatchObject({ status: 'open', opened_at: capture.created_at });
   });
 
+  // specs/030-private-fm-sessions (FR-003): a session without owner would be seen by no one.
+  it('gives a session opened by a capture to the personal channel\'s owner, or else to the capture\'s author', async () => {
+    const fm = createFmWorker();
+    await fm.capture('42', 15868, [doAirLine]);
+    await fm.botEvent('channel-created', { channelId: 'c-perso', channelName: 'fm-perso', author: { id: '7', displayName: 'Bob', avatarUrl: null } });
+    await fm.capture('42', 1000, [doAirLine], { channelId: 'c-perso', channelName: 'fm-perso' });
+    expect(fm.query('SELECT channel_id, owner_discord_user_id FROM fm_sessions ORDER BY channel_id')).toEqual([
+      { channel_id: 'c-perso', owner_discord_user_id: '7' },
+      { channel_id: 'channel-1', owner_discord_user_id: '42' },
+    ]);
+  });
+
   it('changes nothing when the same event is sent again', async () => {
     const fm = createFmWorker();
     await fm.login('42');

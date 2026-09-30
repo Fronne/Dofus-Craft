@@ -12,7 +12,6 @@ const fm = vi.hoisted(() => ({
   logoutFm: vi.fn(),
   getFmSessions: vi.fn(),
   getFmSession: vi.fn(),
-  getFmPlayers: vi.fn(),
   getFmPlayer: vi.fn(),
   importFmCapture: vi.fn(),
   createFmItem: vi.fn(),
@@ -101,10 +100,9 @@ beforeEach(() => {
   // specs/028: « mine=open » (the capture import) lists no session by default.
   fm.getFmSessions.mockImplementation(async (_before?: string | null, filter?: { mine?: string }) =>
     ok(filter?.mine ? { sessions: [], nextBefore: null } : { sessions: [openSession, closedSession], nextBefore: null }));
-  fm.getFmPlayers.mockResolvedValue(ok({ players: [] }));
   fm.getFmPlayer.mockResolvedValue(ok({ player: alice, totalKamas: 150000, importedKamas: 0, items: [], fmChannels: [], fmItems: [], sessions: [
-    { sessionId: 's2', channelName: 'fm-cape', openedAt: '2026-09-30T18:00:00.000Z', spentKamas: 100000 },
-    { sessionId: 's1', channelName: 'fm-coiffe', openedAt: '2026-09-29T18:00:00.000Z', spentKamas: 50000 },
+    { sessionId: 's2', channelName: 'fm-cape', openedAt: '2026-09-30T18:00:00.000Z', spentKamas: 100000, canOpen: true },
+    { sessionId: 's1', channelName: 'fm-coiffe', openedAt: '2026-09-29T18:00:00.000Z', spentKamas: 50000, canOpen: false },
   ] }));
   getCommunityPrices.mockReset();
   getCommunityPrices.mockResolvedValue({ status: 'found', prices: [] });
@@ -204,6 +202,24 @@ describe('Forgemagie page — sessions (US2, US3)', () => {
     fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
     await waitFor(() => expect(normalize(screen.getByText(/Total dépensé/).textContent)).toContain('150 000 kamas'));
     expect(screen.getByRole('button', { name: /#fm-cape/ })).toBeInTheDocument();
+    // specs/030 (research R5): a session the player posted in but doesn't own is listed, not opened.
+    expect(screen.getByText(/#fm-coiffe/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /#fm-coiffe/ })).not.toBeInTheDocument();
+  });
+
+  // specs/030-private-fm-sessions (FR-005, FR-010).
+  it('shows only the player\'s own profile, with an honest visibility setting', async () => {
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
+    await screen.findByText(/Total dépensé/);
+    expect(screen.queryByRole('combobox', { name: 'Voir le profil de' })).not.toBeInTheDocument();
+    expect(fm.getFmPlayer).toHaveBeenCalledWith(me.discordUserId);
+    const note = 'Pour l’instant, personne d’autre ne voit tes séances ni ton profil. Ce réglage servira quand un affichage public sera ajouté.';
+    expect(screen.getByText(note)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Privé' }));
+    await waitFor(() => expect(fm.updateFmMe).toHaveBeenCalledWith({ isPrivate: true }));
+    expect(await screen.findByText(note)).toBeInTheDocument();
   });
 
   it('deletes the profile only after an explicit confirmation', async () => {
@@ -266,17 +282,6 @@ describe('Forgemagie page — tabs and capture import (specs/026)', () => {
     await waitFor(() => expect(section.textContent).toContain('1 achat enregistré.'));
     await waitFor(() => expect(fm.getFmPlayer.mock.calls.length).toBeGreaterThan(readsBefore));
   });
-
-  it('offers no import on another member\'s profile', async () => {
-    fm.getFmPlayers.mockResolvedValue(ok({ players: [{ discordUserId: '7', displayName: 'Bob', avatarUrl: null, private: false, totalKamas: 10 }] }));
-    writeFmSessionToken(TOKEN);
-    await openForgemagie();
-    fireEvent.click(await screen.findByRole('tab', { name: 'Profil' }));
-    await waitFor(() => expect(document.querySelector('.fm-import')).not.toBeNull());
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Voir le profil de' }), { target: { value: '7' } });
-    await waitFor(() => expect(document.querySelector('.fm-import')).toBeNull());
-    expect(fm.getFmPlayer).toHaveBeenLastCalledWith('7');
-  });
 });
 
 // specs/027-fm-item-recap: items in FM, attaching a session, the recap.
@@ -334,16 +339,6 @@ describe('Forgemagie page — items in FM (specs/027)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
     fireEvent.click(screen.getByRole('button', { name: "Supprimer l'objet" }));
     await waitFor(() => expect(fm.deleteFmItem).toHaveBeenCalledWith('i1'));
-  });
-
-  it('shows another member\'s items read only', async () => {
-    fm.getFmPlayers.mockResolvedValue(ok({ players: [{ discordUserId: '7', displayName: 'Bob', avatarUrl: null, private: false, totalKamas: 10 }] }));
-    fm.getFmPlayer.mockImplementation(async (id: string) => withItems(id === '7' ? [{ ...rtograf, owner: { ...alice, discordUserId: '7', displayName: 'Bob' } }] : []));
-    await openProfile();
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Voir le profil de' }), { target: { value: '7' } });
-    await screen.findByRole('button', { name: /Rtograf PA/ });
-    expect(screen.queryByRole('button', { name: 'Ajouter un objet' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Renommer' })).not.toBeInTheDocument();
   });
 
   it('attaches a session to one of the player\'s items from its detail, then offers to detach it', async () => {

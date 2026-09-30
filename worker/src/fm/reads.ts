@@ -127,10 +127,11 @@ export async function sessionsPage(db: FmDb, viewerId: string, before: string | 
     ).bind(viewerId).all<SessionRow>();
     return { sessions: await withPlayers(db, results, viewerId), nextBefore: null };
   }
+  // specs/030-private-fm-sessions (FR-001): only the sessions the viewer started.
   const { results } = await db.prepare(
     `SELECT ${SESSION_COLUMNS} FROM fm_sessions
-     WHERE opened_at < ? ORDER BY opened_at DESC, id DESC LIMIT ?`,
-  ).bind(before ?? '9999', SESSIONS_PAGE_SIZE + 1).all<SessionRow>();
+     WHERE owner_discord_user_id = ? AND opened_at < ? ORDER BY opened_at DESC, id DESC LIMIT ?`,
+  ).bind(viewerId, before ?? '9999', SESSIONS_PAGE_SIZE + 1).all<SessionRow>();
   const page = results.slice(0, SESSIONS_PAGE_SIZE);
   return {
     sessions: await withPlayers(db, page, viewerId),
@@ -139,22 +140,21 @@ export async function sessionsPage(db: FmDb, viewerId: string, before: string | 
 }
 
 export async function sessionDetail(db: FmDb, viewerId: string, sessionId: string) {
-  const session = await db.prepare(`SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE id = ?`)
-    .bind(sessionId).first<SessionRow>();
+  // specs/030 FR-002, FR-003: another player's session, or one without an owner, is not found.
+  const session = await db.prepare(`SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE id = ? AND owner_discord_user_id = ?`)
+    .bind(sessionId, viewerId).first<SessionRow>();
   if (!session) return undefined;
   const [summary] = await withPlayers(db, [session], viewerId);
   const { results } = await db.prepare(`${ITEMS_SELECT} WHERE c.session_id = ? GROUP BY l.item_name ORDER BY total_kamas DESC, l.item_name`)
     .bind(sessionId).all<ItemRow>();
-  // specs/027 FR-005 / FR-007: what the viewer may do with the session's item.
-  const spent = await db.prepare('SELECT 1 AS spent FROM fm_captures WHERE session_id = ? AND discord_user_id = ? LIMIT 1')
-    .bind(sessionId, viewerId).first<{ spent: number }>();
+  // specs/027 FR-007, specs/030 FR-004: what the viewer — the session's owner — may do with its item.
   const owner = session.fm_item_id
     ? await db.prepare('SELECT owner_discord_user_id FROM fm_items WHERE id = ?').bind(session.fm_item_id).first<{ owner_discord_user_id: string }>()
     : null;
   return {
     ...summary,
     items: itemSummaries(results),
-    canAttach: session.fm_item_id === null && session.channel_item_id === null && spent !== null,
+    canAttach: session.fm_item_id === null && session.channel_item_id === null,
     canDetach: owner?.owner_discord_user_id === viewerId,
   };
 }
@@ -188,30 +188,32 @@ export async function ownedItems(db: FmDb, viewerId: string, where: string, ...p
   }));
 }
 
-// Public players, plus the viewer even when private, with what each spent in all.
+// specs/030 FR-005: only the viewer, with what they spent in all (the page no longer lists players).
 export async function listPlayers(db: FmDb, viewerId: string) {
   const { results } = await db.prepare(
     `SELECT p.discord_user_id, p.display_name, p.avatar_url, p.is_private, COALESCE(SUM(c.spent_kamas), 0) AS total_kamas
      FROM fm_players p LEFT JOIN fm_captures c ON c.discord_user_id = p.discord_user_id
-     WHERE p.is_private = 0 OR p.discord_user_id = ?
+     WHERE p.discord_user_id = ?
      GROUP BY p.discord_user_id
      ORDER BY total_kamas DESC, p.display_name`,
   ).bind(viewerId).all<PlayerRow & { total_kamas: number }>();
   return { players: results.map((row) => ({ ...playerView(row, viewerId), totalKamas: row.total_kamas })) };
 }
 
-// A player's spending (FR-016). Undefined when unknown, or private and not the viewer (FR-014).
+// A player's spending (FR-016). Undefined unless it is the viewer's own profile (specs/030 FR-006).
 export async function playerProfile(db: FmDb, viewerId: string, discordUserId: string) {
+  if (discordUserId !== viewerId) return undefined;
   const row = await db.prepare('SELECT discord_user_id, display_name, avatar_url, is_private FROM fm_players WHERE discord_user_id = ?')
     .bind(discordUserId).first<PlayerRow>();
-  if (!row || (row.is_private === 1 && discordUserId !== viewerId)) return undefined;
+  if (!row) return undefined;
 
+  // Spending counts the player's own captures, even in a session they don't own (specs/030 research R5).
   const { results: sessions } = await db.prepare(
-    `SELECT s.id AS session_id, s.channel_name, s.opened_at, SUM(c.spent_kamas) AS spent_kamas
+    `SELECT s.id AS session_id, s.channel_name, s.opened_at, s.owner_discord_user_id, SUM(c.spent_kamas) AS spent_kamas
      FROM fm_captures c JOIN fm_sessions s ON s.id = c.session_id
      WHERE c.discord_user_id = ?
      GROUP BY s.id ORDER BY s.opened_at DESC`,
-  ).bind(discordUserId).all<{ session_id: string; channel_name: string; opened_at: string; spent_kamas: number }>();
+  ).bind(discordUserId).all<{ session_id: string; channel_name: string; opened_at: string; owner_discord_user_id: string | null; spent_kamas: number }>();
   const imported = await db.prepare(
     'SELECT COALESCE(SUM(spent_kamas), 0) AS total FROM fm_captures WHERE discord_user_id = ? AND session_id IS NULL',
   ).bind(discordUserId).first<{ total: number }>();
@@ -227,10 +229,10 @@ export async function playerProfile(db: FmDb, viewerId: string, discordUserId: s
       channelName: session.channel_name,
       openedAt: session.opened_at,
       spentKamas: session.spent_kamas,
+      canOpen: session.owner_discord_user_id === viewerId,
     })),
     importedKamas,
     items: itemSummaries(items),
-    // specs/027 FR-014: the profile's visibility already let the viewer this far.
     fmItems: await ownedItems(db, viewerId, 'i.owner_discord_user_id = ?', discordUserId),
     // specs/029 FR-013.
     fmChannels: await playerChannels(db, discordUserId),

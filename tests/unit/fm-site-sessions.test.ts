@@ -145,7 +145,9 @@ describe('stopping a session from the site (US2)', () => {
     const { id: sessionId } = await (await start({ channelId: 'c-anneau' })).json() as Detail;
     await ack((await commands()).commands[0].id);
 
-    expect((await fm.call('POST', `/fm/sessions/${sessionId}/stop`, { token: bob })).status).toBe(403);
+    // specs/030-private-fm-sessions (SC-003): another player's session is not found.
+    expect((await fm.call('POST', `/fm/sessions/${sessionId}/stop`, { token: bob })).status).toBe(404);
+    expect((await fm.call('POST', `/fm/sessions/${sessionId}/resend`, { token: bob })).status).toBe(404);
     const stopped = await fm.call('POST', `/fm/sessions/${sessionId}/stop`, { token: cyril });
     expect(await stopped.json()).toMatchObject({ status: 'closed', canStop: false });
     expect((await commands()).commands).toEqual([{ id: expect.any(String), type: 'close', channelId: 'c-anneau', channelName: 'fm-anneau' }]);
@@ -196,10 +198,12 @@ describe('/fmstart owner (US4)', () => {
     expect((await fm.call('POST', `/fm/sessions/${sessionId}/stop`, { token: cyril })).status).toBe(200);
   });
 
-  it('keeps sessions without owner for a bot not updated yet', async () => {
+  // specs/030 FR-003: a session without owner (a bot not updated yet) is kept, but seen by no one.
+  it('keeps sessions without owner for a bot not updated yet, seen by no one', async () => {
     const { fm, cyril } = await setup();
     const { sessionId } = await (await fm.botEvent('session-start', { channelId: 'c-coiffe', channelName: 'fm-coiffe' })).json() as { sessionId: string };
-    expect(await (await fm.call('GET', `/fm/sessions/${sessionId}`, { token: cyril })).json()).toMatchObject({ owner: null, canStop: false });
+    expect(fm.query('SELECT owner_discord_user_id FROM fm_sessions WHERE id = ?', sessionId)).toEqual([{ owner_discord_user_id: null }]);
+    expect((await fm.call('GET', `/fm/sessions/${sessionId}`, { token: cyril })).status).toBe(404);
   });
 
   it('refuses an invalid author', async () => {
@@ -218,7 +222,11 @@ describe('captures imported on the site (US3)', () => {
     expect(imported.status).toBe(201);
     expect((await detail(sessionId)).totalKamas).toBe(15868);
 
-    expect((await fm.call('POST', '/fm/imports', { token: bob, body: { sharePrices: false, lines: [line], sessionId } })).status).toBe(403);
+    // specs/030 (SC-003): another player's session answers like an unknown one.
+    const intoOthers = await fm.call('POST', '/fm/imports', { token: bob, body: { sharePrices: false, lines: [line], sessionId } });
+    const intoUnknown = await fm.call('POST', '/fm/imports', { token: bob, body: { sharePrices: false, lines: [line], sessionId: 'unknown' } });
+    expect(intoOthers.status).toBe(404);
+    expect(await intoOthers.text()).toBe(await intoUnknown.text());
     await fm.call('POST', `/fm/sessions/${sessionId}/stop`, { token: cyril });
     const closed = await fm.call('POST', '/fm/imports', { token: cyril, body: { sharePrices: false, lines: [line], sessionId } });
     expect(closed.status).toBe(409);

@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { EmptyState } from '../../components/EmptyState';
-import { formatFmDate, type FmMe, type FmPlayerSpend, type FmProfile } from '../../domain/forgemagie';
+import { formatFmDate, type FmMe, type FmProfile } from '../../domain/forgemagie';
 import { formatKamas } from '../../domain/kamas';
 import type { PriceMode } from '../../domain/price-modes';
-import { deleteFmMe, getFmPlayer, getFmPlayers } from '../../services/fm-api';
+import { deleteFmMe, getFmPlayer } from '../../services/fm-api';
 import { CaptureImport } from './CaptureImport';
 import { FmItemsSection } from './FmItemsSection';
 import { FmChannelsSection } from './FmChannelsSection';
-import { PlayerBadge } from './PlayerBadge';
 import { ItemSummaryTable } from './SessionDetail';
 
-// specs/025-rune-purchase-import: the player's settings (US1 — server, visibility), the spending of a
-// player (US3 — theirs, or a public member's) and the deletion of the profile (FR-007).
+// specs/025-rune-purchase-import: the player's settings (US1 — server, visibility), their spending (US3)
+// and the deletion of the profile (FR-007). specs/030-private-fm-sessions: only one's own profile is shown.
 // specs/026-hdv-rune-prices (FR-010, FR-011): the capture import, on the player's own profile only.
 
 function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean> }) {
@@ -57,10 +56,9 @@ function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { ser
             </button>
           ))}
         </div>
+        {/* specs/030 FR-010: kept for a future public display, it changes nothing others can see today. */}
         <span className="fm-note">
-          {me.isPrivate
-            ? 'Ton profil n’est visible que par toi, et ton nom est masqué dans les sessions.'
-            : 'Les membres du groupe voient ton profil et tes dépenses.'}
+          Pour l’instant, personne d’autre ne voit tes séances ni ton profil. Ce réglage servira quand un affichage public sera ajouté.
         </span>
       </div>
       {failed && <p className="fm-error" role="alert">Le réglage n'a pas pu être enregistré. Réessaie.</p>}
@@ -118,9 +116,13 @@ function Spending({ profile, onOpenSession }: { profile: FmProfile; onOpenSessio
           <ul className="fm-spend-list">
             {profile.sessions.map((session) => (
               <li key={session.sessionId}>
-                <button type="button" className="fm-link" onClick={() => onOpenSession(session.sessionId)}>
-                  #{session.channelName} · {formatFmDate(session.openedAt)}
-                </button>
+                {session.canOpen ? (
+                  <button type="button" className="fm-link" onClick={() => onOpenSession(session.sessionId)}>
+                    #{session.channelName} · {formatFmDate(session.openedAt)}
+                  </button>
+                ) : (
+                  <span>#{session.channelName} · {formatFmDate(session.openedAt)}</span>
+                )}
                 <span className="fm-amount">{formatKamas(session.spentKamas)}</span>
               </li>
             ))}
@@ -148,23 +150,15 @@ export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, 
   onOpenItem: (itemId: string) => void;
   onUnauthorized: () => void;
 }) {
-  const [players, setPlayers] = useState<FmPlayerSpend[]>([]);
-  const [shownId, setShownId] = useState(me.discordUserId);
   const [profile, setProfile] = useState<{ status: 'loading' | 'missing' | 'unavailable' } | { status: 'ready'; profile: FmProfile }>({ status: 'loading' });
   // Bumped after an import, to reread the spending it just added.
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    void getFmPlayers().then((result) => {
-      if (result.status === 'ok') setPlayers(result.data.players);
-    });
-  }, [me.isPrivate]);
-
-  useEffect(() => {
     let cancelled = false;
     // An import rereads in place: the spending already shown stays until the new one arrives.
     if (version === 0) setProfile({ status: 'loading' });
-    void getFmPlayer(shownId).then((result) => {
+    void getFmPlayer(me.discordUserId).then((result) => {
       if (cancelled) return;
       if (result.status === 'unauthorized') onUnauthorized();
       else if (result.status === 'ok') setProfile({ status: 'ready', profile: result.data });
@@ -173,44 +167,30 @@ export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, 
     return () => {
       cancelled = true;
     };
-  }, [shownId, me.isPrivate, onUnauthorized, version]);
-
-  const isMine = shownId === me.discordUserId;
-  const others = players.filter((player) => player.discordUserId && player.discordUserId !== me.discordUserId);
+  }, [me.discordUserId, onUnauthorized, version]);
 
   return (
     <div className="fm-profile">
-      {others.length > 0 && (
-        <label className="fm-field fm-profile-picker">
-          <span className="fm-field-label">Voir le profil de</span>
-          <select className="hdv-type-filter" value={shownId} onChange={(event) => setShownId(event.target.value)}>
-            <option value={me.discordUserId}>Moi</option>
-            {others.map((player) => <option key={player.discordUserId} value={player.discordUserId!}>{player.displayName}</option>)}
-          </select>
-        </label>
-      )}
-
-      {isMine && <ProfileSettings me={me} updateMe={updateMe} />}
-      {isMine && <CaptureImport me={me} priceMode={priceMode} onImported={() => setVersion((value) => value + 1)} />}
-      {!isMine && profile.status === 'ready' && <h2 className="fm-section-title"><PlayerBadge player={profile.profile.player} /></h2>}
+      <ProfileSettings me={me} updateMe={updateMe} />
+      <CaptureImport me={me} priceMode={priceMode} onImported={() => setVersion((value) => value + 1)} />
 
       {profile.status === 'loading' && <p className="empty" role="status">Chargement des dépenses…</p>}
-      {profile.status === 'missing' && <EmptyState icon="info" title="Profil introuvable" description="Ce joueur a peut-être passé son profil en privé." />}
+      {profile.status === 'missing' && <EmptyState icon="info" title="Profil introuvable" description="Reconnecte-toi avec Discord, puis réessaie." />}
       {profile.status === 'unavailable' && <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas. Réessayez plus tard." />}
       {profile.status === 'ready' && (
-        <FmItemsSection items={profile.profile.fmItems} isMine={isMine} onOpenItem={onOpenItem} onChanged={() => setVersion((value) => value + 1)} />
+        <FmItemsSection items={profile.profile.fmItems} isMine onOpenItem={onOpenItem} onChanged={() => setVersion((value) => value + 1)} />
       )}
       {profile.status === 'ready' && (
         <FmChannelsSection
           channels={profile.profile.fmChannels}
           items={profile.profile.fmItems}
-          isMine={isMine}
+          isMine
           onChanged={() => setVersion((value) => value + 1)}
         />
       )}
       {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSession={onOpenSession} />}
 
-      {isMine && <DeleteProfile onDeleted={onDeleted} />}
+      <DeleteProfile onDeleted={onDeleted} />
     </div>
   );
 }

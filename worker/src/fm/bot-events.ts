@@ -84,7 +84,11 @@ async function handleCapture(db: FmDb, event: CaptureEvent): Promise<{ answer: E
   }
   if (!sessionId) {
     sessionId = crypto.randomUUID();
-    statements.push(openSession(db, sessionId, event));
+    // specs/030-private-fm-sessions (FR-003): a session without an owner is seen by no one, so it goes to
+    // the owner of the personal channel, or else to the capture's author (no group FM).
+    const channel = await db.prepare('SELECT owner_discord_user_id FROM fm_channels WHERE channel_id = ?')
+      .bind(event.channelId).first<{ owner_discord_user_id: string | null }>();
+    statements.push(openSession(db, sessionId, event, channel?.owner_discord_user_id ?? event.author.id));
   }
 
   await upsertPlayerStatement(db, { discordUserId: event.author.id, displayName: event.author.displayName, avatarUrl: event.author.avatarUrl }, event.occurredAt).run();

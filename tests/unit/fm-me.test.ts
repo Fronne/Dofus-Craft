@@ -72,7 +72,8 @@ describe('DELETE /fm/me', () => {
     const fm = createFmWorker();
     const token = await fm.login('42');
     const other = await fm.login('7');
-    await fm.botEvent('session-start');
+    // The other player's session, where player 42 posted a capture too.
+    await fm.startSession('7');
     await fm.capture('42', 15868, [doAirLine]);
     await fm.capture('7', 1000, [{ name: 'Rune Fo', qty: 1, price: 1000 }]);
 

@@ -73,7 +73,8 @@ export async function deleteItem(db: FmDb, viewerId: string, id: string): Promis
 // FR-009 to FR-012: total, attached sessions and per-item detail — no share per player. A private
 // owner's item doesn't exist for anyone else (FR-014).
 export async function readItemRecap(db: FmDb, viewerId: string, id: string): Promise<Response> {
-  const [item] = await ownedItems(db, viewerId, 'i.id = ? AND (p.is_private = 0 OR p.discord_user_id = ?)', id, viewerId);
+  // specs/030 FR-007: only the owner reads the recap of an item.
+  const [item] = await ownedItems(db, viewerId, 'i.id = ? AND i.owner_discord_user_id = ?', id, viewerId);
   if (!item) return notFound();
   const { results: sessionRows } = await db.prepare(
     `SELECT ${SESSION_COLUMNS} FROM fm_sessions WHERE ${effectiveItemSql('fm_sessions')} = ? ORDER BY opened_at DESC, id DESC`,
@@ -101,7 +102,9 @@ export async function attachSession(request: Request, db: FmDb, viewerId: string
   const body = await readJson(request);
   const fmItemId = isRecord(body) && typeof body.fmItemId === 'string' ? body.fmItemId : undefined;
   if (!fmItemId) return json({ error: 'fmItemId is required' }, 400);
-  const session = await db.prepare('SELECT id, fm_item_id FROM fm_sessions WHERE id = ?').bind(sessionId).first<{ id: string; fm_item_id: string | null }>();
+  // specs/030 FR-004: the viewer attaches only their own session, to their own item.
+  const session = await db.prepare('SELECT id, fm_item_id FROM fm_sessions WHERE id = ? AND owner_discord_user_id = ?')
+    .bind(sessionId, viewerId).first<{ id: string; fm_item_id: string | null }>();
   if (!session || !(await ownItem(db, viewerId, fmItemId))) return notFound();
   // FR-006: an attached session, even to this very item, is refused.
   if (session.fm_item_id !== null) return json({ error: 'already-attached' }, 409);
@@ -110,10 +113,6 @@ export async function attachSession(request: Request, db: FmDb, viewerId: string
     'SELECT ch.fm_item_id FROM fm_channels ch JOIN fm_sessions s ON s.channel_id = ch.channel_id WHERE s.id = ? AND ch.fm_item_id IS NOT NULL',
   ).bind(sessionId).first();
   if (channelItem) return json({ error: 'already-attached' }, 409);
-
-  const spent = await db.prepare('SELECT 1 AS spent FROM fm_captures WHERE session_id = ? AND discord_user_id = ? LIMIT 1')
-    .bind(sessionId, viewerId).first<{ spent: number }>();
-  if (!spent) return json({ error: 'not-participant' }, 403);
 
   // research R2: the condition in the same statement makes « the first one to attach wins » safe.
   await db.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ? AND fm_item_id IS NULL').bind(fmItemId, sessionId).run();
@@ -124,10 +123,11 @@ export async function attachSession(request: Request, db: FmDb, viewerId: string
 
 export async function detachSession(db: FmDb, viewerId: string, sessionId: string): Promise<Response> {
   const row = await db.prepare(
-    `SELECT s.fm_item_id, i.owner_discord_user_id FROM fm_sessions s LEFT JOIN fm_items i ON i.id = s.fm_item_id WHERE s.id = ?`,
-  ).bind(sessionId).first<{ fm_item_id: string | null; owner_discord_user_id: string | null }>();
-  if (!row || !row.fm_item_id) return notFound();
-  if (row.owner_discord_user_id !== viewerId) return json({ error: 'Forbidden' }, 403);
+    `SELECT s.fm_item_id, i.owner_discord_user_id FROM fm_sessions s LEFT JOIN fm_items i ON i.id = s.fm_item_id
+     WHERE s.id = ? AND s.owner_discord_user_id = ?`,
+  ).bind(sessionId, viewerId).first<{ fm_item_id: string | null; owner_discord_user_id: string | null }>();
+  // specs/030 (research R6): the session and its item must both be the viewer's, or it is not found.
+  if (!row || !row.fm_item_id || row.owner_discord_user_id !== viewerId) return notFound();
   await db.prepare('UPDATE fm_sessions SET fm_item_id = NULL WHERE id = ? AND fm_item_id = ?').bind(sessionId, row.fm_item_id).run();
   return json(await sessionDetail(db, viewerId, sessionId));
 }

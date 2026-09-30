@@ -1533,7 +1533,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .fm-settings { display: grid; gap: var(--space-4); margin-bottom: var(--space-4); }
 .fm-field { display: grid; justify-items: start; gap: var(--space-1); }
 .fm-field-label { font-weight: 700; }
-.fm-profile-picker { margin-bottom: var(--space-4); }
 .fm-danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .fm-delete { color: var(--danger); }
 

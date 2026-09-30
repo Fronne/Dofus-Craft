@@ -195,6 +195,8 @@ l'objet, choix du porteur du projet).
   (specs/027). *(étend specs/027)*
 - **FR-012**: Une session rattachée à la main à un objet (specs/027) MUST garder ce rattachement même si
   son salon est rattaché à un autre objet ou détaché.
+> **Amendé par specs/030-private-fm-sessions** : les salons d'un joueur n'apparaissent que sur son propre profil, jamais sur celui d'un autre.
+
 - **FR-013**: Le site MUST afficher, dans le Profil, les salons FM du joueur (actifs et archivés), avec
   l'objet auquel chacun est rattaché.
 

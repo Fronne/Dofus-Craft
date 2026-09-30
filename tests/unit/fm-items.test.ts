@@ -16,9 +16,9 @@ async function setup() {
   const cyril = await fm.login('42', { displayName: 'Cyril' });
   const bob = await fm.login('7', { displayName: 'Bob' });
   const createItem = async (token = cyril, body: object = rtograf) => (await fm.call('POST', '/fm/items', { token, body })).json() as Promise<Item>;
-  // A session of `author` with the given lines, then closed; returns its id.
+  // A session started by `author` with the given lines, then closed; returns its id.
   const session = async (author: string, spent: number, lines = [doAirLine], channelId = `c-${Math.random()}`) => {
-    await fm.botEvent('session-start', { channelId });
+    await fm.startSession(author, { channelId });
     const { sessionId } = await (await fm.capture(author, spent, lines, { channelId })).json() as { sessionId: string };
     await fm.botEvent('session-stop', { channelId });
     return sessionId;
@@ -69,7 +69,7 @@ describe('items in FM (US1)', () => {
 });
 
 describe('attaching a session (US1)', () => {
-  it('attaches a session the player spent in, and says so in the session', async () => {
+  it('attaches the player\'s own session, and says so in the session', async () => {
     const { cyril, fm, createItem, session, attach } = await setup();
     const item = await createItem();
     const sessionId = await session('42', 1000);
@@ -85,19 +85,28 @@ describe('attaching a session (US1)', () => {
     const { cyril, bob, fm, session } = await setup();
     const sessionId = await session('42', 1000);
     expect(await (await fm.call('GET', `/fm/sessions/${sessionId}`, { token: cyril })).json()).toMatchObject({ canAttach: true, canDetach: false, fmItem: null });
-    expect(await (await fm.call('GET', `/fm/sessions/${sessionId}`, { token: bob })).json()).toMatchObject({ canAttach: false, canDetach: false });
+    // Bob doesn't see Cyril's session at all (specs/030 FR-002).
+    expect((await fm.call('GET', `/fm/sessions/${sessionId}`, { token: bob })).status).toBe(404);
   });
 
-  it('refuses a player who did not spend in the session, even a session without any purchase', async () => {
-    const { fm, bob, createItem, session, attach } = await setup();
+  // specs/030-private-fm-sessions (FR-004): posting in a session no longer lets one attach it.
+  it('refuses another player\'s session like an unknown one, even one the player spent in', async () => {
+    const { fm, bob, createItem, attach } = await setup();
     const bobItem = await createItem(bob);
-    expect((await attach(await session('42', 1000), bobItem.id, bob)).status).toBe(403);
+    await fm.startSession('42', { channelId: 'shared' });
+    const { sessionId } = await (await fm.capture('7', 1000, [doAirLine], { channelId: 'shared' })).json() as { sessionId: string };
 
-    await fm.botEvent('session-start', { channelId: 'empty' });
+    const refused = await attach(sessionId, bobItem.id, bob);
+    expect(refused.status).toBe(404);
+    expect(await refused.text()).toBe(await (await attach('unknown', bobItem.id, bob)).text());
+  });
+
+  it('attaches the player\'s own session even without any purchase', async () => {
+    const { fm, createItem, attach } = await setup();
+    const item = await createItem();
+    await fm.startSession('42', { channelId: 'empty' });
     const [empty] = fm.query<{ id: string }>("SELECT id FROM fm_sessions WHERE channel_id = 'empty'");
-    const refused = await attach(empty.id, bobItem.id, bob);
-    expect(refused.status).toBe(403);
-    expect(await refused.json()).toEqual({ error: 'not-participant' });
+    expect((await attach(empty.id, item.id)).status).toBe(200);
   });
 
   it('refuses another player\'s item, or an unknown session', async () => {
@@ -108,29 +117,26 @@ describe('attaching a session (US1)', () => {
   });
 
   it('attaches a session to one item only: the first one wins', async () => {
-    const { fm, bob, createItem, attach } = await setup();
-    const cyrilItem = await createItem();
-    const bobItem = await createItem(bob);
-    await fm.botEvent('session-start', { channelId: 'shared' });
-    await fm.capture('42', 1000, [doAirLine], { channelId: 'shared' });
-    const { sessionId } = await (await fm.capture('7', 1000, [doAirLine], { channelId: 'shared' })).json() as { sessionId: string };
+    const { createItem, session, attach } = await setup();
+    const first = await createItem();
+    const other = await createItem(undefined, { ...rtograf, label: 'Rtograf PO' });
+    const sessionId = await session('42', 1000);
 
-    expect((await attach(sessionId, cyrilItem.id)).status).toBe(200);
-    expect((await attach(sessionId, cyrilItem.id)).status).toBe(409);
-    const second = await attach(sessionId, bobItem.id, bob);
+    expect((await attach(sessionId, first.id)).status).toBe(200);
+    expect((await attach(sessionId, first.id)).status).toBe(409);
+    const second = await attach(sessionId, other.id);
     expect(second.status).toBe(409);
     expect(await second.json()).toEqual({ error: 'already-attached' });
   });
 
-  it('lets only the item\'s owner detach a session', async () => {
-    const { fm, bob, cyril, createItem, attach } = await setup();
+  // specs/030 (research R6): another player's session is not found, like an unknown one.
+  it('lets only the session\'s owner detach it', async () => {
+    const { fm, bob, cyril, createItem, session, attach } = await setup();
     const item = await createItem();
-    await fm.botEvent('session-start', { channelId: 'shared' });
-    await fm.capture('7', 1000, [doAirLine], { channelId: 'shared' });
-    const { sessionId } = await (await fm.capture('42', 1000, [doAirLine], { channelId: 'shared' })).json() as { sessionId: string };
+    const sessionId = await session('42', 1000);
     await attach(sessionId, item.id);
 
-    expect((await fm.call('DELETE', `/fm/sessions/${sessionId}/item`, { token: bob })).status).toBe(403);
+    expect((await fm.call('DELETE', `/fm/sessions/${sessionId}/item`, { token: bob })).status).toBe(404);
     const detached = await fm.call('DELETE', `/fm/sessions/${sessionId}/item`, { token: cyril });
     expect(await detached.json()).toMatchObject({ fmItem: null, canAttach: true });
   });
@@ -164,7 +170,7 @@ describe('item recap (US2)', () => {
   it('follows the bot: a new purchase adds up, a reset brings the session back to 0', async () => {
     const { fm, cyril, createItem, attach } = await setup();
     const item = await createItem();
-    await fm.botEvent('session-start', { channelId: 'live' });
+    await fm.startSession('42', { channelId: 'live' });
     const { sessionId } = await (await fm.capture('42', 1000, [doAirLine], { channelId: 'live' })).json() as { sessionId: string };
     await attach(sessionId, item.id);
     await fm.capture('42', 2000, [doAirLine], { channelId: 'live' });
@@ -177,28 +183,31 @@ describe('item recap (US2)', () => {
 
 describe('visibility (US3)', () => {
   it('lists a player\'s items on their profile, newest first, with their totals', async () => {
-    const { fm, bob, createItem, session, attach } = await setup();
+    const { fm, cyril, createItem, session, attach } = await setup();
     const older = await createItem();
     await attach(await session('42', 1000), older.id);
     fm.sqlite.prepare("UPDATE fm_items SET created_at = '2026-01-01T00:00:00.000Z' WHERE id = ?").run(older.id);
     const newer = await createItem(undefined, { ...rtograf, label: 'Rtograf PO' });
 
-    const profile = await (await fm.call('GET', '/fm/players/42', { token: bob })).json() as { fmItems: Item[] };
+    const profile = await (await fm.call('GET', '/fm/players/42', { token: cyril })).json() as { fmItems: Item[] };
     expect(profile.fmItems.map((item) => [item.id, item.totalKamas, item.sessionCount])).toEqual([[newer.id, 0, 0], [older.id, 1000, 1]]);
   });
 
-  it('hides a private owner\'s items from the others, but not from the owner', async () => {
+  // specs/030-private-fm-sessions (FR-007): public or private, only the owner sees an item.
+  it('hides an owner\'s items from the others, public or private, but not from the owner', async () => {
     const { fm, bob, cyril, createItem, session, attach } = await setup();
     const item = await createItem();
     const sessionId = await session('42', 1000);
     await attach(sessionId, item.id);
-    await fm.call('PATCH', '/fm/me', { token: cyril, body: { isPrivate: true } });
 
-    expect((await fm.call('GET', `/fm/items/${item.id}`, { token: bob })).status).toBe(404);
-    const seenByBob = await (await fm.call('GET', `/fm/sessions/${sessionId}`, { token: bob })).json() as Session;
-    expect(seenByBob.fmItem).toEqual({ private: true });
+    const unknown = await (await fm.call('GET', '/fm/items/unknown', { token: bob })).text();
+    const seenByBob = await fm.call('GET', `/fm/items/${item.id}`, { token: bob });
+    expect(seenByBob.status).toBe(404);
+    expect(await seenByBob.text()).toBe(unknown);
+    expect((await fm.call('GET', `/fm/sessions/${sessionId}`, { token: bob })).status).toBe(404);
     const { sessions } = await (await fm.call('GET', '/fm/sessions', { token: bob })).json() as { sessions: Session[] };
     expect(JSON.stringify(sessions)).not.toContain('Rtograf');
+    await fm.call('PATCH', '/fm/me', { token: cyril, body: { isPrivate: true } });
 
     expect((await fm.call('GET', `/fm/items/${item.id}`, { token: cyril })).status).toBe(200);
     const seenByCyril = await (await fm.call('GET', `/fm/sessions/${sessionId}`, { token: cyril })).json() as Session;
@@ -209,7 +218,7 @@ describe('visibility (US3)', () => {
     const { fm, cyril, createItem, session, attach } = await setup();
     const item = await createItem();
     const sessionId = await session('7', 1000);
-    await fm.botEvent('session-start', { channelId: 'mine' });
+    await fm.startSession('42', { channelId: 'mine' });
     const { sessionId: mine } = await (await fm.capture('42', 1000, [doAirLine], { channelId: 'mine' })).json() as { sessionId: string };
     await attach(mine, item.id);
 

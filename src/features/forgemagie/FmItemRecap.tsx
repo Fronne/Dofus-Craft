@@ -39,7 +39,7 @@ export function FmItemRecap({ itemId, onBack, onOpenSession, onUnauthorized }: {
         <Icon name="chevron-down" size={16} className="fm-back-icon" /> Retour au profil
       </button>
       {state.status === 'loading' && <p className="empty" role="status">Chargement du récap…</p>}
-      {state.status === 'missing' && <EmptyState icon="info" title="Objet introuvable" description="Il a peut-être été supprimé, ou son propriétaire a passé son profil en privé." />}
+      {state.status === 'missing' && <EmptyState icon="info" title="Objet introuvable" description="Il a peut-être été supprimé." />}
       {state.status === 'unavailable' && <EmptyState icon="info" title="Récap indisponible" description="Le service ne répond pas. Réessayez plus tard." />}
       {state.status === 'ready' && (
         <>

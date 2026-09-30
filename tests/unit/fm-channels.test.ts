@@ -167,20 +167,21 @@ describe('a whole channel attached to an item (FR-011 to FR-013)', () => {
     await created('c1');
     const rtograf = await item();
     await session('c1');
-    expect((await fm.call('PUT', '/fm/channels/c1/item', { token: bob, body: { fmItemId: null } })).status).toBe(403);
+    // specs/030-private-fm-sessions (FR-008): another player's channel is not found.
+    expect((await fm.call('PUT', '/fm/channels/c1/item', { token: bob, body: { fmItemId: null } })).status).toBe(404);
     await fm.call('PUT', '/fm/channels/c1/item', { token: cyril, body: { fmItemId: rtograf.id } });
     await fm.call('PUT', '/fm/channels/c1/item', { token: cyril, body: { fmItemId: null } });
     expect(await (await fm.call('GET', `/fm/items/${rtograf.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 0 });
   });
 
-  it('lists a player\'s channels on their profile, hidden when private', async () => {
+  // specs/030 FR-008: the channels show on their owner's profile only, public or private.
+  it('lists a player\'s channels on their own profile, hidden from the others', async () => {
     const { fm, cyril, bob, created } = await setup();
     await created('c1');
     await created('c2');
     await fm.botEvent('channel-archived', { channelId: 'c2', channelName: 'fm-c2' });
-    const profile = await (await fm.call('GET', '/fm/players/42', { token: bob })).json() as { fmChannels: Channel[] };
+    const profile = await (await fm.call('GET', '/fm/players/42', { token: cyril })).json() as { fmChannels: Channel[] };
     expect(profile.fmChannels.map((channel) => [channel.channelId, channel.status])).toEqual([['c1', 'active'], ['c2', 'archived']]);
-    await fm.call('PATCH', '/fm/me', { token: cyril, body: { isPrivate: true } });
     expect((await fm.call('GET', '/fm/players/42', { token: bob })).status).toBe(404);
   });
 
