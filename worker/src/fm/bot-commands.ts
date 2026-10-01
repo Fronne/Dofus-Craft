@@ -36,7 +36,10 @@ export async function listCommands(request: Request, env: FmEnv): Promise<Respon
   return json({
     pollAfterSeconds: POLL_AFTER_SECONDS,
     commands: results.map((row) => {
-      if (row.type === 'create-channel') return { id: row.id, type: row.type, name: row.requested_name, player: player(row), item: item(row) };
+      // The bot may be on several servers: the channel goes on the site's own (its players are members of it).
+      if (row.type === 'create-channel') {
+        return { id: row.id, type: row.type, guildId: env.DISCORD_GUILD_ID ?? null, name: row.requested_name, player: player(row), item: item(row) };
+      }
       if (row.type === 'open') return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name, player: player(row), item: item(row) };
       return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name };
     }),

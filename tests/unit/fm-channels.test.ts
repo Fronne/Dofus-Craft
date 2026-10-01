@@ -85,7 +85,7 @@ describe('starting from the site (FR-009, FR-010)', () => {
     const response = await fm.call('POST', '/fm/channels', { token: cyril, body: { name: 'mon rtograf', fmItemId: rtograf.id } });
     expect(response.status).toBe(202);
     const { requestId } = await response.json() as { requestId: string };
-    expect(await commands()).toEqual([{ id: requestId, type: 'create-channel', name: 'mon rtograf', player: { id: '42', displayName: 'Cyril' }, item: { name: 'Rtograf PA' } }]);
+    expect(await commands()).toEqual([{ id: requestId, type: 'create-channel', guildId: 'guild-1', name: 'mon rtograf', player: { id: '42', displayName: 'Cyril' }, item: { name: 'Rtograf PA' } }]);
     expect(await (await fm.call('GET', `/fm/channel-requests/${requestId}`, { token: cyril })).json()).toMatchObject({ status: 'pending', channelId: null, sessionId: null });
 
     // What the bot does: create the channel, say so, open its session, acknowledge.

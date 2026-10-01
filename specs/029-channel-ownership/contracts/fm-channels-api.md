@@ -18,9 +18,12 @@ Ordre attendu à la création d'un salon : `channel-created`, puis `session-star
 ### Nouvelle demande — `GET /fm/bot/commands`
 
 ```json
-{ "id": "c3…", "type": "create-channel", "name": "mon rtograf",
+{ "id": "c3…", "type": "create-channel", "guildId": "8899…", "name": "mon rtograf",
   "player": { "id": "42", "displayName": "Cyril" }, "item": { "name": "Rtograf PA" } | null }
 ```
+
+`guildId` (ajouté le 2026-10-01) : le serveur Discord du site, celui dont ses joueurs sont membres. Le
+bot peut être sur plusieurs serveurs ; il crée le salon sur celui-là.
 
 Le bot crée le salon comme depuis le bouton (nom nettoyé, préfixé par le pseudo, permissions,
 catégorie), envoie `channel-created` avec `commandId`, puis `session-start`, et confirme :
