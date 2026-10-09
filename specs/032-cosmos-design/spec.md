@@ -53,7 +53,7 @@ vide et les longues recettes ou listes d'effets débordent.
 
 **Independent Test**: en Cosmos sur un écran large, rechercher un objet de haut niveau à longue
 recette : résultats, fiche et ressources sont visibles ensemble ; chaque liste défile seule ; le
-coût de craft total reste visible en bas de la fenêtre des ressources.
+verdict, avec le coût de craft, reste visible pendant qu'on fait défiler les ressources.
 
 **Acceptance Scenarios**:
 
@@ -130,9 +130,11 @@ design est visuellement identique à ce qu'il était avant cette fonctionnalité
   kamas, images d'objets) ; aucune icône n'est remplacée ni retirée.
 - **FR-008**: En Cosmos, sur un écran assez large, la page Recherche MUST placer côte à côte, sur
   la hauteur de l'écran : (1) la recherche, les filtres et la liste des résultats, (2) la fiche de
-  l'objet choisi avec son prix HDV, son verdict et ses effets, (3) les prix des ressources avec le
-  coût de craft total visible en bas ; chaque liste longue MUST défiler dans sa fenêtre. Sur un
-  écran étroit, ces blocs MUST s'empiler dans cet ordre.
+  l'objet choisi avec son prix HDV, son verdict (qui affiche déjà le coût de craft) et ses
+  effets, (3) les prix des ressources ; chaque liste longue MUST défiler dans sa fenêtre, le
+  titre de la fenêtre restant visible. Sur un écran étroit, ces blocs MUST s'empiler dans cet
+  ordre. (Révision plan 2026-10-09 : la page n'affiche pas de total sous la liste des
+  ressources ; le coût de craft reste celui du verdict, aucun affichage n'est ajouté.)
 - **FR-009**: Cosmos MUST fonctionner en thème sombre (variante principale) et en thème clair
   (variante lavande), avec chacune des couleurs principales existantes, avec un contraste de
   texte au moins équivalent aux autres designs.
@@ -161,7 +163,7 @@ design est visuellement identique à ce qu'il était avant cette fonctionnalité
 - **SC-003**: En Cosmos sur un écran de 1440 × 900, la page Recherche montre résultats, fiche et
   ressources en même temps, sans zone vide de plus d'un quart de l'écran.
 - **SC-004**: Une recette de 20 ingrédients ou un objet de 15 effets reste entièrement accessible
-  par défilement dans sa fenêtre, le coût de craft total restant visible.
+  par défilement dans sa fenêtre, le verdict et son coût de craft restant visibles.
 - **SC-005**: Aucun défilement horizontal ni texte illisible en Cosmos, en thème clair et sombre,
   sur ordinateur (1440 px) et sur mobile (390 px).
 - **SC-006**: Revenus en « Classique » ou « Nouveau », ces designs sont visuellement identiques à
