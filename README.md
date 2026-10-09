@@ -67,8 +67,8 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
     envoyée), et les lignes lues sont vérifiées et corrigées avant d'être enregistrées.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
-- **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)
-  ou « Classique ».
+- **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut),
+  « Classique » ou « Cosmos » (inspiré de l'interface de Dofus 3).
 - **Visite guidée** de la page Recherche à la première visite, et affichage adapté au mobile.
 
 ## Architecture

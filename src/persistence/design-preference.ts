@@ -26,9 +26,9 @@ export function setDesignId(designId: DesignId): void {
   }
 }
 
-// Every rule of src/styles/design-modern.css is scoped under this attribute, so leaving it off
-// is exactly the classic design (FR-005).
+// Every rule of src/styles/design-modern.css and src/styles/design-cosmos.css is scoped under this
+// attribute ("modern" or "cosmos"), so leaving it off is exactly the classic design (FR-005).
 export function applyDesign(designId: DesignId): void {
-  if (designId === 'modern') document.documentElement.dataset.design = 'modern';
-  else delete document.documentElement.dataset.design;
+  if (designId === 'classic') delete document.documentElement.dataset.design;
+  else document.documentElement.dataset.design = designId;
 }

@@ -35,4 +35,15 @@ describe('design preference (specs/012-modern-design)', () => {
     applyDesign('classic');
     expect(document.documentElement.hasAttribute('data-design')).toBe(false);
   });
+
+  it('remembers the Cosmos design and puts it on the document root (specs/032)', () => {
+    setDesignId('cosmos');
+    expect(getDesignId()).toBe('cosmos');
+    applyDesign('cosmos');
+    expect(document.documentElement.dataset.design).toBe('cosmos');
+    applyDesign('modern');
+    expect(document.documentElement.dataset.design).toBe('modern');
+    applyDesign('classic');
+    expect(document.documentElement.hasAttribute('data-design')).toBe(false);
+  });
 });

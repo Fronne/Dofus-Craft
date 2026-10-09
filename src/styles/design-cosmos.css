@@ -1,0 +1,523 @@
+/* specs/032-cosmos-design: the « Cosmos » design, chosen in Paramètres, inspired by the Dofus 3
+   interface (night-blue windows in relief over a starry nebula). Every rule below is scoped under
+   :root[data-design="cosmos"] (checked by tests/unit/design-cosmos-css-scope.test.ts), so the
+   classic and modern designs are untouched. Removing Cosmos is this file plus one entry in
+   src/domain/designs.ts. Never override --slot-* or --image-bg here: game-derived elements keep
+   the game's colors. Never put filter, transform or backdrop-filter on .app-nav or .app-shell:
+   they would trap the fixed server switcher and bottom tab bar on small screens. */
+
+/* Declares the "Nunito Variable" font only; nothing is downloaded until a rule below uses it. */
+@import '@fontsource-variable/nunito';
+
+/* ---------- Tokens: dark (main variant) ---------- */
+
+:root[data-design="cosmos"] {
+  font-family: 'Nunito Variable', Nunito, ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+  --bg: #11132a;
+  --panel: #23263f;
+  --panel-strong: #262a47;
+  --panel-soft: #2f3354;
+  --text: #f3f4fb;
+  --text-muted: #b6b9d4;
+  --text-faint: #9599bb;
+  --border: rgba(150, 158, 220, .2);
+  --border-strong: color-mix(in srgb, var(--gold) 60%, transparent);
+  --input-bg: #0f1124;
+  --button-bg: rgba(255, 255, 255, .05);
+  --inner-bg: #14162a;
+  --radius-sm: 6px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --shadow-sm: 0 6px 16px rgba(0, 0, 0, .45);
+  --shadow-md: 0 10px 24px rgba(0, 0, 0, .55);
+  --shadow: 0 26px 60px -12px rgba(0, 0, 0, .8), 0 6px 14px rgba(0, 0, 0, .5);
+  --transition-fast: 150ms ease;
+  /* Cosmos-only tokens. */
+  --cz-edge: #090a15;
+  --cz-win-top: #2e3154;
+  --cz-win-bot: #1d1f37;
+  --cz-bar-top: #585d86;
+  --cz-bar-bot: #3a3e64;
+  --cz-row-top: #383c60;
+  --cz-row-bot: #2a2d4a;
+  --cz-btn-top: #5b6088;
+  --cz-btn-bot: #3c4068;
+  --cz-btn-edge: #14162a;
+  --cz-btn-text: #e6e8f6;
+  --cz-hi: rgba(255, 255, 255, .1);
+  --cz-inset-shadow: inset 0 2px 9px rgba(0, 0, 0, .65), inset 0 0 0 1px rgba(0, 0, 0, .45);
+  --cz-level: #ffd34d;
+  --cz-pad: var(--space-5);
+  --panel-gradient: linear-gradient(180deg, var(--cz-win-top), var(--cz-win-bot));
+  --gold: #8fb2ff;
+  --gold-bright: #b3caff;
+  --success: #86e6a0;
+  --danger: #ff8a8a;
+  --warning: #ffb15a;
+  scrollbar-color: #6a6f9c #0e1022;
+}
+
+/* Accent colors, tuned for the night-blue ground. Green is the game's lime. */
+:root[data-design="cosmos"][data-accent="red"]    { --gold: #ff7d6e; --gold-bright: #ffa59a; }
+:root[data-design="cosmos"][data-accent="green"]  { --gold: #c8e632; --gold-bright: #e2f57a; }
+:root[data-design="cosmos"][data-accent="purple"] { --gold: #c48bff; --gold-bright: #dbb8ff; }
+:root[data-design="cosmos"][data-accent="orange"] { --gold: #ffa24a; --gold-bright: #ffc285; }
+
+/* ---------- Tokens: light (lavender variant) ---------- */
+
+:root[data-design="cosmos"][data-theme="light"] {
+  color-scheme: light;
+  --bg: #e4e6f3;
+  --panel: #f6f6fc;
+  --panel-strong: #ffffff;
+  --panel-soft: #eceef8;
+  --text: #20223a;
+  --text-muted: #4d5174;
+  --text-faint: #646889;
+  --border: rgba(60, 66, 120, .2);
+  --input-bg: #ffffff;
+  --button-bg: rgba(60, 66, 120, .06);
+  --inner-bg: #e9ebf6;
+  --shadow-sm: 0 4px 12px rgba(40, 44, 90, .14);
+  --shadow-md: 0 8px 20px rgba(40, 44, 90, .18);
+  --shadow: 0 20px 48px -14px rgba(40, 44, 90, .35);
+  --cz-edge: #b4b8d8;
+  --cz-win-top: #ffffff;
+  --cz-win-bot: #eef0f9;
+  --cz-bar-top: #dfe2f3;
+  --cz-bar-bot: #c8cce6;
+  --cz-row-top: #ffffff;
+  --cz-row-bot: #eef0f9;
+  --cz-btn-top: #f4f5fc;
+  --cz-btn-bot: #d9dcef;
+  --cz-btn-edge: #a9aed2;
+  --cz-btn-text: #2c2f4f;
+  --cz-hi: rgba(255, 255, 255, .9);
+  --cz-inset-shadow: inset 0 2px 5px rgba(40, 44, 90, .15), inset 0 0 0 1px rgba(40, 44, 90, .12);
+  --cz-level: #8a5d00;
+  --gold: #2f5fc4;
+  --gold-bright: #234a9e;
+  --success: #1f7a3c;
+  --danger: #b4302a;
+  --warning: #9a5a00;
+  scrollbar-color: #9ea3cb #dfe1ef;
+}
+:root[data-design="cosmos"][data-theme="light"][data-accent="red"]    { --gold: #c03a2c; --gold-bright: #9c2b20; }
+:root[data-design="cosmos"][data-theme="light"][data-accent="green"]  { --gold: #5f7a00; --gold-bright: #4a6000; }
+:root[data-design="cosmos"][data-theme="light"][data-accent="purple"] { --gold: #7a43c9; --gold-bright: #6233a8; }
+:root[data-design="cosmos"][data-theme="light"][data-accent="orange"] { --gold: #b25a00; --gold-bright: #8f4700; }
+
+/* ---------- Ground: starry nebula on the root (body is one viewport tall) ---------- */
+
+:root[data-design="cosmos"] {
+  background:
+    radial-gradient(1.3px 1.3px at 20px 30px, rgba(255, 255, 255, .85), transparent 70%) 0 0 / 173px 151px,
+    radial-gradient(1px 1px at 60px 90px, rgba(200, 235, 255, .6), transparent 70%) 0 0 / 97px 113px,
+    radial-gradient(1.8px 1.8px at 120px 40px, rgba(255, 255, 255, .75), transparent 70%) 0 0 / 331px 287px,
+    radial-gradient(1px 1px at 10px 10px, rgba(255, 240, 255, .45), transparent 70%) 0 0 / 61px 71px,
+    radial-gradient(52rem 32rem at 14% 4%, rgba(138, 88, 226, .5), transparent 66%),
+    radial-gradient(44rem 30rem at 88% 14%, rgba(28, 176, 196, .4), transparent 66%),
+    radial-gradient(50rem 30rem at 48% 104%, rgba(196, 72, 176, .34), transparent 66%),
+    #11132a;
+  background-attachment: fixed;
+}
+:root[data-design="cosmos"][data-theme="light"] {
+  background:
+    radial-gradient(52rem 32rem at 14% 4%, rgba(150, 120, 230, .28), transparent 66%),
+    radial-gradient(44rem 30rem at 88% 14%, rgba(60, 190, 210, .22), transparent 66%),
+    radial-gradient(50rem 30rem at 48% 104%, rgba(210, 120, 200, .2), transparent 66%),
+    #e4e6f3;
+  background-attachment: fixed;
+}
+:root[data-design="cosmos"] body { background: transparent; }
+
+/* ---------- Typography ---------- */
+
+:root[data-design="cosmos"] h1 { font-weight: 900; letter-spacing: -.01em; text-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+:root[data-design="cosmos"] h2,
+:root[data-design="cosmos"] h3 { font-weight: 900; letter-spacing: 0; }
+:root[data-design="cosmos"] .eyebrow,
+:root[data-design="cosmos"] .card h3,
+:root[data-design="cosmos"] .profit-sort,
+:root[data-design="cosmos"] .stat-tile-label { letter-spacing: .1em; text-transform: uppercase; font-weight: 800; }
+:root[data-design="cosmos"] input,
+:root[data-design="cosmos"] .kamas-amount,
+:root[data-design="cosmos"] .price-resource-formatted,
+:root[data-design="cosmos"] .profit-cell b,
+:root[data-design="cosmos"] .stat-tile-value { font-variant-numeric: tabular-nums; }
+
+/* Levels: plain gold text, no frame (specs/032 FR-006). */
+:root[data-design="cosmos"] .result-item-level,
+:root[data-design="cosmos"] .pinned-card-level,
+:root[data-design="cosmos"] .level-slider-value {
+  color: var(--cz-level);
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .45);
+}
+
+/* ---------- Windows ---------- */
+
+:root[data-design="cosmos"] .panel,
+:root[data-design="cosmos"] .card,
+:root[data-design="cosmos"] .result,
+:root[data-design="cosmos"] .server-onboarding-card,
+:root[data-design="cosmos"] .outlier-confirm-dialog,
+:root[data-design="cosmos"] .price-history-panel,
+:root[data-design="cosmos"] .dungeon-counter-panel,
+:root[data-design="cosmos"] .guided-tour-bubble {
+  --cz-pad: var(--space-5);
+  border: 1px solid var(--cz-edge);
+  border-radius: var(--radius-lg);
+  background: var(--panel-gradient);
+  box-shadow: inset 0 1px 0 var(--cz-hi), inset 0 0 0 1px rgba(128, 136, 200, .16), var(--shadow);
+}
+:root[data-design="cosmos"] .panel,
+:root[data-design="cosmos"] .card,
+:root[data-design="cosmos"] .result { padding: var(--cz-pad); }
+
+/* A card's or panel's opening heading becomes the window's title bar. */
+:root[data-design="cosmos"] .card > h2:first-child,
+:root[data-design="cosmos"] .panel > h2:first-child {
+  position: relative;
+  z-index: 2;
+  margin: calc(-1 * var(--cz-pad)) calc(-1 * var(--cz-pad)) var(--space-4);
+  padding: .8rem var(--space-5);
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  background:
+    radial-gradient(55% 160% at 0% 0%, rgba(255, 255, 255, .13), transparent 62%),
+    radial-gradient(55% 160% at 100% 0%, rgba(255, 255, 255, .13), transparent 62%),
+    linear-gradient(180deg, var(--cz-bar-top), var(--cz-bar-bot));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 3px 8px rgba(0, 0, 0, .3);
+  font-size: 1.1rem;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+}
+:root[data-design="cosmos"][data-theme="light"] .card > h2:first-child,
+:root[data-design="cosmos"][data-theme="light"] .panel > h2:first-child { text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
+
+/* Recessed zones: filters, stats, verdict, inner blocks. */
+:root[data-design="cosmos"] .filters-panel,
+:root[data-design="cosmos"] .item-stats,
+:root[data-design="cosmos"] .market-price-summary,
+:root[data-design="cosmos"] .pinned-collection-body,
+:root[data-design="cosmos"] .retained-cost {
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+  box-shadow: var(--cz-inset-shadow);
+}
+:root[data-design="cosmos"] .filters-panel { margin-top: var(--space-4); }
+:root[data-design="cosmos"] .market-price-summary { padding: var(--space-4); }
+
+/* ---------- Fields ---------- */
+
+:root[data-design="cosmos"] input:not([type='range']):not([type='checkbox']):not([type='radio']),
+:root[data-design="cosmos"] select,
+:root[data-design="cosmos"] textarea {
+  border: 1px solid var(--cz-edge);
+  border-radius: 5px;
+  background: var(--input-bg);
+  color: var(--text);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .55), 0 1px 0 var(--cz-hi);
+}
+:root[data-design="cosmos"][data-theme="light"] input:not([type='range']):not([type='checkbox']):not([type='radio']),
+:root[data-design="cosmos"][data-theme="light"] select,
+:root[data-design="cosmos"][data-theme="light"] textarea { box-shadow: inset 0 2px 4px rgba(40, 44, 90, .14); }
+:root[data-design="cosmos"] input:focus,
+:root[data-design="cosmos"] select:focus,
+:root[data-design="cosmos"] textarea:focus {
+  border-color: var(--gold);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .4), 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent);
+  outline: none;
+}
+
+/* ---------- Buttons ---------- */
+
+:root[data-design="cosmos"] .btn-secondary,
+:root[data-design="cosmos"] .icon-button,
+:root[data-design="cosmos"] .settings-choice,
+:root[data-design="cosmos"] .reset-filters,
+:root[data-design="cosmos"] .pin-item-button,
+:root[data-design="cosmos"] .results-collapse,
+:root[data-design="cosmos"] .hdv-tab,
+:root[data-design="cosmos"] .hdv-price-filter,
+:root[data-design="cosmos"] .server-switcher-trigger,
+:root[data-design="cosmos"] .ingredient-choice button {
+  border: 1px solid var(--cz-btn-edge);
+  background: linear-gradient(180deg, var(--cz-btn-top), var(--cz-btn-bot));
+  color: var(--cz-btn-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -2px 0 rgba(0, 0, 0, .18), 0 2px 4px rgba(0, 0, 0, .4);
+}
+:root[data-design="cosmos"] .btn-secondary,
+:root[data-design="cosmos"] .settings-choice,
+:root[data-design="cosmos"] .reset-filters,
+:root[data-design="cosmos"] .pin-item-button,
+:root[data-design="cosmos"] .hdv-tab,
+:root[data-design="cosmos"] .hdv-price-filter {
+  border-radius: 4px;
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .45);
+}
+:root[data-design="cosmos"][data-theme="light"] .btn-secondary,
+:root[data-design="cosmos"][data-theme="light"] .settings-choice,
+:root[data-design="cosmos"][data-theme="light"] .reset-filters,
+:root[data-design="cosmos"][data-theme="light"] .pin-item-button,
+:root[data-design="cosmos"][data-theme="light"] .hdv-tab,
+:root[data-design="cosmos"][data-theme="light"] .hdv-price-filter { text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
+:root[data-design="cosmos"] .btn-secondary:hover,
+:root[data-design="cosmos"] .icon-button:hover,
+:root[data-design="cosmos"] .settings-choice:hover,
+:root[data-design="cosmos"] .reset-filters:hover,
+:root[data-design="cosmos"] .pin-item-button:hover,
+:root[data-design="cosmos"] .hdv-tab:hover,
+:root[data-design="cosmos"] .hdv-price-filter:hover,
+:root[data-design="cosmos"] .server-switcher-trigger:hover { filter: brightness(1.12); color: var(--cz-btn-text); }
+
+/* Selected states: accent edge and a soft halo. */
+:root[data-design="cosmos"] .settings-choice.selected,
+:root[data-design="cosmos"] .pin-item-button.pinned,
+:root[data-design="cosmos"] .hdv-tab--active,
+:root[data-design="cosmos"] .hdv-price-filter--active,
+:root[data-design="cosmos"] .category-icons button.selected,
+:root[data-design="cosmos"] .app-nav-settings.active {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 34%, var(--cz-btn-top)), color-mix(in srgb, var(--gold) 18%, var(--cz-btn-bot)));
+  color: var(--gold-bright);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 14px color-mix(in srgb, var(--gold) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+
+/* Main action: the game's hexagonal « JOUER » button. */
+:root[data-design="cosmos"] .btn-primary {
+  border: 0;
+  border-radius: 0;
+  padding-inline: 1.9rem;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 45%, #fff) 0%, var(--gold) 45%, color-mix(in srgb, var(--gold) 62%, #10140a) 100%);
+  color: #10131f;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+}
+:root[data-design="cosmos"] .btn-primary:hover { filter: brightness(1.1); }
+
+/* ---------- Navigation ---------- */
+
+:root[data-design="cosmos"] .app-nav {
+  border-right: 1px solid var(--cz-edge);
+  background: var(--panel-gradient);
+  box-shadow: inset -1px 0 0 rgba(128, 136, 200, .16), 8px 0 30px rgba(0, 0, 0, .35);
+}
+:root[data-design="cosmos"] .app-nav-brand-mark {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 55%, #fff), var(--gold));
+  color: #10131f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 2px 6px rgba(0, 0, 0, .45);
+}
+:root[data-design="cosmos"] .app-nav-brand-name { font-weight: 900; font-size: 1.15rem; }
+:root[data-design="cosmos"] .app-nav-link {
+  border-left: 0;
+  border-radius: var(--radius-md);
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+:root[data-design="cosmos"] .app-nav-link:hover { background: rgba(255, 255, 255, .05); }
+:root[data-design="cosmos"] .app-nav-link.active {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cz-bar-top) 80%, transparent), color-mix(in srgb, var(--cz-bar-bot) 80%, transparent));
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 3px 0 0 var(--gold), 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+:root[data-design="cosmos"] .app-nav-link.active svg { color: var(--gold-bright); }
+
+/* ---------- Lists: rounded rows in relief, like the auction house ---------- */
+
+:root[data-design="cosmos"] .results button,
+:root[data-design="cosmos"] .pinned-card,
+:root[data-design="cosmos"] .pinned-preview-card,
+:root[data-design="cosmos"] .server-onboarding-option,
+:root[data-design="cosmos"] .server-switcher-option,
+:root[data-design="cosmos"] .price-mode-option,
+:root[data-design="cosmos"] .fm-session-card {
+  border: 1px solid rgba(0, 0, 0, .45);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--cz-row-top), var(--cz-row-bot));
+  color: var(--text);
+  box-shadow: inset 0 1px 0 var(--cz-hi), inset 0 -1px 0 rgba(0, 0, 0, .2), 0 2px 3px rgba(0, 0, 0, .3);
+}
+:root[data-design="cosmos"] .results button:hover,
+:root[data-design="cosmos"] .pinned-card:hover,
+:root[data-design="cosmos"] .pinned-preview-card:hover,
+:root[data-design="cosmos"] .server-onboarding-option:hover,
+:root[data-design="cosmos"] .server-switcher-option:hover { filter: brightness(1.1); transform: none; }
+:root[data-design="cosmos"] .results button.selected,
+:root[data-design="cosmos"] .price-mode-option.selected,
+:root[data-design="cosmos"] .server-switcher-option.selected {
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 0 1px var(--gold), inset 0 0 20px color-mix(in srgb, var(--gold) 18%, transparent), 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent);
+}
+:root[data-design="cosmos"] .profit-row,
+:root[data-design="cosmos"] .hdv-row,
+:root[data-design="cosmos"] .ingredient-row {
+  margin-bottom: 6px;
+  padding-inline: var(--space-3);
+  border: 1px solid rgba(0, 0, 0, .4);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--cz-row-top), var(--cz-row-bot));
+  box-shadow: inset 0 1px 0 var(--cz-hi), 0 2px 3px rgba(0, 0, 0, .28);
+}
+:root[data-design="cosmos"] .profit-row:last-child,
+:root[data-design="cosmos"] .hdv-row:last-child,
+:root[data-design="cosmos"] .ingredient-row:last-child { border-bottom: 1px solid rgba(0, 0, 0, .4); }
+:root[data-design="cosmos"] .profit-head { padding: .5rem var(--space-3); border-radius: 5px; background: rgba(0, 0, 0, .18); }
+:root[data-design="cosmos"] .profit-sort--active { color: var(--gold-bright); }
+
+/* Images of game items sit in recessed slots. */
+:root[data-design="cosmos"] .results button img,
+:root[data-design="cosmos"] .result-image-fallback,
+:root[data-design="cosmos"] .pinned-card img,
+:root[data-design="cosmos"] .pinned-card-fallback,
+:root[data-design="cosmos"] .resource-display img,
+:root[data-design="cosmos"] .card > img {
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, .55), 0 0 0 1px rgba(64, 68, 122, .8), 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* ---------- Gauges ---------- */
+
+:root[data-design="cosmos"] .verdict-bar-track,
+:root[data-design="cosmos"] .level-slider-track::before {
+  height: 12px;
+  border: 1px solid #05060c;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #07080f, #15172c);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .8), 0 1px 0 rgba(255, 255, 255, .08);
+}
+:root[data-design="cosmos"][data-theme="light"] .verdict-bar-track,
+:root[data-design="cosmos"][data-theme="light"] .level-slider-track::before {
+  border-color: #b4b8d8;
+  background: linear-gradient(180deg, #d5d8ec, #e9ebf6);
+  box-shadow: inset 0 2px 3px rgba(40, 44, 90, .2);
+}
+:root[data-design="cosmos"] .verdict-bar-fill,
+:root[data-design="cosmos"] .level-slider-fill {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 50%, #fff), var(--gold) 55%, color-mix(in srgb, var(--gold) 65%, #10140a));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 0 rgba(0, 0, 0, .25);
+}
+:root[data-design="cosmos"] .level-slider-fill { height: 10px; border-radius: 5px; }
+:root[data-design="cosmos"] .verdict-bar--cheaper .verdict-bar-fill {
+  background: linear-gradient(180deg, #c9f7d3, var(--success) 55%, #2f8f4a);
+}
+
+/* ---------- Badges, tiles, banners, overlays ---------- */
+
+:root[data-design="cosmos"] .badge { border-radius: 4px; text-transform: uppercase; letter-spacing: .06em; font-weight: 900; box-shadow: inset 0 1px 0 var(--cz-hi), 0 2px 4px rgba(0, 0, 0, .3); }
+:root[data-design="cosmos"] .stat-tile {
+  border: 1px solid var(--cz-edge);
+  background: var(--panel-gradient);
+  box-shadow: inset 0 1px 0 var(--cz-hi), var(--shadow-md);
+}
+:root[data-design="cosmos"] .info-banner {
+  border: 1px solid var(--cz-edge);
+  background: linear-gradient(180deg, var(--cz-bar-top), var(--cz-bar-bot));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), var(--shadow-md);
+}
+:root[data-design="cosmos"] .guided-tour-cutout { border-radius: var(--radius-lg); box-shadow: 0 0 0 2px var(--gold), 0 0 24px color-mix(in srgb, var(--gold) 45%, transparent), 0 0 0 9999px rgba(5, 6, 16, .6); }
+:root[data-design="cosmos"] .dungeon-counter-trigger { box-shadow: 0 0 0 2px var(--gold), 0 0 20px color-mix(in srgb, var(--gold) 45%, transparent), var(--shadow-md); }
+:root[data-design="cosmos"] .skeleton-card,
+:root[data-design="cosmos"] .skeleton-line,
+:root[data-design="cosmos"] .skeleton-block,
+:root[data-design="cosmos"] .skeleton-thumb { background-color: var(--panel-soft); }
+
+/* ---------- Scrollbars ---------- */
+
+:root[data-design="cosmos"] ::-webkit-scrollbar { width: 9px; height: 9px; }
+:root[data-design="cosmos"] ::-webkit-scrollbar-track { background: rgba(14, 16, 34, .7); border-radius: 5px; }
+:root[data-design="cosmos"] ::-webkit-scrollbar-thumb { border: 1px solid #0e1022; border-radius: 5px; background: linear-gradient(90deg, #7a80ad, #565b88); }
+:root[data-design="cosmos"][data-theme="light"] ::-webkit-scrollbar-track { background: #dfe1ef; }
+:root[data-design="cosmos"][data-theme="light"] ::-webkit-scrollbar-thumb { border-color: #dfe1ef; background: linear-gradient(90deg, #aeb2d6, #8f94c0); }
+
+/* ---------- Recherche: three full-height windows side by side (specs/032 FR-008) ---------- */
+
+/* CSS only: the page's markup is the same in every design. .grid (item card + resources) melts
+   into the page grid; without :has() support the page keeps the stacked layout. */
+@media (min-width: 1200px) {
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) {
+    display: grid;
+    grid-template-columns: minmax(300px, .9fr) minmax(340px, 1fr) minmax(360px, 1.1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: var(--space-4);
+    align-items: start;
+    max-width: none;
+    height: 100vh;
+    padding: var(--space-4);
+    overflow: hidden;
+  }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .page-header { display: none; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: stretch;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel .filters-panel { grid-template-columns: 1fr; gap: var(--space-4); }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel .results { grid-template-columns: 1fr; gap: .4rem; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > p { grid-column: 2; grid-row: 1; margin: 0 0 var(--space-3); }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .market-price-panel { grid-column: 2; grid-row: 2; margin: 0 0 var(--space-4); }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .market-price-panel .market-price-summary { flex-basis: 100%; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .grid { display: contents; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .grid > :first-child {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: stretch;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+  }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .grid > [data-tour="resource-prices"] {
+    grid-column: 3;
+    grid-row: 1 / -1;
+    align-self: stretch;
+    min-height: 0;
+    margin: 0;
+    overflow-y: auto;
+  }
+  /* In the resources column, a line keeps its name on one row and puts the price field below. */
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) [data-tour="resource-prices"] .price-line { grid-template-columns: minmax(0, 1fr) auto; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) [data-tour="resource-prices"] .price-line .price-input-cell { grid-column: 1 / -1; grid-row: 2; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) [data-tour="resource-prices"] .price-line small { grid-column: 1; grid-row: 3; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) [data-tour="resource-prices"] .price-resource-formatted { grid-column: 2; grid-row: 3; }
+  /* The resources window scrolls on its own: its title bar stays in view. */
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .grid > [data-tour="resource-prices"] > h2:first-child { position: sticky; top: calc(-1 * var(--cz-pad)); }
+  /* In the narrow middle column the pin button joins the flow instead of overlapping the name. */
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) .item-detail-card .pin-item-button { position: static; margin: 0 0 var(--space-3) auto; }
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 960px) {
+  /* The bottom tab bar keeps its own solid surface (see the header note on filters). */
+  :root[data-design="cosmos"] .app-nav {
+    border-right: 0;
+    border-top: 1px solid var(--cz-edge);
+    background: linear-gradient(180deg, var(--cz-bar-top), var(--cz-win-bot));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 -10px 24px rgba(0, 0, 0, .45);
+  }
+  :root[data-design="cosmos"] .app-nav-link { font-size: .62rem; letter-spacing: .03em; }
+  :root[data-design="cosmos"] .app-nav-link.active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -3px 0 var(--gold); }
+  :root[data-design="cosmos"] .server-switcher {
+    border-bottom: 1px solid var(--cz-edge);
+    background: linear-gradient(180deg, var(--cz-bar-top), var(--cz-bar-bot));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .4);
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-design="cosmos"] .panel,
+  :root[data-design="cosmos"] .card,
+  :root[data-design="cosmos"] .result { --cz-pad: var(--space-4); }
+}
