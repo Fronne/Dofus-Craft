@@ -334,6 +334,156 @@
 }
 :root[data-design="cosmos"] .app-nav-link.active svg { color: var(--gold-bright); }
 
+/* Nav icons sit in small slots, like the game's inventory tabs; the active one lights up. */
+:root[data-design="cosmos"] .app-nav-link > svg {
+  box-sizing: content-box;
+  flex: none;
+  padding: 6px;
+  border: 1px solid var(--cz-btn-edge);
+  border-radius: 7px;
+  background: linear-gradient(180deg, var(--cz-btn-top), var(--cz-btn-bot));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+:root[data-design="cosmos"] .app-nav-link.active > svg {
+  border-color: color-mix(in srgb, var(--gold) 40%, #000);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 80%, #fff), color-mix(in srgb, var(--gold) 70%, #000));
+  color: #10131f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 0 12px color-mix(in srgb, var(--gold) 50%, transparent);
+}
+:root[data-design="cosmos"] .app-nav-link.active svg { color: #10131f; }
+:root[data-design="cosmos"] .server-switcher-label { color: var(--text-muted); letter-spacing: .1em; }
+:root[data-design="cosmos"] .server-switcher-value { color: var(--gold-bright); font-weight: 900; }
+
+@media (min-width: 961px) {
+  :root[data-design="cosmos"] .app-nav { gap: var(--space-4); }
+  /* The brand becomes the navigation window's title bar (the mark is decorative). */
+  :root[data-design="cosmos"] .app-nav-brand {
+    justify-content: center;
+    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-4)) 0;
+    padding: .85rem var(--space-4);
+    background:
+      radial-gradient(55% 160% at 0% 0%, rgba(255, 255, 255, .13), transparent 62%),
+      radial-gradient(55% 160% at 100% 0%, rgba(255, 255, 255, .13), transparent 62%),
+      linear-gradient(180deg, var(--cz-bar-top), var(--cz-bar-bot));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 3px 8px rgba(0, 0, 0, .3);
+  }
+  :root[data-design="cosmos"] .app-nav-brand-mark { display: none; }
+  :root[data-design="cosmos"] .app-nav-brand-name { font-size: 1.25rem; text-shadow: 0 2px 0 rgba(0, 0, 0, .45); }
+  :root[data-design="cosmos"] .app-nav-list { gap: 2px; }
+}
+
+/* ---------- Search window ---------- */
+
+/* The search label becomes the window's title bar; the help button sits on it. */
+:root[data-design="cosmos"] .search-panel .search-primary { max-width: none; }
+:root[data-design="cosmos"] .search-panel .search-label {
+  display: block;
+  margin: calc(-1 * var(--cz-pad)) calc(-1 * var(--cz-pad)) var(--space-3);
+  padding: .8rem 3.5rem;
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  background:
+    radial-gradient(55% 160% at 0% 0%, rgba(255, 255, 255, .13), transparent 62%),
+    radial-gradient(55% 160% at 100% 0%, rgba(255, 255, 255, .13), transparent 62%),
+    linear-gradient(180deg, var(--cz-bar-top), var(--cz-bar-bot));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(0, 0, 0, .45), 0 3px 8px rgba(0, 0, 0, .3);
+  font-size: 1.05rem;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .45);
+}
+:root[data-design="cosmos"][data-theme="light"] .search-panel .search-label { text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
+:root[data-design="cosmos"] .search-panel .search-help-button { z-index: 3; top: 7px; right: 8px; width: 34px; height: 34px; border-radius: 50%; }
+:root[data-design="cosmos"] .search-panel .search-input-wrap > input,
+:root[data-design="cosmos"] .search-panel .search-primary input { min-height: 46px; font-size: 1rem; }
+/* Filter headings in small capitals, like the auction house's NIVEAUX / CATÉGORIES. */
+:root[data-design="cosmos"] .category-filter legend,
+:root[data-design="cosmos"] .filters-panel .level-filter legend {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+/* Categories as a grid of slots: only the chosen one keeps its name in view; the others keep it
+   for screen readers. */
+:root[data-design="cosmos"] .category-icons { gap: 6px; }
+:root[data-design="cosmos"] .category-icons button { position: relative; min-height: 42px; padding: 4px; border-radius: 7px; }
+:root[data-design="cosmos"] .category-icons button.selected { padding-right: .75rem; }
+:root[data-design="cosmos"] .category-icons button:not(.selected) > span:last-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Item card: image on the left, name and details beside it ---------- */
+
+:root[data-design="cosmos"] .item-detail-card {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  column-gap: var(--space-4);
+  row-gap: .15rem;
+  align-content: start;
+  align-items: center;
+}
+:root[data-design="cosmos"] .item-detail-card > img,
+:root[data-design="cosmos"] .item-detail-card > .image-fallback {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  align-self: start;
+  width: 88px;
+  height: 88px;
+  min-height: 0;
+  margin: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 38%, #33375e, #161830 72%);
+  overflow: hidden;
+  font-size: .7rem;
+}
+:root[data-design="cosmos"] .item-detail-card > h2,
+:root[data-design="cosmos"] .item-detail-card > p:not(:last-child) { grid-column: 2; margin: 0; text-align: left; }
+:root[data-design="cosmos"] .item-detail-card > h2 { font-size: 1.35rem; line-height: 1.15; text-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+:root[data-design="cosmos"] .item-detail-card > p { color: var(--text-muted); font-weight: 700; font-size: .9rem; }
+:root[data-design="cosmos"] .item-detail-card > .pin-item-button {
+  position: static;
+  grid-column: 1 / -1;
+  grid-row: 5;
+  justify-self: start;
+  margin-top: var(--space-4);
+}
+:root[data-design="cosmos"] .item-detail-card > .item-history-button { justify-self: end; }
+:root[data-design="cosmos"] .item-detail-card > .item-stats,
+:root[data-design="cosmos"] .item-detail-card > p:last-child { grid-column: 1 / -1; margin-top: var(--space-4); }
+
+/* Effects: one line per characteristic, alternating, label in light text. */
+:root[data-design="cosmos"] .item-stats { padding: 0 0 .35rem; overflow: hidden; }
+:root[data-design="cosmos"] .item-stats h3 {
+  margin: 0;
+  padding: .6rem .8rem;
+  border-bottom: 1px solid rgba(0, 0, 0, .4);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .01));
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+:root[data-design="cosmos"] .item-stats ul { gap: 0; margin: 0; }
+:root[data-design="cosmos"] .item-stats li {
+  min-height: 36px;
+  padding: .25rem .8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .045);
+  color: var(--text);
+  font-weight: 700;
+}
+:root[data-design="cosmos"] .item-stats li:nth-child(odd) { background: rgba(255, 255, 255, .025); }
+:root[data-design="cosmos"] .item-stats li.stat-positive { color: var(--text); }
+:root[data-design="cosmos"] .item-stats li.stat-negative { color: var(--danger); }
+:root[data-design="cosmos"] .item-stats .characteristic-icon { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .6)); }
+
 /* ---------- Lists: rounded rows in relief, like the auction house ---------- */
 
 :root[data-design="cosmos"] .results button,
@@ -464,6 +614,15 @@
     min-height: 0;
     overflow-y: auto;
   }
+  /* Only the results list scrolls; the title bar, field and filters stay in view. */
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel { display: flex; flex-direction: column; overflow: hidden; }
+  :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel > div:last-child {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0 calc(-1 * var(--space-2));
+    padding: 0 var(--space-2) var(--space-2);
+    overflow-y: auto;
+  }
   :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel .filters-panel { grid-template-columns: 1fr; gap: var(--space-4); }
   :root[data-design="cosmos"] .app-page:has(> .search-panel) > .search-panel .results { grid-template-columns: 1fr; gap: .4rem; }
   :root[data-design="cosmos"] .app-page:has(> .search-panel) > p { grid-column: 2; grid-row: 1; margin: 0 0 var(--space-3); }
@@ -493,8 +652,6 @@
   :root[data-design="cosmos"] .app-page:has(> .search-panel) [data-tour="resource-prices"] .price-resource-formatted { grid-column: 2; grid-row: 3; }
   /* The resources window scrolls on its own: its title bar stays in view. */
   :root[data-design="cosmos"] .app-page:has(> .search-panel) > .grid > [data-tour="resource-prices"] > h2:first-child { position: sticky; top: calc(-1 * var(--cz-pad)); }
-  /* In the narrow middle column the pin button joins the flow instead of overlapping the name. */
-  :root[data-design="cosmos"] .app-page:has(> .search-panel) .item-detail-card .pin-item-button { position: static; margin: 0 0 var(--space-3) auto; }
 }
 
 /* ---------- Small screens ---------- */
@@ -507,7 +664,10 @@
     background: linear-gradient(180deg, var(--cz-bar-top), var(--cz-win-bot));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 -10px 24px rgba(0, 0, 0, .45);
   }
-  :root[data-design="cosmos"] .app-nav-link { font-size: .62rem; letter-spacing: .03em; }
+  /* Seven tabs share the screen width: smaller slots, tighter labels. */
+  :root[data-design="cosmos"] .app-nav-list > li { flex: 1 1 0; min-width: 0; }
+  :root[data-design="cosmos"] .app-nav-link { min-width: 0; padding-inline: 2px; font-size: .62rem; letter-spacing: 0; text-transform: none; }
+  :root[data-design="cosmos"] .app-nav-link > svg { padding: 4px; }
   :root[data-design="cosmos"] .app-nav-link.active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -3px 0 var(--gold); }
   :root[data-design="cosmos"] .server-switcher {
     border-bottom: 1px solid var(--cz-edge);
