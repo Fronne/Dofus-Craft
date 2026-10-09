@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-09
 
-**Status**: Draft
+**Status**: En pause (2026-10-09) — rendu jugé trop éloigné du style de Dofus 3 ; rien n'est fusionné dans master
 
 **Input**: User description: "Ajouter un troisième design « Cosmos » au choix dans Paramètres (réglage Design existant : Classique, Nouveau, et maintenant Cosmos), inspiré de l'interface du jeu Dofus 3 : fenêtres bleu nuit en relief, barres de titre ardoise bombées au titre centré, zones creusées pour les filtres et champs, lignes de liste bombées façon hôtel de vente, ligne sélectionnée avec liseré de la couleur d'accent et halo, boutons secondaires biseautés en petites capitales, bouton principal hexagonal façon « JOUER », jauges creusées façon barre de pods, barres de défilement fines ardoise, fond de nébuleuse violette/turquoise étoilée, police Nunito, niveaux en texte doré sans cadre. La page Recherche, en Cosmos et sur grand écran, place côte à côte les résultats, la fiche de l'objet et les prix des ressources sur toute la hauteur, chaque longue liste défilant dans sa propre fenêtre. Le design Cosmos ne change ni les parcours, ni les libellés, ni les fonctionnalités ; il garde les icônes déjà utilisées par l'application, fonctionne en thème clair et sombre et avec les couleurs d'accent existantes, sur ordinateur et mobile, et respecte la réduction des animations. Les designs Classique et Nouveau restent inchangés. Maquette de référence : https://claude.ai/artifact/4H7eo5T3RK1jSwxzFS5kU4"
 
