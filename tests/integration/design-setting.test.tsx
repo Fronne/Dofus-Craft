@@ -73,6 +73,25 @@ describe('réglage Design (specs/012-modern-design)', () => {
     expect(window.localStorage.getItem('craftcheck-design-choice')).toBe('classic');
   });
 
+  it('offers Cosmos, applies it immediately and remembers it (specs/032 FR-001, FR-002)', async () => {
+    await openSettings();
+    fireEvent.click(await screen.findByRole('button', { name: 'Cosmos' }));
+    expect(root().dataset.design).toBe('cosmos');
+    expect(window.localStorage.getItem('craftcheck-design-choice')).toBe('cosmos');
+    expect(screen.getByRole('button', { name: 'Cosmos' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Nouveau' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('goes back from Cosmos to Nouveau then Classique (specs/032 US3)', async () => {
+    await openSettings();
+    fireEvent.click(await screen.findByRole('button', { name: 'Cosmos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nouveau' }));
+    expect(root().dataset.design).toBe('modern');
+    fireEvent.click(screen.getByRole('button', { name: 'Classique' }));
+    expect(root().hasAttribute('data-design')).toBe(false);
+    expect(window.localStorage.getItem('craftcheck-design-choice')).toBe('classic');
+  });
+
   it('applies a remembered design before the app renders, as main.tsx does (US2, FR-003)', () => {
     window.localStorage.setItem('craftcheck-design-choice', 'modern');
     applyDesign(getDesignId());
