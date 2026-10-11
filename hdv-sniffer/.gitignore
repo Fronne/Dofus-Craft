@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# relevés générés et captures réseau (jamais committés)
+hdv-prices.jsonl
+names.json
+*.pcap
+*.pcapng
