@@ -65,11 +65,17 @@ they are for a new database only.
 ## Huzounet prices (specs/045-restore-production-worker)
 
 The Worker reads the HDV prices published by huzounet.fr, with its author's permission, for the
-server Mikhal only (`src/huzounet.ts`): 50 items a request, one request a second, 12 requests a
+server Mikhal only (`src/huzounet.ts`; the HDV page's hourly limit is described at the end of this section): 50 items a request, one request a second, 12 requests a
 scheduled run, carried on by a cursor from one run to the next. The prices are kept in
 `external_prices`, beside what the players share, and the most recent of both is the one the price
 reads give (`src/external-price.ts`). `POST /external-prices/refresh` reads up to 90 items on demand.
 `HUZOUNET_SYNC = "1"` in `wrangler.toml` turns both on; any other value turns them off.
+
+The HDV page loads a whole tab through that route, 90 items a request, naming its tab (`tab`) and its
+last request (`last`). Those requests have an hourly limit (specs/046-hdv-huzounet-load), so the rows
+written to D1 stay well under the free plan's daily quota: an item read in the last hour is not asked
+again, and a tab loaded to its end answers 429 `hourly-limit` (with `retryAt`) for an hour, to every
+player. The hour of a tab is kept in `external_price_sync` (`source = 'huzounet-hdv-<tab>'`).
 
 The second cron of `wrangler.toml` drives the scheduled read. **Check it against the Worker's
 triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
@@ -79,7 +85,8 @@ triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
 The source of the Worker deployed on 2026-10-02 was lost and written back from the deployed code
 (specs/045). `bash scripts/compare-worker-bundle.sh` (Node 22) builds the Worker without deploying it
 and compares it to that deployed code, kept in `backups/production-2026-10-12/` (not committed): the
-only expected difference is the site's address in the `User-Agent` sent to Huzounet.
+only expected differences are the site's address in the `User-Agent` sent to Huzounet and, since
+specs/046, the HDV page's hourly limit (`src/huzounet.ts`, `src/index.ts`).
 
 ## Files
 

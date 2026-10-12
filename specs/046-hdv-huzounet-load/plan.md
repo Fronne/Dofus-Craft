@@ -12,7 +12,8 @@ découpe les objets de l'onglet en tranches de 90, les envoie l'une après l'aut
 les écrit dans le carnet du Mode communautaire avec la règle déjà en place (« le plus récent gagne »).
 La progression, l'arrêt et les messages d'échec viennent d'un module de règles pur, testé seul. Le site
 apprend au passage à lire l'origine `external` et la mention `latestFragile` que l'API renvoie déjà, et
-les affiche sur la ligne. Le Worker n'est pas modifié. Rien n'est déployé.
+les affiche sur la ligne. Le Worker reçoit un seul ajout, la limite d'un chargement par onglet et par
+heure (FR-017, research.md §9). Rien n'est déployé.
 
 ## Technical Context
 

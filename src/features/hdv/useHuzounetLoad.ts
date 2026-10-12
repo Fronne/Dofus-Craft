@@ -95,16 +95,33 @@ export function useHuzounetLoad({
       setState(next);
     };
 
-    for (const slice of slices) {
+    for (const [index, slice] of slices.entries()) {
+      const hdv = { tab, last: index === slices.length - 1 };
       let outcome: RefreshOutcome = { status: 'too-soon' };
       for (let attempt = 0; attempt <= TOO_SOON_RETRIES && outcome.status === 'too-soon'; attempt += 1) {
         if (lastSentAt !== undefined) {
           await latest.current.wait(Math.max(0, SLICE_SPACING_MS - (Date.now() - lastSentAt)));
         }
         if (token.stopped) return;
-        lastSentAt = Date.now();
-        outcome = await refreshExternalPrices(serverId, slice);
+        const sentAt = Date.now();
+        outcome = await refreshExternalPrices(serverId, slice, hdv);
         if (token.stopped) return;
+        // Nothing was read on Huzounet (all read within the hour): no pause is owed before the next one.
+        if (!(outcome.status === 'ok' && outcome.requests === 0)) lastSentAt = sentAt;
+      }
+      if (outcome.status === 'hourly-limit') {
+        // FR-017: the tab was loaded within the hour, maybe by another player. Nothing more is asked of
+        // Huzounet, but the prices the API already holds are still brought to this device's carnet.
+        for (const rest of slices.slice(index)) {
+          const written = await writeLatestPrices(serverId, rest).catch(() => false);
+          if (token.stopped) return;
+          if (!written) break;
+          done += rest.length;
+          latest.current.onSliceLoaded();
+          setState({ status: 'running', done, total, loaded });
+        }
+        end({ status: 'failed', done, total, loaded, cause: 'hourly-limit', retryAt: outcome.retryAt });
+        return;
       }
       if (outcome.status !== 'ok') {
         end({ status: 'failed', done, total, loaded, cause: outcome.status });
@@ -122,7 +139,7 @@ export function useHuzounetLoad({
       setState({ status: 'running', done, total, loaded });
     }
     end({ status: 'finished', total, loaded });
-  }, [serverId, priceMode]);
+  }, [serverId, priceMode, tab]);
 
   const stop = useCallback(() => {
     const token = current.current;

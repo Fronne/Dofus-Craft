@@ -103,9 +103,18 @@ describe('Huzounet load rules (specs/046)', () => {
         'Chargement impossible : l\'API ne répond pas.',
       ]);
       expect(new Set(messages).size).toBe(5);
+      expect(failed('hourly-limit')).toBe('Cet onglet a déjà été chargé il y a moins d\'une heure.');
       expect(failed('unavailable', 90)).toBe('Huzounet ne répond pas pour le moment. 90 prix chargés.');
       expect(failed('too-soon', 1)).toBe('Réessaie dans quelques secondes. 1 prix chargé.');
     });
+  });
+
+  it('tells when a tab loaded within the hour can be loaded again, in the player\'s own time', () => {
+    const retryAt = new Date(2026, 9, 12, 15, 5).toISOString();
+    expect(loadMessage({ status: 'failed', done: 0, total: 128, loaded: 0, cause: 'hourly-limit', retryAt }))
+      .toBe('Cet onglet a déjà été chargé il y a moins d\'une heure. Prochain chargement possible à 15 h 05.');
+    expect(loadMessage({ status: 'failed', done: 0, total: 128, loaded: 0, cause: 'hourly-limit', retryAt: 'soon' }))
+      .toBe('Cet onglet a déjà été chargé il y a moins d\'une heure.');
   });
 
   describe('shownOrigin', () => {

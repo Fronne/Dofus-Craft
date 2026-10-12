@@ -182,15 +182,17 @@ describe('community price API service (Cloudflare Worker client)', () => {
   });
 
   describe('refreshExternalPrices (specs/046)', () => {
+    const TAB = { tab: 'animals', last: false };
+
     it('asks the API to read the items of a server again, and tells how many prices were read', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ refreshed: 2 }), { status: 200 }));
       vi.stubGlobal('fetch', fetchMock);
-      await expect(refreshExternalPrices('mikhal', ['371', '372'])).resolves.toEqual({ status: 'ok', refreshed: 2 });
+      await expect(refreshExternalPrices('mikhal', ['371', '372'], { tab: 'consumables', last: true })).resolves.toEqual({ status: 'ok', refreshed: 2 });
       const [url, init] = fetchMock.mock.calls[0];
       expect(String(url)).toMatch(/\/external-prices\/refresh$/);
       expect(init.method).toBe('POST');
       expect(init.headers).toMatchObject({ 'Content-Type': 'application/json', Authorization: expect.stringMatching(/^Bearer /) });
-      expect(JSON.parse(init.body)).toEqual({ serverId: 'mikhal', ids: ['371', '372'] });
+      expect(JSON.parse(init.body)).toEqual({ serverId: 'mikhal', ids: ['371', '372'], tab: 'consumables', last: true });
     });
 
     it.each([
@@ -203,14 +205,26 @@ describe('community price API service (Cloudflare Worker client)', () => {
       [200, { done: true }, 'unavailable'],
     ])('reads a %i answer %j as %s', async (status, body, expected) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
-      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: expected });
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toMatchObject({ status: expected });
+    });
+
+    it('tells whether Huzounet was read at all, when the API says so', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ refreshed: 0, requests: 0 }), { status: 200 })));
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toEqual({ status: 'ok', refreshed: 0, requests: 0 });
+    });
+
+    it('tells the hourly limit of a tab apart from a read that came too soon', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: 'hourly-limit', retryAt: '2026-10-12T15:05:00.000Z' }), { status: 429 })));
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toEqual({ status: 'hourly-limit', retryAt: '2026-10-12T15:05:00.000Z' });
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Too many requests', { status: 429 })));
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toEqual({ status: 'too-soon' });
     });
 
     it('never throws: an unreadable body is unavailable, a network error is unreachable', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>', { status: 200 })));
-      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: 'unavailable' });
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toEqual({ status: 'unavailable' });
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: 'unreachable' });
+      await expect(refreshExternalPrices('mikhal', ['371'], TAB)).resolves.toEqual({ status: 'unreachable' });
     });
 
     it('makes the next reads fresh ones once prices were read, not when nothing changed', async () => {
@@ -219,10 +233,10 @@ describe('community price API service (Cloudflare Worker client)', () => {
       const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify(String(url).includes('/refresh') ? { refreshed: calls.shift() } : { serverId: 'mikhal', prices: [] }), { status: 200 }));
       const calls = [0, 3];
       vi.stubGlobal('fetch', fetchMock);
-      await api.refreshExternalPrices('mikhal', ['371']);
+      await api.refreshExternalPrices('mikhal', ['371'], TAB);
       await api.getCommunityPrices(['371'], 'mikhal');
       expect(String(fetchMock.mock.calls[1][0])).not.toContain('fresh=1');
-      await api.refreshExternalPrices('mikhal', ['371']);
+      await api.refreshExternalPrices('mikhal', ['371'], TAB);
       await api.getCommunityPrices(['371'], 'mikhal');
       expect(String(fetchMock.mock.calls[3][0])).toContain('fresh=1');
     });

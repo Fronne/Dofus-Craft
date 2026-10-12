@@ -45,6 +45,19 @@ describe('POST /external-prices/refresh', () => {
     expect(await (await refresh({ serverId: 'mikhal', ids: ['1'] })).json()).toEqual({ refreshed: 0 });
   });
 
+  // specs/046-hdv-huzounet-load.
+  it('lets the HDV page load a tab once an hour, telling it whether Huzounet was read', async () => {
+    const { refresh } = setup();
+    const first = await refresh({ serverId: 'mikhal', ids: ['1', '2'], tab: 'animals', last: true });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ refreshed: 1, requests: 1 });
+
+    const again = await refresh({ serverId: 'mikhal', ids: ['1', '2'], tab: 'animals', last: true });
+    expect(again.status).toBe(429);
+    expect(await again.json()).toEqual({ error: 'hourly-limit', retryAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) });
+    expect((await refresh({ serverId: 'mikhal', ids: ['1'], tab: 'equipment' })).status).toBe(400);
+  });
+
   it('answers 503 when the reading is turned off', async () => {
     const { refresh, huzounet } = setup({ HUZOUNET_SYNC: '0' });
     const response = await refresh({ serverId: 'mikhal', ids: ['1'] });

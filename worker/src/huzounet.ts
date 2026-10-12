@@ -208,13 +208,25 @@ const REFRESH_MAX_IDS = 90;
 const REFRESH_COOLDOWN_MS = 2 * 60 * 1000;
 const REFRESH_MIN_INTERVAL_MS = 5000;
 
+// specs/046-hdv-huzounet-load: the HDV page loads a whole tab, thousands of items at a time. To keep the
+// reads at Huzounet and the rows written to D1 (a daily quota) bounded, a tab loaded to its end is not
+// loaded again for an hour, by anyone; and until then an item read in the last hour is not asked again.
+const HDV_TABS = ['resources', 'consumables', 'animals', 'runes'];
+const HDV_COOLDOWN_MS = 60 * 60 * 1000;
+const hdvSource = (tab: string) => `huzounet-hdv-${tab}`;
+
+/** A request of the HDV page: the tab it loads, and whether it is the last request of that load. */
+export type HdvLoad = { tab: string; last: boolean };
+
 export type RefreshResult =
   | { status: 'ok'; refreshed: number; requests: number }
+  | { status: 'hourly-limit'; retryAt: string }
   | { status: 'invalid' | 'unknown-server' | 'too-soon' | 'unavailable' };
 
 // POST /external-prices/refresh: a player asks for a recipe's prices now. Only what was not read in the
-// last two minutes is asked for, and two reads of a server are at least five seconds apart.
-export async function refreshHuzounetPrices(db: ExternalDb, serverId: string, rawIds: unknown, options: HuzounetOptions & { itemId?: string } = {}): Promise<RefreshResult> {
+// last two minutes is asked for, and two reads of a server are at least five seconds apart. With `hdv`,
+// the request is one of a whole HDV tab's load, with its own, hourly, rules (above).
+export async function refreshHuzounetPrices(db: ExternalDb, serverId: string, rawIds: unknown, options: HuzounetOptions & { itemId?: string; hdv?: HdvLoad } = {}): Promise<RefreshResult> {
   const equipment = new Set(options.equipmentIds ?? EQUIPMENT_IDS);
   const fetcher = options.fetch ?? (fetch as unknown as Fetcher);
   const now = options.now ?? (() => new Date());
@@ -224,10 +236,25 @@ export async function refreshHuzounetPrices(db: ExternalDb, serverId: string, ra
   if (!Array.isArray(rawIds) || rawIds.length === 0 || rawIds.length > REFRESH_MAX_IDS || !rawIds.every((id) => typeof id === 'string' && /^\d{1,9}$/.test(id))) {
     return { status: 'invalid' };
   }
+  const hdv = options.hdv;
+  if (hdv && !HDV_TABS.includes(hdv.tab)) return { status: 'invalid' };
   const server = (options.servers ?? READ_SERVERS).includes(serverId) ? SERVER_IDS[serverId] : undefined;
   if (server === undefined) return { status: 'unknown-server' };
   const ids = [...new Set(rawIds as string[])];
   const at = now();
+  if (hdv) {
+    const loaded = await db.prepare('SELECT run_date FROM external_price_sync WHERE source = ? AND server_id = ?').bind(hdvSource(hdv.tab), serverId).first<{ run_date: string }>();
+    const retryAt = loaded ? new Date(loaded.run_date).getTime() + HDV_COOLDOWN_MS : 0;
+    if (retryAt > at.getTime()) return { status: 'hourly-limit', retryAt: new Date(retryAt).toISOString() };
+  }
+  // The tab is loaded to its end: its hour starts now.
+  const markLoaded = async () => {
+    if (!hdv?.last) return;
+    await db.prepare(
+      `INSERT INTO external_price_sync (source, server_id, run_date, cursor) VALUES (?, ?, ?, 0)
+       ON CONFLICT (source, server_id) DO UPDATE SET run_date = excluded.run_date`,
+    ).bind(hdvSource(hdv.tab), serverId, now().toISOString()).run();
+  };
   // The item whose page asked: its price is one players look at (the Rentabilité page lists those).
   const markItem = async () => {
     if (!options.itemId || !ids.includes(options.itemId)) return;
@@ -235,11 +262,12 @@ export async function refreshHuzounetPrices(db: ExternalDb, serverId: string, ra
   };
   const { results: fresh } = await db.prepare(
     `SELECT resource_id FROM external_prices WHERE source = ? AND server_id = ? AND fetched_at >= ? AND resource_id IN (${ids.map(() => '?').join(', ')})`,
-  ).bind(HUZOUNET_SOURCE, serverId, new Date(at.getTime() - REFRESH_COOLDOWN_MS).toISOString(), ...ids).all<{ resource_id: string }>();
+  ).bind(HUZOUNET_SOURCE, serverId, new Date(at.getTime() - (hdv ? HDV_COOLDOWN_MS : REFRESH_COOLDOWN_MS)).toISOString(), ...ids).all<{ resource_id: string }>();
   const recent = new Set(fresh.map((row) => row.resource_id));
   const wanted = ids.filter((id) => !recent.has(id));
   if (wanted.length === 0) {
     await markItem();
+    await markLoaded();
     return { status: 'ok', refreshed: 0, requests: 0 };
   }
   const last = await db.prepare('SELECT run_date FROM external_price_sync WHERE source = ? AND server_id = ?').bind(REFRESH_SOURCE, serverId).first<{ run_date: string }>();
@@ -264,5 +292,6 @@ export async function refreshHuzounetPrices(db: ExternalDb, serverId: string, ra
     refreshed += batch.reads.length;
   }
   await markItem();
+  await markLoaded();
   return { status: 'ok', refreshed, requests };
 }

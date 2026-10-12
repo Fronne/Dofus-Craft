@@ -8,11 +8,11 @@ import type { CommunityPricesLookup } from '../../src/services/community-price-a
 // specs/046-hdv-huzounet-load: the loop that loads a tab, with the real rules (requests of 90 items,
 // 5.5 s apart) and a pause the test controls.
 const getCommunityPrices = vi.fn<(ids: string[], serverId: string) => Promise<CommunityPricesLookup>>();
-const refreshExternalPrices = vi.fn<(serverId: string, ids: string[]) => Promise<RefreshOutcome>>();
+const refreshExternalPrices = vi.fn<(serverId: string, ids: string[], hdv: { tab: string; last: boolean }) => Promise<RefreshOutcome>>();
 
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrices: (ids: string[], serverId: string) => getCommunityPrices(ids, serverId),
-  refreshExternalPrices: (serverId: string, ids: string[]) => refreshExternalPrices(serverId, ids),
+  refreshExternalPrices: (serverId: string, ids: string[], hdv: { tab: string; last: boolean }) => refreshExternalPrices(serverId, ids, hdv),
 }));
 
 import { useHuzounetLoad } from '../../src/features/hdv/useHuzounetLoad';
@@ -57,6 +57,8 @@ describe('useHuzounetLoad — pace and retries (specs/046)', () => {
     expect(waits[0]).toBeGreaterThan(5000);
     expect(waits[0]).toBeLessThanOrEqual(SLICE_SPACING_MS);
     expect(refreshedIds().map((slice) => slice.length)).toEqual([90, 38]);
+    // Each request names its tab, and the last one says so: the API counts the tab's hour from it.
+    expect(refreshExternalPrices.mock.calls.map(([, , hdv]) => hdv)).toEqual([{ tab: 'consumables', last: false }, { tab: 'consumables', last: true }]);
     expect(onSliceLoaded).toHaveBeenCalledTimes(2);
   });
 
@@ -72,6 +74,29 @@ describe('useHuzounetLoad — pace and retries (specs/046)', () => {
     expect(carnet['1']).toMatchObject({ unitPriceKamas: 150, updatedAt: OBSERVED_AT });
     expect(carnet['2']).toMatchObject({ unitPriceKamas: 999 });
     expect(await resourcePricesFor('personal').getMany('mikhal', ['1', '2'])).toEqual({});
+  });
+
+  it('does not wait after a request for which Huzounet was not read', async () => {
+    refreshExternalPrices.mockResolvedValue({ status: 'ok', refreshed: 0, requests: 0 });
+    const { result } = mount();
+    await act(() => result.current.start());
+    expect(result.current.state).toEqual({ status: 'finished', total: 128, loaded: 0 });
+    expect(refreshExternalPrices).toHaveBeenCalledTimes(2);
+    expect(waits).toEqual([]);
+  });
+
+  it('asks nothing more of Huzounet for a tab loaded less than an hour ago, but brings its prices to the carnet', async () => {
+    known.set('1', huzounetPrice('1', 150));
+    known.set('120', huzounetPrice('120', 990));
+    refreshExternalPrices.mockResolvedValue({ status: 'hourly-limit', retryAt: '2026-10-12T15:05:00.000Z' });
+    const { result } = mount();
+    await act(() => result.current.start());
+    expect(result.current.state).toEqual({ status: 'failed', done: 128, total: 128, loaded: 0, cause: 'hourly-limit', retryAt: '2026-10-12T15:05:00.000Z' });
+    expect(refreshExternalPrices).toHaveBeenCalledTimes(1);
+    expect(waits).toEqual([]);
+    const carnet = await resourcePricesFor('community').getMany('mikhal', ['1', '120']);
+    expect(carnet['1']).toMatchObject({ unitPriceKamas: 150, updatedAt: OBSERVED_AT });
+    expect(carnet['120']).toMatchObject({ unitPriceKamas: 990 });
   });
 
   it('asks again for a request refused as too soon, after a pause, then goes on', async () => {

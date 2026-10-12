@@ -25,8 +25,8 @@ Les identifiants des quatre onglets sont tous numériques (vérifié : 105 runes
 `src/data/rune-items.json`, aucun identifiant non numérique) ; le module de règles écarte malgré tout un
 identifiant qui ne le serait pas, pour qu'une tranche ne soit jamais refusée en bloc.
 
-**Alternatives considered**: ajouter une route « charger un onglet » côté Worker — rejeté : change les
-règles de lecture, demande un déploiement, et le Worker vient d'être remis à l'identique de la production.
+**Alternatives considered**: ajouter une route « charger un onglet » côté Worker — rejeté : une route de
+plus à maintenir pour le même travail. (La limite horaire de la décision 9 s'ajoute à la route existante.)
 
 ## 2. Cadence entre deux tranches
 
@@ -122,6 +122,36 @@ sans code partagé (même choix que `outlier-threshold.ts`).
 
 Si le site croit un serveur relu et que l'API répond 404, le message « Les prix de ce serveur ne sont pas
 relus » s'affiche et le chargement s'arrête à la première tranche (US4-3).
+
+## 9. Limite horaire par onglet (ajout du 12 octobre, à la demande)
+
+**Decision**: la limite est dans l'API. Une demande de la page HDV nomme son onglet (`tab`) et dit quand
+elle est la dernière (`last`). Avec `tab`, un objet lu depuis moins d'une heure n'est pas redemandé ; un
+onglet chargé jusqu'au bout est refusé pendant une heure (429 `hourly-limit`, avec l'heure de reprise).
+L'heure est notée dans la table existante `external_price_sync`.
+
+**Rationale**: le quota qui peut céder sur le plan gratuit de Cloudflare n'est pas le nombre de requêtes
+(un chargement complet de Ressources en fait une soixantaine sur 100 000 par jour) mais les lignes
+écrites en base D1 (100 000 par jour, chiffres à confirmer dans le tableau de bord) : chaque prix relu
+est une ligne écrite. Sans limite, un joueur qui reclique toutes les trois minutes épuise le quota, et le
+partage de prix tombe avec. Avec la limite : au plus 24 chargements complets par onglet et par jour,
+soit au pire environ 67 000 prix écrits si les quatre onglets étaient rechargés chaque heure pendant
+24 heures — en pratique très loin de là. Une limite tenue par l'appareil ne protégerait de rien : elle
+doit être commune à tous les joueurs.
+
+Noter l'heure à la **fin** du chargement, et non au début, laisse reprendre un chargement arrêté ou en
+échec ; la règle « pas redemandé avant une heure » évite alors de relire ce qui l'a déjà été.
+
+**Limite connue**: un objet que Huzounet ne tarife pas n'a pas de ligne en base, donc pas d'heure de
+lecture : il est redemandé à Huzounet à chaque reprise d'un chargement inachevé (sans écriture en base).
+
+**Alternatives considered**: un budget quotidien global de prix relus (proposé, écarté par l'utilisateur
+au profit d'une règle par onglet et par heure, plus lisible pour le joueur) ; mémoriser la dernière
+lecture dans le navigateur (ne vaut que par appareil).
+
+**Conséquence**: le Worker du dépôt n'est plus identique à celui de la production ; la limite ne vaut
+qu'une fois le Worker redéployé. D'ici là l'API en ligne ignore `tab` et `last` et applique ses règles
+actuelles (deux minutes par objet), sans erreur.
 
 ## 8. Ce que faisait le site en ligne
 

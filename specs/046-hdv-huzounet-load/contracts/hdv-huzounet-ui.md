@@ -25,6 +25,7 @@ la minute supérieure.
 | terminé, `loaded > 0` | « P prix chargés depuis Huzounet. » (« 1 prix chargé depuis Huzounet. ») |
 | terminé, `loaded = 0` | « Les prix sont déjà à jour. » |
 | arrêté | « Chargement arrêté : P prix chargés. » |
+| échec `hourly-limit` | « Cet onglet a déjà été chargé il y a moins d'une heure. Prochain chargement possible à 15 h 05. » (heure locale du joueur) |
 | échec `too-soon` (après 3 redemandes) | « Réessaie dans quelques secondes. P prix chargés. » |
 | échec `unavailable` | « Huzounet ne répond pas pour le moment. P prix chargés. » |
 | échec `disabled` | « Le chargement depuis Huzounet est indisponible. » |

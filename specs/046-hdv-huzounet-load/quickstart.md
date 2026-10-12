@@ -25,6 +25,7 @@ Attendu : tout passe. Ce que ces tests prouvent :
 
 ```bash
 npx tsc -b --noEmit
+npx tsc -p worker --noEmit
 npx eslint src tests
 npx vitest run
 ```
@@ -58,6 +59,15 @@ Huzounet.
   l'onglet (35, 128 avec « environ 10 s ») ; mentions « Huzounet · relevé ancien » sous le type des
   croquettes ; en Mode personnel, bouton désactivé avec son explication. Le bouton n'a pas été cliqué en
   Mode communautaire : un clic lit réellement Huzounet.
+
+### Après l'ajout de la limite horaire (FR-017)
+
+- 1 030 tests passent (12 de plus : limite horaire dans l'API, dans le client, la boucle et la page) ;
+  même échec connu, qui passe seul ; `npx tsc -b --noEmit`, `npx tsc -p worker --noEmit` et
+  `npx eslint src tests --quiet` sans erreur.
+- `bash scripts/compare-worker-bundle.sh` : 32 lignes différentes de la production (4 avant) — la limite
+  horaire, voulue. Elle ne vaut qu'une fois le Worker redéployé ; d'ici là l'API en ligne ignore `tab` et
+  `last`.
 
 ## Hors périmètre
 

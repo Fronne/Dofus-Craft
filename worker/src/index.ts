@@ -205,11 +205,16 @@ export default {
       const record = (typeof body === 'object' && body !== null ? body : {}) as Record<string, unknown>;
       const result = await refreshHuzounetPrices(env.DB, typeof record.serverId === 'string' ? record.serverId : '', record.ids, {
         itemId: typeof record.itemId === 'string' ? record.itemId : undefined,
+        // specs/046-hdv-huzounet-load: a request of the HDV page names its tab, and says when it is the last.
+        hdv: typeof record.tab === 'string' ? { tab: record.tab, last: record.last === true } : undefined,
       });
       if (result.status === 'ok') {
         if (result.refreshed > 0) clearReadCache();
-        return json({ refreshed: result.refreshed });
+        // The HDV page also learns whether Huzounet was read at all: when it was not, it need not wait
+        // before its next request.
+        return json(typeof record.tab === 'string' ? { refreshed: result.refreshed, requests: result.requests } : { refreshed: result.refreshed });
       }
+      if (result.status === 'hourly-limit') return json({ error: 'hourly-limit', retryAt: result.retryAt }, 429);
       const status = { invalid: 400, 'unknown-server': 404, 'too-soon': 429, unavailable: 502 }[result.status];
       return json({ error: result.status }, status);
     }

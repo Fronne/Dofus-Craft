@@ -42,7 +42,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   L'onglet Runes filtre par stat et indique l'origine du dernier prix partagé (« Bot Discord »,
   « Capture », « Saisie manuelle »). En Mode communautaire sur Mikhal, le bouton « Charger depuis
   Huzounet » demande à l'API de relire les prix de tout l'onglet (par demandes de 90 objets, 5,5 s
-  d'écart) ; un prix qui en vient porte la mention « Huzounet », avec « peu de relevés » ou « relevé
+  d'écart, un chargement complet par onglet et par heure au plus, tous joueurs confondus) ; un prix qui en vient porte la mention « Huzounet », avec « peu de relevés » ou « relevé
   ancien » quand sa source le signale.
 - **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
   leur compte Discord (le reste du site reste sans compte).

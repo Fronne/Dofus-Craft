@@ -107,6 +107,15 @@ donne son message.
 
 ---
 
+## Phase 8: Limite horaire par onglet (FR-017, ajout du 12 octobre)
+
+- [x] T023 Dans worker/src/huzounet.ts : option `hdv: { tab, last }` de `refreshHuzounetPrices` — onglet inconnu → `invalid` ; onglet chargé jusqu'au bout depuis moins d'une heure → `{ status: 'hourly-limit', retryAt }` sans lecture ; objets lus depuis moins d'une heure non redemandés ; à la réussite de la demande `last`, heure notée dans `external_price_sync` (`source = 'huzounet-hdv-<onglet>'`). Dans worker/src/index.ts : lire `tab` et `last` du corps, répondre 429 `{ error: 'hourly-limit', retryAt }`, et ajouter `requests` à la réponse 200 d'une demande avec `tab`. Une demande sans `tab` est inchangée.
+- [x] T024 Tests du Worker : tests/unit/huzounet-sync.test.ts (une heure par objet, refus dans l'heure avec `retryAt`, autre onglet et page Recherche non concernés, dernière demande sans rien à lire, dernière demande en échec, onglet inconnu) et tests/unit/huzounet-refresh-route.test.ts (200 avec `requests`, 429 `hourly-limit`, 400).
+- [x] T025 Côté site : `refreshExternalPrices(serverId, ids, { tab, last })` et lecture de `hourly-limit` / `requests` dans src/services/community-price-api.ts ; cause `hourly-limit` et message avec l'heure dans src/domain/huzounet-load.ts ; src/features/hdv/useHuzounetLoad.ts envoie l'onglet, marque la dernière demande et n'attend pas après une demande sans lecture ; tests correspondants (règles, client, boucle, page).
+- [x] T026 Mettre à jour worker/README.md, README.md et les documents de la fonctionnalité ; relancer toutes les vérifications.
+
+---
+
 ## Dependencies & Execution Order
 
 - Phase 2 bloque tout : T002 et T003 d'abord (en parallèle, avec T004), puis T005, puis T006.

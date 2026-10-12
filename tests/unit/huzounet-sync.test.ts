@@ -173,6 +173,71 @@ describe('refreshHuzounetPrices', () => {
     expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], options)).toMatchObject({ refreshed: 1, requests: 1 });
   });
 
+  // specs/046-hdv-huzounet-load: the HDV page loads a whole tab, with hourly rules.
+  describe('a request of an HDV tab', () => {
+    const hdv = (tab: string, last = false) => ({ hdv: { tab, last } });
+
+    it('asks nothing for what was read in the last hour', async () => {
+      const { d1, options, answers, asked, advance } = setup();
+      answers.set('1', priced(100));
+      answers.set('2', priced(200));
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], options)).toMatchObject({ refreshed: 1 });
+
+      advance(30 * 60_000);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('animals') })).toEqual({ status: 'ok', refreshed: 0, requests: 0 });
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1', '2'], { ...options, ...hdv('animals') })).toMatchObject({ refreshed: 1, requests: 1 });
+      expect(asked()).toEqual([['1'], ['2']]);
+
+      advance(31 * 60_000);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('animals') })).toMatchObject({ refreshed: 1, requests: 1 });
+    });
+
+    it('refuses a tab loaded to its end less than an hour ago, and says when it can be loaded again', async () => {
+      const { d1, options, answers, fetcher, advance, state } = setup();
+      answers.set('1', priced(100));
+      answers.set('2', priced(200));
+      // Not the last request of the load: the tab is not loaded yet.
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('animals') })).toMatchObject({ status: 'ok' });
+      expect(state('huzounet-hdv-animals')).toBeUndefined();
+      advance(6000);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['2'], { ...options, ...hdv('animals', true) })).toMatchObject({ status: 'ok', refreshed: 1 });
+      const loadedAt = new Date(state('huzounet-hdv-animals')!.run_date).getTime();
+
+      advance(10 * 60_000);
+      const calls = fetcher.mock.calls.length;
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['3'], { ...options, ...hdv('animals') })).toEqual({ status: 'hourly-limit', retryAt: new Date(loadedAt + 3_600_000).toISOString() });
+      expect(fetcher).toHaveBeenCalledTimes(calls);
+      // Another tab, and a recipe of the Recherche page, are not concerned.
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['3'], { ...options, ...hdv('runes') })).toMatchObject({ status: 'ok' });
+      advance(6000);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['4'], options)).toMatchObject({ status: 'ok' });
+
+      advance(51 * 60_000);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['5'], { ...options, ...hdv('animals') })).toMatchObject({ status: 'ok' });
+    });
+
+    it('counts a tab as loaded when its last request had nothing left to read', async () => {
+      const { d1, options, answers, state } = setup();
+      answers.set('1', priced(100));
+      await refreshHuzounetPrices(d1, 'mikhal', ['1'], options);
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('consumables', true) })).toEqual({ status: 'ok', refreshed: 0, requests: 0 });
+      expect(state('huzounet-hdv-consumables')).toBeDefined();
+    });
+
+    it('does not count a tab as loaded when its last request failed', async () => {
+      const { d1, options, fetcher, state } = setup();
+      fetcher.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) });
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('resources', true) })).toEqual({ status: 'unavailable' });
+      expect(state('huzounet-hdv-resources')).toBeUndefined();
+    });
+
+    it('refuses a tab it does not know', async () => {
+      const { d1, options, fetcher } = setup();
+      expect(await refreshHuzounetPrices(d1, 'mikhal', ['1'], { ...options, ...hdv('equipment') })).toEqual({ status: 'invalid' });
+      expect(fetcher).not.toHaveBeenCalled();
+    });
+  });
+
   it('answers too soon when the server was read less than five seconds ago', async () => {
     const { d1, options, answers, advance, fetcher } = setup();
     answers.set('1', priced(100));

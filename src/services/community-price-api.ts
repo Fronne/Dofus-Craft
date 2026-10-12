@@ -222,20 +222,28 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
 }
 
 // specs/046-hdv-huzounet-load (contracts/external-prices-refresh.md): asks the API to read again, on
-// Huzounet, the prices of up to 90 items of a server. Never throws. Once prices were read, the next
+// Huzounet, the prices of up to 90 items of a server, as one request of an HDV tab's load (the API lets
+// a tab be loaded once an hour). Never throws. Once prices were read, the next
 // reads are fresh ones, like after this device's own contribution.
-export async function refreshExternalPrices(serverId: string, ids: string[]): Promise<RefreshOutcome> {
+export async function refreshExternalPrices(serverId: string, ids: string[], hdv: { tab: string; last: boolean }): Promise<RefreshOutcome> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}/external-prices/refresh`, {
       method: 'POST',
       headers: apiHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ serverId, ids }),
+      body: JSON.stringify({ serverId, ids, tab: hdv.tab, last: hdv.last }),
     });
   } catch {
     return { status: 'unreachable' };
   }
-  if (response.status === 429) return { status: 'too-soon' };
+  if (response.status === 429) {
+    // Two refusals share this status: a read too close to the previous one, and the tab's hourly limit.
+    const refusal: unknown = await response.json().catch(() => undefined);
+    if (isRecord(refusal) && refusal.error === 'hourly-limit') {
+      return { status: 'hourly-limit', retryAt: typeof refusal.retryAt === 'string' ? refusal.retryAt : undefined };
+    }
+    return { status: 'too-soon' };
+  }
   if (response.status === 404) return { status: 'unknown-server' };
   if (response.status === 503) return { status: 'disabled' };
   if (!response.ok) return { status: 'unavailable' };
@@ -247,7 +255,7 @@ export async function refreshExternalPrices(serverId: string, ids: string[]): Pr
   }
   if (!isRecord(payload) || typeof payload.refreshed !== 'number') return { status: 'unavailable' };
   if (payload.refreshed > 0) freshReadsUntil = Date.now() + FRESH_READ_WINDOW_MS;
-  return { status: 'ok', refreshed: payload.refreshed };
+  return { status: 'ok', refreshed: payload.refreshed, requests: typeof payload.requests === 'number' ? payload.requests : undefined };
 }
 
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing

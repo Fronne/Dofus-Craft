@@ -31,6 +31,10 @@ Runes 105.
   de plafond : un clic charge l'onglet entier.
 - Q: Que fait le bouton en Mode personnel ? → A: Il est inactif, avec l'explication ; le carnet personnel
   n'est jamais modifié.
+- Q: Faut-il une limite pour ne pas épuiser le quota gratuit de Cloudflare (écritures en base par jour) ?
+  → A: Oui : un onglet chargé jusqu'au bout ne peut pas être rechargé avant une heure, pour tous les
+  joueurs ; d'ici là, un objet lu depuis moins d'une heure n'est pas redemandé. Cela ajoute une règle à
+  l'API (FR-017), ce qui amende FR-016.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -57,7 +61,7 @@ les prix reçus apparaissent dans la liste et dans le compteur « N objets sur M
 3. **Given** un chargement terminé où des prix ont changé, **When** il s'achève, **Then** le joueur lit
    combien de prix ont été chargés, et le compteur et les filtres « Sans prix » / « Prix ancien » de
    l'onglet tiennent compte des nouveaux prix.
-4. **Given** un chargement terminé où rien n'a changé (tout a été lu il y a moins de deux minutes),
+4. **Given** un chargement terminé où rien n'a changé (tout a été lu il y a moins d'une heure),
    **When** il s'achève, **Then** le joueur lit que les prix sont déjà à jour.
 5. **Given** un filtre actif (recherche, type ou stat, « Sans prix », « Prix ancien »), **When** le joueur
    clique sur le bouton, **Then** tous les objets de l'onglet sont demandés, pas seulement ceux que le
@@ -126,8 +130,12 @@ affichés ; puis rejouer avec chaque réponse d'échec et vérifier le message.
 6. **Given** le joueur hors ligne ou l'API injoignable, **When** une tranche échoue, **Then** le
    chargement s'arrête avec un message d'échec, et les prix déjà affichés sont conservés.
 7. **Given** un chargement arrêté ou en échec, **When** le joueur clique de nouveau sur le bouton,
-   **Then** un nouveau chargement démarre ; les objets lus il y a moins de deux minutes ne sont pas
+   **Then** un nouveau chargement démarre ; les objets lus il y a moins d'une heure ne sont pas
    redemandés à Huzounet.
+8. **Given** un onglet chargé jusqu'au bout il y a moins d'une heure, par ce joueur ou par un autre,
+   **When** le joueur clique sur le bouton, **Then** rien n'est lu chez Huzounet, les prix que l'API
+   garde déjà pour cet onglet s'affichent, et il lit « Cet onglet a déjà été chargé il y a moins d'une
+   heure. Prochain chargement possible à 15 h 05. »
 
 ---
 
@@ -205,8 +213,13 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
 - **FR-014**: Le chargement NE DOIT PAS modifier le carnet du Mode personnel, ni créer de prix partagé au
   nom du joueur.
 - **FR-015**: Une saisie en cours sur une ligne NE DOIT PAS être perdue quand une tranche arrive.
-- **FR-016**: La fonctionnalité NE DOIT PAS changer les règles de lecture de l'API (taille des tranches
-  acceptées, délais, serveurs relus) : elle s'y conforme.
+- **FR-016**: La fonctionnalité NE DOIT PAS changer les règles de lecture existantes de l'API (taille des
+  tranches acceptées, délais, serveurs relus, actualisation d'une recette depuis la page Recherche) : elle
+  s'y conforme, et n'y ajoute que la limite horaire de FR-017.
+- **FR-017**: Un onglet chargé jusqu'au bout pour un serveur NE DOIT PAS pouvoir être rechargé avant une
+  heure, quel que soit le joueur ; le refus DOIT dire à quelle heure le chargement redevient possible. Un
+  chargement arrêté ou en échec ne compte pas : il peut être repris, et les objets déjà lus depuis moins
+  d'une heure ne sont alors pas redemandés à Huzounet. La limite est tenue par l'API, pas par l'appareil.
 
 ### Key Entities
 
@@ -234,7 +247,9 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
   visible sans action du joueur.
 - **SC-006**: En Mode personnel ou sur un serveur non relu, aucune demande de chargement n'est envoyée,
   quel que soit le nombre de clics.
-- **SC-007**: Un chargement ne dépasse jamais une demande toutes les cinq secondes vers l'API.
+- **SC-007**: Un chargement ne lit jamais Huzounet plus d'une fois toutes les cinq secondes.
+- **SC-008**: Sur une journée, les quatre onglets d'un serveur ne peuvent pas être chargés en entier plus
+  de 24 fois chacun, quel que soit le nombre de joueurs et de clics.
 
 ## Assumptions
 

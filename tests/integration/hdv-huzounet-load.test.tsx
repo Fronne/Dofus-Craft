@@ -10,7 +10,7 @@ import type { CommunityPriceLookup, CommunityPricesLookup } from '../../src/serv
 // checked in tests/unit/huzounet-load.test.ts and tests/integration/huzounet-load-hook.test.tsx; here a
 // request takes 20 items and the pause 30 ms, so the small Créatures tab loads in two requests (20 + 15).
 const getCommunityPrices = vi.fn<(ids: string[], serverId: string) => Promise<CommunityPricesLookup>>();
-const refreshExternalPrices = vi.fn<(serverId: string, ids: string[]) => Promise<RefreshOutcome>>();
+const refreshExternalPrices = vi.fn<(serverId: string, ids: string[], hdv: { tab: string; last: boolean }) => Promise<RefreshOutcome>>();
 const submitCommunityPrice = vi.fn<(id: string, serverId: string, amount: number) => Promise<{ id: string } | undefined>>();
 
 vi.mock('../../src/services/community-price-api', () => ({
@@ -20,7 +20,7 @@ vi.mock('../../src/services/community-price-api', () => ({
     return lookup.prices[0] ? { status: 'found', price: lookup.prices[0] } : { status: 'not-found' };
   },
   getCommunityPrices: (ids: string[], serverId: string) => getCommunityPrices(ids, serverId),
-  refreshExternalPrices: (serverId: string, ids: string[]) => refreshExternalPrices(serverId, ids),
+  refreshExternalPrices: (serverId: string, ids: string[], hdv: { tab: string; last: boolean }) => refreshExternalPrices(serverId, ids, hdv),
   getSharedItemPrices: vi.fn().mockResolvedValue({ status: 'found', items: [] }),
   submitCommunityPrice: (id: string, serverId: string, amount: number) => submitCommunityPrice(id, serverId, amount),
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
@@ -290,6 +290,15 @@ describe('HDV page — loading a tab from Huzounet (specs/046)', { timeout: 30_0
       expect(await screen.findByText('Les prix sont déjà à jour.')).toBeInTheDocument();
       // The new load starts over from the first request: the one that failed, then the second.
       expect(refreshedIds().map((ids) => ids.length)).toEqual([20, 20, 15]);
+    });
+
+    it('says so when the tab was loaded less than an hour ago, and when it can be again', async () => {
+      await openHdv('community');
+      refreshExternalPrices.mockResolvedValueOnce({ status: 'hourly-limit', retryAt: new Date(2026, 9, 12, 15, 5).toISOString() });
+      fireEvent.click(loadButton());
+      expect(await screen.findByText('Cet onglet a déjà été chargé il y a moins d\'une heure. Prochain chargement possible à 15 h 05.')).toBeInTheDocument();
+      expect(refreshExternalPrices).toHaveBeenCalledTimes(1);
+      expect(refreshExternalPrices.mock.calls[0][2]).toEqual({ tab: 'animals', last: false });
     });
 
     it('keeps a value being typed when a request lands', async () => {

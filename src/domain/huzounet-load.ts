@@ -22,7 +22,11 @@ const LAST_SLICE_SECONDS = 3;
 export type LoadAvailability = 'ready' | 'personal-mode' | 'server-not-read';
 
 export type RefreshOutcome =
-  | { status: 'ok'; refreshed: number }
+  // `requests`: how many times Huzounet was read for this request, when the API tells — 0 means every
+  // item had been read in the last hour, so the next request need not wait.
+  | { status: 'ok'; refreshed: number; requests?: number }
+  // The tab was loaded to its end less than an hour ago, by this player or another.
+  | { status: 'hourly-limit'; retryAt?: string }
   | { status: 'too-soon' | 'unavailable' | 'disabled' | 'unknown-server' | 'unreachable' };
 
 export type LoadFailure = Exclude<RefreshOutcome['status'], 'ok'>;
@@ -32,7 +36,7 @@ export type LoadState =
   | { status: 'running'; done: number; total: number; loaded: number }
   | { status: 'finished'; total: number; loaded: number }
   | { status: 'stopped'; done: number; total: number; loaded: number }
-  | { status: 'failed'; done: number; total: number; loaded: number; cause: LoadFailure };
+  | { status: 'failed'; done: number; total: number; loaded: number; cause: LoadFailure; retryAt?: string };
 
 export function loadAvailability(priceMode: PriceMode, serverId: string | undefined): LoadAvailability {
   if (priceMode !== 'community') return 'personal-mode';
@@ -67,8 +71,16 @@ function loadedSentence(loaded: number): string {
   return loaded === 1 ? '1 prix chargé.' : `${loaded} prix chargés.`;
 }
 
+/** « 15 h 05 », in the player's own time; nothing for a date that cannot be read. */
+function retryTimeLabel(retryAt: string): string {
+  const date = new Date(retryAt);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 const FAILURE_MESSAGES: Record<LoadFailure, string> = {
   'too-soon': 'Réessaie dans quelques secondes.',
+  'hourly-limit': 'Cet onglet a déjà été chargé il y a moins d\'une heure.',
   unavailable: 'Huzounet ne répond pas pour le moment.',
   disabled: 'Le chargement depuis Huzounet est indisponible.',
   'unknown-server': 'Les prix de ce serveur ne sont pas relus.',
@@ -84,6 +96,10 @@ export function loadMessage(state: LoadState): string {
     case 'stopped':
       return state.loaded === 0 ? 'Chargement arrêté : aucun prix chargé.' : `Chargement arrêté : ${loadedSentence(state.loaded)}`;
     case 'failed':
+      if (state.cause === 'hourly-limit') {
+        const time = state.retryAt ? retryTimeLabel(state.retryAt) : '';
+        return time ? `${FAILURE_MESSAGES[state.cause]} Prochain chargement possible à ${time}.` : FAILURE_MESSAGES[state.cause];
+      }
       return state.loaded > 0 ? `${FAILURE_MESSAGES[state.cause]} ${loadedSentence(state.loaded)}` : FAILURE_MESSAGES[state.cause];
     default:
       return '';
