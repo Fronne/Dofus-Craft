@@ -25,6 +25,11 @@
     "worker:db:migrate-fm-items": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0008_add_fm_items.sql --remote",
     "worker:db:migrate-site-sessions": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0009_add_site_sessions.sql --remote",
     "worker:db:migrate-fm-channels": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0010_add_fm_channels.sql --remote",
+    "worker:db:migrate-external-prices": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0011_add_external_prices.sql --remote",
+    "worker:db:migrate-fm-guild": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0012_add_fm_guild.sql --remote",
+    "worker:db:migrate-line-corrections": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0013_add_line_corrections.sql --remote",
+    "worker:db:migrate-line-read-name": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0014_add_line_read_name_and_counted.sql --remote",
+    "worker:db:migrate-channel-commands": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0015_add_channel_commands.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",
     "admin:deploy": "wrangler deploy --config admin-worker/wrangler.toml"

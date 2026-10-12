@@ -170,7 +170,14 @@ CREATE TABLE IF NOT EXISTS fm_purchase_lines (
   total_kamas INTEGER NOT NULL CHECK (total_kamas > 0),
   unit_price_kamas INTEGER NOT NULL,
   contribution_id TEXT,
-  price_status TEXT NOT NULL CHECK (price_status IN ('recorded', 'unknown-item', 'ambiguous-item', 'no-server', 'outlier', 'personal-mode'))
+  price_status TEXT NOT NULL CHECK (price_status IN ('recorded', 'unknown-item', 'ambiguous-item', 'no-server', 'outlier', 'personal-mode')),
+  -- specs/045-restore-production-worker: what was read first, once the player corrected the line.
+  original_quantity INTEGER,
+  original_total_kamas INTEGER,
+  corrected_at TEXT,
+  -- The name as it was read, when it had to be recovered; 0 for a line that is not a rune.
+  original_item_name TEXT,
+  counted INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE INDEX IF NOT EXISTS idx_fm_purchase_lines_capture ON fm_purchase_lines (capture_id);
@@ -189,9 +196,10 @@ CREATE INDEX IF NOT EXISTS idx_fm_sessions_item ON fm_sessions (fm_item_id);
 -- specs/028-site-started-sessions: requests to the Discord bot (open / close a session), which it
 -- fetches every 10 seconds and acknowledges; an acknowledged request is never handed out again.
 -- specs/029-channel-ownership: plus 'create-channel', which has no session nor channel yet.
+-- specs/045-restore-production-worker: plus 'archive-channel' and 'reopen-channel'.
 CREATE TABLE IF NOT EXISTS fm_bot_commands (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('open', 'close', 'create-channel')),
+  type TEXT NOT NULL CHECK (type IN ('open', 'close', 'create-channel', 'archive-channel', 'reopen-channel')),
   session_id TEXT REFERENCES fm_sessions (id),
   channel_id TEXT,
   status TEXT NOT NULL CHECK (status IN ('pending', 'done', 'failed', 'cancelled')),
@@ -220,3 +228,41 @@ CREATE TABLE IF NOT EXISTS fm_channels (
 );
 
 CREATE INDEX IF NOT EXISTS idx_fm_channels_owner ON fm_channels (owner_discord_user_id, status);
+
+-- specs/045-restore-production-worker: the name of the group's Discord server, read at each login.
+CREATE TABLE IF NOT EXISTS fm_guild (
+  id TEXT PRIMARY KEY CHECK (id = 'current'),
+  name TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- specs/045-restore-production-worker: prices read from an outside source (Huzounet), kept beside the
+-- prices the players share (src/external-price.ts), and where each scheduled read stopped (src/huzounet.ts).
+CREATE TABLE IF NOT EXISTS external_prices (
+  source TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  server_id TEXT NOT NULL,
+  unit_price_kamas INTEGER NOT NULL CHECK (unit_price_kamas >= 1),
+  observed_at TEXT NOT NULL,
+  support INTEGER NOT NULL DEFAULT 0,
+  provisional INTEGER NOT NULL DEFAULT 0,
+  stale INTEGER NOT NULL DEFAULT 0,
+  fetched_at TEXT NOT NULL,
+  -- 1 once the row is the HDV price of an item players look at (its own page, or a price the group shared
+  -- for it), not only the price of an ingredient: those are the ones the Rentabilité page lists.
+  is_item INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (source, resource_id, server_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_prices_lookup ON external_prices (server_id, resource_id);
+
+CREATE TABLE IF NOT EXISTS external_price_sync (
+  source TEXT NOT NULL,
+  server_id TEXT NOT NULL,
+  run_date TEXT NOT NULL,
+  cursor INTEGER NOT NULL DEFAULT 0,
+  completed_at TEXT,
+  last_error TEXT,
+  last_error_at TEXT,
+  PRIMARY KEY (source, server_id)
+);
