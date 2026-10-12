@@ -1,25 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { EmptyState } from '../../components/EmptyState';
-import { formatFmDate, type FmMe, type FmProfile } from '../../domain/forgemagie';
-import { formatKamas } from '../../domain/kamas';
-import type { PriceMode } from '../../domain/price-modes';
+import { formatFmDate, groupTabLabel, spendingBySeance, type FmMe, type FmProfile } from '../../domain/forgemagie';
 import { deleteFmMe, getFmPlayer } from '../../services/fm-api';
-import { CaptureImport } from './CaptureImport';
-import { FmItemsSection } from './FmItemsSection';
-import { FmChannelsSection } from './FmChannelsSection';
-import { ItemSummaryTable } from './SessionDetail';
+import { Kamas } from '../prices/PricesPage';
+import { PurchasesTable } from './PurchasesTable';
 
-// specs/025-rune-purchase-import: the player's settings (US1 — server, visibility), their spending (US3)
-// and the deletion of the profile (FR-007). specs/030-private-fm-sessions: only one's own profile is shown.
-// specs/026-hdv-rune-prices (FR-010, FR-011): the capture import, on the player's own profile only.
+// specs/025-rune-purchase-import: the player's settings (visibility), their spending and the deletion of
+// the profile. specs/049-fm-seances (US5): the server is the site's own, and the spending is told by
+// séance de FM.
 
-function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean> }) {
+function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { isPrivate?: boolean }) => Promise<boolean> }) {
   const { servers } = useActiveServer();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const server = servers.find((entry) => entry.id === me.serverId);
 
-  const change = async (changes: { serverId?: string; isPrivate?: boolean }) => {
+  const change = async (changes: { isPrivate?: boolean }) => {
     setSaving(true);
     setFailed(!(await updateMe(changes)));
     setSaving(false);
@@ -27,19 +24,11 @@ function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { ser
 
   return (
     <section className="fm-settings" aria-label="Réglages du profil">
-      <label className="fm-field">
+      <div className="fm-field">
         <span className="fm-field-label">Serveur Dofus</span>
-        <select
-          className="hdv-type-filter"
-          value={me.serverId ?? ''}
-          disabled={saving}
-          onChange={(event) => void change({ serverId: event.target.value })}
-        >
-          {me.serverId === null && <option value="">Choisir un serveur</option>}
-          {servers.map((server) => <option key={server.id} value={server.id}>{server.name}</option>)}
-        </select>
-        <span className="fm-note">Tes achats envoyés par le bot sont rangés sur ce serveur.</span>
-      </label>
+        <b>{server?.name ?? '—'}</b>
+        <span className="fm-note">Tes achats sont rangés sur ce serveur : celui que tu as choisi pour tout le site, en haut de la page.</span>
+      </div>
       <div className="fm-field">
         <span className="fm-field-label">Visibilité</span>
         <div className="hdv-price-filters" role="group" aria-label="Visibilité du profil">
@@ -56,9 +45,10 @@ function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { ser
             </button>
           ))}
         </div>
-        {/* specs/030 FR-010: kept for a future public display, it changes nothing others can see today. */}
         <span className="fm-note">
-          Pour l’instant, personne d’autre ne voit tes séances ni ton profil. Ce réglage servira quand un affichage public sera ajouté.
+          Public : les autres membres voient, dans l’onglet {groupTabLabel(me)}, ton pseudo, ton total dépensé et la liste de tes
+          séances de FM (nom, objet, état, total). Privé : tu n’y apparais pas. Dans les deux cas, personne d’autre ne voit tes
+          sessions, tes captures ni tes runes achetées.
         </span>
       </div>
       {failed && <p className="fm-error" role="alert">Le réglage n'a pas pu être enregistré. Réessaie.</p>}
@@ -89,8 +79,8 @@ function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
       <dialog ref={dialogRef} className="outlier-confirm-dialog" aria-label="Supprimer mon profil" onCancel={() => setState('idle')}>
         <p><b>Supprimer ton profil ?</b></p>
         <p>
-          Ton profil, tes achats et ta ligne dans chaque session seront supprimés définitivement ; les totaux des sessions
-          seront recalculés sans toi. Les prix déjà partagés avec le groupe restent, sans ton nom.
+          Ton profil et tes achats seront supprimés définitivement ; tes séances de FM ne seront plus visibles. Les prix déjà
+          partagés avec le groupe restent, sans ton nom.
         </p>
         {state === 'failed' && <p className="fm-error" role="alert">La suppression a échoué. Réessaie.</p>}
         <div className="outlier-confirm-dialog-actions">
@@ -104,60 +94,54 @@ function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
   );
 }
 
-function Spending({ profile, onOpenSession }: { profile: FmProfile; onOpenSession: (sessionId: string) => void }) {
+function Spending({ profile, onOpenSeance }: { profile: FmProfile; onOpenSeance: (seanceId: string) => void }) {
+  const seances = spendingBySeance(profile.sessions);
   return (
     <section className="fm-spending" aria-label="Dépenses de forgemagie">
-      <p className="fm-total">Total dépensé : <strong>{formatKamas(profile.totalKamas)}</strong></p>
-      {profile.sessions.length === 0 && profile.importedKamas === 0 ? (
-        <EmptyState icon="anvil" title="Aucune dépense pour l'instant" />
+      <p className="fm-total">Total dépensé : <strong><Kamas value={profile.totalKamas} /></strong></p>
+      {seances.length === 0 && profile.importedKamas === 0 ? (
+        <EmptyState icon="hammer" title="Aucune dépense pour l'instant" />
       ) : (
         <>
-          <h3 className="fm-subtitle">Par session</h3>
+          <h3 className="fm-subtitle">Par séance de FM</h3>
           <ul className="fm-spend-list">
-            {profile.sessions.map((session) => (
-              <li key={session.sessionId}>
-                {session.canOpen ? (
-                  <button type="button" className="fm-link" onClick={() => onOpenSession(session.sessionId)}>
-                    #{session.channelName} · {formatFmDate(session.openedAt)}
-                  </button>
-                ) : (
-                  <span>#{session.channelName} · {formatFmDate(session.openedAt)}</span>
-                )}
-                <span className="fm-amount">{formatKamas(session.spentKamas)}</span>
-              </li>
-            ))}
+            {seances.map((seance) => {
+              const text = `#${seance.name} · ${formatFmDate(seance.lastOpenedAt)}`;
+              return (
+                <li key={seance.key}>
+                  {seance.seanceId !== undefined
+                    ? <button type="button" className="fm-link" onClick={() => onOpenSeance(seance.seanceId!)}>{text}</button>
+                    : <span>{text}</span>}
+                  <span className="fm-amount"><Kamas value={seance.spentKamas} /></span>
+                </li>
+              );
+            })}
             {profile.importedKamas > 0 && (
               <li>
-                <span>Captures importées sur le site</span>
-                <span className="fm-amount">{formatKamas(profile.importedKamas)}</span>
+                <span>Captures importées hors séance</span>
+                <span className="fm-amount"><Kamas value={profile.importedKamas} /></span>
               </li>
             )}
           </ul>
-          <h3 className="fm-subtitle">Par objet</h3>
-          <ItemSummaryTable items={profile.items} />
+          <h3 className="fm-subtitle">Par objet acheté</h3>
+          <PurchasesTable items={profile.items} />
         </>
       )}
     </section>
   );
 }
 
-export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, onOpenItem, onUnauthorized }: {
+export function ProfileTab({ me, updateMe, onDeleted, onOpenSeance, onUnauthorized }: {
   me: FmMe;
-  priceMode: PriceMode;
-  updateMe: (changes: { serverId?: string; isPrivate?: boolean }) => Promise<boolean>;
+  updateMe: (changes: { isPrivate?: boolean }) => Promise<boolean>;
   onDeleted: () => void;
-  onOpenSession: (sessionId: string) => void;
-  onOpenItem: (itemId: string) => void;
+  onOpenSeance: (seanceId: string) => void;
   onUnauthorized: () => void;
 }) {
   const [profile, setProfile] = useState<{ status: 'loading' | 'missing' | 'unavailable' } | { status: 'ready'; profile: FmProfile }>({ status: 'loading' });
-  // Bumped after an import, to reread the spending it just added.
-  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    // An import rereads in place: the spending already shown stays until the new one arrives.
-    if (version === 0) setProfile({ status: 'loading' });
     void getFmPlayer(me.discordUserId).then((result) => {
       if (cancelled) return;
       if (result.status === 'unauthorized') onUnauthorized();
@@ -167,28 +151,16 @@ export function ProfileTab({ me, priceMode, updateMe, onDeleted, onOpenSession, 
     return () => {
       cancelled = true;
     };
-  }, [me.discordUserId, onUnauthorized, version]);
+  }, [me.discordUserId, onUnauthorized]);
 
   return (
     <div className="fm-profile">
       <ProfileSettings me={me} updateMe={updateMe} />
-      <CaptureImport me={me} priceMode={priceMode} onImported={() => setVersion((value) => value + 1)} />
 
       {profile.status === 'loading' && <p className="empty" role="status">Chargement des dépenses…</p>}
       {profile.status === 'missing' && <EmptyState icon="info" title="Profil introuvable" description="Reconnecte-toi avec Discord, puis réessaie." />}
       {profile.status === 'unavailable' && <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas. Réessayez plus tard." />}
-      {profile.status === 'ready' && (
-        <FmItemsSection items={profile.profile.fmItems} isMine onOpenItem={onOpenItem} onChanged={() => setVersion((value) => value + 1)} />
-      )}
-      {profile.status === 'ready' && (
-        <FmChannelsSection
-          channels={profile.profile.fmChannels}
-          items={profile.profile.fmItems}
-          isMine
-          onChanged={() => setVersion((value) => value + 1)}
-        />
-      )}
-      {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSession={onOpenSession} />}
+      {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSeance={onOpenSeance} />}
 
       <DeleteProfile onDeleted={onDeleted} />
     </div>

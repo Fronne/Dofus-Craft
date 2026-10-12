@@ -1,5 +1,8 @@
 # Feature Specification: Récap de forgemagie par objet
 
+**Révision (specs/049-fm-seances, 2026-10-12)** : le récap par objet et la liste « Mes objets en FM » du profil ne sont plus affichés par le site : l'objet se choisit, se renomme et se retire depuis la séance de FM.
+Voir [specs/049-fm-seances](../049-fm-seances/spec.md).
+
 **Feature Branch**: `027-fm-item-recap`
 
 **Created**: 2026-09-30

@@ -28,9 +28,18 @@ export type IconName =
   | 'refresh'
   | 'potion'
   | 'rune'
+  | 'hammer'
+  | 'user'
   | 'image';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  // A hammer, for the séances de FM (specs/049).
+  hammer: {
+    children: '<path d="M13.5 3.5l7 7-3 3-7-7z"/><path d="M12.5 8.5 4 17a1.9 1.9 0 0 0 2.7 2.7l8.5-8.5"/>',
+  },
+  user: {
+    children: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/>',
+  },
   // An anvil, for the Forgemagie page (specs/025).
   anvil: {
     children:

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import {
-  normalizeItemName, unitPriceKamas, type FmMe, type FmSession, type PriceableResource, type ProposedLine, type ResourceNameIndex,
+  isRuneName, normalizeItemName, unitPriceKamas, type FmMe, type PriceableResource, type ProposedLine, type ResourceNameIndex,
 } from '../../domain/forgemagie';
 import { formatKamas, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
@@ -9,12 +9,14 @@ import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { loadResourceIndex, readCapture, type CaptureReading } from '../../services/capture-ocr';
 import { getCommunityPrices } from '../../services/community-price-api';
-import { getFmSessions, importFmCapture } from '../../services/fm-api';
+import { importFmCapture } from '../../services/fm-api';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
 
 // specs/025-rune-purchase-import (US5): paste or drop a chat capture, check and correct what was read on
 // this device, then validate. Nothing is recorded before « Valider » (FR-023), and a line whose
 // resource isn't identified can't be validated (FR-024).
+// specs/049-fm-seances (US2): the capture goes into the open session of a séance; a line that is not a
+// rune is recorded but does not count in the séance.
 
 type EditableLine = {
   key: number;
@@ -47,7 +49,17 @@ function lineValues(line: EditableLine) {
   return valid ? { quantity, totalKamas, unit: unitPriceKamas({ quantity, totalKamas }) } : undefined;
 }
 
-export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMode: PriceMode; onImported: () => void }) {
+const NO_SERVER = 'Ton serveur Dofus n’a pas pu être enregistré. Choisis-le de nouveau avec le sélecteur de serveur du site, en haut de la page.';
+
+export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionClosed }: {
+  me: FmMe;
+  priceMode: PriceMode;
+  /** The open session the capture goes into. */
+  sessionId: string;
+  onImported: () => void;
+  /** The session was stopped meanwhile: nothing was recorded. */
+  onSessionClosed: () => void;
+}) {
   const [lines, setLines] = useState<EditableLine[]>([]);
   const [status, setStatus] = useState<'idle' | 'reading' | 'review' | 'saving'>('idle');
   const [message, setMessage] = useState<{ tone: 'info' | 'error'; text: string } | undefined>(undefined);
@@ -55,22 +67,6 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [outlierDialog, confirmOutlier] = useOutlierConfirm();
-  // specs/028 FR-013: the player's open sessions the import can go into; the most recent by default.
-  const [openSessions, setOpenSessions] = useState<FmSession[]>([]);
-  const [targetSessionId, setTargetSessionId] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    void getFmSessions(null, { mine: 'open' }).then((result) => {
-      if (cancelled || result.status !== 'ok') return;
-      setOpenSessions(result.data.sessions);
-      setTargetSessionId(result.data.sessions[0]?.id ?? '');
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   useEffect(() => {
     void loadResourceIndex().then(setIndex).catch(() => undefined);
   }, []);
@@ -115,7 +111,11 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
   const blocked = kept.some((line) => !line.resource || !lineValues(line));
 
   const validate = async () => {
-    if (blocked || kept.length === 0 || !me.serverId) return;
+    if (blocked || kept.length === 0) return;
+    if (!me.serverId) {
+      setMessage({ tone: 'error', text: NO_SERVER });
+      return;
+    }
     setStatus('saving');
     setMessage(undefined);
     const priced = kept.map((line) => ({ line, values: lineValues(line)! }));
@@ -143,18 +143,20 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
       itemId: line.resource!.id,
       quantity: values.quantity,
       totalKamas: values.totalKamas,
-    })), priceMode === 'community', targetSessionId || undefined);
+    })), priceMode === 'community', sessionId);
 
     if (result.status !== 'ok') {
+      const closed = result.status === 'error' && result.code === 'session-not-open';
       setStatus('review');
       setMessage({
         tone: 'error',
         text: result.status === 'error' && result.code === 'no-server'
-          ? 'Choisis d’abord ton serveur Dofus ci-dessus.'
-          : result.status === 'error' && result.code === 'session-not-open'
-            ? 'Cette session vient d’être arrêtée. Choisis-en une autre, ou « Hors session ».'
+          ? NO_SERVER
+          : closed
+            ? 'Cette session vient d’être arrêtée : rien n’a été enregistré.'
             : 'L’import n’a pas pu être enregistré. Réessaie.',
       });
+      if (closed) onSessionClosed();
       return;
     }
     // Mode personnel: the prices stay on this device, like a manual entry.
@@ -164,7 +166,12 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
     }
     setLines([]);
     setStatus('idle');
-    setMessage({ tone: 'info', text: `${priced.length} ${priced.length > 1 ? 'achats enregistrés' : 'achat enregistré'}.` });
+    const uncounted = priced.filter(({ line }) => !isRuneName(line.resource!.name)).length;
+    setMessage({
+      tone: 'info',
+      text: `${priced.length} ${priced.length > 1 ? 'achats enregistrés' : 'achat enregistré'}${
+        uncounted > 0 ? `, dont ${uncounted} ${uncounted > 1 ? 'non comptés' : 'non compté'} (pas une rune)` : ''}.`,
+    });
     onImported();
   };
 
@@ -230,6 +237,9 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
                       <input type="checkbox" checked={line.keep} aria-label={`Garder ${line.itemName}`} onChange={(event) => update(line.key, { keep: event.target.checked })} />
                     </td>
                     <th scope="row">
+                      {line.resource && !isRuneName(line.resource.name) && (
+                        <span className="fm-correction-read">pas une rune : non comptée dans la séance</span>
+                      )}
                       {line.resource ? line.resource.name : (
                         <label className="fm-unknown">
                           <span className="fm-error">« {line.itemName} » non reconnu</span>
@@ -259,15 +269,6 @@ export function CaptureImport({ me, priceMode, onImported }: { me: FmMe; priceMo
           </table>
           <p className="fm-note">Prix unitaire = total ÷ quantité, arrondi au kama le plus proche. Chaque ligne est un lot acheté.</p>
           {blocked && <p className="fm-error" role="alert">Choisis l'objet de chaque ligne non reconnue, ou décoche-la.</p>}
-          {openSessions.length > 0 && (
-            <label className="fm-field">
-              <span className="fm-field-label">Ajouter à</span>
-              <select className="hdv-type-filter" value={targetSessionId} onChange={(event) => setTargetSessionId(event.target.value)} aria-label="Session de l'import">
-                {openSessions.map((session) => <option key={session.id} value={session.id}>La session en cours #{session.channelName}</option>)}
-                <option value="">Hors session</option>
-              </select>
-            </label>
-          )}
           <div className="fm-import-actions">
             <button type="button" className="btn btn-secondary" onClick={() => { setLines([]); setStatus('idle'); }} disabled={status === 'saving'}>
               Annuler

@@ -1,5 +1,8 @@
 # Feature Specification: Démarrer une session FM depuis le site, synchronisée avec Discord
 
+**Révision (specs/049-fm-seances, 2026-10-12)** : une session se démarre désormais en créant une séance de FM ou en reprenant une séance en pause ; l'import d'une capture se fait depuis la séance, dans sa session ouverte.
+Voir [specs/049-fm-seances](../049-fm-seances/spec.md).
+
 **Feature Branch**: `028-site-started-sessions`
 
 **Created**: 2026-09-30

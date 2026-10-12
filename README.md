@@ -49,21 +49,20 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   ancien » quand sa source le signale.
 - **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
   leur compte Discord (le reste du site reste sans compte).
-  - Les **sessions FM** du bot Discord du groupe y sont gardées : total, dépense de chaque joueur, et
-    détail des runes achetées avec leur prix moyen, les mêmes chiffres que le résumé du bot. Le détail
-    d'une session liste aussi chacune de ses **captures** lues (dans Discord ou sur le site), avec son
-    auteur, son montant et le récap de ses runes.
-  - Chaque joueur a ses **salons FM personnels**, créés par le bot (bouton « Nouvelle séance de FM » dans
-    Discord, ou « Démarrer une séance » sur le site) : visibles par lui seul, 5 actifs au plus,
-    archivés avec `/fmarchive`. Un salon peut être rattaché à un objet en FM : toutes ses sessions
-    comptent alors pour cet objet.
-  - On peut **démarrer et arrêter une session depuis le site**, dans un de ses salons : le bot l'ouvre
-    ou la ferme aussi dans Discord en quelques secondes, et les captures collées sur le site peuvent y
-    être ajoutées.
-  - Chaque joueur déclare ses **objets en FM** (par exemple son Anneau Rtograf) et y rattache les
-    sessions où il a dépensé : le **récap** d'un objet donne le total dépensé, ses sessions et le détail
-    des runes. Une session se rattache en tapant le nom de l'objet dans son détail : un de ses objets
-    en FM, ou un équipement du catalogue, qui crée alors l'objet.
+  - Chaque joueur y retrouve ses **séances de FM** : un salon Discord privé créé par le bot (bouton
+    « Nouvelle séance de FM », dans Discord ou sur le site), 5 non archivées au plus, avec l'objet
+    forgemagé s'il l'a choisi. Une séance est en cours, en pause ou archivée.
+  - Le détail d'une séance donne le total dépensé, les runes achetées avec leur prix moyen, puis ses
+    **sessions** et, dans chacune, ses **captures** (lues dans Discord ou collées sur le site). Seules
+    les runes comptent : les autres achats d'une capture sont listés, sans être comptés.
+  - On y **arrête ou reprend une session**, on **archive ou rouvre la séance**, on choisit, renomme
+    ou retire son objet, et on **corrige une capture mal lue** (quantité et total de chaque ligne) ;
+    la valeur lue reste connue et peut être rétablie.
+  - Un onglet au nom du serveur Discord du groupe montre ce que la forgemagie a coûté à chaque joueur
+    au profil public, avec la liste de ses séances (nom, objet, état, total) — jamais ses sessions,
+    ses captures ni ses runes.
+  - Le **profil** règle la visibilité, donne les dépenses par séance de FM et par objet acheté, et
+    permet de supprimer son profil. Les achats sont rangés sur le serveur choisi pour tout le site.
   - Chaque joueur a un **profil** avec ses dépenses. Il est public par défaut ; un profil privé
     n'est visible que par son propriétaire, et son nom est masqué dans les sessions.
   - Les achats envoyés par le bot alimentent le **prix des runes**, affiché dans l'onglet Runes de la

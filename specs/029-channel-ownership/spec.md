@@ -1,5 +1,8 @@
 # Feature Specification: Salons FM personnels créés par le bot
 
+**Révision (specs/049-fm-seances, 2026-10-12)** : le salon personnel est présenté comme une « séance de FM » ; l'archivage et la réouverture se font aussi depuis le site, et la liste des salons a quitté le profil.
+Voir [specs/049-fm-seances](../049-fm-seances/spec.md).
+
 **Feature Branch**: `029-channel-ownership`
 
 **Created**: 2026-09-30

@@ -1,23 +1,27 @@
 import { useState } from 'react';
 import { EmptyState } from '../../components/EmptyState';
-import { FmItemRecap } from './FmItemRecap';
+import { Icon, type IconName } from '../../components/Icon';
+import { groupTabLabel } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import { fmLoginUrl } from '../../services/fm-api';
 import { PlayerBadge } from './PlayerBadge';
+import { PlayersTab } from './PlayersTab';
 import { ProfileTab } from './ProfileTab';
-import { SessionDetail } from './SessionDetail';
-import { SessionsTab } from './SessionsTab';
+import { SeanceDetail } from './SeanceDetail';
+import { SeancesTab } from './SeancesTab';
 import { useFmAuth } from './useFmAuth';
 
 // specs/025-rune-purchase-import: the Forgemagie page, for members of the group's Discord server only
 // (FR-001, FR-002). The rest of the site stays anonymous (FR-003).
+// specs/049-fm-seances: the page is about séances de FM — one's own, then what forgemagie cost the
+// players of the group, then one's profile.
 
-// specs/026-hdv-rune-prices: the rune prices moved to the HDV page; the capture import is in Profil.
-type FmTab = 'sessions' | 'profile';
+type FmTab = 'seances' | 'players' | 'profile';
 
-const TABS: { id: FmTab; label: string }[] = [
-  { id: 'sessions', label: 'Sessions' },
-  { id: 'profile', label: 'Profil' },
+const TABS: { id: FmTab; icon: IconName }[] = [
+  { id: 'seances', icon: 'hammer' },
+  { id: 'players', icon: 'users' },
+  { id: 'profile', icon: 'user' },
 ];
 
 const LOGIN_ERRORS = {
@@ -27,21 +31,19 @@ const LOGIN_ERRORS = {
 
 export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
   const auth = useFmAuth();
-  const [tab, setTab] = useState<FmTab>('sessions');
-  const [openSessionId, setOpenSessionId] = useState<string | undefined>(undefined);
-  // specs/027-fm-item-recap: the recap of an item in FM, opened from the Profil tab.
-  const [openItemId, setOpenItemId] = useState<string | undefined>(undefined);
+  const [tab, setTab] = useState<FmTab>('seances');
+  const [openSeanceId, setOpenSeanceId] = useState<string | undefined>(undefined);
 
-  const openSession = (sessionId: string) => {
-    setOpenSessionId(sessionId);
-    setTab('sessions');
+  const openSeance = (seanceId: string) => {
+    setOpenSeanceId(seanceId);
+    setTab('seances');
   };
 
   return (
     <>
       <header className="page-header">
         <h1>Forgemagie</h1>
-        <p>Les sessions FM du bot Discord et les dépenses de chacun.</p>
+        <p>Tes séances de FM, leurs sessions et ce qu'elles ont coûté.</p>
       </header>
 
       <section className="panel hdv-panel fm-panel">
@@ -57,12 +59,15 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
         {auth.status === 'anonymous' && (
           <div className="fm-login">
             <p>
-              Connecte-toi avec ton compte Discord pour retrouver les sessions FM du bot et ce que chacun a
-              dépensé. Le prix des runes est dans la page HDV, onglet Runes.
+              Connecte-toi avec ton compte Discord pour retrouver tes séances de FM et ce qu'elles ont coûté. Le prix des
+              runes est dans la page HDV, onglet Runes.
             </p>
             {auth.loginError && <p className="fm-error" role="alert">{LOGIN_ERRORS[auth.loginError]}</p>}
             <a className="btn btn-primary" href={fmLoginUrl()}>Se connecter avec Discord</a>
-            <p className="fm-note">Seuls ton identifiant, ton pseudo et ton avatar Discord sont gardés.</p>
+            <p className="fm-note">
+              Seuls ton identifiant, ton pseudo et ton avatar Discord sont gardés. Discord te demandera aussi l'accès à la
+              liste de tes serveurs : seul le nom de celui du groupe y est lu.
+            </p>
           </div>
         )}
 
@@ -80,24 +85,25 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
                   type="button"
                   role="tab"
                   aria-selected={entry.id === tab}
-                  className={`hdv-tab${entry.id === tab ? ' hdv-tab--active' : ''}`}
+                  className={`hdv-tab hdv-tab--icon fm-tab${entry.id === 'players' ? ' fm-tab--group' : ''}${entry.id === tab ? ' hdv-tab--active' : ''}`}
                   onClick={() => {
                     setTab(entry.id);
-                    if (entry.id === 'sessions') setOpenSessionId(undefined);
-                    if (entry.id === 'profile') setOpenItemId(undefined);
+                    if (entry.id === 'seances') setOpenSeanceId(undefined);
                   }}
                 >
-                  {entry.label}
+                  <Icon name={entry.icon} size={18} />
+                  <span className="fm-tab-label">
+                    {entry.id === 'seances' ? 'Séances de FM' : entry.id === 'players' ? groupTabLabel(auth.me!) : 'Profil'}
+                  </span>
                 </button>
               ))}
             </div>
 
-            {tab === 'sessions' && (openSessionId
-              ? <SessionDetail sessionId={openSessionId} me={auth.me} onBack={() => setOpenSessionId(undefined)} onUnauthorized={auth.forget} />
-              : <SessionsTab me={auth.me} onOpen={setOpenSessionId} onUnauthorized={auth.forget} />)}
-            {tab === 'profile' && (openItemId
-              ? <FmItemRecap itemId={openItemId} onBack={() => setOpenItemId(undefined)} onOpenSession={openSession} onUnauthorized={auth.forget} />
-              : <ProfileTab me={auth.me} priceMode={priceMode} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSession={openSession} onOpenItem={setOpenItemId} onUnauthorized={auth.forget} />)}
+            {tab === 'seances' && (openSeanceId
+              ? <SeanceDetail key={openSeanceId} seanceId={openSeanceId} me={auth.me} priceMode={priceMode} onBack={() => setOpenSeanceId(undefined)} onUnauthorized={auth.forget} />
+              : <SeancesTab me={auth.me} onOpen={setOpenSeanceId} onUnauthorized={auth.forget} />)}
+            {tab === 'players' && <PlayersTab onUnauthorized={auth.forget} />}
+            {tab === 'profile' && <ProfileTab me={auth.me} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSeance={openSeance} onUnauthorized={auth.forget} />}
           </>
         )}
       </section>

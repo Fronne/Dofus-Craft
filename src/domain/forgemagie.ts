@@ -78,63 +78,124 @@ export type FmPlayer = { discordUserId: string | null; displayName: string | nul
 
 export type FmSessionStatus = 'open' | 'closed';
 
-/** specs/027: the item a session is attached to, or `{ private: true }` for a private owner's item. */
-export type FmSessionItem = { id: string; name: string; owner: FmPlayer } | { private: true };
-
-export type FmSession = {
-  id: string;
-  channelName: string;
-  status: FmSessionStatus;
-  openedAt: string;
-  closedAt: string | null;
-  totalKamas: number;
-  players: { player: FmPlayer; spentKamas: number }[];
-  fmItem: FmSessionItem | null;
-  /** specs/029: whether the item comes from the session's channel or was attached by hand. */
-  fmItemSource: 'session' | 'channel' | null;
-  /** specs/028: who started it (site) or typed /fmstart; null for older sessions. */
-  owner: FmPlayer | null;
-  origin: 'discord' | 'site';
-  /** specs/028 FR-011: for a session started on the site, whether the bot opened it in Discord. */
-  sync: FmSessionSync | null;
-  canStop: boolean;
-};
-
+/** specs/028 FR-011: for a session started on the site, whether the bot opened it in Discord. */
 export type FmSessionSync = { status: 'pending' | 'opened' | 'failed' | 'cancelled' | 'stale'; error: string | null };
 
-/** specs/029: a player's personal FM channel; `busy` when a session is open in it (own channels list only). */
-export type FmChannel = {
-  channelId: string;
-  channelName: string;
-  status: 'active' | 'archived' | 'deleted';
-  fmItem: { id: string; name: string } | null;
-  busy?: boolean;
+/** specs/029: a channel the site asked the bot to create. */
+export type FmChannelRequest = { id: string; status: 'pending' | 'done' | 'failed'; error?: string | null; channelId?: string | null; sessionId?: string | null };
+
+/** What was bought of one item. specs/049: `corrected` once a line of it was corrected, `readNames` the names it was misread under. */
+export type FmItemSummary = {
+  itemName: string;
+  itemId: string | null;
+  quantity: number;
+  totalKamas: number;
+  averageUnitKamas: number;
+  corrected?: boolean;
+  readNames?: string[];
 };
 
-/** specs/029: a channel the site asked the bot to create. */
-export type FmChannelRequest = { id: string; status: 'pending' | 'done' | 'failed'; error: string | null; channelId: string | null; sessionId: string | null };
+// --- Séances de FM (specs/049-fm-seances, contracts/fm-seances-client.md) ---
 
-export type FmItemSummary = { itemName: string; itemId: string | null; quantity: number; totalKamas: number; averageUnitKamas: number };
+/** A séance de FM is a player's private Discord channel: running while a session is open in it. */
+export type FmSeanceState = 'running' | 'paused' | 'archived';
 
-/** specs/031-fm-session-captures: one capture read during a session, with its own recap. */
-export type FmCapture = {
+export const SEANCE_STATE_LABELS: Record<FmSeanceState, string> = {
+  running: 'En cours',
+  paused: 'En pause',
+  archived: 'Archivée',
+};
+
+/** The item forgemaged in a séance: `name` is the player's own name for it, or the equipment's. */
+export type FmSeanceItem = { id: string; name: string; itemName: string; label: string | null; imageUrl: string | null };
+
+export type FmSeance = {
+  id: string;
+  name: string;
+  state: FmSeanceState;
+  /** The state of the Discord channel itself, as the API tells it. */
+  discord: string;
+  fmItem: FmSeanceItem | null;
+  totalKamas: number;
+  sessionCount: number;
+  captureCount: number;
+  createdAt: string;
+  lastActivityAt: string;
+};
+
+/** One purchase line of a capture, as it counts now and as it was read. */
+export type FmCaptureLine = {
+  id: string;
+  itemName: string;
+  quantity: number;
+  totalKamas: number;
+  unitPriceKamas: number;
+  originalQuantity: number;
+  originalTotalKamas: number;
+  corrected: boolean;
+  priceStatus: string;
+};
+
+/** A line of a capture that is not a rune: listed, never counted in the séance. */
+export type FmIgnoredLine = { itemName: string; quantity: number; totalKamas: number };
+
+export type FmSeanceCapture = {
   id: string;
   createdAt: string;
   /** `bot`: posted in Discord and read by the bot; `capture`: imported on the site. */
   origin: 'bot' | 'capture';
-  player: FmPlayer;
   spentKamas: number;
   items: FmItemSummary[];
+  corrected: boolean;
+  lines: FmCaptureLine[];
+  ignored: FmIgnoredLine[];
 };
 
-export type FmSessionDetail = FmSession & {
+export type FmSeanceSession = {
+  id: string;
+  status: FmSessionStatus;
+  openedAt: string;
+  closedAt?: string | null;
+  totalKamas: number;
+  sync?: FmSessionSync | null;
+  canStop: boolean;
+  captures: FmSeanceCapture[];
+};
+
+/** An archiving or a reopening of the channel the bot has not done yet, or failed to do. */
+export type FmSeanceRequest = { type: 'archive' | 'reopen'; status: 'pending' | 'failed' | 'stale'; error?: string | null };
+
+export type FmSeanceDetail = FmSeance & {
+  /** How many items were bought, every purchase of the séance together. */
+  quantity: number;
   items: FmItemSummary[];
-  /** specs/031: oldest first; empty from an older Worker. */
-  captures: FmCapture[];
-  /** specs/027 FR-005: not attached yet, and the viewer spent in it. */
-  canAttach: boolean;
-  /** specs/027 FR-007: attached to one of the viewer's items. */
-  canDetach: boolean;
+  sessions: FmSeanceSession[];
+  request: FmSeanceRequest | null;
+  canResume: boolean;
+  canArchive: boolean;
+  canReopen: boolean;
+};
+
+/** A séance as the other members of the group see it: no session, no capture, no rune. */
+export type FmGroupSeance = {
+  name: string;
+  state: FmSeanceState;
+  fmItem: { name: string; imageUrl: string | null } | null;
+  totalKamas: number;
+  sessionCount: number;
+  lastActivityAt: string;
+};
+
+/** A player of the group and what forgemagie cost them; `private` only ever true on the viewer's own line. */
+export type FmGroupPlayer = {
+  displayName: string;
+  avatarUrl: string | null;
+  isMe: boolean;
+  private: boolean;
+  totalKamas: number;
+  seanceCount: number;
+  lastActivityAt: string | null;
+  seances: FmGroupSeance[];
 };
 
 /** specs/027: an item a player forgemages ("objet en FM"), with the total of its attached sessions. */
@@ -149,17 +210,11 @@ export type FmOwnedItem = {
   sessionCount: number;
 };
 
-/** specs/027 FR-009 to FR-012: an item's recap — no share per player. */
-export type FmItemRecap = FmOwnedItem & {
-  sessions: { id: string; channelName: string; status: FmSessionStatus; openedAt: string; totalKamas: number }[];
-  items: FmItemSummary[];
-};
-
 export function fmItemDisplayName(item: { label: string | null; itemName: string }): string {
   return item.label ?? item.itemName;
 }
 
-/** specs/031: what the session is attached to — one of the player's items, or a new one for an equipment. */
+/** What a séance is attached to — one of the player's items, or a new one for an equipment. */
 export type FmAttachTarget =
   | { fmItemId: string }
   | { item: { itemId: string; itemName: string; imageUrl: string | null } };
@@ -174,8 +229,6 @@ export function matchesItemQuery(item: { label: string | null; itemName: string 
   return [item.label ?? '', item.itemName].some((name) => foldForSearch(name).includes(folded));
 }
 
-export type FmSessionsPage = { sessions: FmSession[]; nextBefore: string | null };
-
 export type FmMe = {
   discordUserId: string;
   displayName: string;
@@ -183,20 +236,79 @@ export type FmMe = {
   serverId: string | null;
   isPrivate: boolean;
   firstLoginAt: string | null;
+  /** specs/049: the name of the group's Discord server, read at login. */
+  guildName?: string | null;
 };
 
+/** specs/049: the name of the players' tab — the group's Discord server, when it is known. */
+export function groupTabLabel(me: Pick<FmMe, 'guildName'>): string {
+  return me.guildName?.trim() || 'Joueurs';
+}
+
+/** specs/049: only runes count in a séance; what the chat names « Rune … » is one. */
+export function isRuneName(name: string): boolean {
+  return normalizeItemName(name).startsWith('rune ');
+}
+
+/** specs/049: the lines of a capture that do not count, one per item — bought twice, listed once. */
+export function mergeIgnoredLines(lines: FmIgnoredLine[]): FmIgnoredLine[] {
+  const byName = new Map<string, FmIgnoredLine>();
+  for (const line of lines) {
+    const known = byName.get(line.itemName);
+    byName.set(line.itemName, known
+      ? { ...known, quantity: known.quantity + line.quantity, totalKamas: known.totalKamas + line.totalKamas }
+      : { ...line });
+  }
+  return [...byName.values()];
+}
+
+/** specs/049: the quantity and total typed in a correction — whole numbers of at least 1, or nothing. */
+export function correctionValues(quantity: string, total: string): { quantity: number; totalKamas: number } | undefined {
+  const parse = (raw: string) => {
+    const digits = raw.replace(/[\s\u202f\u00a0]/g, '');
+    return /^\d+$/.test(digits) ? Number(digits) : undefined;
+  };
+  const parsedQuantity = parse(quantity);
+  const parsedTotal = parse(total);
+  return parsedQuantity !== undefined && parsedQuantity > 0 && parsedTotal !== undefined && parsedTotal > 0
+    ? { quantity: parsedQuantity, totalKamas: parsedTotal }
+    : undefined;
+}
+
+/** One session of a profile's spending; `channelId` is its séance (absent from an older API). */
+export type FmProfileSession = { sessionId: string; channelId?: string | null; channelName: string; openedAt: string; spentKamas: number; canOpen: boolean };
+
+export type FmSeanceSpending = { key: string; seanceId: string | undefined; name: string; lastOpenedAt: string; spentKamas: number };
+
+/**
+ * specs/049: a profile's spending, one line per séance — its sessions added up, dated by the latest,
+ * the most recent séance first. `seanceId` only when the séance can be opened by the viewer.
+ */
+export function spendingBySeance(sessions: FmProfileSession[]): FmSeanceSpending[] {
+  const bySeance = new Map<string, FmSeanceSpending>();
+  for (const session of sessions) {
+    const key = session.channelId ?? session.sessionId;
+    const known = bySeance.get(key);
+    bySeance.set(key, {
+      key,
+      seanceId: session.canOpen ? session.channelId ?? undefined : known?.seanceId,
+      name: known?.name ?? session.channelName,
+      lastOpenedAt: known && known.lastOpenedAt > session.openedAt ? known.lastOpenedAt : session.openedAt,
+      spentKamas: (known?.spentKamas ?? 0) + session.spentKamas,
+    });
+  }
+  return [...bySeance.values()].sort((a, b) => (a.lastOpenedAt < b.lastOpenedAt ? 1 : -1));
+}
 
 export type FmProfile = {
   player: FmPlayer;
   totalKamas: number;
   // specs/030-private-fm-sessions (research R5): a session the player posted in but doesn't own won't open.
-  sessions: { sessionId: string; channelName: string; openedAt: string; spentKamas: number; canOpen: boolean }[];
+  sessions: FmProfileSession[];
   importedKamas: number;
   items: FmItemSummary[];
   /** specs/027 FR-014. */
   fmItems: FmOwnedItem[];
-  /** specs/029 FR-013. */
-  fmChannels: FmChannel[];
 };
 
 /** Why a purchase line created a price, or not (contracts/fm-bot-api.md). */

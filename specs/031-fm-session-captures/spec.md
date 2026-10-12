@@ -1,5 +1,8 @@
 # Feature Specification: Captures d'une séance FM et rattachement d'objet par son nom
 
+**Révision (specs/049-fm-seances, 2026-10-12)** : les captures sont rangées par session dans le détail de la séance, peuvent être corrigées, et l'objet se choisit par son nom au niveau de la séance.
+Voir [specs/049-fm-seances](../049-fm-seances/spec.md).
+
 **Feature Branch**: `031-fm-session-captures` (développée sur `claude/charming-goodall-wv8us5`)
 
 **Created**: 2026-09-30

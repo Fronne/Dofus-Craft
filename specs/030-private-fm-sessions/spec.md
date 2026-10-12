@@ -1,5 +1,8 @@
 # Feature Specification: Forgemagie privée — chacun ne voit que ses séances
 
+**Révision (specs/049-fm-seances, 2026-10-12)** : le réglage de visibilité a désormais un effet : un profil public apparaît, avec la liste de ses séances, dans l'onglet au nom du groupe ; sessions, captures et runes restent privées.
+Voir [specs/049-fm-seances](../049-fm-seances/spec.md).
+
 **Feature Branch**: `030-private-fm-sessions`
 
 **Created**: 2026-09-30

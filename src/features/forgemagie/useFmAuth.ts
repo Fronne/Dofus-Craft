@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { parseLoginFragment, type FmMe } from '../../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken, writeFmSessionToken } from '../../persistence/fm-session-token';
@@ -38,22 +38,30 @@ export function useFmAuth() {
         setStatus(result.status === 'unauthorized' || result.status === 'not-found' ? 'anonymous' : 'unavailable');
         return;
       }
-      let profile = result.data;
-      // First login (FR-005): the profile's server starts as the site's active server.
-      if (profile.serverId === null && serverId) {
-        const updated = await updateFmMe({ serverId });
-        if (cancelled) return;
-        if (updated.status === 'ok') profile = updated.data;
-      }
-      setMe(profile);
+      setMe(result.data);
       setStatus('connected');
     })();
     return () => {
       cancelled = true;
     };
-    // The active server only seeds a first login; changing it later must not reload the profile.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
+
+  // specs/049-fm-seances: the profile's server follows the site's — the purchases are filed on the
+  // server chosen for the whole site. A server that could not be saved is not asked again.
+  const profileServerId = me?.serverId;
+  const askedServerId = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (status !== 'connected' || profileServerId === undefined || !serverId) return;
+    if (profileServerId === serverId || askedServerId.current === serverId) return;
+    askedServerId.current = serverId;
+    let cancelled = false;
+    void updateFmMe({ serverId }).then((result) => {
+      if (!cancelled && result.status === 'ok') setMe(result.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, profileServerId, serverId]);
 
   const retry = useCallback(() => setAttempt((value) => value + 1), []);
 
