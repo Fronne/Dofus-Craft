@@ -11,3 +11,6 @@ test-results/
 playwright-report/
 backups/
 dist-admin/
+
+# Copies de travail Claude Code (claude --worktree)
+.claude/worktrees/

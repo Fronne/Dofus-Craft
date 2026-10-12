@@ -23,3 +23,20 @@ branche `NNN-nom-court` est créée à partir de `master` avant `/speckit-specif
 Respecter la constitution du projet (`.specify/memory/constitution.md`) et rester cohérent avec les
 specs déjà existantes dans `specs/`. Pour un correctif ponctuel ou un bug qui ne touche pas une
 fonctionnalité déjà spécifiée, ce workflow complet n'est pas obligatoire.
+
+## Travailler dans un worktree
+
+Avant toute modification de code, si la session ne tourne pas déjà dans un worktree (dossier
+`.claude/worktrees/`), créer un worktree dédié à la tâche avec un nom court et clair, puis y faire
+tout le travail. Le dossier principal du projet et la branche `master` ne doivent pas être modifiés
+directement. Le workflow Speckit s'exécute lui aussi à l'intérieur de ce worktree.
+
+## Fin de tâche
+
+Avant d'annoncer qu'une tâche est terminée, lancer le sous-agent `relecteur` sur les changements
+et corriger les points graves qu'il signale.
+
+## Test bloqué
+
+Si le même test échoue deux fois de suite malgré une correction, ne pas réessayer une troisième fois
+à l'aveugle : lancer le sous-agent `debogueur` (Opus), puis appliquer le correctif qu'il propose.
