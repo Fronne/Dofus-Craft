@@ -20,7 +20,6 @@ export function ResourcePriceInput({
   history,
   caption,
   priceNote,
-  underPrice,
 }: {
   resource: Resource;
   quantity: number;
@@ -58,8 +57,6 @@ export function ResourcePriceInput({
   caption?: ReactNode;
   // specs/047: what makes the price shown a fragile one (« peu de relevés », « relevé ancien »), after its date.
   priceNote?: string;
-  // Shown under the price field (HDV page: where the price shown comes from).
-  underPrice?: ReactNode;
 }) {
   const valid = isValidKamas(value);
   const [editing, setEditing] = useState(false);
@@ -188,7 +185,6 @@ export function ResourcePriceInput({
         </span>
         {history}
       </span>
-      {underPrice && <span className="price-under">{underPrice}</span>}
       {subtotalKamas !== undefined
         ? subtotalKamas !== null && <b className="price-resource-formatted">{formatKamas(subtotalKamas)}</b>
         : value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}

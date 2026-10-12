@@ -45,7 +45,7 @@ test.describe('HDV page (specs/023)', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test('lists the runes in their own tab, without logging in, with the origin of a shared price (specs/026)', async ({ page }) => {
+  test('lists the runes in their own tab, without logging in, with a shared price but not where it comes from (specs/026)', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('craftcheck-price-mode-choice', 'community'));
     await page.route('**/community-prices?*', (route) => route.fulfill({
       contentType: 'application/json',
@@ -58,6 +58,8 @@ test.describe('HDV page (specs/023)', () => {
     await page.getByRole('tab', { name: 'Runes' }).click();
     await expect(page.getByText('sur 105')).toBeVisible();
     await page.getByRole('searchbox', { name: 'Rechercher une rune' }).fill('Rune Do Air');
-    await expect(page.locator('li.hdv-row').filter({ hasText: 'Rune Do Air' }).first()).toContainText('Bot Discord');
+    const row = page.locator('li.hdv-row').filter({ hasText: 'Rune Do Air' }).first();
+    await expect(row.getByRole('textbox')).toHaveValue(/1\s?587/);
+    await expect(row).not.toContainText('Bot Discord');
   });
 });

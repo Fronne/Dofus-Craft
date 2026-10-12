@@ -303,16 +303,10 @@ describe('HDV page (specs/023)', () => {
       ? { status: 'found', price: { resourceId: id, serverId: 'mikhal', medianAmountKamas: 1587, sampleSize: 1, latestAmountKamas: 1587, latestContributionAt: new Date().toISOString(), latestOrigin: 'bot' } }
       : { status: 'not-found' }));
 
-    it('shows the origin of the latest shared price in Mode communautaire', async () => {
+    it('shows the latest shared price in Mode communautaire, without writing where it comes from', async () => {
       sharedByBot();
       await openHdv('community', 'runes');
-      await waitFor(() => expect(rowOf(DO_AIR.name)?.textContent).toContain('Bot Discord'));
-    });
-
-    it('shows no origin in Mode personnel, where nothing is shared', async () => {
-      sharedByBot();
-      await openHdv('personal', 'runes');
-      await waitFor(() => expect(rows()).toHaveLength(105));
+      await waitFor(() => expect(priceInput(DO_AIR.name).value.replace(/\s/g, '')).toBe('1587'));
       expect(rowOf(DO_AIR.name)?.textContent).not.toContain('Bot Discord');
     });
   });

@@ -36,18 +36,10 @@ la minute supérieure.
 
 ## Mention d'origine sur une ligne (Mode communautaire, tous les onglets)
 
-Sous le champ de prix de la ligne (et non plus à la suite du type ou de la stat), dans le
-`span.fm-origin` existant :
-
-| Dernier prix connu de l'API | Mention |
-|-----------------------------|---------|
-| origine `external` | « Huzounet » |
-| origine `external`, `latestFragile: 'provisional'` | « Huzounet · peu de relevés » |
-| origine `external`, `latestFragile: 'stale'` | « Huzounet · relevé ancien » |
-| origine `manual`, `capture`, `bot` | onglet Runes : libellé existant (inchangé) ; autres onglets : rien (inchangé) |
-
-Condition commune pour « Huzounet » : la date du prix affiché (carnet) est celle du dernier prix connu de
-l'API, et aucune saisie n'est en cours sur la ligne. Sinon, pas de mention.
+**Retirée le 2026-10-12, à la demande de l'utilisateur** : la page HDV n'écrit plus d'où vient un
+prix (« Huzounet », « Bot Discord », « Capture », « Saisie manuelle »), dans aucun onglet, Runes
+compris. Ce que la source dit d'un prix Huzounet fragile reste affiché après la date de la ligne
+(« Dernière mise à jour : … · peu de relevés » ou « · relevé ancien »), comme sur la page Recherche.
 
 ## Comportements
 

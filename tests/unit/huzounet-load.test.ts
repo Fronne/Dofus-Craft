@@ -5,7 +5,6 @@ import {
   HUZOUNET_SERVERS,
   loadAvailability,
   loadMessage,
-  shownOrigin,
   sliceIds,
   SLICE_SIZE,
   SLICE_SPACING_MS,
@@ -115,21 +114,5 @@ describe('Huzounet load rules (specs/046)', () => {
       .toBe('Cet onglet a déjà été chargé il y a moins d\'une heure. Prochain chargement possible à 15 h 05.');
     expect(loadMessage({ status: 'failed', done: 0, total: 128, loaded: 0, cause: 'hourly-limit', retryAt: 'soon' }))
       .toBe('Cet onglet a déjà été chargé il y a moins d\'une heure.');
-  });
-
-  describe('shownOrigin', () => {
-    const latest = { origin: 'external' as const, contributedAt: '2026-10-12T02:10:00.000Z' };
-    const entry = (updatedAt: string) => ({ resourceId: '1', unitPriceKamas: 100, updatedAt });
-
-    it('tells the origin of the price shown when it is the latest one known', () => {
-      expect(shownOrigin(entry(latest.contributedAt), latest)).toEqual(latest);
-      expect(shownOrigin(entry(latest.contributedAt), { ...latest, fragile: 'stale' })?.fragile).toBe('stale');
-    });
-
-    it('tells nothing when the carnet holds another price, or none', () => {
-      expect(shownOrigin(entry('2026-10-12T09:00:00.000Z'), latest)).toBeUndefined();
-      expect(shownOrigin(undefined, latest)).toBeUndefined();
-      expect(shownOrigin(entry(latest.contributedAt), undefined)).toBeUndefined();
-    });
   });
 });

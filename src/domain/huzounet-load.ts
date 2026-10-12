@@ -1,6 +1,4 @@
-import type { PriceOrigin } from './forgemagie';
 import type { PriceMode } from './price-modes';
-import type { ResourcePrice } from './types';
 
 // specs/046-hdv-huzounet-load: the rules of the HDV page's « Charger depuis Huzounet » button — which
 // servers can be loaded, how a tab is cut into requests, what the player reads. No React, no network.
@@ -118,13 +116,3 @@ export const FRAGILE_LABELS: Record<PriceFragility, string> = {
   provisional: 'peu de relevés',
   stale: 'relevé ancien',
 };
-
-/** The latest price the API knows for an item: where it comes from, and its own date. */
-export type LatestMention = { origin: PriceOrigin; fragile?: PriceFragility; contributedAt: string };
-
-// FR-013, constitution III: the origin is only told for the price actually shown. A carnet entry with
-// another date is another price (one the player typed since), so it gets no mention.
-export function shownOrigin(carnetEntry: ResourcePrice | undefined, latest: LatestMention | undefined): LatestMention | undefined {
-  if (!carnetEntry || !latest || carnetEntry.updatedAt !== latest.contributedAt) return undefined;
-  return latest;
-}

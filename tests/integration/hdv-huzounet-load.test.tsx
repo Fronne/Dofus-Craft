@@ -192,21 +192,19 @@ describe('HDV page — loading a tab from Huzounet (specs/046)', { timeout: 30_0
   });
 
   describe('US2 — where a price comes from', () => {
-    it('shows a price only Huzounet knows, says so, and counts the item', async () => {
+    it('shows a price only Huzounet knows and counts the item, without writing where it comes from', async () => {
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1500));
       await openHdv('community');
       await waitFor(() => expect(priceInput(CROQUETTE.name).value.replace(/\s/g, '')).toBe('1500'));
-      await waitFor(() => expect(within(rowOf(CROQUETTE.name)!).getByText('Huzounet')).toBeInTheDocument());
       await waitFor(() => expect(count()).toBe('1 objet sur 35 a un prix'));
-      expect(rows().filter((row) => row.textContent?.includes('Huzounet'))).toHaveLength(1);
+      expect(rows().filter((row) => row.textContent?.includes('Huzounet'))).toHaveLength(0);
     });
 
-    it.each([['provisional', 'Huzounet · peu de relevés'], ['stale', 'Huzounet · relevé ancien']] as const)('adds what Huzounet says of a %s price', async (latestFragile, mention) => {
+    it.each([['provisional', 'peu de relevés'], ['stale', 'relevé ancien']] as const)('keeps what its source says of a %s price after its date, without naming Huzounet', async (latestFragile, note) => {
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1500, { latestFragile }));
       await openHdv('community');
-      await waitFor(() => expect(within(rowOf(CROQUETTE.name)!).getByText(mention)).toBeInTheDocument());
-      // Under the price it qualifies, not under the item type.
-      expect(within(rowOf(CROQUETTE.name)!).getByText(mention).closest('.price-under')).not.toBeNull();
+      await waitFor(() => expect(rowOf(CROQUETTE.name)?.textContent).toContain(`· ${note}`));
+      expect(rowOf(CROQUETTE.name)?.textContent).not.toContain('Huzounet');
     });
 
     it('says nothing of Huzounet when the group shared a more recent price', async () => {
