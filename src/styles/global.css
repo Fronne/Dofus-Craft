@@ -4,9 +4,9 @@ html, body { height: 100%; }
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
-    radial-gradient(circle at 15% 0%, rgba(45, 77, 113, .18), transparent 34rem),
-    radial-gradient(circle at 90% 12%, rgba(108, 77, 30, .09), transparent 28rem),
+    var(--bg-glow),
     var(--bg);
 }
 
@@ -35,6 +35,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .app-shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app-nav {
@@ -55,6 +56,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh;
 }
 
 .app-nav-brand {
@@ -272,7 +274,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   border: 2px solid var(--gold);
   border-radius: 50%;
   background: var(--panel-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  box-shadow: var(--shadow-sm);
   cursor: grab;
   pointer-events: auto;
 }
@@ -282,7 +284,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   border: 2px solid var(--gold);
   border-radius: 50%;
   background: var(--panel-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  box-shadow: var(--shadow-sm);
   cursor: grab;
   pointer-events: auto;
 }
@@ -460,7 +462,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
    both the populated .pinned-grid and the empty-collection placeholder, and both states below, so
    dropping works the same whether the group already has cards or not. The dashed outline only
    shows while something is actively being dragged over this exact group. */
-.pinned-collection-body { border-radius: var(--radius-md); transition: background-color .1s ease; }
+.pinned-collection-body { border-radius: var(--radius-md); transition: background-color var(--transition-fast); }
 .pinned-collection-body-drag-over {
   outline: 2px dashed var(--gold-bright);
   outline-offset: 4px;
@@ -573,11 +575,11 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .resource-name-copy:hover, .resource-name-copy:focus-visible { background: var(--gold-soft); }
 .resource-name-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
-.resource-name-copy-icon { margin-left: .3rem; vertical-align: -2px; opacity: 0; color: var(--text-muted); transition: opacity .15s ease; }
+.resource-name-copy-icon { margin-left: .3rem; vertical-align: -2px; opacity: 0; color: var(--text-muted); transition: opacity var(--transition-fast); }
 .resource-name-copy:hover .resource-name-copy-icon,
 .resource-name-copy:focus-visible .resource-name-copy-icon,
 .resource-name-copy.is-copied .resource-name-copy-icon { opacity: 1; }
@@ -600,7 +602,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, 4px);
-  transition: opacity .15s ease, transform .15s ease;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 .resource-name-copy.is-copied .resource-name-copied { opacity: 1; transform: translate(-50%, 0); }
 .resource-name-copied:empty { display: none; }
@@ -785,7 +787,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .market-price-summary p.verdict-bar-label { font-size: .88rem; }
 .verdict-bar-empty { font-style: italic; }
 .verdict-bar-track { display: block; height: 10px; border-radius: var(--radius-pill); background: var(--border); overflow: hidden; }
-.verdict-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--text-faint); transition: width .3s ease; }
+.verdict-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--text-faint); transition: width var(--transition-enter); }
 .verdict-bar--cheaper .verdict-bar-fill { background: var(--success); }
 @media (max-width: 720px) {
   .verdict-savings { justify-items: start; text-align: left; flex-basis: 100%; }
@@ -854,7 +856,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .server-switcher-trigger[aria-expanded="true"] .server-switcher-chevron { color: var(--gold-bright); }
 .server-switcher-icon { flex: 0 0 auto; color: var(--gold-bright); }
 .server-switcher-text { display: flex; align-items: baseline; gap: .5rem; min-width: 0; text-align: left; }
-.server-switcher-label { font-size: .68rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+.server-switcher-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
 .server-switcher-value { color: var(--text); font-weight: 700; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .server-switcher-chevron { flex: 0 0 auto; color: var(--text-faint); }
 
@@ -868,6 +870,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   width: max-content;
   min-width: 220px;
   max-height: min(70vh, 420px);
+  max-height: min(70dvh, 420px);
   overflow-y: auto;
   padding: var(--space-3);
   border: 1px solid var(--border);
@@ -890,7 +893,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .server-switcher-option:hover, .server-switcher-option:focus-visible { background: var(--button-bg); }
 .server-switcher-option.selected { background: var(--gold-soft); color: var(--gold-bright); }
 
-.server-onboarding { display: grid; place-items: center; min-height: 100vh; padding: var(--space-4); }
+.server-onboarding { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: var(--space-4); }
 .server-onboarding-card {
   display: grid;
   gap: var(--space-4);
@@ -952,7 +955,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .price-mode-option-disabled { cursor: not-allowed; opacity: .7; }
 .price-mode-option-disabled:hover { border-color: var(--border); }
 .price-mode-option-badge {
-  font-size: .7rem;
+  font-size: .72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .03em;
@@ -980,10 +983,10 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   inset: 0;
   display: grid;
   place-items: center;
-  color: #fff;
+  color: var(--on-image);
   font-size: .8rem;
   font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+  text-shadow: var(--on-image-shadow);
 }
 
 .price-mode-notice {
@@ -1096,14 +1099,14 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(9, 13, 20, .88) 0%, rgba(9, 13, 20, .68) 38%, rgba(9, 13, 20, .8) 100%);
+  background: var(--image-veil);
 }
 
 .home-hero { display: grid; gap: var(--space-3); margin-bottom: var(--space-5); }
 .home-hero-content { display: grid; gap: var(--space-3); max-width: 620px; }
-.home-hero .eyebrow { color: rgba(255, 255, 255, .75); }
-.home-hero h1 { color: #fff; }
-.home-hero p { margin: 0; color: rgba(255, 255, 255, .82); font-size: 1.02rem; }
+.home-hero .eyebrow { color: color-mix(in srgb, var(--on-image) 75%, transparent); }
+.home-hero h1 { color: var(--on-image); }
+.home-hero p { margin: 0; color: color-mix(in srgb, var(--on-image) 82%, transparent); font-size: 1.02rem; }
 .home-hero-cta { justify-self: start; margin-top: var(--space-2); }
 
 .stat-tile-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-5); }
@@ -1143,7 +1146,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   position: sticky; top: 0; z-index: 5;
   margin-inline: calc(-1 * var(--space-3)); padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border); border-radius: var(--radius-md);
-  background: var(--panel-strong); box-shadow: 0 3px 8px rgba(0, 0, 0, .15);
+  background: var(--panel-strong); box-shadow: var(--shadow-sm);
 }
 .profit-sort { padding: .25rem 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: right; cursor: pointer; white-space: nowrap; }
 .profit-sort:first-child { text-align: left; }
@@ -1193,7 +1196,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   .profit-row { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--space-2); column-gap: var(--space-2); }
   .profit-row-main { grid-column: 1 / -1; }
   .profit-cell { justify-items: start; }
-  .profit-cell-label { display: block; font-size: .7rem; color: var(--text-muted); }
+  .profit-cell-label { display: block; font-size: .72rem; color: var(--text-muted); }
   .profit-cell b { white-space: nowrap; }
 }
 
@@ -1221,8 +1224,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* specs/022 FR-012: Almanax of 23 July switch (+50 % pet XP). */
 .pet-almanax-switch { position: relative; display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; cursor: pointer; font-size: .9rem; font-weight: 600; }
 .pet-almanax-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.pet-almanax-switch-track { position: relative; flex: none; width: 40px; height: 22px; border-radius: var(--radius-pill); background: var(--text-faint); transition: background .15s; }
-.pet-almanax-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel-strong); transition: transform .15s; }
+.pet-almanax-switch-track { position: relative; flex: none; width: 40px; height: 22px; border-radius: var(--radius-pill); background: var(--text-faint); transition: background var(--transition-fast); }
+.pet-almanax-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel-strong); transition: transform var(--transition-fast); }
 .pet-almanax-switch input:checked + .pet-almanax-switch-track { background: var(--gold-bright); }
 .pet-almanax-switch input:checked + .pet-almanax-switch-track::after { transform: translateX(18px); }
 .pet-almanax-switch input:focus-visible + .pet-almanax-switch-track { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
@@ -1334,6 +1337,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   max-width: none;
   max-height: none;
   margin: 0;
@@ -1488,7 +1492,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   /* No room to its left on a phone: with the portraits in a row, opening below hides none of them. */
   .dungeon-counter-panel { top: calc(100% + 12px); right: 0; }
   .dungeon-counter-trigger { width: 40px; height: 40px; }
-  .dungeon-counter-badge { top: -6px; right: -8px; min-width: 20px; height: 20px; font-size: .66rem; line-height: 16px; }
+  .dungeon-counter-badge { top: -6px; right: -8px; min-width: 20px; height: 20px; font-size: .72rem; line-height: 16px; }
 }
 
 /* specs/023-hdv-price-entry: the HDV price-entry page, one tab per in-game auction house. */
@@ -1574,8 +1578,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .fm-player-fold > summary { cursor: pointer; list-style: none; }
 .fm-player-fold > summary::-webkit-details-marker { display: none; }
 .fm-player-chevron { grid-column: 3; }
-.fm-fold-chevron { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-pill); color: var(--text-muted); transition: color .2s, background-color .2s; }
-.fm-fold-chevron svg { transition: transform .2s; }
+.fm-fold-chevron { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-pill); color: var(--text-muted); transition: color var(--transition-enter), background-color var(--transition-enter); }
+.fm-fold-chevron svg { transition: transform var(--transition-enter); }
 summary:hover > .fm-fold-chevron, details[open] > summary > .fm-fold-chevron { background: var(--gold-soft); color: var(--gold-bright); }
 details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-capture > summary { position: relative; padding-right: 2.25rem; }
@@ -1621,7 +1625,7 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-items tbody tr:nth-child(2n) { background: color-mix(in srgb, var(--panel-strong) 45%, transparent); }
 .fm-items tfoot th, .fm-items tfoot td { border-bottom: 0; border-top: 2px solid var(--border-strong); font-weight: 800; }
 .fm-unit-price { white-space: nowrap; }
-.fm-corrected { padding: .05rem .45rem; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); color: var(--gold-bright); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.fm-corrected { padding: .05rem .45rem; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); color: var(--gold-bright); font-size: .72rem; font-weight: 700; white-space: nowrap; }
 .fm-correct { margin: var(--space-1) 0 var(--space-2); }
 .fm-correction { display: grid; gap: var(--space-2); margin-bottom: var(--space-2); }
 .fm-correction p { margin: 0; }
@@ -1784,12 +1788,12 @@ button:not(:disabled):active, a.btn:active, a.icon-button:active, .app-nav-link:
 .pinned-price-migration-notice,
 .tab-panel,
 dialog[open].outlier-confirm-dialog,
-details[open] > :not(summary) { animation: rise-in 160ms ease; }
+details[open] > :not(summary) { animation: rise-in var(--transition-enter); }
 .price-history-panel,
 .guided-tour-bubble,
 .guided-tour-dim,
 .back-to-top,
-.outlier-confirm-dialog::backdrop { animation: fade-in 160ms ease; }
+.outlier-confirm-dialog::backdrop { animation: fade-in var(--transition-enter); }
 
 /* ---------- Touch: targets large enough for a finger ---------- */
 

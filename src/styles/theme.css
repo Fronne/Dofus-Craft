@@ -47,15 +47,24 @@
 
   --danger: #f38b8b;
   --success: #4fbf74;
-  --success-soft: rgba(79, 191, 116, .14);
+  --success-soft: color-mix(in srgb, var(--success) 14%, transparent);
   --warning: #e2b04f;
-  --warning-soft: rgba(226, 176, 79, .14);
+  --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
   --border: rgba(148, 171, 201, .18);
   /* Outline of a field (input, select, textarea): the only thing that marks where to type, so it
      keeps a 3:1 contrast with the card, unlike --border which only separates. */
   --border-control: #6b7c93;
   /* Veil behind a dialog or the guided tour. */
   --scrim: rgba(9, 13, 20, .6);
+  /* Text drawn on a picture or on a color sample, and the veil that keeps it readable: the same in
+     both themes, because the picture does not change with the theme. */
+  --on-image: #ffffff;
+  --on-image-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+  --image-veil: linear-gradient(180deg, rgba(9, 13, 20, .88) 0%, rgba(9, 13, 20, .68) 38%, rgba(9, 13, 20, .8) 100%);
+  /* Two faint glows behind the classic page background. */
+  --bg-glow:
+    radial-gradient(circle at 15% 0%, rgba(45, 77, 113, .18), transparent 34rem),
+    radial-gradient(circle at 90% 12%, rgba(108, 77, 30, .09), transparent 28rem);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .16), 0 1px 1px rgba(0, 0, 0, .08);
   --shadow-md: 0 6px 16px rgba(0, 0, 0, .22);
   --shadow: 0 12px 32px rgba(0, 0, 0, .28);
@@ -90,6 +99,8 @@
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
   --transition-fast: 120ms ease;
+  /* A panel, a tab or an unfolded block coming in, and a value that slides (gauge, chevron). */
+  --transition-enter: 160ms ease;
 
   /* Field heights: large for the main search of the Recherche page only, medium everywhere else,
      small inside tables and inline edits. */
@@ -119,9 +130,9 @@
   --gold-bright: var(--accent-blue-bright-light);
   --danger: #b94b4b;
   --success: #1f7038;
-  --success-soft: rgba(31, 112, 56, .1);
+  --success-soft: color-mix(in srgb, var(--success) 10%, transparent);
   --warning: #85600a;
-  --warning-soft: rgba(133, 96, 10, .1);
+  --warning-soft: color-mix(in srgb, var(--warning) 10%, transparent);
   --border: rgba(45, 67, 94, .16);
   --border-control: #8794a6;
   --shadow-sm: 0 1px 2px rgba(53, 69, 91, .06), 0 1px 1px rgba(53, 69, 91, .04);

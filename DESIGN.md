@@ -13,6 +13,7 @@ design « Moderne », toutes préfixées par `:root[data-design="modern"]`.
   avant tout le reste.
 - **Une seule action principale par écran** : un seul bouton plein (`.btn-primary`) visible à la fois.
 - **Jamais de valeur écrite en dur** : couleur, espacement, rayon, ombre et durée viennent d'un jeton.
+  Seule exception : la durée d'une boucle de chargement (`spin`, `skeleton-shimmer`).
 - **Deux thèmes, cinq accents, deux designs** : tout doit rester lisible dans chaque combinaison
   (`data-theme`, `data-accent`, `data-design` sur `<html>`).
 
@@ -36,6 +37,17 @@ design « Moderne », toutes préfixées par `:root[data-design="modern"]`.
 | Avertissement | `--warning` | `#e2b04f` | `#85600a` |
 | Erreur / destructif | `--danger` | `#f38b8b` | `#b94b4b` |
 | Voile derrière un dialogue | `--scrim` | `rgba(9,13,20,.6)` | identique |
+| Texte posé sur une image | `--on-image` | `#ffffff` | identique |
+
+Le design « Moderne » remplace cinq de ces valeurs ; toutes les autres sont communes aux deux designs.
+
+| Jeton | Moderne sombre | Moderne clair |
+| --- | --- | --- |
+| `--bg` | `#0a0f17` | `#f3f5f9` |
+| `--panel-strong` | `#141d2c` | `#ffffff` |
+| `--panel-soft` | `#1c2739` | `#eef1f6` |
+| `--border` | `rgba(148,171,201,.11)` | `rgba(45,67,94,.09)` |
+| `--input-bg` | `rgba(5,9,16,.45)` | `#f5f7fb` |
 
 Règles :
 
@@ -43,6 +55,11 @@ Règles :
   orange). Leur nom est historique : ce sont **l'accent**, pas une couleur dorée.
 - Les teintes dérivées se calculent avec `color-mix()` à partir d'un jeton (`--gold-soft`,
   `--border-strong`, `--success-soft`…), jamais avec un `rgba()` recopié.
+- Un texte posé sur une image (bannière d'accueil, coche d'une pastille de couleur) utilise
+  `--on-image`, avec le voile `--image-veil` ou l'ombre `--on-image-shadow` pour rester lisible. Ces
+  trois jetons ne changent pas avec le thème, parce que l'image ne change pas.
+- Les cases d'équipement gardent les couleurs du jeu (`--slot-bg`, `--slot-border`, `--slot-glyph`) :
+  elles ne suivent ni l'accent ni le design.
 - Contraste minimal : 4,5:1 pour tout texte, 3:1 pour le contour d'un champ et pour une icône seule.
   `--text-faint` est la teinte la plus claire autorisée pour du texte.
 - Une couleur ne porte jamais seule une information : un prix ancien a aussi son libellé, un gain a
@@ -50,22 +67,27 @@ Règles :
 
 ## 3. Typographie
 
-Police : Inter, puis la police système. Corps à `1rem` (16 px), interligne `1.5`.
+Police : Inter, puis la police système. Seul le design « Moderne » utilise la police embarquée
+« Inter Variable » (`@fontsource-variable/inter`) ; en « Classique », Inter s'affiche si elle est
+installée sur l'appareil, sinon c'est la police système. Corps à `1rem` (16 px), interligne `1.5`.
 
-| Usage | Taille | Graisse |
+| Usage | Classique | Moderne |
 | --- | --- | --- |
-| Titre de page (`h1`) | `clamp(1.5rem, 2.6vw, 2rem)` | 800 |
-| Titre de section (`h2`) | `1.25rem` | 700 |
-| Sous-titre (`h3`) | `1rem` | 700 |
-| Corps | `1rem` | 400 |
-| Texte secondaire | `.875rem` | 400 |
-| Note, date, légende | `.8rem` | 400 |
-| Sur-titre (`.eyebrow`) | `.72rem`, capitales, espacement `.08em` | 700 |
+| Titre de page (`h1`) | `clamp(1.75rem, 4vw, 2.5rem)`, 700, espacement `-.03em` | `clamp(2rem, 4vw, 2.75rem)`, 760, espacement `-.035em` |
+| Titre de section (`h2`) | `1.15rem`, 700 | identique, espacement `-.02em` |
+| Titre d'une carte (`.card h2`) | `1.3rem`, centré | `1.2rem`, aligné à gauche (centré sur la fiche d'un objet) |
+| Sous-titre (`h3`) | `1rem`, 700 | identique |
+| Rubrique d'une carte (`.card h3`) | `.82rem`, capitales, 800, `--text-muted` | identique |
+| Corps | `1rem`, 400 | identique ; phrase d'en-tête de page à `1.02rem`, interligne `1.6` |
+| Texte secondaire, libellé de champ | `.85rem` à `.9rem` (libellé de champ : `.88rem`, 700) | identique |
+| Note, date, légende | `.8rem`, 400 | identique |
+| Sur-titre (`.eyebrow`) | `.76rem`, capitales, espacement `.16em`, 800 | `.76rem`, capitales, espacement `.12em`, 700 |
 
 - Une page a un seul `h1`, puis des `h2`, puis des `h3` : on ne saute pas de niveau.
 - Les montants en kamas utilisent des chiffres tabulaires (`font-variant-numeric: tabular-nums`) dès
-  qu'ils sont alignés en colonne.
-- Aucun texte sous `.72rem` (11,5 px).
+  qu'ils sont alignés en colonne. Le design « Moderne » l'applique aussi aux champs de saisie et aux prix affichés.
+- Aucun texte sous `.72rem` (11,5 px). Seule exception : le libellé de la barre de navigation basse,
+  qui descend jusqu'à `.62rem` sur un écran étroit pour ne pas être coupé.
 
 ## 4. Espacement
 
@@ -77,19 +99,29 @@ Base de 4 px. Seuls ces pas sont utilisés :
 | `--space-2` | 8 px | entre deux éléments d'une même ligne |
 | `--space-3` | 12 px | marge intérieure d'un bouton, d'une ligne de liste |
 | `--space-4` | 16 px | entre deux blocs d'une carte, gouttière mobile |
-| `--space-5` | 24 px | marge intérieure d'une carte |
-| `--space-6` | 32 px | entre deux cartes |
+| `--space-5` | 24 px | marge intérieure d'une carte (Classique) |
+| `--space-6` | 32 px | entre deux cartes, marge intérieure d'une carte (Moderne) |
 | `--space-7` | 48 px | respiration d'un état vide |
 
 ## 5. Rayons, ombres, mouvement
 
-- Rayons : `--radius-xs` 6 px (pastilles, petits boutons), `--radius-sm` 8 px (champs, boutons),
-  `--radius-md` 12 px (lignes, bulles), `--radius-lg` 16 px (cartes), `--radius-pill` (badges, avatars).
-- Ombres : `--shadow-sm` (élément posé), `--shadow-md` (menu, bulle), `--shadow` (dialogue). Trois
-  niveaux, pas d'ombre écrite à la main.
-- Mouvement : `--transition-fast` (120 ms) pour les survols ; l'apparition d'un panneau, d'un onglet
-  ou d'un bloc déplié dure 160 à 200 ms (`rise-in`, `fade-in`). Rien ne bouge sans raison, et tout
-  s'arrête sous `prefers-reduced-motion` (côté CSS, et `prefersReducedMotion()` côté script).
+| Jeton | Classique | Moderne | Usage |
+| --- | --- | --- | --- |
+| `--radius-xs` | 6 px | 6 px | pastilles, petits boutons |
+| `--radius-sm` | 8 px | 10 px | images d'objet, petits blocs |
+| `--radius-md` | 12 px | 16 px | boutons, champs, lignes, bulles |
+| `--radius-lg` | 16 px | 22 px | cartes, dialogues |
+| `--radius-pill` | 999 px | 999 px | badges, avatars |
+
+- Ombres : `--shadow-sm` (élément posé), `--shadow-md` (menu, bulle, survol d'une carte),
+  `--shadow` (dialogue). Trois niveaux, pas d'ombre écrite à la main. Le design « Moderne » redéfinit
+  ces trois jetons en ombres plus larges et plus douces ; il ajoute une lueur de la couleur d'accent
+  sous le bouton principal et sous l'élément sélectionné.
+- Mouvement : `--transition-fast` pour les survols (120 ms en Classique, 180 ms en Moderne) ;
+  `--transition-enter` (160 ms) pour l'apparition d'un panneau, d'un onglet ou d'un bloc déplié
+  (`rise-in`, `fade-in`) et pour une valeur qui glisse (jauge, chevron). En « Moderne », les cartes
+  entrent en 280 ms et la bulle des compteurs en 200 ms (`modern-rise`). Rien ne bouge sans raison,
+  et tout s'arrête sous `prefers-reduced-motion` (côté CSS, et `prefersReducedMotion()` côté script).
 
 ## 6. Composants
 
@@ -106,19 +138,40 @@ Base de 4 px. Seuls ces pas sont utilisés :
 Un lien qui mène à une autre page et sert d'action principale d'un état vide prend aussi
 `.btn .btn-primary`.
 
+Un bouton fait 44 px de haut (36 px en `.btn-small`, 40 px pour `.icon-button`, 32 px pour
+`.icon-button--sm`), avec le rayon
+`--radius-md`. En « Moderne », le bouton principal porte un dégradé de `--gold-bright` vers `--gold`
+et tout bouton se soulève de 1 px au survol.
+
 ### Champs
 
 - Hauteur : `--control-lg` (56 px) pour la grande recherche de la page Recherche uniquement,
   `--control-md` (44 px) partout ailleurs, `--control-sm` (36 px) dans un tableau.
-- Contour `--border-control`, fond `--input-bg`, rayon `--radius-sm`.
+- Contour `--border-control`, fond `--input-bg`, rayon `--radius-md`.
 - Chaque champ a un libellé visible ou un `aria-label` ; le texte d'exemple ne remplace jamais le libellé.
 - Un champ de prix valide avec Entrée et reprend sa valeur d'origine avec Échap.
 
 ### Cartes et pages
 
 - Une page = un `<header class="page-header">` (`h1` + une phrase), puis des `.panel`.
-- `.panel` : fond `--panel`, contour `--border`, rayon `--radius-lg`, marge intérieure `--space-5`.
+- `.panel` : fond `--panel-gradient` (égal à `--panel` en Classique ; en Moderne, `--panel-strong`, avec un
+  léger reflet clair en haut en thème sombre),
+  contour `--border`, rayon `--radius-lg`, ombre `--shadow-sm`, marge intérieure `--space-5`
+  (`--space-6` en Moderne). Sous 720 px : marge `--space-4` et rayon `--radius-md` dans les deux designs.
 - Les grilles utilisent `minmax(0, 1fr)` pour ne jamais déborder sur mobile.
+
+### Badges
+
+`.badge` : pastille en forme de pilule (`--radius-pill`), texte à `.92rem` et graisse 750. En
+« Moderne », le badge du verdict de prix est un peu plus petit (`.88rem`).
+
+| Classe | Fond | Texte | Quand |
+| --- | --- | --- | --- |
+| `.badge-success` | `--panel-soft` | `--success` | verdict favorable |
+| `.badge-warning` | `--warning-soft` | `--warning` | point à vérifier |
+| `.badge-neutral` | `--panel-soft` | `--text-muted` | information sans jugement |
+
+Le libellé porte l'information ; la couleur ne fait que la renforcer.
 
 ### Onglets
 
@@ -144,7 +197,7 @@ l'ordre de tabulation ; les flèches, Début et Fin passent de l'un à l'autre
 | Désactivé | opacité `.55`, curseur `not-allowed`, pas d'effet de survol |
 | En cours | le bouton est désactivé et son libellé change (« Enregistrement… ») |
 | Survol / appui | tout élément cliquable a un survol et un état `:active` |
-| Focus | contour de 2 px `--gold-bright`, décalé de 2 px, sur tout élément atteignable au clavier |
+| Focus | contour de 2 px `--gold-bright`, décalé de 2 px, sur tout élément atteignable au clavier ; en « Moderne », un champ prend à la place un contour `--gold` et un halo de 4 px `--gold-soft` |
 | Destructif | une confirmation avant, ou un « Annuler » juste après |
 
 ## 8. Mobile
@@ -153,7 +206,8 @@ l'ordre de tabulation ; les flèches, Début et Fin passent de l'un à l'autre
   défile dans son propre conteneur (`.fm-table-scroll`).
 - Cible tactile : 44 × 44 px au moins (règle appliquée sous `(pointer: coarse), (max-width: 960px)`).
 - Sous 960 px, la navigation passe en barre basse ; le contenu garde une marge pour ne pas passer dessous.
-- Les hauteurs plein écran utilisent `dvh`, pas `vh`.
+- Les hauteurs plein écran utilisent `dvh`. La même règle en `vh` est écrite juste avant, pour les
+  navigateurs qui ne connaissent pas `dvh`.
 - Taille de police des champs : 16 px au moins, pour éviter le zoom automatique d'iOS.
 
 ## 9. Ton et libellés
