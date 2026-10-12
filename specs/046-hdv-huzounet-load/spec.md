@@ -90,7 +90,8 @@ de chaque ligne.
 3. **Given** un objet dont le dernier prix partagé est plus récent que le prix Huzounet, **When** la
    liste s'affiche, **Then** la ligne montre le prix partagé, sans mention « Huzounet ».
 4. **Given** un prix Huzounet que sa source dit provisoire, ou ancien, **When** la ligne s'affiche,
-   **Then** elle porte en plus la mention « provisoire », ou « ancien ».
+   **Then** elle porte en plus la mention « peu de relevés », ou « relevé ancien » (les libellés du site
+   en ligne).
 5. **Given** un prix Huzounet affiché, **When** le joueur saisit son propre prix sur la ligne, **Then**
    son prix est partagé comme aujourd'hui et devient celui affiché.
 
@@ -199,7 +200,7 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
   prix partagé par le groupe et le prix lu sur Huzounet, y compris pour un objet que seul Huzounet
   tarifie.
 - **FR-013**: Une ligne dont le prix affiché vient de Huzounet DOIT le dire (« Huzounet »), et dire en
-  plus « provisoire » ou « ancien » quand la source le signale.
+  plus « peu de relevés » (prix provisoire) ou « relevé ancien » quand la source le signale.
 - **FR-014**: Le chargement NE DOIT PAS modifier le carnet du Mode personnel, ni créer de prix partagé au
   nom du joueur.
 - **FR-015**: Une saisie en cours sur une ligne NE DOIT PAS être perdue quand une tranche arrive.
