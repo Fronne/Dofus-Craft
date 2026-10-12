@@ -20,6 +20,10 @@ export function loadResourceIndex(): Promise<ResourceNameIndex> {
   resourceIndex ??= import('../data/hdv-items.json').then((module) => {
     const hdv = module.default as HdvItemsData;
     return buildResourceNameIndex([...(runeItems as RuneItemsData).runes, ...hdv.items]);
+  }).catch((error: unknown) => {
+    // A failed load is not kept: the next capture asks for the list again.
+    resourceIndex = undefined;
+    throw error;
   });
   return resourceIndex;
 }

@@ -10,21 +10,22 @@ const MORE_DELAY_MS = 800;
 // Watches the element at the end of the list and calls `onVisible` when it scrolls into view. Without
 // IntersectionObserver (very old browsers, tests), every line is simply shown.
 function useEndOfList(onVisible: () => void, enabled: boolean) {
-  const ref = useRef<HTMLDivElement>(null);
+  // The element is kept in state, not in a ref: when the list is rebuilt (another tab of the HDV
+  // page), the new end-of-list element is observed in place of the one that left the page.
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
   const callback = useRef(onVisible);
   useEffect(() => {
     callback.current = onVisible;
   });
   useEffect(() => {
-    const target = ref.current;
     if (!enabled || !target || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) callback.current();
     }, { rootMargin: '400px' });
     observer.observe(target);
     return () => observer.disconnect();
-  }, [enabled]);
-  return ref;
+  }, [enabled, target]);
+  return setTarget;
 }
 
 /**

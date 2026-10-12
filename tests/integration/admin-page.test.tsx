@@ -84,7 +84,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       fireEvent.click(within(card()).getByRole('button', { name: 'Enregistrer' }));
       await act(async () => {});
       expect(api.update).not.toHaveBeenCalled();
-      expect(within(card()).getByRole('status')).toHaveTextContent('nombre entier positif ou nul');
+      expect(within(card()).getByRole('alert')).toHaveTextContent('nombre entier positif ou nul');
     });
 
     it('keeps the typed value and says so when saving fails (FR-013)', async () => {

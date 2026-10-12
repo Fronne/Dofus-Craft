@@ -41,6 +41,7 @@ export function useOutlierConfirm(): readonly [ReactNode, (details: OutlierConfi
     <dialog
       ref={dialogRef}
       className="outlier-confirm-dialog"
+      aria-label="Confirmer ce prix"
       onCancel={(event) => {
         event.preventDefault();
         respond(false);

@@ -61,7 +61,7 @@ export function CounterEditor({
       </p>
       <div className="admin-counter-edit">
         <label htmlFor={countId}>Chiffre</label>
-        <input id={countId} inputMode="numeric" value={countText} onChange={(event) => setCountText(event.target.value)} />
+        <input id={countId} inputMode="numeric" aria-invalid={message?.error ? true : undefined} value={countText} onChange={(event) => setCountText(event.target.value)} />
         <label className="admin-checkbox">
           <input type="checkbox" checked={atLeast} onChange={(event) => setAtLeast(event.target.checked)} />
           <span>Au moins (affiche un +)</span>
@@ -71,7 +71,7 @@ export function CounterEditor({
         <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={() => void save()}>Enregistrer</button>
         <button type="button" className="btn btn-secondary btn-small admin-danger" disabled={busy} onClick={() => void remove()}>Supprimer</button>
       </div>
-      {message && <p className={message.error ? 'admin-message admin-message--error' : 'admin-message'} role="status">{message.text}</p>}
+      {message && <p className={message.error ? 'admin-message admin-message--error' : 'admin-message'} role={message.error ? 'alert' : 'status'}>{message.text}</p>}
     </article>
   );
 }

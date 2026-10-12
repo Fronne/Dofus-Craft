@@ -123,7 +123,7 @@ export function StartSeance({ me, onCreated }: { me: FmMe; onCreated: (seanceId:
       <div className="fm-import-actions">
         <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)} disabled={busy}>Annuler</button>
         <button type="button" className="btn btn-primary" onClick={() => void create()} disabled={busy || !name.trim()}>
-          Créer la séance
+          {busy ? 'Création…' : 'Créer la séance'}
         </button>
       </div>
     </div>

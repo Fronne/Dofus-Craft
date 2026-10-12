@@ -51,6 +51,7 @@ export function CaptureCorrection({ capture, onCancel, onSaved }: {
 
   return (
     <div className="fm-correction">
+      <div className="fm-table-scroll">
       <table className="fm-items fm-correction-lines">
         <thead>
           <tr>
@@ -83,10 +84,10 @@ export function CaptureCorrection({ capture, onCancel, onSaved }: {
                   )}
                 </th>
                 <td>
-                  <input className="fm-number" inputMode="numeric" value={value.quantity} disabled={saving} aria-label={`Quantité de ${line.itemName}`} onChange={(event) => update(line.id, { quantity: event.target.value })} />
+                  <input className="fm-number" inputMode="numeric" value={value.quantity} disabled={saving} aria-invalid={values ? undefined : true} aria-label={`Quantité de ${line.itemName}`} onChange={(event) => update(line.id, { quantity: event.target.value })} />
                 </td>
                 <td>
-                  <input className="fm-number" inputMode="numeric" value={value.total} disabled={saving} aria-label={`Total de ${line.itemName}`} onChange={(event) => update(line.id, { total: event.target.value })} />
+                  <input className="fm-number" inputMode="numeric" value={value.total} disabled={saving} aria-invalid={values ? undefined : true} aria-label={`Total de ${line.itemName}`} onChange={(event) => update(line.id, { total: event.target.value })} />
                 </td>
                 <td>{values ? <span className="fm-unit-price"><Kamas value={unitPriceKamas(values)} />/u</span> : '—'}</td>
               </tr>
@@ -94,6 +95,7 @@ export function CaptureCorrection({ capture, onCancel, onSaved }: {
           })}
         </tbody>
       </table>
+      </div>
       {invalid && <p className="fm-error" role="alert">Une quantité et un total d'au moins 1 sont attendus sur chaque ligne.</p>}
       {failed && <p className="fm-error" role="alert">La correction n’a pas pu être enregistrée. Réessaie.</p>}
       <div className="fm-import-actions">

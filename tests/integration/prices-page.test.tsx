@@ -221,10 +221,10 @@ describe('Prix page — craft profit (specs/019)', () => {
       await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
 
       expect(screen.queryByRole('combobox', { name: /Trier/ })).not.toBeInTheDocument();
-      fireEvent.click(screen.getByRole('button', { name: 'Trier par Marge' }));
+      fireEvent.click(screen.getByRole('button', { name: /^Trier par Marge/ }));
       expect(names()).toEqual(['Bottes', 'Anneau', 'Coiffe']);
-      expect(screen.getByRole('button', { name: 'Trier par Marge' })).toHaveAttribute('aria-pressed', 'true');
-      fireEvent.click(screen.getByRole('button', { name: 'Trier par Marge' }));
+      expect(screen.getByRole('button', { name: /^Trier par Marge/ })).toHaveAttribute('aria-pressed', 'true');
+      fireEvent.click(screen.getByRole('button', { name: /^Trier par Marge/ }));
       expect(names()).toEqual(['Coiffe', 'Anneau', 'Bottes']);
       fireEvent.click(screen.getByRole('button', { name: 'Trier par Nom' }));
       expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']);

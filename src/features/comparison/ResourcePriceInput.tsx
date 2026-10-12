@@ -67,6 +67,9 @@ export function ResourcePriceInput({
   // descendant) — clicking the row would then focus that button instead of the price field.
   const inputId = useId();
   const lastCommittedValueRef = useRef(value);
+  const focusValueRef = useRef(value);
+  const cancelledRef = useRef(false);
+  const errorId = useId();
   // specs/008-stale-resource-highlight: 'unknown' and 'fresh' add no class — only a price that has
   // actually gone stale/expired gets flagged (FR-004/FR-005).
   const priceAge = classifyPriceAge(updatedAt);
@@ -86,6 +89,7 @@ export function ResourcePriceInput({
       <span className="price-resource-quantity">
         {caption ?? <>× {quantity}</>}
       </span>
+      {!updatedAt && priceNote && <small><span className="price-note">{priceNote}</span></small>}
       {updatedAt && (
         <small>
           Dernière mise à jour : {formatRelativeTime(updatedAt)}
@@ -104,8 +108,24 @@ export function ResourcePriceInput({
             id={inputId}
             ref={inputRef}
             inputMode="numeric"
+            aria-label={`Prix de ${resource.name}`}
             aria-invalid={!valid}
+            aria-describedby={valid ? undefined : errorId}
             value={formatKamasInput(value)}
+            onFocus={() => {
+              focusValueRef.current = value;
+            }}
+            // Enter validates like leaving the field does; Escape puts back the price it held on entry.
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                event.currentTarget.blur();
+              } else if (event.key === 'Escape' && value !== focusValueRef.current) {
+                cancelledRef.current = true;
+                onChange(focusValueRef.current);
+                event.currentTarget.blur();
+              }
+            }}
             onChange={(event) => {
               // Marking as "editing" here too (not just on the edit-button click) matters for a
               // field that started empty: typing its first character makes `value` truthy, and
@@ -120,6 +140,11 @@ export function ResourcePriceInput({
               onChange(normalizeKamasInput(event.target.value));
             }}
             onBlur={() => {
+              if (cancelledRef.current) {
+                cancelledRef.current = false;
+                setEditing(false);
+                return;
+              }
               onBlur?.(value);
               if (!lockWhenFilled) return;
               setEditing(false);
@@ -164,7 +189,7 @@ export function ResourcePriceInput({
         ? subtotalKamas !== null && <b className="price-resource-formatted">{formatKamas(subtotalKamas)}</b>
         : value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}
       {retained}
-      {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
+      {!valid && <em id={errorId} role="alert">Entrez un nombre entier positif ou zéro.</em>}
     </label>
   );
 }

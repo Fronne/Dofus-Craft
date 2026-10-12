@@ -11,8 +11,11 @@ export function ServerOnboarding() {
         <span className="server-onboarding-brand" aria-hidden="true">
           Dofus<span className="app-nav-brand-accent">Craft</span>
         </span>
-        <h2 id="server-onboarding-heading">Choisissez votre serveur</h2>
-        <p>Sélectionnez votre serveur Dofus pour commencer à utiliser Dofus Craft.</p>
+        <h1 id="server-onboarding-heading">Choisissez votre serveur</h1>
+        <p>
+          Dofus Craft calcule si un craft est rentable : coût de fabrication contre prix à l'hôtel des ventes.
+          Choisissez votre serveur pour commencer, les prix sont propres à chacun.
+        </p>
         {groups.map((group) => (
           <section key={group.type} className="server-onboarding-group">
             <h3 className="eyebrow">{SERVER_TYPE_LABELS[group.type]}</h3>

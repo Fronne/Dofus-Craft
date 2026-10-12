@@ -9,6 +9,7 @@ import { usePlayerCounters } from './usePlayerCounters';
 // counter's portrait — or "Fermer" close it, so only one bubble is open at a time.
 export function DungeonCounterBubble({ counter }: { counter: PlayerCounter }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const label = counterLabel(counter);
   const portrait = portraitUrl(counter.breedId, counter.sex);
@@ -29,10 +30,14 @@ export function DungeonCounterBubble({ counter }: { counter: PlayerCounter }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (open) panelRef.current?.focus({ preventScroll: true });
+  }, [open]);
+
   return (
     <div className="dungeon-counter" ref={rootRef}>
       {open && (
-        <div className="dungeon-counter-panel" role="dialog" aria-label={label}>
+        <div ref={panelRef} tabIndex={-1} className="dungeon-counter-panel" role="dialog" aria-label={label}>
           <div className="dungeon-counter-header">
             <img src={portrait} alt="" className="dungeon-counter-avatar" width={44} height={44} />
             <div className="dungeon-counter-who">

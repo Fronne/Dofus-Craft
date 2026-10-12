@@ -26,11 +26,16 @@ function blockingErrorMessage(hasData: boolean, error: unknown, fallback: string
 
 export function useCatalogue(query: string, categoryId: string, selectedId: string, levelFilter = '', resultLimit = 12) {
   const [catalogueWarm, setCatalogueWarm] = useState(false);
+  // Goes up on « Réessayer »: the search and the detail then ask the network again.
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    whenCatalogueReady().then(() => {
+    // Settled either way: a failed background load must not leave « Mise à jour… » on screen for
+    // good — the search then simply keeps counting from what it has.
+    const settle = () => {
       if (!cancelled) setCatalogueWarm(true);
-    });
+    };
+    whenCatalogueReady().then(settle, settle);
     return () => {
       cancelled = true;
     };
@@ -63,7 +68,7 @@ export function useCatalogue(query: string, categoryId: string, selectedId: stri
     // Bumping this once catalogueWarm flips true forces one extra revalidation of the *same*
     // search key (preview total -> real total) without resetting the already-displayed results to
     // a loading state — unlike an actual new key (a genuinely different query/filter).
-    revalidateToken: catalogueWarm ? 1 : 0,
+    revalidateToken: `${catalogueWarm ? 1 : 0}:${attempt}`,
   });
 
   const detailKey = selectedId ? `detail:${selectedId}` : undefined;
@@ -72,6 +77,7 @@ export function useCatalogue(query: string, categoryId: string, selectedId: stri
     loadCached,
     fetchRemote: () => getItemDetail(selectedId),
     saveCache,
+    revalidateToken: attempt,
   });
 
   return {
@@ -90,5 +96,6 @@ export function useCatalogue(query: string, categoryId: string, selectedId: stri
     isRevalidating: searchState.isRevalidating || detailState.isRevalidating || categoriesState.isRevalidating,
     offline: searchState.offline || detailState.offline || categoriesState.offline,
     lastSyncedAt: searchState.lastSyncedAt,
+    retry: () => setAttempt((count) => count + 1),
   };
 }

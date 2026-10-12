@@ -12,12 +12,14 @@ export type HdvItemsState =
 
 let loaded: HdvItemsData | undefined;
 
-export function useHdvItems(): HdvItemsState {
+export function useHdvItems(): HdvItemsState & { retry: () => void } {
   const [state, setState] = useState<HdvItemsState>(() => (loaded ? { status: 'ready', data: loaded } : { status: 'loading' }));
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (loaded) return;
     let cancelled = false;
+    setState({ status: 'loading' });
     import('../../data/hdv-items.json')
       .then((module) => {
         loaded = module.default as HdvItemsData;
@@ -29,7 +31,7 @@ export function useHdvItems(): HdvItemsState {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
-  return state;
+  return { ...state, retry: () => setAttempt((count) => count + 1) };
 }

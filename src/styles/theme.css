@@ -10,7 +10,9 @@
   --panel-soft: #202d42;
   --text: #edf2f7;
   --text-muted: #93a4ba;
-  --text-faint: #6f8097;
+  --text-faint: #8a9ab0;
+  /* Text and icons drawn on the accent color (primary button, counter badge). */
+  --on-accent: #0b1018;
 
   /* Accent color presets: one base + "bright" hue per theme, chosen so it
      stays readable on both dark and light backgrounds. --gold/--gold-bright
@@ -27,7 +29,7 @@
   --accent-red-bright-light: #a52e26;
   --accent-green-dark: #4fbf74;
   --accent-green-bright-dark: #74d694;
-  --accent-green-light: #2f8f4e;
+  --accent-green-light: #27803f;
   --accent-green-bright-light: #1f7038;
   --accent-purple-dark: #a480e0;
   --accent-purple-bright-dark: #bb9cee;
@@ -35,7 +37,7 @@
   --accent-purple-bright-light: #6238a8;
   --accent-orange-dark: #e2984f;
   --accent-orange-bright-dark: #efb474;
-  --accent-orange-light: #c26a1f;
+  --accent-orange-light: #b05c15;
   --accent-orange-bright-light: #a3560f;
 
   --gold: var(--accent-blue-dark);
@@ -49,6 +51,11 @@
   --warning: #e2b04f;
   --warning-soft: rgba(226, 176, 79, .14);
   --border: rgba(148, 171, 201, .18);
+  /* Outline of a field (input, select, textarea): the only thing that marks where to type, so it
+     keeps a 3:1 contrast with the card, unlike --border which only separates. */
+  --border-control: #6b7c93;
+  /* Veil behind a dialog or the guided tour. */
+  --scrim: rgba(9, 13, 20, .6);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .16), 0 1px 1px rgba(0, 0, 0, .08);
   --shadow-md: 0 6px 16px rgba(0, 0, 0, .22);
   --shadow: 0 12px 32px rgba(0, 0, 0, .28);
@@ -75,6 +82,7 @@
   --space-7: 3rem;
 
   /* Corner radius scale — subtle, not "pill" everywhere. */
+  --radius-xs: .375rem;
   --radius-sm: .5rem;
   --radius-md: .75rem;
   --radius-lg: 1rem;
@@ -82,6 +90,12 @@
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
   --transition-fast: 120ms ease;
+
+  /* Field heights: large for the main search of the Recherche page only, medium everywhere else,
+     small inside tables and inline edits. */
+  --control-lg: 56px;
+  --control-md: 44px;
+  --control-sm: 36px;
 }
 
 :root[data-accent="red"]    { --gold: var(--accent-red-dark);    --gold-bright: var(--accent-red-bright-dark); }
@@ -98,16 +112,18 @@
   --panel-strong: #ffffff;
   --panel-soft: #e5eaf1;
   --text: #253246;
-  --text-muted: #5f6d80;
-  --text-faint: #8491a2;
+  --text-muted: #566477;
+  --text-faint: #5f6d80;
+  --on-accent: #ffffff;
   --gold: var(--accent-blue-light);
   --gold-bright: var(--accent-blue-bright-light);
   --danger: #b94b4b;
-  --success: #2f8f4e;
-  --success-soft: rgba(47, 143, 78, .1);
-  --warning: #a3760f;
-  --warning-soft: rgba(163, 118, 15, .1);
+  --success: #1f7038;
+  --success-soft: rgba(31, 112, 56, .1);
+  --warning: #85600a;
+  --warning-soft: rgba(133, 96, 10, .1);
   --border: rgba(45, 67, 94, .16);
+  --border-control: #8794a6;
   --shadow-sm: 0 1px 2px rgba(53, 69, 91, .06), 0 1px 1px rgba(53, 69, 91, .04);
   --shadow-md: 0 6px 16px rgba(53, 69, 91, .1);
   --shadow: 0 10px 28px rgba(53, 69, 91, .16);
@@ -128,9 +144,9 @@
 
 * { box-sizing: border-box; }
 html { background: var(--bg); }
-body { font-size: 16px; line-height: 1.5; }
-button, input, select { font: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+body { font-size: 1rem; line-height: 1.5; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
   outline: 2px solid var(--gold-bright);
   outline-offset: 2px;
 }

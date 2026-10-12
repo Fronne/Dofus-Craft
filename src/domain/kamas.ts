@@ -6,8 +6,12 @@
 const ICON_ASSET_VERSION = 1;
 export const KAMAS_ICON_URL = `/kamas-icon.png?v=${ICON_ASSET_VERSION}`;
 
+// No price in the game comes near twelve digits: past them a number stops being exact, so the rest
+// of a mistyped or pasted value is dropped.
+const MAX_KAMAS_DIGITS = 12;
+
 export function normalizeKamasInput(value: string): string {
-  return value.replace(/\D/g, '');
+  return value.replace(/\D/g, '').slice(0, MAX_KAMAS_DIGITS);
 }
 
 export function formatKamasInput(value: string): string {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { tabOnKey } from '../../components/tab-keys';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon, type IconName } from '../../components/Icon';
 import { groupTabLabel } from '../../domain/forgemagie';
@@ -31,6 +32,7 @@ const LOGIN_ERRORS = {
 
 export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
   const auth = useFmAuth();
+  const [leaving, setLeaving] = useState(false);
   const [tab, setTab] = useState<FmTab>('seances');
   const [openSeanceId, setOpenSeanceId] = useState<string | undefined>(undefined);
 
@@ -75,7 +77,17 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
           <>
             <div className="fm-account">
               <PlayerBadge player={{ discordUserId: auth.me.discordUserId, displayName: auth.me.displayName, avatarUrl: auth.me.avatarUrl, private: auth.me.isPrivate }} />
-              <button type="button" className="btn btn-secondary btn-small" onClick={() => void auth.logout()}>Se déconnecter</button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-small"
+                disabled={leaving}
+                onClick={() => {
+                  setLeaving(true);
+                  void auth.logout().finally(() => setLeaving(false));
+                }}
+              >
+                {leaving ? 'Déconnexion…' : 'Se déconnecter'}
+              </button>
             </div>
 
             <div className="hdv-tabs" role="tablist" aria-label="Forgemagie">
@@ -84,7 +96,16 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
                   key={entry.id}
                   type="button"
                   role="tab"
+                  id={`fm-tab-${entry.id}`}
                   aria-selected={entry.id === tab}
+                  aria-controls="fm-tabpanel"
+                  tabIndex={entry.id === tab ? 0 : -1}
+                  onKeyDown={(event) => {
+                    const next = tabOnKey(event, TABS.map((candidate) => candidate.id), entry.id);
+                    if (!next) return;
+                    setTab(next);
+                    if (next === 'seances') setOpenSeanceId(undefined);
+                  }}
                   className={`hdv-tab hdv-tab--icon fm-tab${entry.id === 'players' ? ' fm-tab--group' : ''}${entry.id === tab ? ' hdv-tab--active' : ''}`}
                   onClick={() => {
                     setTab(entry.id);
@@ -99,11 +120,13 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
               ))}
             </div>
 
+            <div className="tab-panel" role="tabpanel" id="fm-tabpanel" aria-labelledby={`fm-tab-${tab}`} key={tab}>
             {tab === 'seances' && (openSeanceId
               ? <SeanceDetail key={openSeanceId} seanceId={openSeanceId} me={auth.me} priceMode={priceMode} onBack={() => setOpenSeanceId(undefined)} onUnauthorized={auth.forget} />
               : <SeancesTab me={auth.me} onOpen={setOpenSeanceId} onUnauthorized={auth.forget} />)}
             {tab === 'players' && <PlayersTab onUnauthorized={auth.forget} />}
             {tab === 'profile' && <ProfileTab me={auth.me} updateMe={auth.updateMe} onDeleted={auth.forget} onOpenSeance={openSeance} onUnauthorized={auth.forget} />}
+            </div>
           </>
         )}
       </section>

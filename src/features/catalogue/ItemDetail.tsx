@@ -32,12 +32,16 @@ export function ItemDetail({
   isPinned = false,
   onTogglePin,
   history,
+  pending = false,
 }: {
   detail?: ItemDetailData;
   isPinned?: boolean;
   onTogglePin?: () => void;
   // specs/017: the price-history button, in the card's top-left corner. Only passed in Mode communautaire.
   history?: ReactNode;
+  // The recipe and effects are still loading, or could not be loaded: « no recipe » and « no effect »
+  // would be wrong then, so neither is said.
+  pending?: boolean;
 }) {
   if (!detail) {
     return <section className="card"><p>Sélectionnez un objet pour voir ses détails.</p></section>;
@@ -48,7 +52,7 @@ export function ItemDetail({
   return (
     <section className="card item-detail-card" data-tour="item-detail">
       {onTogglePin && (
-        <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} onClick={onTogglePin}>
+        <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned} onClick={onTogglePin}>
           <Icon name={isPinned ? 'bookmark-filled' : 'bookmark'} size={18} />
           {isPinned ? 'Ne plus suivre' : 'Suivre'}
         </button>
@@ -89,12 +93,14 @@ export function ItemDetail({
           <h3 id="item-stats-heading">Effets</h3>
           {stats.length ? (
             <StatList stats={stats} />
+          ) : pending ? (
+            <span className="skeleton-block skeleton-line item-stats-skeleton" aria-hidden="true" />
           ) : (
             <p className="muted">Aucune statistique fournie par DofusDB pour cet objet.</p>
           )}
         </section>
       )}
-      {!recipe && <p>Aucune recette disponible pour cet objet.</p>}
+      {!recipe && !pending && <p>Aucune recette disponible pour cet objet.</p>}
     </section>
   );
 }

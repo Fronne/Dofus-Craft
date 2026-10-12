@@ -30,6 +30,7 @@ import { useHdvItems } from './useHdvItems';
 import { useHdvPriceSummary } from './useHdvPriceSummary';
 import { useHuzounetLoad } from './useHuzounetLoad';
 import { useLatestOrigins } from './useLatestOrigins';
+import { tabOnKey } from '../../components/tab-keys';
 
 // specs/023-hdv-price-entry: record the prices of an in-game HDV in one pass, one tab per HDV, with
 // the very same price field as the Recherche page (same carnet, same Mode personnel / communautaire
@@ -113,7 +114,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
     : filterHdvItems(tabItems, { query, typeId });
   const filtered = sortHdvLines(byCategory, summary.prices, sort);
   const { visible, endRef, loadingMore, reset } = useLoadMoreOnScroll(filtered);
-  const { data: carnet, save, remove, loaded, reload } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
+  const { data: carnet, save, remove, loaded, reload, error: carnetError } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
   const { priced, total } = countPriced(tabLines, summary.prices);
   const origins = useLatestOrigins(serverId, priceMode, visible.map((item) => item.id), originsVersion);
   const refreshSummary = summary.refresh;
@@ -168,9 +169,16 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
               key={entry.id}
               type="button"
               role="tab"
+              id={`hdv-tab-${entry.id}`}
               aria-selected={entry.id === tab}
+              aria-controls="hdv-tabpanel"
+              tabIndex={entry.id === tab ? 0 : -1}
               className={`hdv-tab hdv-tab--icon${entry.id === tab ? ' hdv-tab--active' : ''}`}
               onClick={() => chooseTab(entry.id)}
+              onKeyDown={(event) => {
+                const next = tabOnKey(event, HDV_TABS.map((candidate) => candidate.id), entry.id);
+                if (next) chooseTab(next);
+              }}
             >
               <Icon name={TAB_ICONS[entry.id]} size={16} />
               <span>{entry.label}</span>
@@ -178,12 +186,19 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
           ))}
         </div>
 
+        <div className="tab-panel" role="tabpanel" id="hdv-tabpanel" aria-labelledby={`hdv-tab-${tab}`} key={tab}>
         {!serverId ? (
           <EmptyState icon="server" title="Aucun serveur choisi" description="Choisissez un serveur pour saisir ses prix." />
         ) : !isRunes && hdvItems.status === 'loading' ? (
           <p className="empty" role="status">Chargement des objets…</p>
         ) : !isRunes && hdvItems.status === 'unavailable' ? (
-          <EmptyState icon="info" title="Liste des objets indisponible" description="Les objets de cet HDV n'ont pas pu être chargés. Réessayez plus tard ; vos prix déjà saisis sont conservés." />
+          <div role="alert">
+            <EmptyState icon="info" title="Liste des objets indisponible" description="Les objets de cet HDV n'ont pas pu être chargés. Vos prix déjà saisis sont conservés.">
+              <button type="button" className="btn btn-primary" onClick={hdvItems.retry}>Réessayer</button>
+              {/* After a new version of the site went online, only a reload finds the list again. */}
+              <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>Recharger la page</button>
+            </EmptyState>
+          </div>
         ) : (
           <>
             <div className="profit-toolbar hdv-toolbar">
@@ -245,7 +260,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
 
             <div className="results-meta">
               <span role="status" className="hdv-count">
-                {summary.loaded ? `${priced} ${priced > 1 ? 'objets' : 'objet'} sur ${total} ${priced > 1 ? 'ont' : 'a'} un prix` : 'Lecture des prix…'}
+                {!summary.loaded ? 'Lecture des prix…' : summary.failed ? 'Lecture des prix impossible' : `${priced} ${isRunes ? (priced > 1 ? 'runes' : 'rune') : (priced > 1 ? 'objets' : 'objet')} sur ${total} ${priced > 1 ? 'ont' : 'a'} un prix`}
               </span>
               {tabIds.length > 0 && (
                 <HuzounetLoadButton
@@ -264,6 +279,8 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                 peuvent avoir un prix ici, sans être proposées là-bas.
               </p>
             )}
+
+            {carnetError && <p className="warning" role="alert">{carnetError}</p>}
 
             {filtered.length === 0 ? (
               <EmptyState
@@ -308,6 +325,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
             )}
           </>
         )}
+        </div>
       </section>
     </>
   );

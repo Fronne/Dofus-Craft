@@ -90,7 +90,7 @@ function SortHeader({ sort, onSort }: { sort: ProfitSort; onSort: (sort: ProfitS
             type="button"
             className={`profit-sort${active ? ' profit-sort--active' : ''}`}
             aria-pressed={active}
-            aria-label={`Trier par ${column.label}`}
+            aria-label={`Trier par ${column.label}${active ? (sort.direction === 'desc' ? ', décroissant' : ', croissant') : ''}`}
             onClick={() => onSort({
               key: column.key,
               direction: active ? (sort.direction === 'asc' ? 'desc' : 'asc') : first,
@@ -112,7 +112,8 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ProfitSort>(DEFAULT_PROFIT_SORT);
-  const { status, rows, done, total } = useCraftProfits(serverId, priceMode);
+  const [attempt, setAttempt] = useState(0);
+  const { status, rows, done, total } = useCraftProfits(serverId, priceMode, attempt);
   const serverName = servers.find((server) => server.id === serverId)?.name;
 
   const filtered = sortProfitRows(filterProfitRows(rows, query), sort);
@@ -133,7 +134,17 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
         {!serverId ? (
           <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le bénéfice de craft des objets." />
         ) : status === 'unavailable' ? (
-          <p className="warning">Impossible de charger les prix partagés pour le moment.</p>
+          <div role="alert">
+            <EmptyState
+              icon="info"
+              title="Rentabilité indisponible"
+              description={priceMode === 'community'
+                ? 'Impossible de charger les prix partagés pour le moment.'
+                : 'Impossible de lire les prix enregistrés sur cet appareil.'}
+            >
+              <button type="button" className="btn btn-primary" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
+            </EmptyState>
+          </div>
         ) : (
           <>
             <div className="profit-toolbar">
@@ -152,17 +163,16 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
               </div>
             </div>
             {status === 'loading' && (
-              <p className="empty" role="status">Calcul en cours… ({done} / {total})</p>
+              <p className="empty" role="status">Calcul en cours…{total > 0 ? ` (${done} / ${total})` : ''}</p>
             )}
             {status === 'ready' && rows.length === 0 ? (
-              <>
-                <EmptyState
-                  icon="coins"
-                  title="Aucun objet calculable"
-                  description="Il faut un prix HDV et le prix de toutes ses ressources."
-                />
-                <p className="profit-empty-link"><Link to={ROUTES.search}>Aller à la page Recherche</Link></p>
-              </>
+              <EmptyState
+                icon="coins"
+                title="Aucun objet calculable"
+                description="Il faut un prix HDV et le prix de toutes ses ressources."
+              >
+                <Link to={ROUTES.search} className="btn btn-primary">Aller à la page Recherche</Link>
+              </EmptyState>
             ) : rows.length > 0 && filtered.length === 0 ? (
               <EmptyState icon="search" title="Aucun objet ne correspond à votre recherche" description="Essayez un autre nom d'objet." />
             ) : rows.length > 0 && (

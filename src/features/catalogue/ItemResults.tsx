@@ -3,6 +3,7 @@ import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
+import { prefersReducedMotion } from '../../services/motion';
 
 // How many more results each « Afficher plus » click reveals (also the initial page size).
 export const RESULTS_PAGE_SIZE = 12;
@@ -19,6 +20,8 @@ export function ItemResults({
   isRevalidating = false,
   offline = false,
   lastSyncedAt,
+  error = '',
+  onRetry,
 }: {
   items: Item[];
   selected?: string;
@@ -31,6 +34,9 @@ export function ItemResults({
   isRevalidating?: boolean;
   offline?: boolean;
   lastSyncedAt?: string;
+  // Why nothing could be loaded at all (no result and no local copy), with a way to ask again.
+  error?: string;
+  onRetry?: () => void;
 }) {
   const resultsTopRef = useRef<HTMLDivElement>(null);
   const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
@@ -39,7 +45,25 @@ export function ItemResults({
   // revalidation must never replace it with a skeleton (that would also discard the user's scroll
   // position for no reason).
   // With no results bar to host it, the sync status sits on its own line above the placeholder.
-  if (loading && !items.length) return <>{syncStatus}<SkeletonCard count={Math.min(resultLimit, RESULTS_PAGE_SIZE)} /></>;
+  if (loading && !items.length) {
+    return (
+      <>
+        {syncStatus}
+        <span className="visually-hidden" role="status">Chargement des objets…</span>
+        <SkeletonCard count={Math.min(resultLimit, RESULTS_PAGE_SIZE)} />
+      </>
+    );
+  }
+  // A failed load is not an empty search: it says so, and offers to try again.
+  if (!items.length && error) {
+    return (
+      <div role="alert">
+        <EmptyState icon="info" title="Impossible de charger les objets" description={error}>
+          {onRetry && <button type="button" className="btn btn-primary" onClick={onRetry}>Réessayer</button>}
+        </EmptyState>
+      </div>
+    );
+  }
   if (!items.length) {
     return (
       <>
@@ -60,7 +84,7 @@ export function ItemResults({
   // shorter, leaves the player further down (on the item detail) with no sign of what happened.
   const collapse = () => {
     setResultLimit(RESULTS_PAGE_SIZE);
-    resultsTopRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    resultsTopRef.current?.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   };
   return (
     <div>
@@ -78,7 +102,7 @@ export function ItemResults({
       </div>
       <div className="results" aria-label="Résultats de recherche">
         {items.map((item) => (
-          <button className={selected === item.id ? 'selected' : ''} onClick={() => onSelect(item.id)} key={item.id}>
+          <button type="button" className={selected === item.id ? 'selected' : ''} aria-pressed={selected === item.id} onClick={() => onSelect(item.id)} key={item.id}>
             {item.imageUrl ? (
               <img src={item.imageUrl} alt="" loading="lazy" width="32" height="32" />
             ) : (

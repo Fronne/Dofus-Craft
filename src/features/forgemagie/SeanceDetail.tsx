@@ -114,7 +114,13 @@ export function SeanceDetail({ seanceId, me, priceMode, onBack, onUnauthorized }
         {back}
         {state.status === 'loading' && <p className="empty" role="status">Chargement de la séance de FM…</p>}
         {state.status === 'missing' && <EmptyState icon="info" title="Séance de FM introuvable" />}
-        {state.status === 'unavailable' && <EmptyState icon="info" title="Séance de FM indisponible" description="Le service ne répond pas. Réessayez plus tard." />}
+        {state.status === 'unavailable' && (
+          <div role="alert">
+            <EmptyState icon="info" title="Séance de FM indisponible" description="Le service ne répond pas pour le moment.">
+              <button type="button" className="btn btn-primary" onClick={() => { setState({ status: 'loading' }); void load(true); }}>Réessayer</button>
+            </EmptyState>
+          </div>
+        )}
       </div>
     );
   }
@@ -143,7 +149,7 @@ export function SeanceDetail({ seanceId, me, priceMode, onBack, onUnauthorized }
             <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={() => void act(() => startFmSession(seance.id))}>Reprendre</button>
           )}
           {seance.canArchive && (
-            <button type="button" className="btn btn-secondary btn-small fm-delete" disabled={busy} onClick={() => archiveDialog.current?.showModal()}>Archiver la séance</button>
+            <button type="button" className="btn btn-danger btn-small" disabled={busy} onClick={() => archiveDialog.current?.showModal()}>Archiver la séance</button>
           )}
           {seance.canReopen && (
             <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={() => void act(() => reopenFmSeance(seance.id))}>Rouvrir</button>

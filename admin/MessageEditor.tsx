@@ -25,6 +25,7 @@ export function MessageEditor() {
   const [endsAtLocal, setEndsAtLocal] = useState('');
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; error: boolean; field?: string }>();
+  const [attempt, setAttempt] = useState(0);
 
   function load(message: InfoMessage | null) {
     setCurrent(message);
@@ -43,7 +44,7 @@ export function MessageEditor() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   async function publish(event: FormEvent) {
     event.preventDefault();
@@ -86,7 +87,22 @@ export function MessageEditor() {
       <p className="settings-section-description">
         Un message affiché en haut de toutes les pages du site. Visible par tous au prochain chargement ; chaque joueur peut le fermer.
       </p>
-      {current === undefined && !feedback && <p className="empty">Chargement…</p>}
+      {current === undefined && !feedback && <p className="empty" role="status">Chargement…</p>}
+      {/* The message online could not be read: publishing now would replace it unseen. */}
+      {current === undefined && feedback?.error && (
+        <div className="inline-retry">
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={() => {
+              setFeedback(undefined);
+              setAttempt((count) => count + 1);
+            }}
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
       {current && !isInfoMessageActive(current) && (
         <p className="admin-message admin-message--error">
           Expiré le {dateFormatter.format(new Date(current.endsAt as string))} : il n'est plus affiché.
@@ -97,6 +113,7 @@ export function MessageEditor() {
           Message
           <textarea
             aria-label="Message"
+            aria-invalid={feedback?.error && feedback.field === 'text' ? true : undefined}
             value={text}
             maxLength={INFO_MESSAGE_MAX_LENGTH}
             rows={3}
@@ -116,7 +133,7 @@ export function MessageEditor() {
         </fieldset>
         <label className="admin-message-field">
           Fin (facultative)
-          <input type="datetime-local" aria-label="Fin (facultative)" value={endsAtLocal} onChange={(event) => setEndsAtLocal(event.target.value)} />
+          <input type="datetime-local" aria-label="Fin (facultative)" aria-invalid={feedback?.error && feedback.field === 'endsAt' ? true : undefined} value={endsAtLocal} onChange={(event) => setEndsAtLocal(event.target.value)} />
           {fieldError('endsAt')}
         </label>
         {text.trim() && (
@@ -129,13 +146,13 @@ export function MessageEditor() {
           </div>
         )}
         <div className="admin-counter-actions">
-          <button type="submit" className="btn btn-primary" disabled={busy}>Publier</button>
+          <button type="submit" className="btn btn-primary" disabled={busy || current === undefined}>Publier</button>
           {current && (
             <button type="button" className="btn btn-secondary admin-danger" disabled={busy} onClick={() => void remove()}>Retirer</button>
           )}
         </div>
         {feedback && !feedback.field && (
-          <p className={`admin-message${feedback.error ? ' admin-message--error' : ''}`} role="status">{feedback.text}</p>
+          <p className={`admin-message${feedback.error ? ' admin-message--error' : ''}`} role={feedback.error ? 'alert' : 'status'}>{feedback.text}</p>
         )}
       </form>
     </section>

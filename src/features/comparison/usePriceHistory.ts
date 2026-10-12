@@ -17,19 +17,21 @@ export type PriceHistoryState =
   | { kind: 'ready'; history: PriceHistory; loadedAt: number }
   | { kind: 'unavailable' };
 
-export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId: string, enabled: boolean): PriceHistoryState {
-  const key = `${kind}:${id}:${serverId}`;
+// `attempt` goes up when the player asks again after a failed load.
+export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId: string, enabled: boolean, attempt = 0): PriceHistoryState {
+  const key = `${kind}:${id}:${serverId}:${attempt}`;
+  const cacheKey = `${kind}:${id}:${serverId}`;
   // The last answer, tagged with the key it answers, so a stale one never shows for another target.
   const [result, setResult] = useState<{ key: string; state: PriceHistoryState }>();
 
   useEffect(() => {
-    if (!enabled || cache.has(key)) return;
+    if (!enabled || cache.has(cacheKey)) return;
     let cancelled = false;
     void getPriceHistory(kind, id, serverId).then((lookup) => {
       if (cancelled) return;
       if (lookup.status === 'found') {
         const ready = { history: lookup.history, loadedAt: Date.now() };
-        cache.set(key, ready);
+        cache.set(cacheKey, ready);
         setResult({ key, state: { kind: 'ready', ...ready } });
       } else {
         setResult({ key, state: { kind: 'unavailable' } });
@@ -38,9 +40,9 @@ export function usePriceHistory(kind: 'resource' | 'item', id: string, serverId:
     return () => {
       cancelled = true;
     };
-  }, [enabled, key, kind, id, serverId]);
+  }, [enabled, key, cacheKey, kind, id, serverId]);
 
-  const cached = cache.get(key);
+  const cached = cache.get(cacheKey);
   if (cached) return { kind: 'ready', ...cached };
   if (result?.key === key) return result.state;
   return { kind: 'loading' };

@@ -33,7 +33,8 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [grouping, setGrouping] = useState<HistoryWindow>(readHistoryGrouping);
-  const state = usePriceHistory(kind, id, serverId, open);
+  const [attempt, setAttempt] = useState(0);
+  const state = usePriceHistory(kind, id, serverId, open, attempt);
   const serverName = useActiveServer().servers.find((server) => server.id === serverId)?.name ?? serverId;
 
   const close = useCallback((returnFocus: boolean) => {
@@ -62,6 +63,12 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
       document.removeEventListener('pointerdown', onPointerDown);
     };
   }, [open, close]);
+
+  // The panel lives at the end of <body>: the focus goes into it, or the keyboard would have to
+  // cross the whole page to reach it.
+  useEffect(() => {
+    if (open) panelRef.current?.focus({ preventScroll: true });
+  }, [open]);
 
   // Positioned by writing the panel's style directly: the position follows the page, not React state.
   useLayoutEffect(() => {
@@ -117,7 +124,7 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
         {label}
       </button>
       {open && createPortal(
-        <div ref={panelRef} className="price-history-panel" role="dialog" aria-label={`Historique du prix de ${name}`}>
+        <div ref={panelRef} tabIndex={-1} className="price-history-panel" role="dialog" aria-label={`Historique du prix de ${name}`}>
           <div className="price-history-header">
             <div>
               <p className="price-history-title">{name}</p>
@@ -140,7 +147,7 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
               </button>
             ))}
           </div>
-          <PriceHistoryBody state={state} grouping={grouping} onChooseGrouping={chooseGrouping} />
+          <PriceHistoryBody state={state} grouping={grouping} onChooseGrouping={chooseGrouping} onRetry={() => setAttempt((count) => count + 1)} />
         </div>,
         document.body,
       )}
@@ -148,14 +155,22 @@ export function PriceHistoryButton({ kind, id, name, serverId, label, className 
   );
 }
 
-function PriceHistoryBody({ state, grouping, onChooseGrouping }: {
+function PriceHistoryBody({ state, grouping, onChooseGrouping, onRetry }: {
   state: PriceHistoryState;
   grouping: HistoryWindow;
   onChooseGrouping: (window: HistoryWindow) => void;
+  onRetry: () => void;
 }) {
   if (state.kind === 'loading') return <div className="price-history-skeleton" aria-busy="true" aria-label="Chargement de l'historique" />;
   // FR-013: no curve, no value — never an invented or outdated one.
-  if (state.kind === 'unavailable') return <p className="price-history-message">Historique indisponible pour le moment.</p>;
+  if (state.kind === 'unavailable') {
+    return (
+      <div className="price-history-message" role="alert">
+        <p>Historique indisponible pour le moment.</p>
+        <button type="button" className="price-history-invite" onClick={onRetry}>Réessayer</button>
+      </div>
+    );
+  }
   const display = historyDisplay(state.history, grouping);
   if (display.kind === 'empty') return <p className="price-history-message">Pas encore d'historique pour ce serveur.</p>;
   if (display.kind === 'chart') return <PriceHistoryChart prices={display.prices} window={grouping} now={state.loadedAt} />;

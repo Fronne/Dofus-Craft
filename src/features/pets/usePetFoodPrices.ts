@@ -39,7 +39,8 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
   return { prices, communityUnavailable: false };
 }
 
-export function usePetFoodPrices(serverId: string | undefined, priceMode: PriceMode): PetFoodPricesState {
+// `attempt` goes up when the player asks again after the shared prices could not be reached.
+export function usePetFoodPrices(serverId: string | undefined, priceMode: PriceMode, attempt = 0): PetFoodPricesState {
   const key = serverId ? `${serverId}:${priceMode}` : undefined;
   // The loaded prices remember which server + mode they belong to: any other context reads as loading.
   const [loaded, setLoaded] = useState<{ key: string; state: PetFoodPricesState }>();
@@ -56,6 +57,6 @@ export function usePetFoodPrices(serverId: string | undefined, priceMode: PriceM
     return () => {
       cancelled = true;
     };
-  }, [key, serverId, priceMode]);
+  }, [key, serverId, priceMode, attempt]);
   return loaded && loaded.key === key ? loaded.state : LOADING;
 }

@@ -32,6 +32,8 @@ export function MarketPriceInput({
   const locked = Boolean(lockWhenFilled) && Boolean(value) && !editing;
   const inputRef = useRef<HTMLInputElement>(null);
   const lastCommittedValueRef = useRef(value);
+  const focusValueRef = useRef(value);
+  const cancelledRef = useRef(false);
   const priceAge = classifyPriceAge(updatedAt);
   const ageClass = priceAge === 'stale' ? ' market-date--stale' : priceAge === 'expired' ? ' market-date--expired' : '';
   const field = (
@@ -41,7 +43,22 @@ export function MarketPriceInput({
         ref={inputRef}
         inputMode="numeric"
         aria-invalid={!valid}
+        aria-describedby={valid ? undefined : 'market-price-error'}
         value={formatKamasInput(value)}
+        onFocus={() => {
+          focusValueRef.current = value;
+        }}
+        // Enter validates like leaving the field does; Escape puts back the price it held on entry.
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.currentTarget.blur();
+          } else if (event.key === 'Escape' && value !== focusValueRef.current) {
+            cancelledRef.current = true;
+            onChange(focusValueRef.current);
+            event.currentTarget.blur();
+          }
+        }}
         onChange={(event) => {
           // First keystroke of an edit session: remember the value it started from (see
           // ResourcePriceInput, same no-op and revert guards).
@@ -50,6 +67,11 @@ export function MarketPriceInput({
           onChange(normalizeKamasInput(event.target.value));
         }}
         onBlur={() => {
+          if (cancelledRef.current) {
+            cancelledRef.current = false;
+            setEditing(false);
+            return;
+          }
           if (!lockWhenFilled) return;
           setEditing(false);
           // Only a real edit session can commit: focusing the locked field alone must not.
@@ -101,7 +123,7 @@ export function MarketPriceInput({
           screen.getByLabelText('Prix HDV')) holds regardless of where it sits in the DOM. */}
       {history ? <div className="market-input-row">{field}{history}</div> : field}
       {updatedAt && <small className={`market-date${ageClass}`}>Dernière mise à jour : {formatRelativeTime(updatedAt)}</small>}
-      {!valid && <em>Entrez un nombre entier positif ou zéro.</em>}
+      {!valid && <em id="market-price-error" role="alert">Entrez un nombre entier positif ou zéro.</em>}
     </div>
   );
 }

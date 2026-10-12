@@ -344,6 +344,8 @@ describe('renaming or deleting a collection from its group heading (specs/005-pi
     await screen.findByRole('heading', { name: 'PvP' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer la liste PvP' }));
+    // Deleting a list asks once more before doing it.
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
 
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'PvP' })).not.toBeInTheDocument());
     const ungrouped = screen.getByRole('heading', { name: 'Sans liste' }).closest('.pinned-collection') as HTMLElement;

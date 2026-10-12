@@ -133,6 +133,8 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const setSelected = (id: string) => updateParams({ item: id });
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [market, setMarket] = useState('');
+  // Mode personnel: the HDV price could not be kept on this device (said under the field).
+  const [marketError, setMarketError] = useState('');
   const community = priceMode === 'community';
   const levelFilter = levelMin || levelMax ? `${levelMin}:${levelMax}` : '';
   const catalogue = useCatalogue(query, category, selected, levelFilter, resultLimit);
@@ -163,8 +165,11 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
       return;
     }
     let cancelled = false;
+    setMarketError('');
     pinnedItemPrices.get(serverId, selected).then((price) => {
       if (!cancelled) setMarket(price ? String(price.marketPriceKamas) : '');
+    }).catch(() => {
+      if (!cancelled) setMarket('');
     });
     return () => {
       cancelled = true;
@@ -323,6 +328,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const firstCraftablePath = firstCraftable >= 0 ? topCosts[firstCraftable].resourceId : undefined;
   // The line the tour unfolded itself (never one the player had unfolded), folded back afterwards.
   const tourUnfoldedPath = useRef<string | undefined>(undefined);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
   const foldTourUnfolded = () => {
     const path = tourUnfoldedPath.current;
     if (!path) return;
@@ -363,8 +369,13 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
 
   return (
     <>
+      <header className="page-header">
+        <h1>Crafter ou acheter ?</h1>
+        <p>Calculez en quelques secondes si un craft Dofus est rentable.</p>
+      </header>
       <section className="panel search-panel">
         <button
+          ref={helpButtonRef}
           type="button"
           className="icon-button search-help-button"
           aria-label="Comment fonctionne cette page ?"
@@ -385,8 +396,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           onReset={resetFilters}
           categories={catalogue.categories}
         />
-        {catalogue.error && <p className="warning">{catalogue.error}</p>}
         <ItemResults
+          error={catalogue.error}
+          onRetry={catalogue.retry}
           items={catalogue.items}
           selected={selected}
           onSelect={setSelected}
@@ -400,8 +412,13 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           lastSyncedAt={catalogue.lastSyncedAt}
         />
       </section>
-      {catalogue.detailLoading && <p className="empty">Chargement des détails…</p>}
-      {catalogue.detailError && <p className="warning">{catalogue.detailError}</p>}
+      {catalogue.detailLoading && <p className="empty" role="status">Chargement des détails…</p>}
+      {catalogue.detailError && (
+        <div className="inline-retry" role="alert">
+          <p className="warning">{catalogue.detailError}</p>
+          <button type="button" className="btn btn-secondary btn-small" onClick={catalogue.retry}>Réessayer</button>
+        </div>
+      )}
       {detail?.recipe && result && (
         <section className="panel market-price-panel">
           <div className="market-price-summary" data-tour="recommendation">
@@ -420,11 +437,10 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                       // Mode communautaire shares on commit (above), never into the local price.
                       if (!community && selectedItem && serverId) {
                         const parsed = parseKamas(value);
-                        if (parsed === undefined) {
-                          void pinnedItemPrices.remove(serverId, selectedItem.id);
-                        } else {
-                          void pinnedItemPrices.save(serverId, selectedItem.id, parsed);
-                        }
+                        const kept = parsed === undefined
+                          ? pinnedItemPrices.remove(serverId, selectedItem.id)
+                          : pinnedItemPrices.save(serverId, selectedItem.id, parsed);
+                        kept.then(() => setMarketError(''), () => setMarketError("Impossible d'enregistrer ce prix sur cet appareil."));
                       }
                     }}
                   />
@@ -432,12 +448,14 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
               )}
             />
           </div>
+          {marketError && <p className="field-status field-status--error" role="alert">{marketError}</p>}
           {marketOutlierDialog}
         </section>
       )}
       <div className="grid">
         <ItemDetail
           detail={detail}
+          pending={catalogue.detailLoading || Boolean(catalogue.detailError)}
           isPinned={selected ? pinned.isPinned(selected) : false}
           history={community && selectedItem && serverId
             ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} label="Historique" className="pin-item-button item-history-button" />
@@ -485,7 +503,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                 />
               );
             })}
-            {error && <p className="warning">{error}</p>}
+            {error && <p className="warning" role="alert">{error}</p>}
           </section>
         )}
       </div>
@@ -497,6 +515,8 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
             foldTourUnfolded();
             markSearchTourSeen();
             setTourOpen(false);
+            // Back to where the tour is opened from, instead of the top of the document.
+            helpButtonRef.current?.focus();
           }}
         />
       )}

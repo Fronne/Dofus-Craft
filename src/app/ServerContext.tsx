@@ -9,6 +9,9 @@ type ServerContextValue = {
   hasSelectedServer: boolean;
   servers: Server[];
   loadingServers: boolean;
+  // The server list could not be read (DofusDB unreachable and no local copy); `retryServers` asks again.
+  serversError: boolean;
+  retryServers: () => void;
   selectServer: (serverId: ServerId) => void;
 };
 
@@ -17,10 +20,14 @@ const ServerContext = createContext<ServerContextValue | undefined>(undefined);
 export function ServerProvider({ children }: { children: ReactNode }) {
   const [servers, setServers] = useState<Server[]>([]);
   const [loadingServers, setLoadingServers] = useState(true);
+  const [serversError, setServersError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [serverId, setServerId] = useState<ServerId | undefined>(() => getActiveServerId());
 
   useEffect(() => {
     let cancelled = false;
+    setLoadingServers(true);
+    setServersError(false);
     getServers()
       .then((fetched) => {
         if (cancelled) return;
@@ -29,13 +36,16 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         // only trust it once it's confirmed to be part of the real, current server list.
         setServerId((current) => (current && fetched.some((server) => server.id === current) ? current : undefined));
       })
+      .catch(() => {
+        if (!cancelled) setServersError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoadingServers(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   const selectServer = (nextServerId: ServerId) => {
     setActiveServerId(nextServerId);
@@ -49,6 +59,8 @@ export function ServerProvider({ children }: { children: ReactNode }) {
         hasSelectedServer: serverId !== undefined,
         servers,
         loadingServers,
+        serversError,
+        retryServers: () => setAttempt((count) => count + 1),
         selectServer,
       }}
     >

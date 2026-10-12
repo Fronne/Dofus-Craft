@@ -46,6 +46,7 @@ export function useResourcePrices(
       .then((result) => {
         if (generationRef.current !== generation) return;
         setData(result);
+        setError('');
         setLoaded(true);
       })
       .catch(() => {
@@ -67,12 +68,17 @@ export function useResourcePrices(
   }
   async function remove(id: string) {
     if (!serverId) return;
-    await repository.remove(serverId, id);
-    setData((current) => {
-      const rest = { ...current };
-      delete rest[id];
-      return rest;
-    });
+    try {
+      await repository.remove(serverId, id);
+      setData((current) => {
+        const rest = { ...current };
+        delete rest[id];
+        return rest;
+      });
+      setError('');
+    } catch {
+      setError('Impossible de supprimer ce prix.');
+    }
   }
   return { data, save, remove, error, loaded, reload };
 }

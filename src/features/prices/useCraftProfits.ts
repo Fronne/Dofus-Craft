@@ -207,7 +207,8 @@ export function preloadCraftProfits(serverId: string | undefined, priceMode: Pri
   };
 }
 
-export function useCraftProfits(serverId: string | undefined, priceMode: PriceMode): CraftProfitsState {
+// `attempt` goes up when the player asks again after a failed computation.
+export function useCraftProfits(serverId: string | undefined, priceMode: PriceMode, attempt = 0): CraftProfitsState {
   const key = `${serverId}:${priceMode}`;
   const [state, setState] = useState<CraftProfitsState>(() => cache.get(key) ?? runs.get(key)?.latest ?? INITIAL);
 
@@ -242,7 +243,7 @@ export function useCraftProfits(serverId: string | undefined, priceMode: PriceMo
         }
       }
     };
-  }, [key, serverId, priceMode]);
+  }, [key, serverId, priceMode, attempt]);
 
   return state;
 }

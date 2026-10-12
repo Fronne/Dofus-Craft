@@ -87,7 +87,7 @@
 /* Keeps the search title clear of the help button in the panel's top-right corner. */
 :root[data-design="modern"] .search-panel .search-label { padding-right: 44px; }
 :root[data-design="modern"] .category-icons button { border-radius: var(--radius-pill); padding-right: .95rem; }
-:root[data-design="modern"] .results button img { border-radius: 10px; }
+:root[data-design="modern"] .results button img { border-radius: var(--radius-sm); }
 /* The verdict becomes a tinted inset instead of a column separated by a rule. */
 :root[data-design="modern"] .market-price-summary {
   padding: var(--space-4) var(--space-5);
@@ -142,7 +142,7 @@
 }
 :root[data-design="modern"] .app-nav-brand-mark {
   background: linear-gradient(135deg, var(--gold), var(--gold-bright));
-  color: #0b1018;
+  color: var(--on-accent);
   box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--gold) 70%, transparent);
 }
 :root[data-design="modern"] .app-nav-link { border-left: 0; font-weight: 600; }
@@ -160,9 +160,14 @@
   background: linear-gradient(180deg, var(--gold-bright), var(--gold));
   box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--gold) 80%, transparent);
 }
-:root[data-design="modern"] .btn:hover,
-:root[data-design="modern"] .icon-button:hover,
-:root[data-design="modern"] .settings-choice:hover { transform: translateY(-1px); }
+:root[data-design="modern"] .btn:hover:not(:disabled),
+:root[data-design="modern"] .icon-button:hover:not(:disabled),
+:root[data-design="modern"] .settings-choice:hover:not(:disabled) { transform: translateY(-1px); }
+/* Pressed: back down from the hover lift. */
+:root[data-design="modern"] .btn:active:not(:disabled),
+:root[data-design="modern"] .icon-button:active:not(:disabled),
+:root[data-design="modern"] .settings-choice:active:not(:disabled),
+:root[data-design="modern"] .results button:active { transform: translateY(1px); }
 :root[data-design="modern"] .settings-choice.selected {
   box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--gold) 80%, transparent);
 }
@@ -171,6 +176,7 @@
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 :root[data-design="modern"] input:focus,
+:root[data-design="modern"] textarea:focus,
 :root[data-design="modern"] select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 0 4px var(--gold-soft);

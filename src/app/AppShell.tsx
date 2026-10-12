@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { EmptyState } from '../components/EmptyState';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ROUTES } from './router';
 import { Icon } from '../components/Icon';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
@@ -33,6 +35,31 @@ const NAV_ITEMS = [
   { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false },
   { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false },
 ];
+
+const SITE_NAME = 'Dofus Craft';
+// The browser tab's title of each page, so tabs, history and bookmarks can be told apart.
+const PAGE_TITLES: Record<string, string> = {
+  [ROUTES.search]: `${SITE_NAME} — Crafter ou acheter ? Rentabilité des crafts Dofus`,
+  [ROUTES.pinned]: `Suivis — ${SITE_NAME}`,
+  [ROUTES.prices]: `Rentabilité des crafts — ${SITE_NAME}`,
+  [ROUTES.hdv]: `Prix de l'HDV — ${SITE_NAME}`,
+  [ROUTES.pets]: `XP Familier — ${SITE_NAME}`,
+  [ROUTES.forgemagie]: `Forgemagie — ${SITE_NAME}`,
+  [ROUTES.settings]: `Paramètres — ${SITE_NAME}`,
+};
+
+function NotFoundPage() {
+  return (
+    <>
+      <header className="page-header">
+        <h1>Page introuvable</h1>
+      </header>
+      <EmptyState icon="search" title="Cette adresse n'existe pas" description="Le lien est peut-être incomplet, ou la page a changé d'adresse.">
+        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
+      </EmptyState>
+    </>
+  );
+}
 
 export function AppShell() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -74,8 +101,23 @@ export function AppShell() {
   // for the active server and price mode, so it's already there when the player opens the page.
   useEffect(() => preloadCraftProfits(serverId, priceMode), [serverId, priceMode]);
 
+  // On a page change: the tab's title follows, and the focus moves to the page itself, so a keyboard
+  // or screen-reader user lands on the new content rather than staying on the menu link.
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  const firstPage = useRef(true);
+  useEffect(() => {
+    document.title = PAGE_TITLES[pathname] ?? `Page introuvable — ${SITE_NAME}`;
+    if (firstPage.current) {
+      firstPage.current = false;
+      return;
+    }
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname]);
+
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#contenu">Aller au contenu</a>
       <nav className="app-nav" aria-label="Navigation principale">
         <div className="app-nav-brand">
           <span className="app-nav-brand-mark" aria-hidden="true">DC</span>
@@ -112,18 +154,17 @@ export function AppShell() {
             type="button"
             className="icon-button"
             aria-label={theme === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'}
-            aria-pressed={theme === 'light'}
             onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
           >
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
           </button>
-          <span className="app-nav-version">v{__APP_VERSION__}</span>
         </div>
       </nav>
       <div className="app-shell-main">
         <PinnedPriceMigrationNotice />
-        <main className="app-page">
+        <main className="app-page" id="contenu" tabIndex={-1} ref={mainRef}>
           <InfoBanner />
+          <ErrorBoundary key={pathname}>
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
             <Route path={ROUTES.home} element={<Navigate to={ROUTES.search} replace />} />
@@ -155,7 +196,9 @@ export function AppShell() {
                 />
               }
             />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </ErrorBoundary>
         </main>
       </div>
       <PlayerCounters />

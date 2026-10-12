@@ -53,6 +53,7 @@ function PlayerCard({ player, foldable }: { player: FmGroupPlayer; foldable: boo
 
 export function PlayersTab({ onUnauthorized }: { onUnauthorized: () => void }) {
   const [state, setState] = useState<{ status: 'loading' | 'unavailable' } | { status: 'ready'; players: FmGroupPlayer[] }>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,11 +66,17 @@ export function PlayersTab({ onUnauthorized }: { onUnauthorized: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, [onUnauthorized]);
+  }, [onUnauthorized, attempt]);
 
   if (state.status === 'loading') return <p className="empty" role="status">Chargement des joueurs…</p>;
   if (state.status !== 'ready') {
-    return <EmptyState icon="info" title="Joueurs indisponibles" description="Le service ne répond pas. Réessayez plus tard." />;
+    return (
+      <div role="alert">
+        <EmptyState icon="info" title="Joueurs indisponibles" description="Le service ne répond pas pour le moment.">
+          <button type="button" className="btn btn-primary" onClick={() => { setState({ status: 'loading' }); setAttempt((count) => count + 1); }}>Réessayer</button>
+        </EmptyState>
+      </div>
+    );
   }
   if (state.players.length === 0) {
     return (

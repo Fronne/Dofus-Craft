@@ -10,6 +10,8 @@ import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 export function useHdvPriceSummary(serverId: string | undefined, priceMode: PriceMode, ids: string[]) {
   const [prices, setPrices] = useState<Record<string, ResourcePrice>>({});
   const [loaded, setLoaded] = useState(false);
+  // The read failed: the count and the sorts by price would be wrong, so the page says so instead.
+  const [failed, setFailed] = useState(false);
   const [version, setVersion] = useState(0);
   const generation = useRef(0);
   const key = ids.join(',');
@@ -27,13 +29,16 @@ export function useHdvPriceSummary(serverId: string | undefined, priceMode: Pric
       .then((result) => {
         if (generation.current !== current) return;
         setPrices(result);
+        setFailed(false);
         setLoaded(true);
       })
       .catch(() => {
-        if (generation.current === current) setLoaded(true);
+        if (generation.current !== current) return;
+        setFailed(true);
+        setLoaded(true);
       });
   }, [serverId, priceMode, key, version]);
 
   const refresh = useCallback(() => setVersion((value) => value + 1), []);
-  return { prices, loaded, refresh };
+  return { prices, loaded, failed, refresh };
 }

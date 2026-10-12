@@ -138,7 +138,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
 
     await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(10300)}`)));
     expect(within(line('Planche Agglomérée')).getByText('Acheté')).toBeInTheDocument();
-    expect(within(line('Planche Agglomérée')).getByText(/ton choix/)).toBeInTheDocument();
+    expect(within(line('Planche Agglomérée')).getByText(/votre choix/)).toBeInTheDocument();
     expect(within(line('Planche Agglomérée')).getByRole('button', { name: 'Acheter' })).toHaveAttribute('aria-pressed', 'true');
 
     // Still forced after leaving and coming back.

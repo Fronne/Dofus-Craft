@@ -73,7 +73,7 @@ function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
 
   return (
     <section className="fm-danger-zone">
-      <button type="button" className="btn btn-secondary btn-small fm-delete" onClick={() => dialogRef.current?.showModal()}>
+      <button type="button" className="btn btn-danger btn-small" onClick={() => dialogRef.current?.showModal()}>
         Supprimer mon profil
       </button>
       <dialog ref={dialogRef} className="outlier-confirm-dialog" aria-label="Supprimer mon profil" onCancel={() => setState('idle')}>
@@ -86,7 +86,7 @@ function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
         <div className="outlier-confirm-dialog-actions">
           <button type="button" onClick={() => { dialogRef.current?.close(); setState('idle'); }}>Annuler</button>
           <button type="button" className="outlier-confirm-dialog-confirm" disabled={state === 'deleting'} onClick={() => void confirm()}>
-            Supprimer définitivement
+            {state === 'deleting' ? 'Suppression…' : 'Supprimer définitivement'}
           </button>
         </div>
       </dialog>
@@ -139,6 +139,7 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSeance, onUnauthoriz
   onUnauthorized: () => void;
 }) {
   const [profile, setProfile] = useState<{ status: 'loading' | 'missing' | 'unavailable' } | { status: 'ready'; profile: FmProfile }>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,7 +152,7 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSeance, onUnauthoriz
     return () => {
       cancelled = true;
     };
-  }, [me.discordUserId, onUnauthorized]);
+  }, [me.discordUserId, onUnauthorized, attempt]);
 
   return (
     <div className="fm-profile">
@@ -159,7 +160,13 @@ export function ProfileTab({ me, updateMe, onDeleted, onOpenSeance, onUnauthoriz
 
       {profile.status === 'loading' && <p className="empty" role="status">Chargement des dépenses…</p>}
       {profile.status === 'missing' && <EmptyState icon="info" title="Profil introuvable" description="Reconnecte-toi avec Discord, puis réessaie." />}
-      {profile.status === 'unavailable' && <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas. Réessayez plus tard." />}
+      {profile.status === 'unavailable' && (
+        <div role="alert">
+          <EmptyState icon="info" title="Dépenses indisponibles" description="Le service ne répond pas pour le moment.">
+            <button type="button" className="btn btn-primary" onClick={() => { setProfile({ status: 'loading' }); setAttempt((count) => count + 1); }}>Réessayer</button>
+          </EmptyState>
+        </div>
+      )}
       {profile.status === 'ready' && <Spending profile={profile.profile} onOpenSeance={onOpenSeance} />}
 
       <DeleteProfile onDeleted={onDeleted} />

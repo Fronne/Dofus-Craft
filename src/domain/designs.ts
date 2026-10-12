@@ -6,7 +6,7 @@ type Design = { id: DesignId; label: string };
 
 export const designs: Design[] = [
   { id: 'classic', label: 'Classique' },
-  { id: 'modern', label: 'Nouveau' },
+  { id: 'modern', label: 'Moderne' },
 ];
 
 export function isKnownDesignId(designId: string): designId is DesignId {

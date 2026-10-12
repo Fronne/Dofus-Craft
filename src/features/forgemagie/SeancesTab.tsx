@@ -78,7 +78,13 @@ export function SeancesTab({ me, onOpen, onUnauthorized }: { me: FmMe; onOpen: (
 
   if (state === 'loading') return <p className="empty" role="status">Chargement des séances de FM…</p>;
   if (state === 'unavailable') {
-    return <EmptyState icon="info" title="Séances de FM indisponibles" description="Le service ne répond pas. Réessayez plus tard." />;
+    return (
+      <div role="alert">
+        <EmptyState icon="info" title="Séances de FM indisponibles" description="Le service ne répond pas pour le moment.">
+          <button type="button" className="btn btn-primary" onClick={() => { setState('loading'); void load(true); }}>Réessayer</button>
+        </EmptyState>
+      </div>
+    );
   }
 
   // Once the bot created the channel, the new séance opens right away.

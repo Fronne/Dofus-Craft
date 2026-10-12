@@ -36,7 +36,7 @@ export function ParametresPage({
       <section className="panel settings-section">
         <h2>Design</h2>
         <p className="settings-section-description">
-          Essayez le nouveau design, ou revenez au design classique à tout moment.
+          Choisissez entre le design moderne et le design classique ; vous pouvez en changer à tout moment.
         </p>
         <div className="settings-choice-row">
           {designs.map((option) => (

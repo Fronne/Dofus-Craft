@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icon';
+import { prefersReducedMotion } from '../services/motion';
 
 // Shown once the player has scrolled down a screen or so: one click back to the top of the page.
 // Shared by the long, scrolling lists (Rentabilité, specs/019; XP Familier, specs/022 FR-007).
@@ -18,7 +19,7 @@ export function BackToTopButton() {
       className="back-to-top"
       aria-label="Revenir en haut"
       title="Revenir en haut"
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      onClick={() => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' })}
     >
       <Icon name="chevron-down" size={20} />
     </button>

@@ -18,6 +18,7 @@ function runeIcon(item: FmItemSummary): string | undefined {
 export function PurchasesTable({ items, showTotal = true }: { items: FmItemSummary[]; showTotal?: boolean }) {
   if (items.length === 0) return <p className="empty">Aucun achat détaillé.</p>;
   return (
+    <div className="fm-table-scroll">
     <table className="fm-items">
       <thead>
         <tr>
@@ -62,5 +63,6 @@ export function PurchasesTable({ items, showTotal = true }: { items: FmItemSumma
         </tfoot>
       )}
     </table>
+    </div>
   );
 }

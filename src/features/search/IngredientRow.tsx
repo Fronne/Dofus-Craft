@@ -15,7 +15,7 @@ export function RetainedCostIndicator({ cost }: { cost: RetainedCost }) {
   return (
     <span className={`retained-cost retained-cost--${cost.option}`}>
       <span className="retained-cost-option">{OPTION_LABELS[cost.option]}</span>
-      {cost.forced && <span className="retained-cost-forced"> (ton choix)</span>}
+      {cost.forced && <span className="retained-cost-forced"> (votre choix)</span>}
       <span className="retained-cost-amounts">
         {cost.purchaseKamas !== undefined && <span>Achat : {formatKamas(cost.purchaseKamas)}/u</span>}
         {cost.purchaseKamas !== undefined && cost.recipeKamas !== undefined && ' · '}

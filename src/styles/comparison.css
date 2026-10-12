@@ -8,6 +8,7 @@
 .price-history-trigger {
   display: inline-grid;
   place-items: center;
+  flex: none;
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
@@ -53,7 +54,7 @@
 .price-history-close { flex: 0 0 auto; }
 .price-history-server { margin: .1rem 0 0; font-size: .75rem; color: var(--text-muted); }
 .price-history-groupings { display: inline-flex; justify-self: start; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
-.price-history-grouping { padding: .25rem .75rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
+.price-history-grouping { min-height: 32px; padding: .25rem .75rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
 .price-history-grouping + .price-history-grouping { border-left: 1px solid var(--border); }
 .price-history-grouping[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
 .price-history-message { display: grid; gap: .35rem; min-height: 5rem; align-content: center; margin: 0; color: var(--text-muted); }
@@ -71,7 +72,7 @@
 .price-history-chart { position: relative; }
 .price-history-svg { display: block; width: 100%; height: auto; overflow: visible; }
 .price-history-grid { stroke: var(--border); stroke-width: 1; }
-.price-history-tick { fill: var(--text-faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+.price-history-tick { fill: var(--text-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 .price-history-plot { fill: transparent; cursor: crosshair; }
 .price-history-crosshair { stroke: var(--text-faint); stroke-width: 1; pointer-events: none; }
 .price-history-line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
@@ -97,17 +98,6 @@
 }
 .price-history-tooltip strong { color: var(--text); font-size: .85rem; font-variant-numeric: tabular-nums; }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
 .price-history-tooltip--start { transform: translate(-12px, calc(-100% - 10px)); }
 .price-history-tooltip--end { transform: translate(calc(-100% + 12px), calc(-100% - 10px)); }
 .item-history-button { right: auto; left: var(--space-5); }

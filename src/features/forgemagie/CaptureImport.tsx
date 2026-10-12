@@ -74,7 +74,9 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
   const read = useCallback(async (file: Blob) => {
     setStatus('reading');
     setMessage(undefined);
-    const reading = await readCapture(file);
+    // A reading that throws (the list of names did not load) ends like one that is unavailable,
+    // instead of leaving « Lecture de la capture… » on screen for good.
+    const reading = await readCapture(file).catch((): CaptureReading => ({ status: 'unavailable' }));
     if (reading.status !== 'ok') {
       setStatus('idle');
       setMessage({ tone: 'error', text: READING_MESSAGES[reading.status] });
@@ -108,7 +110,9 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...changes } : line)));
 
   const kept = lines.filter((line) => line.keep);
-  const blocked = kept.some((line) => !line.resource || !lineValues(line));
+  const unknownItem = kept.some((line) => !line.resource);
+  const badNumbers = kept.some((line) => !lineValues(line));
+  const blocked = unknownItem || badNumbers;
 
   const validate = async () => {
     if (blocked || kept.length === 0) return;
@@ -160,9 +164,15 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
       return;
     }
     // Mode personnel: the prices stay on this device, like a manual entry.
+    // The purchases are recorded by then: a carnet that refuses the write changes the message, not the outcome.
+    let carnetFailed = false;
     if (priceMode === 'personal') {
       const carnet = resourcePricesFor('personal');
-      await Promise.all(priced.map(({ line, values }) => carnet.save(me.serverId!, line.resource!.id, values.unit)));
+      try {
+        await Promise.all(priced.map(({ line, values }) => carnet.save(me.serverId!, line.resource!.id, values.unit)));
+      } catch {
+        carnetFailed = true;
+      }
     }
     setLines([]);
     setStatus('idle');
@@ -170,7 +180,8 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
     setMessage({
       tone: 'info',
       text: `${priced.length} ${priced.length > 1 ? 'achats enregistrés' : 'achat enregistré'}${
-        uncounted > 0 ? `, dont ${uncounted} ${uncounted > 1 ? 'non comptés' : 'non compté'} (pas une rune)` : ''}.`,
+        uncounted > 0 ? `, dont ${uncounted} ${uncounted > 1 ? 'non comptés' : 'non compté'} (pas une rune)` : ''}.${
+        carnetFailed ? ' Leurs prix n’ont pas pu être gardés sur cet appareil.' : ''}`,
     });
     onImported();
   };
@@ -188,7 +199,7 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
           event.preventDefault();
           setDragging(false);
           const file = event.dataTransfer.files[0];
-          if (file) void read(file);
+          if (file && status !== 'reading' && status !== 'saving') void read(file);
         }}
       >
         <Icon name="image" size={22} />
@@ -218,6 +229,7 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
       {(status === 'review' || status === 'saving') && lines.length > 0 && (
         <>
           {lines.some((line) => !line.resource) && resourceNames}
+          <div className="fm-table-scroll">
           <table className="fm-items fm-import-lines">
             <thead>
               <tr>
@@ -256,10 +268,10 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
                       )}
                     </th>
                     <td>
-                      <input className="fm-number" inputMode="numeric" value={line.quantity} aria-label={`Quantité de ${line.itemName}`} onChange={(event) => update(line.key, { quantity: event.target.value })} />
+                      <input className="fm-number" inputMode="numeric" value={line.quantity} aria-invalid={line.keep && !values ? true : undefined} aria-label={`Quantité de ${line.itemName}`} onChange={(event) => update(line.key, { quantity: event.target.value })} />
                     </td>
                     <td>
-                      <input className="fm-number" inputMode="numeric" value={line.total} aria-label={`Total de ${line.itemName}`} onChange={(event) => update(line.key, { total: event.target.value })} />
+                      <input className="fm-number" inputMode="numeric" value={line.total} aria-invalid={line.keep && !values ? true : undefined} aria-label={`Total de ${line.itemName}`} onChange={(event) => update(line.key, { total: event.target.value })} />
                     </td>
                     <td>{values ? `${formatKamas(values.unit)}/u` : '—'}</td>
                   </tr>
@@ -267,8 +279,12 @@ export function CaptureImport({ me, priceMode, sessionId, onImported, onSessionC
               })}
             </tbody>
           </table>
+          </div>
           <p className="fm-note">Prix unitaire = total ÷ quantité, arrondi au kama le plus proche. Chaque ligne est un lot acheté.</p>
-          {blocked && <p className="fm-error" role="alert">Choisis l'objet de chaque ligne non reconnue, ou décoche-la.</p>}
+          {unknownItem && <p className="fm-error" role="alert">Choisis l'objet de chaque ligne non reconnue, ou décoche-la.</p>}
+          {!unknownItem && badNumbers && (
+            <p className="fm-error" role="alert">Une quantité et un total d'au moins 1 sont attendus sur chaque ligne gardée.</p>
+          )}
           <div className="fm-import-actions">
             <button type="button" className="btn btn-secondary" onClick={() => { setLines([]); setStatus('idle'); }} disabled={status === 'saving'}>
               Annuler

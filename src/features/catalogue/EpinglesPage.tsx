@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePinnedItems } from './usePinnedItems';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
@@ -72,20 +72,61 @@ function CollectionHeading({
   onDelete: () => void;
 }) {
   const [renaming, setRenaming] = useState(false);
+  // Deleting asks once more, in place: a list is not brought back with one click.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [draft, setDraft] = useState(name ?? '');
+  // After an edit is validated or canceled, the focus goes back to the button that opened it.
+  const renameButton = useRef<HTMLButtonElement>(null);
+  const deleteButton = useRef<HTMLButtonElement>(null);
+  const focusBack = useRef<'rename' | 'delete' | undefined>(undefined);
+  useEffect(() => {
+    if (renaming || confirmingDelete || !focusBack.current) return;
+    (focusBack.current === 'rename' ? renameButton : deleteButton).current?.focus();
+    focusBack.current = undefined;
+  }, [renaming, confirmingDelete]);
 
   if (!name) {
     return <h2 className="pinned-collection-title">Sans liste</h2>;
   }
 
+  if (confirmingDelete) {
+    const cancel = () => {
+      focusBack.current = 'delete';
+      setConfirmingDelete(false);
+    };
+    return (
+      <div
+        className="pinned-collection-title pinned-collection-confirm"
+        role="group"
+        aria-label={`Supprimer la liste ${name}`}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') cancel();
+        }}
+      >
+        <span>Supprimer la liste « {name} » ? Ses objets restent suivis.</span>
+        <button type="button" className="btn btn-danger btn-small" onClick={onDelete}>Supprimer</button>
+        <button type="button" className="btn btn-secondary btn-small" autoFocus onClick={cancel}>Annuler</button>
+      </div>
+    );
+  }
+
   if (renaming) {
+    const cancel = () => {
+      focusBack.current = 'rename';
+      setRenaming(false);
+      setDraft(name);
+    };
     return (
       <form
         className="pinned-collection-title pinned-collection-title-editing"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') cancel();
+        }}
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = draft.trim();
           if (trimmed) onRename(trimmed);
+          focusBack.current = 'rename';
           setRenaming(false);
         }}
       >
@@ -103,10 +144,7 @@ function CollectionHeading({
           type="button"
           className="icon-button"
           aria-label="Annuler le renommage"
-          onClick={() => {
-            setRenaming(false);
-            setDraft(name);
-          }}
+          onClick={cancel}
         >
           <Icon name="close" size={14} />
         </button>
@@ -118,6 +156,7 @@ function CollectionHeading({
     <h2 className="pinned-collection-title">
       {name}
       <button
+        ref={renameButton}
         type="button"
         className="icon-button"
         aria-label={`Renommer la liste ${name}`}
@@ -128,7 +167,7 @@ function CollectionHeading({
       >
         <Icon name="edit" size={14} />
       </button>
-      <button type="button" className="icon-button" aria-label={`Supprimer la liste ${name}`} onClick={onDelete}>
+      <button ref={deleteButton} type="button" className="icon-button" aria-label={`Supprimer la liste ${name}`} onClick={() => setConfirmingDelete(true)}>
         <Icon name="close" size={14} />
       </button>
     </h2>
@@ -141,17 +180,29 @@ function CollectionHeading({
 function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void }) {
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState('');
+  const openButton = useRef<HTMLButtonElement>(null);
+  const wasCreating = useRef(false);
+  useEffect(() => {
+    if (wasCreating.current && !creating) openButton.current?.focus();
+    wasCreating.current = creating;
+  }, [creating]);
 
   if (creating) {
+    const close = () => {
+      setCreating(false);
+      setDraft('');
+    };
     return (
       <form
         className="new-collection-form"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') close();
+        }}
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = draft.trim();
           if (trimmed) onCreate(trimmed);
-          setCreating(false);
-          setDraft('');
+          close();
         }}
       >
         <input
@@ -169,10 +220,7 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
           type="button"
           className="icon-button"
           aria-label="Annuler la création de liste"
-          onClick={() => {
-            setCreating(false);
-            setDraft('');
-          }}
+          onClick={close}
         >
           <Icon name="close" size={16} />
         </button>
@@ -181,7 +229,7 @@ function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void })
   }
 
   return (
-    <button type="button" className="settings-choice new-collection-button" onClick={() => setCreating(true)}>
+    <button ref={openButton} type="button" className="btn btn-secondary" onClick={() => setCreating(true)}>
       + Nouvelle liste
     </button>
   );
@@ -198,11 +246,17 @@ async function sharedMarketPrices(serverId: string, ids: string[]): Promise<Reco
 }
 
 export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
-  const { pinnedItems, unpin, listCollectionNames, createCollection, assignCollection, renameCollection, deleteCollection } = usePinnedItems();
+  const { pinnedItems, pin, unpin, listCollectionNames, createCollection, assignCollection, renameCollection, deleteCollection } = usePinnedItems();
   const navigate = useNavigate();
   const { serverId } = useActiveServer();
   const [summaries, setSummaries] = useState<Record<string, PinnedPriceSummary>>({});
   const [loadingSummaries, setLoadingSummaries] = useState(true);
+  // The prices could not be computed (a recipe or a carnet read failed); « Réessayer » asks again.
+  const [summariesError, setSummariesError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  // The item just removed from the list, kept for a while so « Annuler » can put it back.
+  const [removed, setRemoved] = useState<PinnedItem>();
+  const collectionNames = listCollectionNames();
   // 005-pinned-item-collections: drag a card onto another collection's zone (including "Sans
   // collection") to move it there — the only way to change a card's collection on this page.
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
@@ -217,6 +271,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
     }
     let cancelled = false;
     setLoadingSummaries(true);
+    setSummariesError(false);
     const ids = pinnedItemIds.split(',');
     (async () => {
       const [details, marketPrices] = await Promise.all([
@@ -279,11 +334,16 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
       if (priceMode !== 'community') return;
       await syncCommunityPrices(serverId, chainResourceIds(), resourcePrices, (resourceId, amountKamas, updatedAt) => repository.save(serverId, resourceId, amountKamas, updatedAt), () => cancelled);
       if (!cancelled) summarize();
-    })();
+    })().catch(() => {
+      // Never left on « … »: what was computed stays, and the failure is said.
+      if (cancelled) return;
+      setSummariesError(true);
+      setLoadingSummaries(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [serverId, pinnedItemIds, priceMode]);
+  }, [serverId, pinnedItemIds, priceMode, attempt]);
 
   return (
     <>
@@ -296,14 +356,38 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
           <NewCollectionButton onCreate={createCollection} />
         </div>
       )}
+      {summariesError && pinnedItems.length > 0 && (
+        <div className="inline-retry" role="alert">
+          <p className="warning">Impossible de calculer les prix de vos objets suivis.</p>
+          <button type="button" className="btn btn-secondary btn-small" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
+        </div>
+      )}
+      {removed && (
+        <div className="inline-retry pinned-removed" role="status">
+          <p>« {removed.item.name} » n'est plus suivi.</p>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={() => {
+              pin(removed.item);
+              if (removed.collectionName) assignCollection(removed.item.id, removed.collectionName);
+              setRemoved(undefined);
+            }}
+          >
+            Annuler
+          </button>
+        </div>
+      )}
       {pinnedItems.length === 0 ? (
         <EmptyState
           icon="bookmark"
           title="Aucun objet suivi"
           description="Suivez un objet depuis la recherche pour le retrouver ici, quel que soit le serveur actif."
-        />
+        >
+          <Link to={ROUTES.search} className="btn btn-primary">Rechercher un objet</Link>
+        </EmptyState>
       ) : (
-        groupByCollection(pinnedItems, listCollectionNames()).map((group) => {
+        groupByCollection(pinnedItems, collectionNames).map((group) => {
           const groupKey = group.name ?? '__ungrouped__';
           return (
           <section className="pinned-collection" key={groupKey}>
@@ -339,7 +423,6 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                   className={`pinned-card${draggedItemId === entry.item.id ? ' pinned-card-dragging' : ''}`}
                   key={entry.item.id}
                   draggable
-                  aria-label={`${entry.item.name} — glisser-déposer sur une autre liste pour le déplacer (actuellement : ${group.name ?? 'Sans liste'})`}
                   onDragStart={(event) => {
                     setDraggedItemId(entry.item.id);
                     event.dataTransfer.setData('text/plain', entry.item.id);
@@ -374,7 +457,10 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                       type="button"
                       className="icon-button pinned-card-remove"
                       aria-label={`Ne plus suivre ${entry.item.name}`}
-                      onClick={() => unpin(entry.item.id)}
+                      onClick={() => {
+                        setRemoved(entry);
+                        unpin(entry.item.id);
+                      }}
                     >
                       <Icon name="close" size={16} />
                     </button>
@@ -387,6 +473,18 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                       HDV : {formatPriceValue(summary?.marketPriceKamas, loadingSummaries)}
                     </span>
                   </div>
+                  {/* Same move as dragging the card onto another list, for the keyboard and a touch screen. */}
+                  {collectionNames.length > 0 && (
+                    <select
+                      className="pinned-card-list"
+                      aria-label={`Liste de ${entry.item.name}`}
+                      value={group.name ?? ''}
+                      onChange={(event) => assignCollection(entry.item.id, event.target.value || undefined)}
+                    >
+                      <option value="">Sans liste</option>
+                      {collectionNames.map((name) => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                  )}
                 </div>
                 );
               })}

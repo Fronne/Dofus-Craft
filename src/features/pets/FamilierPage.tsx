@@ -177,7 +177,8 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valid, levels.totalXp, levels.targetLevel]);
 
-  const { status, prices } = usePetFoodPrices(serverId, priceMode);
+  const [attempt, setAttempt] = useState(0);
+  const { status, prices, communityUnavailable } = usePetFoodPrices(serverId, priceMode, attempt);
   // The name search narrows the resources before sorting. Every priced resource is listed, shown 25
   // lines at a time as the end of the list scrolls into view, like Rentabilité (FR-007, revised
   // 2026-09-28); a new search or sort goes back to the first lines.
@@ -272,17 +273,28 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le prix des ressources." />
           ) : status === 'loading' ? (
             <p className="empty" role="status">Chargement des prix…</p>
+          ) : !hasAnyPrice && communityUnavailable ? (
+            // An unreachable service is not « no price »: it says so and offers to ask again.
+            <div role="alert">
+              <EmptyState icon="info" title="Prix partagés indisponibles" description="Le service des prix partagés ne répond pas pour le moment.">
+                <button type="button" className="btn btn-primary" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
+              </EmptyState>
+            </div>
           ) : !hasAnyPrice ? (
-            <>
-              <EmptyState
-                icon="coins"
-                title="Aucune recommandation sans prix"
-                description="Saisissez des prix de ressources depuis la page Recherche pour voir les moins chères."
-              />
-              <p className="profit-empty-link"><Link to={ROUTES.search}>Aller à la page Recherche</Link></p>
-            </>
+            <EmptyState
+              icon="coins"
+              title="Aucune recommandation sans prix"
+              description="Saisissez le prix de ces ressources dans la page HDV, onglet Animaux, pour voir les moins chères."
+            >
+              <Link to={ROUTES.hdv} className="btn btn-primary">Saisir des prix dans la page HDV</Link>
+            </EmptyState>
           ) : (
             <>
+              {communityUnavailable && (
+                <p className="sync-status sync-status-offline" role="status">
+                  Prix partagés indisponibles : les prix gardés sur cet appareil sont affichés.
+                </p>
+              )}
               <div className="profit-toolbar">
                 <div className="search-input-wrap prices-search">
                   <Icon name="search" size={18} className="search-input-icon" />
@@ -307,9 +319,13 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
                     value={maxQuantityText}
                     placeholder="Aucune"
                     aria-invalid={maxQuantityValid ? undefined : true}
+                    aria-describedby={maxQuantityValid ? undefined : 'pet-max-quantity-error'}
                     onChange={(event) => changeMaxQuantity(event.target.value)}
                   />
                 </label>
+                {!maxQuantityValid && (
+                  <p id="pet-max-quantity-error" className="pet-max-quantity-note field-status--error" role="alert">Nombre entier supérieur à 0.</p>
+                )}
                 {capped.hiddenCount > 0 && maxQuantity !== undefined && (
                   <p className="pet-max-quantity-note">
                     {numberFormat.format(capped.hiddenCount)} {capped.hiddenCount === 1 ? 'ressource masquée' : 'ressources masquées'} (plus de {numberFormat.format(maxQuantity)} unités)

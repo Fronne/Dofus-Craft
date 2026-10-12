@@ -272,7 +272,7 @@ describe('HDV page (specs/023)', () => {
       expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Ressources', 'Consommables', 'Créatures', 'Runes']);
       expect(screen.getByRole('tab', { name: 'Runes' })).toHaveAttribute('aria-selected', 'true');
       await waitFor(() => expect(rows()).toHaveLength(105));
-      await waitFor(() => expect(status()).toBe('0 objet sur 105 a un prix'));
+      await waitFor(() => expect(status()).toBe('0 rune sur 105 a un prix'));
     });
 
     it('searches by name and filters by stat', async () => {
@@ -290,7 +290,7 @@ describe('HDV page (specs/023)', () => {
       await openHdv('personal', 'runes');
       typePrice(DO_AIR.name, '1587');
       await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [DO_AIR.id]))[DO_AIR.id]?.unitPriceKamas).toBe(1587));
-      await waitFor(() => expect(status()).toBe('1 objet sur 105 a un prix'));
+      await waitFor(() => expect(status()).toBe('1 rune sur 105 a un prix'));
       const sort = screen.getByRole('combobox', { name: 'Trier' }) as HTMLSelectElement;
       expect(sort.options[0].textContent).toBe('Tri par stat');
       expect(names()[0].trim()).not.toBe(DO_AIR.name);

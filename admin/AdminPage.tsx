@@ -55,8 +55,22 @@ export function AdminPage() {
           Les bulles affichées en bas à droite du site. Les changements sont visibles par tous au prochain chargement.
         </p>
         {notice && <p className="admin-message" role="status">{notice}</p>}
-        {load.state === 'loading' && <p className="empty">Chargement…</p>}
-        {load.state === 'error' && <p className="admin-message admin-message--error" role="alert">{load.message}</p>}
+        {load.state === 'loading' && <p className="empty" role="status">Chargement…</p>}
+        {load.state === 'error' && (
+          <div className="inline-retry" role="alert">
+            <p className="admin-message admin-message--error">{load.message}</p>
+            <button
+              type="button"
+              className="btn btn-secondary btn-small"
+              onClick={() => {
+                setLoad({ state: 'loading' });
+                void reload();
+              }}
+            >
+              Réessayer
+            </button>
+          </div>
+        )}
         {load.state === 'ready' && load.counters.length === 0 && (
           <p className="empty">Aucun compteur pour l'instant : ajoutez-en un ci-dessous.</p>
         )}
