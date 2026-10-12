@@ -236,6 +236,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   border: 0;
   border-top: 1px solid var(--border);
 }
+.filters-panel[hidden] { display: none; }
 .filters-panel legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .level-filters { display: flex; flex-direction: column; gap: .75rem; }
 .level-filter { min-width: 0; border: 0; padding: 0; margin: 0; }
@@ -306,6 +307,35 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
 }
 .reset-filters:hover { border-color: var(--border-strong); color: var(--gold-bright); background: var(--gold-soft); }
+/* The button that unfolds the filters, and the reset next to it. */
+.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.filters-bar .reset-filters { align-self: auto; }
+.filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 38px;
+  padding: .45rem .8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.filters-toggle:hover, .filters-toggle[aria-expanded="true"] { border-color: var(--border-strong); color: var(--gold-bright); background: var(--gold-soft); }
+.filters-toggle-chevron { transition: transform .15s ease; }
+.filters-toggle[aria-expanded="true"] .filters-toggle-chevron { transform: rotate(180deg); }
+.filters-toggle-count {
+  min-width: 1.35rem;
+  padding: 0 .35rem;
+  border-radius: var(--radius-pill);
+  background: var(--gold);
+  color: var(--panel-strong);
+  font-size: .75rem;
+  line-height: 1.35rem;
+  text-align: center;
+}
 
 .category-filter { min-width: 0; border: 0; padding: 0; margin: 0; flex: 1 1 auto; }
 .category-filter legend { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 0 0 .35rem; color: var(--text); font-size: .82rem; font-weight: 700; }
@@ -1798,7 +1828,7 @@ details[open] > :not(summary) { animation: rise-in var(--transition-enter); }
 /* ---------- Touch: targets large enough for a finger ---------- */
 
 @media (pointer: coarse), (max-width: 960px) {
-  .btn-small, .reset-filters, .server-switcher-option, .pinned-price-migration-notice button, .outlier-confirm-dialog-actions button { min-height: 44px; }
+  .btn-small, .reset-filters, .filters-toggle, .server-switcher-option, .pinned-price-migration-notice button, .outlier-confirm-dialog-actions button { min-height: 44px; }
   .icon-button, .icon-button--sm { width: 44px; height: 44px; }
   .pinned-collection-title .icon-button { width: 36px; height: 36px; }
   .ingredient-choice button, .ingredient-toggle, .price-history-grouping, .hdv-price-filter { min-height: 36px; padding-inline: .75rem; }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Category } from '../../domain/types';
 import { CategoryFilter } from './CategoryFilter';
 import { LevelRangeSlider } from './LevelRangeSlider';
@@ -27,6 +28,8 @@ export function ItemSearch({
   categories: Category[];
 }) {
   const hasActiveFilters = Boolean(query || category || levelMin || levelMax);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = (category ? 1 : 0) + (levelMin || levelMax ? 1 : 0);
   return (
     <div className="search" data-tour="search">
       <label className="search-primary">
@@ -48,7 +51,31 @@ export function ItemSearch({
           />
         </span>
       </label>
-      <fieldset className="filters-panel">
+      {/* The filters stay folded until asked for; the count says some are applied while they are hidden. */}
+      <div className="filters-bar">
+        <button
+          type="button"
+          className="filters-toggle"
+          aria-expanded={filtersOpen}
+          aria-controls="search-filters-panel"
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <span>Filtres</span>
+          {activeFilterCount > 0 && (
+            <span className="filters-toggle-count" aria-label={`${activeFilterCount} actif${activeFilterCount > 1 ? 's' : ''}`}>
+              {activeFilterCount}
+            </span>
+          )}
+          <Icon name="chevron-down" size={16} className="filters-toggle-chevron" />
+        </button>
+        {hasActiveFilters && (
+          <button type="button" className="reset-filters" onClick={onReset}>
+            Réinitialiser les filtres
+          </button>
+        )}
+      </div>
+      {/* Kept mounted while folded: a level change still waiting for its delay is not lost. */}
+      <fieldset className="filters-panel" id="search-filters-panel" hidden={!filtersOpen}>
         <legend>Filtres</legend>
         <CategoryFilter categories={categories} value={category} onChange={setCategory} />
         <div className="level-filters">
@@ -56,11 +83,6 @@ export function ItemSearch({
             <legend>Niveau</legend>
             <LevelRangeSlider levelMin={levelMin} setLevelMin={setLevelMin} levelMax={levelMax} setLevelMax={setLevelMax} />
           </fieldset>
-          {hasActiveFilters && (
-            <button type="button" className="reset-filters" onClick={onReset}>
-              Réinitialiser les filtres
-            </button>
-          )}
         </div>
       </fieldset>
     </div>

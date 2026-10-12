@@ -37,7 +37,7 @@ export function searchTourSteps(priceMode: PriceMode): TourStep[] {
       target: 'search',
       title: 'Rechercher un objet',
       body: 'Tapez le nom d\'un objet ou d\'une panoplie, puis choisissez un résultat.',
-      points: [{ term: 'Catégorie et niveau', text: 'pour affiner la liste' }],
+      points: [{ term: 'Filtres', text: 'catégorie et niveau, pour affiner la liste' }],
     },
     {
       id: 'market-price',

@@ -24,9 +24,17 @@ describe('ItemSearch result limit', () => {
     );
 
     expect(screen.getByPlaceholderText('Rechercher un objet ou une panoplie...')).toBeInTheDocument();
+    // Folded until asked for.
+    expect(screen.getByLabelText('Niveau min')).not.toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^Filtres/ }));
     expect(screen.getByLabelText('Niveau min')).toHaveValue('1');
     expect(screen.getByLabelText('Niveau max')).toHaveValue('200');
     expect(screen.getByText('Tous les niveaux')).toBeInTheDocument();
+    expect(screen.getByLabelText('Niveau min')).toBeVisible();
+    // A second click folds them again.
+    fireEvent.click(screen.getByRole('button', { name: /^Filtres/ }));
+    expect(screen.getByRole('button', { name: /^Filtres/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByLabelText('Niveau min')).not.toBeVisible();
   });
 
   it('commits the level range once a handle stops moving, leaving a bound at its end empty', () => {
@@ -48,6 +56,7 @@ describe('ItemSearch result limit', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /^Filtres/ }));
     fireEvent.change(screen.getByLabelText('Niveau min'), { target: { value: '40' } });
     fireEvent.change(screen.getByLabelText('Niveau min'), { target: { value: '60' } });
     expect(screen.getByText('60 – 200')).toBeInTheDocument();
@@ -76,6 +85,9 @@ describe('ItemSearch result limit', () => {
       />,
     );
 
+    // Folded, the button still says how many filters are applied.
+    expect(screen.getByRole('button', { name: /^Filtres/ })).toHaveTextContent('1');
+    fireEvent.click(screen.getByRole('button', { name: /^Filtres/ }));
     fireEvent.change(screen.getByLabelText('Niveau min'), { target: { value: '150' } });
     expect(screen.getByLabelText('Niveau min')).toHaveValue('100');
     expect(screen.getByText('Niveau 100')).toBeInTheDocument();
