@@ -1,4 +1,5 @@
 import { isInfoMessage, type InfoMessage, type InfoMessageInput } from '../src/domain/info-message';
+import { isSiteSettings, type SiteSettings } from '../src/domain/site-settings';
 import { isPlayerCounter, type PlayerCounter, type PlayerCounterInput } from '../src/domain/player-counter';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): same-origin calls to the
@@ -57,6 +58,9 @@ export const adminApi = {
     (payload === null || isInfoMessage(payload) ? payload : undefined)),
   saveMessage: (input: InfoMessageInput) => call('PUT', '/message', input, (payload) => (isInfoMessage(payload) ? payload : undefined)),
   deleteMessage: () => call<void>('DELETE', '/message', undefined, () => undefined),
+  // specs/050-forgemagie-page-toggle: the site settings; saving answers with what is now saved.
+  getSettings: () => call('GET', '/settings', undefined, (payload) => (isSiteSettings(payload) ? payload : undefined)),
+  saveSettings: (input: SiteSettings) => call('PUT', '/settings', input, (payload) => (isSiteSettings(payload) ? payload : undefined)),
   remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
 };
 

@@ -16,6 +16,7 @@ import { HdvPage } from '../features/hdv/HdvPage';
 import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
+import { useForgemagiePageEnabled } from './useForgemagiePageEnabled';
 import type { AccentColorId } from '../domain/accent-colors';
 import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-preference';
 import type { PriceMode } from '../domain/price-modes';
@@ -61,6 +62,20 @@ function NotFoundPage() {
   );
 }
 
+// specs/050-forgemagie-page-toggle (FR-004): what the Forgemagie address shows while the page is off.
+function ForgemagieUnavailablePage() {
+  return (
+    <>
+      <header className="page-header">
+        <h1>Forgemagie</h1>
+      </header>
+      <EmptyState icon="anvil" title="Forgemagie est momentanément indisponible" description="La page reviendra bientôt. Vos séances et vos données sont conservées.">
+        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
+      </EmptyState>
+    </>
+  );
+}
+
 export function AppShell() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const stored = window.localStorage.getItem('craftcheck-theme');
@@ -97,6 +112,9 @@ export function AppShell() {
     void recordVisit();
   }, []);
   const { serverId } = useActiveServer();
+  // specs/050-forgemagie-page-toggle: the owner turns the Forgemagie page on or off; off, its link is
+  // gone and its address says so (FR-003, FR-004).
+  const { enabled: forgemagieEnabled, reading: readingForgemagie } = useForgemagiePageEnabled();
   // specs/021-background-data-loading (FR-006, FR-009): the Prix list is prepared in the background
   // for the active server and price mode, so it's already there when the player opens the page.
   useEffect(() => preloadCraftProfits(serverId, priceMode), [serverId, priceMode]);
@@ -127,7 +145,7 @@ export function AppShell() {
         </div>
         <ServerSwitcher />
         <ul className="app-nav-list">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter((item) => forgemagieEnabled || item.to !== ROUTES.forgemagie).map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -180,7 +198,14 @@ export function AppShell() {
             <Route path={ROUTES.legacyPrices} element={<Navigate to={ROUTES.prices} replace />} />
             <Route path={ROUTES.hdv} element={<HdvPage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
-            <Route path={ROUTES.forgemagie} element={<ForgemagiePage priceMode={priceMode} />} />
+            <Route
+              path={ROUTES.forgemagie}
+              element={forgemagieEnabled
+                ? <ForgemagiePage priceMode={priceMode} />
+                : readingForgemagie
+                  ? <p className="empty" role="status">Chargement…</p>
+                  : <ForgemagieUnavailablePage />}
+            />
             <Route
               path={ROUTES.settings}
               element={

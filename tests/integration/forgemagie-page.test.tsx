@@ -150,6 +150,8 @@ beforeEach(() => {
   window.localStorage.clear();
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   window.localStorage.setItem('craftcheck-price-mode-choice', 'community');
+  // specs/050-forgemagie-page-toggle: the page only shows while the owner has it enabled.
+  window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: true }));
   globalThis.indexedDB = new IDBFactory();
   Object.values(fm).forEach((mock) => mock.mockReset());
   fm.getFmMe.mockResolvedValue(ok(me));

@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
   getMessage: vi.fn(),
   saveMessage: vi.fn(),
   deleteMessage: vi.fn(),
+  getSettings: vi.fn(),
+  saveSettings: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -49,6 +51,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false } });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -222,6 +225,49 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       api.getMessage.mockResolvedValue({ status: 'ok', value: { ...published, endsAt: '2020-01-01T10:00:00.000Z' } });
       render(<AdminPage />);
       expect(await screen.findByText(/^Expiré le 1 janvier 2020/)).toBeInTheDocument();
+    });
+  });
+
+  describe('pages du site (specs/050)', () => {
+    const pages = async () => (await screen.findByRole('heading', { name: 'Pages du site' })).closest('section') as HTMLElement;
+
+    it('shows the Forgemagie page as disabled, and enables it in one click', async () => {
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true } });
+      render(<AdminPage />);
+      const section = await pages();
+      expect(await within(section).findByText('Désactivée')).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: 'Activer' }));
+      expect(await within(section).findByText('Activée')).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ forgemagiePage: true });
+      expect(within(section).getByText('Page Forgemagie activée.')).toBeInTheDocument();
+      expect(within(section).getByRole('button', { name: 'Désactiver' })).toBeInTheDocument();
+    });
+
+    it('disables an enabled page', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false } });
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver' }));
+      expect(await within(section).findByText('Désactivée')).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ forgemagiePage: false });
+    });
+
+    it('says when saving failed and keeps the saved state (FR-008)', async () => {
+      api.saveSettings.mockResolvedValue({ status: 'unavailable' });
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Activer' }));
+      expect(await within(section).findByRole('alert')).toHaveTextContent('Enregistrement impossible pour le moment.');
+      expect(within(section).getByText('Désactivée')).toBeInTheDocument();
+    });
+
+    it('offers to retry when the state could not be read, without a button that would guess it', async () => {
+      api.getSettings.mockResolvedValue({ status: 'unavailable' });
+      render(<AdminPage />);
+      const section = await pages();
+      expect(await within(section).findByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
+      expect(within(section).queryByRole('button', { name: 'Activer' })).not.toBeInTheDocument();
     });
   });
 });

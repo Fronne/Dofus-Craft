@@ -20,7 +20,7 @@ réglage est illisible (P2).
 
 ## Phase 1: Setup
 
-- [ ] T001 Créer `worker/migrations/0016_add_site_settings.sql` : table `site_settings` (`key TEXT
+- [X] T001 Créer `worker/migrations/0016_add_site_settings.sql` : table `site_settings` (`key TEXT
   PRIMARY KEY CHECK (key IN ('forgemagie_page'))`, `value TEXT NOT NULL CHECK (value IN ('0', '1'))`,
   `updated_at TEXT NOT NULL`), avec l'en-tête de commentaire des autres migrations ; ajouter la même
   table à `worker/schema.sql` ; ajouter le script `worker:db:migrate-site-settings` dans
@@ -30,16 +30,16 @@ réglage est illisible (P2).
 
 ## Phase 2: Foundational (règles partagées)
 
-- [ ] T002 [P] Créer `src/domain/site-settings.ts` : type `SiteSettings = { forgemagiePage: boolean }`,
+- [X] T002 [P] Créer `src/domain/site-settings.ts` : type `SiteSettings = { forgemagiePage: boolean }`,
   `DEFAULT_SITE_SETTINGS = { forgemagiePage: false }`, `isSiteSettings(value)` et
   `validateSiteSettingsInput(input)` (« `forgemagiePage` doit être un booléen, sinon erreur sur le
   champ `forgemagiePage` »).
-- [ ] T003 [P] Écrire `tests/unit/site-settings-domain.test.ts` : garde de type (objet valide, champ
+- [X] T003 [P] Écrire `tests/unit/site-settings-domain.test.ts` : garde de type (objet valide, champ
   manquant, non booléen, `null`) et validation (booléen accepté, chaîne ou absence refusée).
-- [ ] T004 Créer `worker/src/site-settings.ts` : `readSiteSettings(db)` (aucune ligne ⇒
+- [X] T004 Créer `worker/src/site-settings.ts` : `readSiteSettings(db)` (aucune ligne ⇒
   `DEFAULT_SITE_SETTINGS`, `'1'` ⇒ activée) et la route `GET /site-settings` dans
   `worker/src/index.ts`, à côté de `/info-message`, sans clé et sans cache.
-- [ ] T005 [P] Écrire `tests/unit/site-settings-route.test.ts` : aucune ligne ⇒ `false`, `'1'` ⇒
+- [X] T005 [P] Écrire `tests/unit/site-settings-route.test.ts` : aucune ligne ⇒ `false`, `'1'` ⇒
   `true`, `'0'` ⇒ `false`.
 
 ---
@@ -49,14 +49,14 @@ réglage est illisible (P2).
 **Goal** : sans réglage activé, ni lien ni page. **Independent test** : ouvrir le site sans rien
 activer.
 
-- [ ] T006 [P] [US1] Créer `src/services/site-settings-api.ts` : `getSiteSettings()` lit
+- [X] T006 [P] [US1] Créer `src/services/site-settings-api.ts` : `getSiteSettings()` lit
   `GET /site-settings`, ne lève jamais, `undefined` sur toute erreur ou charge utile invalide ; test
   `tests/unit/site-settings-api.test.ts`.
-- [ ] T007 [US1] Créer `src/app/useForgemagiePageEnabled.ts` (lit le réglage au montage) et, dans
+- [X] T007 [US1] Créer `src/app/useForgemagiePageEnabled.ts` (lit le réglage au montage) et, dans
   `src/app/AppShell.tsx`, retirer le lien « Forgemagie » de la navigation et remplacer l'élément de
   la route `/forgemagie` par un état vide « Forgemagie est momentanément indisponible » avec le lien
   « Aller à la recherche » tant que la page est désactivée (FR-003, FR-004, FR-005).
-- [ ] T008 [US1] Écrire `tests/integration/forgemagie-page-toggle.test.tsx` : désactivée ⇒ pas de
+- [X] T008 [US1] Écrire `tests/integration/forgemagie-page-toggle.test.tsx` : désactivée ⇒ pas de
   lien et message d'indisponibilité sur `/forgemagie` ; activée ⇒ lien et page présents.
 
 ---
@@ -66,17 +66,17 @@ activer.
 **Goal** : un clic change l'état. **Independent test** : activer puis désactiver dans
 l'administration et recharger le site.
 
-- [ ] T009 [US2] Créer `admin-worker/src/settings.ts` (`getSettings`, `saveSettings` avec
+- [X] T009 [US2] Créer `admin-worker/src/settings.ts` (`getSettings`, `saveSettings` avec
   `INSERT … ON CONFLICT(key) DO UPDATE`) et les routes `GET` / `PUT /api/settings` dans
   `admin-worker/src/index.ts`, derrière `verifyOwner`, validation par `validateSiteSettingsInput`
   (400 avec `field`).
-- [ ] T010 [P] [US2] Écrire `tests/unit/admin-settings-api.test.ts` : 403 sans propriétaire, lecture
+- [X] T010 [P] [US2] Écrire `tests/unit/admin-settings-api.test.ts` : 403 sans propriétaire, lecture
   par défaut, écriture puis relecture, 400 sur valeur non booléenne.
-- [ ] T011 [US2] Ajouter `getSettings` / `saveSettings` à `admin/admin-api.ts`, créer
+- [X] T011 [US2] Ajouter `getSettings` / `saveSettings` à `admin/admin-api.ts`, créer
   `admin/SiteSettingsEditor.tsx` (section « Pages du site », état « Activée » / « Désactivée »,
   bouton « Activer » / « Désactiver », erreur affichée et état conservé en cas d'échec — FR-006,
   FR-008) et l'insérer dans `admin/AdminPage.tsx` avant le bandeau d'information.
-- [ ] T012 [US2] Compléter `tests/integration/admin-page.test.tsx` : état affiché, clic qui change
+- [X] T012 [US2] Compléter `tests/integration/admin-page.test.tsx` : état affiché, clic qui change
   l'état, échec qui laisse l'état précédent et affiche une erreur.
 
 ---
@@ -86,11 +86,11 @@ l'administration et recharger le site.
 **Goal** : dernier état connu, sinon désactivée. **Independent test** : lire « activée », couper le
 service, recharger.
 
-- [ ] T013 [US3] Créer `src/persistence/site-settings-cache.ts` (clé `craftcheck-site-settings`,
+- [X] T013 [US3] Créer `src/persistence/site-settings-cache.ts` (clé `craftcheck-site-settings`,
   illisible ou absent ⇒ `DEFAULT_SITE_SETTINGS`) et l'utiliser dans
   `src/app/useForgemagiePageEnabled.ts` : état initial = dernier état connu, mis à jour et mémorisé
   à chaque lecture réussie, inchangé si la lecture échoue (FR-009).
-- [ ] T014 [P] [US3] Écrire `tests/unit/site-settings-cache.test.ts` et compléter
+- [X] T014 [P] [US3] Écrire `tests/unit/site-settings-cache.test.ts` et compléter
   `tests/integration/forgemagie-page-toggle.test.tsx` : lecture en échec avec « activée » mémorisée
   ⇒ page accessible ; sans rien de mémorisé ⇒ page masquée.
 
@@ -98,7 +98,7 @@ service, recharger.
 
 ## Phase 6: Polish
 
-- [ ] T015 Documenter la route et la migration dans `worker/README.md`, puis lancer
+- [X] T015 Documenter la route et la migration dans `worker/README.md`, puis lancer
   `npm run typecheck`, `npm run lint` et `npm run test`.
 
 ## Dependencies

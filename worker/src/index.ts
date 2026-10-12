@@ -6,6 +6,7 @@ import { itemPricesResponse, latestPriceResponse } from './latest';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
+import { siteSettingsResponse } from './site-settings';
 import { cachedRead, clearReadCache } from './read-cache';
 import { CORS_HEADERS } from './cors';
 import { handleFm } from './fm/router';
@@ -162,6 +163,11 @@ export default {
     if (request.method === 'GET' && url.pathname === '/info-message') {
       const { status, body } = await infoMessageResponse(env.DB);
       return json(body, status);
+    }
+
+    // specs/050-forgemagie-page-toggle: the owner's site settings, readable by everyone.
+    if (request.method === 'GET' && url.pathname === '/site-settings') {
+      return json(await siteSettingsResponse(env.DB), 200, { 'Cache-Control': 'no-store' });
     }
 
     // specs/014-admin-counters: the humorous player counters, readable by everyone.

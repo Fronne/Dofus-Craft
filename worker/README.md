@@ -91,7 +91,7 @@ specs/046, the HDV page's hourly limit (`src/huzounet.ts`, `src/index.ts`).
 ## Files
 
 - `src/index.ts` — the routes: anonymous reads `GET /community-price`, `GET /latest-price`
-  (specs/016), `GET /item-prices` (specs/019), `GET /price-history` (specs/017, specs/018), `GET /info-message` (specs/020) and
+  (specs/016), `GET /item-prices` (specs/019), `GET /price-history` (specs/017, specs/018), `GET /info-message` (specs/020), `GET /site-settings` (specs/050) and
   `GET /player-counters`; keyed writes
   `POST /community-price`, `POST /visit` and `POST /external-prices/refresh` (specs/045).
 - `src/huzounet.ts`, `src/external-price.ts` — the prices read from Huzounet (specs/045), unit-tested

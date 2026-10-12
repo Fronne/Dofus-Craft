@@ -63,6 +63,22 @@ async function openAsLoggedIn(page: Page) {
 }
 
 test.describe('Forgemagie page (specs/025)', () => {
+  // specs/050-forgemagie-page-toggle: the page only shows while the owner has it enabled.
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/site-settings', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ forgemagiePage: true }) }));
+  });
+
+  test('says the page is unavailable while the owner has it disabled (specs/050)', async ({ page }) => {
+    await page.route('**/site-settings', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ forgemagiePage: false }) }));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Mikhal' }).click();
+    await expect(page.getByRole('link', { name: 'Forgemagie' })).toHaveCount(0);
+    await page.goto('/forgemagie');
+    await expect(page.getByText('Forgemagie est momentanément indisponible')).toBeVisible();
+  });
+
   test('asks a logged-out player to log in with Discord', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Mikhal' }).click();

@@ -5,11 +5,12 @@ import { CounterEditor } from './CounterEditor';
 import { failureMessage } from './messages';
 import { NewCounterForm } from './NewCounterForm';
 import { MessageEditor } from './MessageEditor';
+import { SiteSettingsEditor } from './SiteSettingsEditor';
 
 type Load = { state: 'loading' } | { state: 'ready'; counters: PlayerCounter[] } | { state: 'error'; message: string };
 
 // specs/014-admin-counters (contracts/admin-ui.md): the administration page, organised in sections
-// so other site settings can be added later (FR-015): the information banner (specs/020), then "Compteurs".
+// so other site settings can be added later (FR-015): the site's pages (specs/050), the information banner (specs/020), then "Compteurs".
 export function AdminPage() {
   const [email, setEmail] = useState('');
   const [load, setLoad] = useState<Load>({ state: 'loading' });
@@ -46,6 +47,8 @@ export function AdminPage() {
         <h1>Administration</h1>
         {email && <p>Connecté : {email}</p>}
       </header>
+
+      <SiteSettingsEditor />
 
       <MessageEditor />
 

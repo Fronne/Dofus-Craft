@@ -79,6 +79,14 @@ CREATE TABLE IF NOT EXISTS info_message (
   updated_at TEXT NOT NULL
 );
 
+-- specs/050-forgemagie-page-toggle: the owner's site settings (see
+-- migrations/0016_add_site_settings.sql). Written only by the dofus-craft-admin Worker.
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page')),
+  value TEXT NOT NULL CHECK (value IN ('0', '1')),
+  updated_at TEXT NOT NULL
+);
+
 -- specs/025-rune-purchase-import (data-model.md): the Forgemagie page. The only tables holding Discord
 -- identifiers; community_price_contributions stays free of player data (research R8).
 

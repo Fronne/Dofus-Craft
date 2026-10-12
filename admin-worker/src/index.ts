@@ -3,11 +3,13 @@ import { verifyAccessToken, verifyOwner, type AccessEnv, type TokenVerifier } fr
 import { createCounter, deleteCounter, listCounters, updateCounter, type CountersDb } from './counters';
 import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
 import { validateInfoMessageInput } from '../../src/domain/info-message';
+import { getSettings, saveSettings, type SettingsDb } from './settings';
+import { validateSiteSettingsInput } from '../../src/domain/site-settings';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
 export interface Env extends AccessEnv {
-  DB: CountersDb & MessageDb;
+  DB: CountersDb & MessageDb & SettingsDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -46,6 +48,16 @@ export async function handleApi(request: Request, env: Env, verify: TokenVerifie
     if (request.method === 'DELETE') {
       await deleteMessage(env.DB);
       return new Response(null, { status: 204 });
+    }
+  }
+
+  // specs/050-forgemagie-page-toggle: the site settings (which pages are enabled).
+  if (pathname === '/api/settings') {
+    if (request.method === 'GET') return json(await getSettings(env.DB));
+    if (request.method === 'PUT') {
+      const validation = validateSiteSettingsInput(await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
+      return json(await saveSettings(env.DB, validation.value));
     }
   }
 

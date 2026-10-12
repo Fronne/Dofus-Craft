@@ -71,6 +71,8 @@
 
 /* specs/020-info-banner: the information banner's editor. */
 .admin-page > .admin-section + .admin-section { margin-top: var(--space-4); }
+.admin-page-toggle { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.admin-page-toggle p { margin: 0; }
 .admin-message-form { display: grid; gap: var(--space-3); }
 .admin-message-field { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
 .admin-message-field textarea, .admin-message-field input { width: 100%; min-width: 0; font: inherit; font-weight: 500; }

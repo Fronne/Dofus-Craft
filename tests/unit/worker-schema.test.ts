@@ -56,7 +56,8 @@ describe('worker/migrations', () => {
     for (const file of readdirSync(directory).filter((name) => name >= '0007').sort()) {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
     }
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_'));
+    // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name === 'site_settings');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
   });
