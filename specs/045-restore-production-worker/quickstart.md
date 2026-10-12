@@ -38,7 +38,7 @@ un déploiement les remplace. Seule l'heure de fin du passage Huzounet reste à 
 Relevés le 2026-10-12, sous Node 22.
 
 - **Tests** (`npm test`) : 956 réussis, 1 échec. L'échec (`tests/integration/hdv-page.test.tsx`, « shows the
-  latest shared price over an older kept one ») existait avant la fonctionnalité et concerne le site, hors
+  latest shared price over an older kept one ») existait avant la fonctionnalité, concerne le site et passe quand le fichier est lancé seul, hors
   périmètre (FR-016). Avant : 893 réussis, le même échec. 63 tests ajoutés, dans 7 nouveaux fichiers
   (`worker-schema`, `external-price`, `huzounet-sync`, `huzounet-refresh-route`, `fm-seances`,
   `fm-captures`, `fm-players`) et dans les fichiers existants adaptés.

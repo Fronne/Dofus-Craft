@@ -8,7 +8,7 @@ import { createTestD1 } from '../support/sqlite-d1';
 // specs/045-restore-production-worker (US2): the prices read from Huzounet beside the group's own.
 beforeEach(() => clearReadCache());
 
-const summary = { medianAmountKamas: 100, sampleSize: 3, latestAmountKamas: 110, latestContributionAt: '2026-10-01T10:00:00.000Z', latestOrigin: 'manual' as const };
+const summary = { medianAmountKamas: 100, sampleSize: 3, lastContributionAt: '2026-10-01T10:00:00.000Z', latestAmountKamas: 110, latestContributionAt: '2026-10-01T10:00:00.000Z', latestOrigin: 'manual' as const };
 const external = { unitPriceKamas: 90, observedAt: '2026-10-02T10:00:00.000Z', provisional: false, stale: false };
 
 function seed() {

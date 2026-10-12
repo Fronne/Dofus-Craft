@@ -15,7 +15,7 @@ function setup(at = TUESDAY) {
   test.insert({ resourceId: '9999', amountKamas: 10, createdAt: '2026-10-01T10:00:00.000Z' });
   let clock = new Date(at).getTime();
   const answers = new Map<string, Price>();
-  const fetcher = vi.fn(async (url: string, init: { headers: Record<string, string> }) => {
+  const fetcher = vi.fn(async (url: string, init: { headers: Record<string, string> }): Promise<{ ok: boolean; status: number; json(): Promise<unknown> }> => {
     expect(init.headers.Accept).toBe('application/json');
     const ids = new URL(url).searchParams.get('items')!.split(',');
     return { ok: true, status: 200, json: async () => ({ prices: Object.fromEntries(ids.flatMap((id) => (answers.has(id) ? [[id, answers.get(id)]] : []))) }) };

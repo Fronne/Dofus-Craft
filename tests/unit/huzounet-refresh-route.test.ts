@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import worker, { type Env } from '../../worker/src/index';
 import { clearReadCache } from '../../worker/src/read-cache';
 import { createTestD1 } from '../support/sqlite-d1';
 
@@ -8,10 +7,17 @@ import { createTestD1 } from '../support/sqlite-d1';
 beforeEach(() => clearReadCache());
 afterEach(() => vi.unstubAllGlobals());
 
+// The Worker's entry needs the Workers types, which the app's own type check doesn't load: it is loaded
+// here by a path that check doesn't follow, and typed by what the test uses of it.
+type Env = { DB: unknown; COMMUNITY_API_KEY: string; HUZOUNET_SYNC?: string; CONTRIBUTION_LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> } };
+type Worker = { fetch(request: Request, env: Env): Promise<Response> };
+const entry = '../../worker/src/index';
+const loadWorker = async () => ((await import(/* @vite-ignore */ entry)) as { default: Worker }).default;
+
 function setup(vars: Partial<Env> = {}) {
   const test = createTestD1();
-  const env = { DB: test.d1 as unknown as Env['DB'], COMMUNITY_API_KEY: 'app-key', HUZOUNET_SYNC: '1', ...vars } as Env;
-  const refresh = (body: unknown, authorization = 'Bearer app-key') => worker.fetch(new Request('https://api.test/external-prices/refresh', {
+  const env: Env = { DB: test.d1, COMMUNITY_API_KEY: 'app-key', HUZOUNET_SYNC: '1', ...vars };
+  const refresh = async (body: unknown, authorization = 'Bearer app-key') => (await loadWorker()).fetch(new Request('https://api.test/external-prices/refresh', {
     method: 'POST',
     headers: { Authorization: authorization, 'Content-Type': 'application/json' },
     body: typeof body === 'string' ? body : JSON.stringify(body),
@@ -62,7 +68,7 @@ describe('POST /external-prices/refresh', () => {
     const tooSoon = await refresh({ serverId: 'mikhal', ids: ['2'] });
     expect([tooSoon.status, await tooSoon.json()]).toEqual([429, { error: 'too-soon' }]);
 
-    const limited = setup({ CONTRIBUTION_LIMITER: { limit: async () => ({ success: false }) } as unknown as Env['CONTRIBUTION_LIMITER'] });
+    const limited = setup({ CONTRIBUTION_LIMITER: { limit: async () => ({ success: false }) } });
     expect((await limited.refresh({ serverId: 'mikhal', ids: ['1'] })).status).toBe(429);
 
     const failing = setup();
