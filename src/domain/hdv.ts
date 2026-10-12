@@ -1,5 +1,4 @@
 import { normalizeSearchText } from '../services/dofusdb-api';
-import { classifyPriceAge } from './price-age';
 import type { ResourcePrice } from './types';
 
 // specs/023-hdv-price-entry: the HDV price-entry page's rules. The items of each HDV are frozen in
@@ -53,21 +52,37 @@ export function filterHdvItems(items: HdvItem[], { query, typeId }: { query: str
     (typeId === '' || item.typeId === typeId) && (!needle || normalizeSearchText(item.name).includes(needle)));
 }
 
-export type HdvPriceFilter = 'all' | 'missing' | 'old';
+// specs/048-hdv-sort: the order of a tab's list. `default` is the tab's own (by name; by stat for the
+// runes); the four others replace the « Sans prix » / « Prix ancien » filters of specs/023.
+export type HdvSort = 'default' | 'price-desc' | 'price-asc' | 'recent' | 'oldest';
+
+/** The named sorts, in the order of the menu — after the tab's own order. */
+export const HDV_SORTS: { id: Exclude<HdvSort, 'default'>; label: string }[] = [
+  { id: 'price-desc', label: 'Prix le plus élevé' },
+  { id: 'price-asc', label: 'Prix le plus bas' },
+  { id: 'recent', label: 'Mis à jour récemment' },
+  { id: 'oldest', label: 'Mis à jour il y a longtemps' },
+];
+
+export function isHdvSort(value: unknown): value is HdvSort {
+  return value === 'default' || HDV_SORTS.some((sort) => sort.id === value);
+}
 
 /**
- * FR-010: `missing` keeps the items with no entry in the active mode's carnet, `old` those whose
- * price is flagged as old by the same rule as the Recherche page (stale or expired).
+ * specs/048 (FR-003, FR-004): the lines with a price first, by unit price or by date of the price —
+ * a date that cannot be read counts as the oldest; then the lines without one. Lines that tie, and
+ * the lines without a price, keep the order they came in. Never changes the list it is given.
  */
-export function filterByPrice<T extends { id: string }>(items: T[], prices: Record<string, ResourcePrice>, filter: HdvPriceFilter, now: Date = new Date()): T[] {
-  if (filter === 'all') return items;
-  if (filter === 'missing') return items.filter((item) => !prices[item.id]);
-  return items.filter((item) => {
-    const price = prices[item.id];
-    if (!price) return false;
-    const age = classifyPriceAge(price.updatedAt, now);
-    return age === 'stale' || age === 'expired';
-  });
+export function sortHdvLines<T extends { id: string }>(items: T[], prices: Record<string, ResourcePrice>, sort: HdvSort): T[] {
+  if (sort === 'default') return items;
+  const byPrice = sort === 'price-desc' || sort === 'price-asc';
+  const direction = sort === 'price-asc' || sort === 'oldest' ? 1 : -1;
+  const key = (price: ResourcePrice) => (byPrice ? price.unitPriceKamas : Date.parse(price.updatedAt) || 0);
+  const position = new Map(items.map((item, index) => [item.id, index]));
+  const priced = items.filter((item) => prices[item.id]);
+  const unpriced = items.filter((item) => !prices[item.id]);
+  priced.sort((a, b) => direction * (key(prices[a.id]) - key(prices[b.id])) || position.get(a.id)! - position.get(b.id)!);
+  return [...priced, ...unpriced];
 }
 
 /** FR-010: how many items of the tab have a price, whatever the filters. */

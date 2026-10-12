@@ -26,6 +26,8 @@ export type IconName =
   | 'store'
   | 'anvil'
   | 'refresh'
+  | 'potion'
+  | 'rune'
   | 'image';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
@@ -38,6 +40,13 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
   refresh: {
     children:
       '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>',
+  },
+  // A flask and a carved stone, for the Consommables and Runes tabs of the HDV page (specs/048).
+  potion: {
+    children: '<path d="M9.5 3h5"/><path d="M10.5 3v5.2L6 16.5A3 3 0 0 0 8.7 21h6.6a3 3 0 0 0 2.7-4.5L13.5 8.2V3"/><path d="M7.7 14h8.6"/>',
+  },
+  rune: {
+    children: '<path d="M12 3l7 4v10l-7 4-7-4V7z"/><path d="M10 8v8"/><path d="M10 8.5l3.8 2-3.8 2 3.8 3.5"/>',
   },
   // A picture, for importing a chat capture (specs/025).
   image: {

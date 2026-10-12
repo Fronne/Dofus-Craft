@@ -92,3 +92,8 @@ npx tsc -b --noEmit && npx eslint src tests --quiet && npx vitest run
 
 Puis, sur le site local : page HDV, menu « Trier » dans chaque onglet, icônes des onglets en largeur de
 bureau et de téléphone. Référence avant modification : 1 062 tests.
+
+Résultat (12 octobre 2026) : 1 069 tests ; `tsc` et `eslint` sans erreur. Dans une exécution complète, le
+test HDV « dernier prix partagé » (specs/024) échoue parfois sous la charge et passe seul, comme avant.
+À l'écran : menu « Trier » à cinq choix, quatre onglets à icônes (icône au-dessus du libellé en largeur
+de téléphone), plus de boutons de filtre par prix ; « Charger depuis Huzounet » toujours présent.

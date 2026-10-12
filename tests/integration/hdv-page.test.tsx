@@ -191,15 +191,75 @@ describe('HDV page (specs/023)', () => {
     });
   });
 
-  describe('US4 — where prices are missing', () => {
-    it('shows only the items without a price, with a count that ignores the filters', async () => {
-      await resourcePricesFor('personal').save('mikhal', CROQUETTE.id, 1500);
+  // specs/048-hdv-sort: the « Trier » menu replaces the « Sans prix » / « Prix ancien » filters of specs/023.
+  describe('sorting a tab (specs/048)', () => {
+    // In the tab's own order (by name): Croquette enrichie, then the two others.
+    const ABRAKNYDE = { id: '27006', name: 'Croquette infusée de l\'Abraknyde' };
+    const ARAKNE = { id: '27010', name: 'Croquette infusée de l\'Arakne' };
+    const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const sortBy = (label: string) => {
+      const select = screen.getByRole('combobox', { name: 'Trier' }) as HTMLSelectElement;
+      fireEvent.change(select, { target: { value: [...select.options].find((option) => option.textContent === label)!.value } });
+    };
+    const firstNames = (count: number) => names().slice(0, count).map((name) => name.trim());
+
+    it('sorts by price or by date, the items without a price after the others', async () => {
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', CROQUETTE.id, 300, daysAgo(3));
+      await carnet.save('mikhal', ABRAKNYDE.id, 50, daysAgo(1));
+      await carnet.save('mikhal', ARAKNE.id, 900, daysAgo(10));
       await openHdv('personal');
-      await waitFor(() => expect(status()).toBe('1 objet sur 35 a un prix'));
-      fireEvent.click(screen.getByRole('button', { name: 'Sans prix' }));
-      await waitFor(() => expect(rows()).toHaveLength(34));
-      expect(rowOf(CROQUETTE.name)).toBeUndefined();
-      expect(status()).toBe('1 objet sur 35 a un prix');
+      await waitFor(() => expect(status()).toBe('3 objets sur 35 ont un prix'));
+      const select = screen.getByRole('combobox', { name: 'Trier' }) as HTMLSelectElement;
+      expect([...select.options].map((option) => option.textContent)).toEqual([
+        'Tri par nom', 'Prix le plus élevé', 'Prix le plus bas', 'Mis à jour récemment', 'Mis à jour il y a longtemps',
+      ]);
+      expect(firstNames(3)).toEqual([CROQUETTE.name, ABRAKNYDE.name, ARAKNE.name]);
+
+      sortBy('Prix le plus élevé');
+      await waitFor(() => expect(firstNames(3)).toEqual([ARAKNE.name, CROQUETTE.name, ABRAKNYDE.name]));
+      sortBy('Prix le plus bas');
+      await waitFor(() => expect(firstNames(3)).toEqual([ABRAKNYDE.name, CROQUETTE.name, ARAKNE.name]));
+      sortBy('Mis à jour récemment');
+      await waitFor(() => expect(firstNames(3)).toEqual([ABRAKNYDE.name, CROQUETTE.name, ARAKNE.name]));
+      sortBy('Mis à jour il y a longtemps');
+      await waitFor(() => expect(firstNames(3)).toEqual([ARAKNE.name, CROQUETTE.name, ABRAKNYDE.name]));
+
+      // Every item of the tab is still listed, and the count ignores the sort.
+      expect(rows()).toHaveLength(35);
+      expect(status()).toBe('3 objets sur 35 ont un prix');
+      sortBy('Tri par nom');
+      await waitFor(() => expect(firstNames(3)).toEqual([CROQUETTE.name, ABRAKNYDE.name, ARAKNE.name]));
+    });
+
+    it('sorts what the search keeps, and stays chosen in another tab', async () => {
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', CROQUETTE.id, 300, daysAgo(3));
+      await carnet.save('mikhal', ARAKNE.id, 900, daysAgo(10));
+      await openHdv('personal');
+      await waitFor(() => expect(status()).toBe('2 objets sur 35 ont un prix'));
+      sortBy('Prix le plus élevé');
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un objet' }), { target: { value: 'croquette' } });
+      await waitFor(() => expect(firstNames(2)).toEqual([ARAKNE.name, CROQUETTE.name]));
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Consommables' }));
+      await waitFor(() => expect(screen.getByRole('tab', { name: 'Consommables' })).toHaveAttribute('aria-selected', 'true'));
+      expect(screen.getByRole('combobox', { name: 'Trier' })).toHaveValue('price-desc');
+    });
+
+    it('no longer offers the price filters it replaces', async () => {
+      await openHdv('personal');
+      expect(screen.queryByRole('button', { name: 'Sans prix' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Prix ancien' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: 'Filtrer par prix' })).not.toBeInTheDocument();
+    });
+
+    it('shows an icon in each tab, whose name stays its label (US2)', async () => {
+      await openHdv('personal');
+      const tabs = screen.getAllByRole('tab');
+      expect(tabs.map((tab) => tab.textContent)).toEqual(['Ressources', 'Consommables', 'Créatures', 'Runes']);
+      for (const tab of tabs) expect(tab.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+      expect(screen.getByRole('tab', { name: 'Créatures' })).toHaveAttribute('aria-selected', 'true');
     });
   });
 
@@ -226,13 +286,17 @@ describe('HDV page (specs/023)', () => {
       expect(rows().every((row) => row.textContent?.includes('Force'))).toBe(true);
     });
 
-    it('saves a typed price like the other tabs, and « Sans prix » leaves it out', async () => {
+    it('saves a typed price like the other tabs, and sorts by stat unless asked otherwise (specs/048)', async () => {
       await openHdv('personal', 'runes');
       typePrice(DO_AIR.name, '1587');
       await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [DO_AIR.id]))[DO_AIR.id]?.unitPriceKamas).toBe(1587));
       await waitFor(() => expect(status()).toBe('1 objet sur 105 a un prix'));
-      fireEvent.click(screen.getByRole('button', { name: 'Sans prix' }));
-      await waitFor(() => expect(rows()).toHaveLength(104));
+      const sort = screen.getByRole('combobox', { name: 'Trier' }) as HTMLSelectElement;
+      expect(sort.options[0].textContent).toBe('Tri par stat');
+      expect(names()[0].trim()).not.toBe(DO_AIR.name);
+      fireEvent.change(sort, { target: { value: 'price-desc' } });
+      await waitFor(() => expect(names()[0].trim()).toBe(DO_AIR.name));
+      expect(rows()).toHaveLength(105);
     });
 
     const sharedByBot = () => getCommunityPrice.mockImplementation(async (id) => (id === DO_AIR.id

@@ -4,8 +4,8 @@ import type { ResourcePrice } from '../../domain/types';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 
 // specs/023-hdv-price-entry (research.md §6): the carnet prices of **every** item of the open tab, in
-// one batched read, for the « N objets sur M ont un prix » count and the « Sans prix » / « Prix
-// ancien » filters. Separate from the read of the displayed lines, which only covers what is shown.
+// one batched read, for the « N objets sur M ont un prix » count and the sorts by price and by
+// date (specs/048). Separate from the read of the displayed lines, which only covers what is shown.
 // `refresh()` rereads it after a price is saved on the page.
 export function useHdvPriceSummary(serverId: string | undefined, priceMode: PriceMode, ids: string[]) {
   const [prices, setPrices] = useState<Record<string, ResourcePrice>>({});

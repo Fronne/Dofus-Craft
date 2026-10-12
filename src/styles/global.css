@@ -1470,8 +1470,12 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 }
 
 /* specs/023-hdv-price-entry: the HDV price-entry page, one tab per in-game auction house. */
-.hdv-tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); border-bottom: 1px solid var(--border); overflow-x: auto; }
-.hdv-tab { padding: var(--space-2) var(--space-4); border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; color: var(--text-muted); font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
+/* specs/048-hdv-sort: the line under the tabs is drawn inside them, so the active tab's own covers it. */
+.hdv-tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); box-shadow: inset 0 -1px 0 var(--border); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.hdv-tabs::-webkit-scrollbar { display: none; }
+.hdv-tab { padding: var(--space-2) var(--space-4); border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; white-space: nowrap; }
+.hdv-tab--icon { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.hdv-tab--icon svg { flex: none; }
 .hdv-tab:hover { color: var(--text); }
 .hdv-tab--active { border-bottom-color: var(--gold-bright); color: var(--gold-bright); }
 .hdv-type-filter { min-height: 40px; padding: 0 var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-strong); color: var(--text); font: inherit; }
@@ -1497,7 +1501,9 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 @media (max-width: 640px) {
   .hdv-row .price-line { grid-template-columns: minmax(0, 1fr) auto; }
   .hdv-type-filter { flex: 1 1 100%; }
-  .hdv-tab { flex: 1 1 0; padding: var(--space-2) var(--space-1); font-size: .9rem; }
+  .hdv-tabs { gap: 0; }
+  .hdv-tab { flex: 1 1 0; padding: var(--space-2) var(--space-1); font-size: .82rem; }
+  .hdv-tab--icon { flex-direction: column; gap: .15rem; }
 }
 
 /* ---------- Forgemagie (specs/025) ---------- */

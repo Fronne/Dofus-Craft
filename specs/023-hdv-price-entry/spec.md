@@ -6,6 +6,9 @@
 
 **Status**: Draft
 
+**Révision (specs/048-hdv-sort, 2026-10-12)** : les boutons « Tous / Sans prix / Prix ancien » du récit 4
+(FR-010, seconde partie) sont remplacés par le menu « Trier » ; le compteur de prix connus est conservé.
+
 **Input**: User description: « Page « Saisie HDV » : permettre de saisir les prix des objets par
 hôtel des ventes (HDV) du jeu, avec un onglet par HDV — Ressources, Consommables, Animaux
 (croquettes pour nourrir les familiers, etc.). Aujourd'hui, un prix de ressource ne peut être saisi

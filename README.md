@@ -41,7 +41,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Bandeau d'information** : un message (Info ou Important, avec une date de fin facultative)
   publié depuis la page d'administration, affiché en haut du site ; chaque joueur peut le fermer.
 - **Page HDV** : relever les prix d'un hôtel des ventes en un seul passage, un onglet par HDV
-  (Ressources, Consommables, Créatures, Runes), avec recherche, filtres et compteur de prix connus.
+  (Ressources, Consommables, Créatures, Runes), avec recherche, filtres, tri (par nom, par prix, par date de mise à jour) et compteur de prix connus.
   L'onglet Runes filtre par stat et indique l'origine du dernier prix partagé (« Bot Discord »,
   « Capture », « Saisie manuelle »). En Mode communautaire sur Mikhal, le bouton « Charger depuis
   Huzounet » demande à l'API de relire les prix de tout l'onglet (par demandes de 90 objets, 5,5 s

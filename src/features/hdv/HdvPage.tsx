@@ -2,20 +2,22 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
-import { Icon } from '../../components/Icon';
+import { Icon, type IconName } from '../../components/Icon';
 import runeItems from '../../data/rune-items.json';
 import { CHARACTERISTIC_ASSET_BY_ID } from '../../domain/characteristic-icons';
 import { filterRunes, PRICE_ORIGIN_LABELS, runeStatLabels, type RuneItem, type RuneItemsData } from '../../domain/forgemagie';
 import {
   countPriced,
-  filterByPrice,
   filterHdvItems,
+  HDV_SORTS,
   HDV_TABS,
   isHdvId,
+  isHdvSort,
   itemsForHdv,
+  sortHdvLines,
   typesInTab,
   type HdvId,
-  type HdvPriceFilter,
+  type HdvSort,
 } from '../../domain/hdv';
 import { FRAGILE_LABELS, loadableIds, loadAvailability, shownOrigin, type LatestMention } from '../../domain/huzounet-load';
 import type { PriceMode } from '../../domain/price-modes';
@@ -60,11 +62,8 @@ function RuneCaption({ rune, mention }: { rune: RuneItem; mention?: LatestMentio
   );
 }
 
-const PRICE_FILTERS: { id: HdvPriceFilter; label: string }[] = [
-  { id: 'all', label: 'Tous' },
-  { id: 'missing', label: 'Sans prix' },
-  { id: 'old', label: 'Prix ancien' },
-];
+// specs/048-hdv-sort: what each tab shows before its name.
+const TAB_ICONS: Record<HdvId, IconName> = { resources: 'package', consumables: 'potion', animals: 'paw', runes: 'rune' };
 
 function readStoredTab(): HdvId {
   try {
@@ -91,7 +90,8 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
   const [typeId, setTypeId] = useState<number | ''>('');
   const [stat, setStat] = useState('');
   const [originsVersion, setOriginsVersion] = useState(0);
-  const [priceFilter, setPriceFilter] = useState<HdvPriceFilter>('all');
+  // specs/048-hdv-sort: kept from one tab to the next, not from one visit to the next.
+  const [sort, setSort] = useState<HdvSort>('default');
   const [inputs, setInputs] = useState<Record<string, string>>({});
   // Values typed for one server or mode never carry over to another (same as the Recherche page).
   useEffect(() => {
@@ -111,7 +111,7 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
   const byCategory: HdvLine[] = isRunes
     ? filterRunes(RUNES, { query, stat }).map((rune) => ({ id: rune.id, name: rune.name, imageUrl: rune.imageUrl, rune }))
     : filterHdvItems(tabItems, { query, typeId });
-  const filtered = filterByPrice(byCategory, summary.prices, priceFilter);
+  const filtered = sortHdvLines(byCategory, summary.prices, sort);
   const { visible, endRef, loadingMore, reset } = useLoadMoreOnScroll(filtered);
   const { data: carnet, save, remove, loaded, reload } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
   const { priced, total } = countPriced(tabLines, summary.prices);
@@ -169,10 +169,11 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
               type="button"
               role="tab"
               aria-selected={entry.id === tab}
-              className={`hdv-tab${entry.id === tab ? ' hdv-tab--active' : ''}`}
+              className={`hdv-tab hdv-tab--icon${entry.id === tab ? ' hdv-tab--active' : ''}`}
               onClick={() => chooseTab(entry.id)}
             >
-              {entry.label}
+              <Icon name={TAB_ICONS[entry.id]} size={16} />
+              <span>{entry.label}</span>
             </button>
           ))}
         </div>
@@ -228,22 +229,18 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                   ))}
                 </select>
               )}
-              <div className="hdv-price-filters" role="group" aria-label="Filtrer par prix">
-                {PRICE_FILTERS.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    aria-pressed={entry.id === priceFilter}
-                    className={`hdv-price-filter${entry.id === priceFilter ? ' hdv-price-filter--active' : ''}`}
-                    onClick={() => {
-                      setPriceFilter(entry.id);
-                      reset();
-                    }}
-                  >
-                    {entry.label}
-                  </button>
-                ))}
-              </div>
+              <select
+                className="hdv-type-filter"
+                aria-label="Trier"
+                value={sort}
+                onChange={(event) => {
+                  setSort(isHdvSort(event.target.value) ? event.target.value : 'default');
+                  reset();
+                }}
+              >
+                <option value="default">{isRunes ? 'Tri par stat' : 'Tri par nom'}</option>
+                {HDV_SORTS.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+              </select>
             </div>
 
             <div className="results-meta">
