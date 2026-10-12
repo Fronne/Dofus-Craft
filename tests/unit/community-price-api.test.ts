@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCommunityPrice, getCommunityPrices, getLatestItemPrice, refreshExternalPrices, submitCommunityPrice } from '../../src/services/community-price-api';
+import { getCommunityPrice, getCommunityPrices, getLatestItemPrice, refreshExternalPrices, refreshRecipePrices, submitCommunityPrice } from '../../src/services/community-price-api';
 
 describe('community price API service (Cloudflare Worker client)', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -178,6 +178,45 @@ describe('community price API service (Cloudflare Worker client)', () => {
       expect(await read()).toMatchObject({ latestOrigin: 'external', latestFragile: undefined });
       answer({ ...base, latestOrigin: 'bot', latestFragile: 'stale' });
       expect(await read()).toMatchObject({ latestOrigin: 'bot', latestFragile: undefined });
+    });
+  });
+
+  describe('refreshRecipePrices (specs/047)', () => {
+    it('asks the API to read again the item of a recipe and its resources, and tells how many prices were read', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ refreshed: 2 }), { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+      await expect(refreshRecipePrices('mikhal', '14076', ['14076', '303'])).resolves.toEqual({ status: 'ok', refreshed: 2 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(String(url)).toMatch(/\/external-prices\/refresh$/);
+      expect(init.method).toBe('POST');
+      expect(init.headers).toMatchObject({ 'Content-Type': 'application/json', Authorization: expect.stringMatching(/^Bearer /) });
+      // Neither `tab` nor `last`: those belong to an HDV tab's load, with its hourly limit (specs/046).
+      expect(JSON.parse(init.body)).toEqual({ serverId: 'mikhal', itemId: '14076', ids: ['14076', '303'] });
+    });
+
+    it('tells when nothing had to be read again', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ refreshed: 0 }), { status: 200 })));
+      await expect(refreshRecipePrices('mikhal', '14076', ['14076'])).resolves.toEqual({ status: 'ok', refreshed: 0 });
+    });
+
+    it.each([
+      [429, { error: 'too-soon' }, 'too-soon'],
+      [404, { error: 'unknown-server' }, 'not-read'],
+      [502, { error: 'unavailable' }, 'unavailable'],
+      [503, { error: 'disabled' }, 'unavailable'],
+      [400, { error: 'invalid' }, 'unavailable'],
+      [200, { ok: true }, 'unavailable'],
+    ])('reads a %i answer as %s', async (status, body, expected) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+      await expect(refreshRecipePrices('mikhal', '14076', ['14076'])).resolves.toEqual({ status: expected });
+    });
+
+    it('never throws: an unreadable answer or a network failure is an unavailable service', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>', { status: 200 })));
+      await expect(refreshRecipePrices('mikhal', '14076', ['14076'])).resolves.toEqual({ status: 'unavailable' });
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+      await expect(refreshRecipePrices('mikhal', '14076', ['14076'])).resolves.toEqual({ status: 'unavailable' });
     });
   });
 

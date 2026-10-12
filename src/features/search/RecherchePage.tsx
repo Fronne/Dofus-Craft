@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import type { ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
 import { parseKamas } from '../../domain/kamas';
+import { recipeRefreshIds, recipeRefreshMessage } from '../../domain/recipe-refresh';
+import { refreshRecipePrices } from '../../services/community-price-api';
 import { ItemSearch } from '../catalogue/ItemSearch';
 import { ItemResults, RESULTS_PAGE_SIZE } from '../catalogue/ItemResults';
 import { ItemDetail } from '../catalogue/ItemDetail';
@@ -169,7 +171,15 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     };
   }, [serverId, selected, community]);
   // specs/016-shared-item-prices: the latest HDV price shared by the group for this item and server.
-  const [sharedItemPrice, commitSharedItemPrice] = useSharedItemPrice(community ? selected || undefined : undefined, serverId);
+  // specs/047-recherche-refresh-prices: goes up each time the API has read prices again on request —
+  // the shared HDV price, the lines and the resources not on screen then read theirs again.
+  const [reload, setReload] = useState(0);
+  // What « Actualiser les prix » is doing or last said, for the server and item it was clicked on: shown
+  // for those only, so another item or server starts without a message (FR-006).
+  const refreshKey = `${serverId}:${selected}`;
+  const [refreshState, setRefreshState] = useState<{ key: string; busy: boolean; message?: string }>({ key: '', busy: false });
+  const refresh = refreshState.key === refreshKey ? refreshState : { busy: false, message: undefined };
+  const [sharedItemPrice, commitSharedItemPrice] = useSharedItemPrice(community ? selected || undefined : undefined, serverId, reload);
   // Another item or server: start from an empty field, never the previous item's price — its own
   // shared price (or the cached one) fills it in as soon as it's known.
   useEffect(() => {
@@ -245,7 +255,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const gapFillRequested = useRef(new Set<string>());
   useEffect(() => {
     gapFillRequested.current = new Set();
-  }, [serverId, priceMode, selected]);
+  }, [serverId, priceMode, selected, reload]);
   // Lines on screen: the top-level ingredients plus the sub-resources of every unfolded line.
   const displayedIds = new Set<string>();
   for (const ingredient of detail?.recipe?.ingredients ?? []) displayedIds.add(ingredient.resourceId);
@@ -270,7 +280,16 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     // `data`/`save` change with every carnet write; the gap fill only needs to re-run when the set
     // of resources or the settled state changes, and the Set above prevents asking twice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [priceMode, serverId, pricesLoaded, idsKey]);
+  }, [priceMode, serverId, pricesLoaded, idsKey, reload]);
+
+  // specs/047 (FR-002 to FR-005): one request for the item and the resources of its whole craft chain.
+  const refreshPrices = async () => {
+    if (!serverId || !selectedItem) return;
+    setRefreshState({ key: refreshKey, busy: true });
+    const outcome = await refreshRecipePrices(serverId, selectedItem.id, recipeRefreshIds(selectedItem.id, ids));
+    if (outcome.status === 'ok') setReload((count) => count + 1);
+    setRefreshState({ key: refreshKey, busy: false, message: recipeRefreshMessage(outcome) });
+  };
 
   // specs/016 US2: shares a validated HDV price in Mode communautaire. The typed value stays shown
   // (and used by the comparison) even if the service can't be reached — for this visit (FR-011).
@@ -435,12 +454,24 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
         />
         {detail?.recipe && (
           <section className="card" data-tour="resource-prices">
-            <h2>Prix des ressources</h2>
+            <div className="prices-head">
+              <h2>Prix des ressources</h2>
+              {community && serverId && selectedItem && (
+                <div className="prices-refresh">
+                  <button type="button" className="btn btn-secondary btn-small" disabled={refresh.busy} onClick={() => void refreshPrices()}>
+                    <Icon name="refresh" size={16} className={refresh.busy ? 'prices-refresh-icon--busy' : undefined} />
+                    {refresh.busy ? 'Actualisation…' : 'Actualiser les prix'}
+                  </button>
+                  {refresh.message && <p role="status">{refresh.message}</p>}
+                </div>
+              )}
+            </div>
             {detail.recipe.ingredients.map((ingredient, index) => {
               const path = ingredient.resourceId;
               return (
                 <IngredientRow
-                  key={path}
+                  // specs/047: mounted again once prices were read again, so the line reads its own.
+                  key={`${path}:${reload}`}
                   path={path}
                   quantity={ingredient.quantity}
                   cost={topCosts[index]}

@@ -595,6 +595,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 .card h2, .card h3 { color: var(--text); line-height: 1.2; }
 .card h2 { margin: var(--space-4) 0 var(--space-3); font-size: 1.3rem; letter-spacing: -.02em; text-align: center; }
+/* specs/047-recherche-refresh-prices: « Prix des ressources » with its « Actualiser les prix » button. */
+.prices-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2) var(--space-3); flex-wrap: wrap; margin: var(--space-4) 0 var(--space-3); }
+.card .prices-head h2 { margin: 0; min-height: 36px; display: flex; align-items: center; }
+.prices-refresh { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); margin-left: auto; }
+.prices-refresh p { margin: 0; color: var(--text-muted); font-size: .85rem; }
+.prices-refresh-icon--busy { animation: spin 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .prices-refresh-icon--busy { animation: none; } }
 .card h3 { margin-top: var(--space-3); padding-bottom: .3rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .card p, .card li { font-size: .96rem; }
 .item-category { display: flex; align-items: center; gap: .3rem; }
@@ -677,6 +684,8 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
    default `title` tooltip — same panel/border/shadow language as the rest of the UI. Mouse-hover
    only, on the "Dernière mise à jour" text itself (user feedback 2026-09-21: not the whole row,
    and no keyboard-focus trigger) — .price-line small carries the position:relative for it. */
+/* specs/047-recherche-refresh-prices: what makes a Huzounet price a fragile one, after its date. */
+.price-note { color: var(--text-muted); }
 .price-age-tooltip {
   position: absolute;
   bottom: calc(100% + var(--space-3));

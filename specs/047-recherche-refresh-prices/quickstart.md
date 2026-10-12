@@ -32,3 +32,10 @@ Les contrats détaillés sont dans [contracts/recherche-refresh-ui.md](./contrac
 ## Résultats
 
 - Référence avant modification (branche `master`, 12 octobre 2026) : 1 030 tests passent.
+- Après la fonctionnalité : 1 062 tests passent (32 de plus : règles, client de l'API et 13 tests de la
+  page). Dans une exécution complète, deux tests de page (Familier « 25 premières lignes », HDV « dernier
+  prix partagé ») échouent parfois sous la charge ; ils passent seuls, et ne touchent pas cette page.
+- `npx tsc -b --noEmit` et `npx eslint src tests --quiet` : sans erreur.
+- À l'écran (site local, Mikhal, Mode communautaire) : bouton à droite du titre, mention « · relevé
+  ancien » après la date d'un prix Huzounet ancien. Le bouton n'a pas été cliqué (lecture réelle chez
+  Huzounet).

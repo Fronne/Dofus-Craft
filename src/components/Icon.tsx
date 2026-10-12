@@ -25,6 +25,7 @@ export type IconName =
   | 'paw'
   | 'store'
   | 'anvil'
+  | 'refresh'
   | 'image';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
@@ -32,6 +33,11 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
   anvil: {
     children:
       '<path d="M3 7h13a5 5 0 0 1-5 5H9v2.5L6.5 17h11L15 14.5V12"/><path d="M16 7h5v2a3 3 0 0 1-3 3"/><path d="M5 20h14"/>',
+  },
+  // Two arrows chasing each other, for reading prices again (specs/047).
+  refresh: {
+    children:
+      '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>',
   },
   // A picture, for importing a chat capture (specs/025).
   image: {

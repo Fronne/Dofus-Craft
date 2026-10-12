@@ -19,6 +19,7 @@ export function ResourcePriceInput({
   subtotalKamas,
   history,
   caption,
+  priceNote,
 }: {
   resource: Resource;
   quantity: number;
@@ -54,6 +55,8 @@ export function ResourcePriceInput({
   history?: ReactNode;
   // specs/023: shown instead of « × quantity » where a quantity means nothing (HDV page: the item type).
   caption?: ReactNode;
+  // specs/047: what makes the price shown a fragile one (« peu de relevés », « relevé ancien »), after its date.
+  priceNote?: string;
 }) {
   const valid = isValidKamas(value);
   const [editing, setEditing] = useState(false);
@@ -86,6 +89,7 @@ export function ResourcePriceInput({
       {updatedAt && (
         <small>
           Dernière mise à jour : {formatRelativeTime(updatedAt)}
+          {priceNote && <span className="price-note"> · {priceNote}</span>}
           {priceAgeTooltip && (
             <span className="price-age-tooltip" role="tooltip">
               {priceAgeTooltip}

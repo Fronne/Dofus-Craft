@@ -20,6 +20,9 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 - **Recherche dans tout le catalogue** : par nom et par catégorie, avec les fiches d'objets et
   d'armes présentées comme dans le jeu. Le catalogue est gardé sur l'appareil, donc la page
   s'affiche instantanément aux visites suivantes.
+- **Actualiser les prix d'une recette** : en Mode communautaire, un bouton de la page Recherche fait
+  relire sur Huzounet le prix de l'objet affiché et des ressources de sa recette ; un prix que sa
+  source dit provisoire ou ancien le signale sur sa ligne.
 - **Prix mémorisés par serveur** : un prix de ressource saisi une fois se retrouve dans toutes les
   recettes qui l'utilisent. Chaque serveur Dofus a ses propres prix.
 - **Deux modes de prix** :

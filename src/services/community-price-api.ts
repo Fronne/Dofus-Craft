@@ -1,6 +1,7 @@
 import type { CommunityPrice } from '../domain/types';
 import { isPriceOrigin } from '../domain/forgemagie';
 import type { RefreshOutcome } from '../domain/huzounet-load';
+import type { RecipeRefreshOutcome } from '../domain/recipe-refresh';
 import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
@@ -256,6 +257,35 @@ export async function refreshExternalPrices(serverId: string, ids: string[], hdv
   if (!isRecord(payload) || typeof payload.refreshed !== 'number') return { status: 'unavailable' };
   if (payload.refreshed > 0) freshReadsUntil = Date.now() + FRESH_READ_WINDOW_MS;
   return { status: 'ok', refreshed: payload.refreshed, requests: typeof payload.requests === 'number' ? payload.requests : undefined };
+}
+
+// specs/047-recherche-refresh-prices (contracts/recherche-refresh-ui.md): asks the API to read again,
+// on Huzounet, the price of the item shown on the Recherche page and of the resources of its recipe.
+// `itemId` tells the API which of the ids is an item players look at. Never throws. After a read that
+// went through, the next reads are fresh ones, like after this device's own contribution.
+export async function refreshRecipePrices(serverId: string, itemId: string, ids: string[]): Promise<RecipeRefreshOutcome> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/external-prices/refresh`, {
+      method: 'POST',
+      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ serverId, itemId, ids }),
+    });
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (response.status === 429) return { status: 'too-soon' };
+  if (response.status === 404) return { status: 'not-read' };
+  if (!response.ok) return { status: 'unavailable' };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!isRecord(payload) || typeof payload.refreshed !== 'number') return { status: 'unavailable' };
+  freshReadsUntil = Date.now() + FRESH_READ_WINDOW_MS;
+  return { status: 'ok', refreshed: payload.refreshed };
 }
 
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing

@@ -58,6 +58,8 @@ export async function lookupLatestItemPrice(itemId: string, serverId: string): P
 export function useSharedItemPrice(
   itemId: string | undefined,
   serverId: string | undefined,
+  // specs/047-recherche-refresh-prices: a change of this value reads the price again.
+  reloadKey = 0,
 ): readonly [SharedItemPriceState, (amountKamas: number) => Promise<SharedItemPriceState | undefined>] {
   const [state, setState] = useState<SharedItemPriceState>({ kind: 'loading' });
 
@@ -76,7 +78,7 @@ export function useSharedItemPrice(
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [itemId, serverId]);
+  }, [itemId, serverId, reloadKey]);
 
   // US2: shares a validated price (kind 'item'), then reloads the latest price so the date moves to
   // this contribution. If that reload doesn't come back with a price (service unreachable right

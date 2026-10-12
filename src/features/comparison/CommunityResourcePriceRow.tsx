@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import type { Resource, ResourcePrice } from '../../domain/types';
 import { pickCommunityPrice } from '../../domain/community-price-choice';
+import { FRAGILE_LABELS } from '../../domain/huzounet-load';
 import { isValidKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import { ResourcePriceInput } from './ResourcePriceInput';
@@ -104,6 +105,15 @@ export function CommunityResourcePriceRow({
     await commit(amount);
   }
 
+  // specs/047-recherche-refresh-prices (FR-008): a Huzounet price its source calls provisional or old
+  // says so on the line — only while the price shown is that one: nothing being typed, and a carnet
+  // that is empty or holds this very reading.
+  const latest = communityState.kind === 'found' ? communityState.price : undefined;
+  const priceNote = latest?.latestOrigin === 'external' && latest.latestFragile && !isEditing &&
+    (!carnetEntry || carnetEntry.updatedAt === latest.latestContributionAt)
+    ? FRAGILE_LABELS[latest.latestFragile]
+    : undefined;
+
   return (
     <Fragment>
       <ResourcePriceInput
@@ -117,6 +127,7 @@ export function CommunityResourcePriceRow({
         retained={retained}
         subtotalKamas={subtotalKamas}
         caption={caption}
+        priceNote={priceNote}
         history={<PriceHistoryButton key={serverId} kind="resource" id={resource.id} name={resource.name} serverId={serverId} />}
       />
       {outlierDialog}

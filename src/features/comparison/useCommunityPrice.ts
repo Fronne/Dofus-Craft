@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getCommunityPrice, getCommunityPrices, submitCommunityPrice, type CommunityPriceLookup } from '../../services/community-price-api';
 import type { CommunityPrice } from '../../domain/types';
+import { isPriceOrigin } from '../../domain/forgemagie';
 
 // FR-014 / research.md "Fréquence de rafraîchissement du prix communautaire": refetch on mount
 // (i.e. on resource/server change, since that remounts via the key prop) and every 5 minutes
@@ -36,6 +37,9 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
     ) {
       return undefined;
     }
+    // specs/047-recherche-refresh-prices (FR-009): where the price came from is kept with it, read back
+    // with the same care as from the API — a known origin, and a fragility only for a Huzounet price.
+    const latestOrigin = isPriceOrigin(parsed.latestOrigin) ? parsed.latestOrigin : undefined;
     return {
       resourceId,
       serverId,
@@ -44,6 +48,10 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
       lastContributionAt: typeof parsed.lastContributionAt === 'string' ? parsed.lastContributionAt : undefined,
       latestAmountKamas: parsed.latestAmountKamas,
       latestContributionAt: parsed.latestContributionAt,
+      latestOrigin,
+      latestFragile: latestOrigin === 'external' && (parsed.latestFragile === 'stale' || parsed.latestFragile === 'provisional')
+        ? parsed.latestFragile
+        : undefined,
     };
   } catch {
     return undefined;
