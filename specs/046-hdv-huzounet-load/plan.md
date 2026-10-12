@@ -92,14 +92,15 @@ src/
 │   └── comparison/
 │       ├── useResourcePrices.ts         # reload() : relire le carnet après une tranche
 │       └── CommunityResourcePriceRow.tsx # pas de confirmation d'écart sans médiane (sampleSize 0)
-└── styles.css                           # mise en forme du bouton et de la progression
+└── styles/global.css                         # mise en forme du bouton et de la progression
 
 tests/
 ├── unit/
 │   ├── huzounet-load.test.ts            # NOUVEAU
 │   └── community-price-api.test.ts      # refreshExternalPrices, origine external, latestFragile
 └── integration/
-    └── hdv-huzounet-load.test.tsx       # NOUVEAU — les quatre récits de la spec
+    ├── hdv-huzounet-load.test.tsx       # NOUVEAU — les quatre récits, sur la page
+    └── huzounet-load-hook.test.tsx      # NOUVEAU — la boucle : cadence réelle, reprises, arrêt
 ```
 
 **Structure Decision**: celle du dépôt — règles dans `src/domain/`, appels réseau dans `src/services/`,

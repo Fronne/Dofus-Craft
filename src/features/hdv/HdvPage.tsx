@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
 import runeItems from '../../data/rune-items.json';
 import { CHARACTERISTIC_ASSET_BY_ID } from '../../domain/characteristic-icons';
-import { filterRunes, PRICE_ORIGIN_LABELS, runeStatLabels, type PriceOrigin, type RuneItem, type RuneItemsData } from '../../domain/forgemagie';
+import { filterRunes, PRICE_ORIGIN_LABELS, runeStatLabels, type RuneItem, type RuneItemsData } from '../../domain/forgemagie';
 import {
   countPriced,
   filterByPrice,
@@ -17,13 +17,16 @@ import {
   type HdvId,
   type HdvPriceFilter,
 } from '../../domain/hdv';
+import { FRAGILE_LABELS, loadableIds, loadAvailability, shownOrigin, type LatestMention } from '../../domain/huzounet-load';
 import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
 import { PriceEntryField } from '../comparison/PriceEntryField';
 import { useResourcePrices } from '../comparison/useResourcePrices';
+import { HuzounetLoadButton } from './HuzounetLoadButton';
 import { useHdvItems } from './useHdvItems';
 import { useHdvPriceSummary } from './useHdvPriceSummary';
+import { useHuzounetLoad } from './useHuzounetLoad';
 import { useLatestOrigins } from './useLatestOrigins';
 
 // specs/023-hdv-price-entry: record the prices of an in-game HDV in one pass, one tab per HDV, with
@@ -39,13 +42,20 @@ const RUNE_STATS = runeStatLabels(RUNES);
 /** What one line of any tab needs: the item, and the caption under its name. */
 type HdvLine = { id: string; name: string; imageUrl?: string; rune?: RuneItem; typeId?: number };
 
-function RuneCaption({ rune, origin }: { rune: RuneItem; origin?: PriceOrigin }) {
+// specs/046-hdv-huzounet-load (FR-013): where the price shown comes from — « Huzounet », with what its
+// source says of it when that price is a provisional or an old one.
+function originLabel(mention: LatestMention): string {
+  const label = PRICE_ORIGIN_LABELS[mention.origin];
+  return mention.fragile ? `${label} · ${FRAGILE_LABELS[mention.fragile]}` : label;
+}
+
+function RuneCaption({ rune, mention }: { rune: RuneItem; mention?: LatestMention }) {
   const asset = rune.characteristicId === null ? undefined : CHARACTERISTIC_ASSET_BY_ID[rune.characteristicId];
   return (
     <span className="hdv-item-type fm-rune-caption">
       {asset && <CharacteristicIcon asset={asset} size={16} />}
       {rune.statLabel}
-      {origin && <span className="fm-origin">{PRICE_ORIGIN_LABELS[origin]}</span>}
+      {mention && <span className="fm-origin">{originLabel(mention)}</span>}
     </span>
   );
 }
@@ -103,12 +113,30 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
     : filterHdvItems(tabItems, { query, typeId });
   const filtered = filterByPrice(byCategory, summary.prices, priceFilter);
   const { visible, endRef, loadingMore, reset } = useLoadMoreOnScroll(filtered);
-  const { data: carnet, save, remove, loaded } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
+  const { data: carnet, save, remove, loaded, reload } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
   const { priced, total } = countPriced(tabLines, summary.prices);
-  const origins = useLatestOrigins(serverId, priceMode, isRunes ? RUNES.map((rune) => rune.id) : [], originsVersion);
+  const origins = useLatestOrigins(serverId, priceMode, visible.map((item) => item.id), originsVersion);
+  const refreshSummary = summary.refresh;
   const onSaved = () => {
-    summary.refresh();
+    refreshSummary();
     setOriginsVersion((value) => value + 1);
+  };
+  // specs/046-hdv-huzounet-load: the button covers every item of the tab, whatever the filters (FR-001).
+  const tabIds = useMemo(() => loadableIds(tabLines.map((item) => item.id)), [tabLines]);
+  // The prices of a request are in the carnet: the count, the displayed lines and their origin follow
+  // (FR-005). A value being typed lives in `inputs`, which none of these touch (FR-015).
+  const onSliceLoaded = useCallback(() => {
+    refreshSummary();
+    reload();
+    setOriginsVersion((value) => value + 1);
+  }, [refreshSummary, reload]);
+  const huzounet = useHuzounetLoad({ serverId, priceMode, tab, ids: tabIds, onSliceLoaded });
+  // « Huzounet » is told for the price shown only: not for another one kept on the device, nor while
+  // the player types one. The origin of a shared price stays as it was (specs/026).
+  const mentionOf = (id: string) => {
+    const mention = origins[id];
+    if (mention?.origin !== 'external') return mention;
+    return inputs[id] === undefined ? shownOrigin(carnet[id], mention) : undefined;
   };
 
   const serverName = servers.find((server) => server.id === serverId)?.name;
@@ -219,9 +247,18 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
             </div>
 
             <div className="results-meta">
-              <span role="status">
+              <span role="status" className="hdv-count">
                 {summary.loaded ? `${priced} ${priced > 1 ? 'objets' : 'objet'} sur ${total} ${priced > 1 ? 'ont' : 'a'} un prix` : 'Lecture des prix…'}
               </span>
+              {tabIds.length > 0 && (
+                <HuzounetLoadButton
+                  availability={loadAvailability(priceMode, serverId)}
+                  count={tabIds.length}
+                  state={huzounet.state}
+                  onStart={() => void huzounet.start()}
+                  onStop={huzounet.stop}
+                />
+              )}
             </div>
 
             {tab === 'animals' && (
@@ -248,8 +285,13 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
                         // A unit price only: no « × 1 » subtotal repeating it.
                         subtotalKamas={null}
                         caption={item.rune
-                          ? <RuneCaption rune={item.rune} origin={origins[item.id]} />
-                          : <span className="hdv-item-type">{typeNames[String(item.typeId)]}</span>}
+                          ? <RuneCaption rune={item.rune} mention={mentionOf(item.id)} />
+                          : (
+                            <span className="hdv-item-type hdv-item-caption">
+                              {typeNames[String(item.typeId)]}
+                              {mentionOf(item.id)?.origin === 'external' && <span className="fm-origin">{originLabel(mentionOf(item.id)!)}</span>}
+                            </span>
+                          )}
                         priceMode={priceMode}
                         serverId={serverId}
                         input={inputs[item.id]}

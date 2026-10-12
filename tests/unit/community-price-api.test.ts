@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCommunityPrice, getCommunityPrices, getLatestItemPrice, submitCommunityPrice } from '../../src/services/community-price-api';
+import { getCommunityPrice, getCommunityPrices, getLatestItemPrice, refreshExternalPrices, submitCommunityPrice } from '../../src/services/community-price-api';
 
 describe('community price API service (Cloudflare Worker client)', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -152,6 +152,79 @@ describe('community price API service (Cloudflare Worker client)', () => {
       await submitCommunityPrice('r1', 'mikhal', 100);
       expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ resourceId: '208', amountKamas: 7000, kind: 'item' });
       expect(JSON.parse(fetchMock.mock.calls[1][1].body)).not.toHaveProperty('kind');
+    });
+  });
+
+  // specs/046-hdv-huzounet-load (contracts/external-prices-refresh.md).
+  describe('prices read on Huzounet (specs/046)', () => {
+    const base = { resourceId: '371', medianAmountKamas: 0, sampleSize: 0, latestAmountKamas: 42, latestContributionAt: '2026-10-12T02:10:00.000Z' };
+    const answer = (row: Record<string, unknown>) => vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ serverId: 'mikhal', prices: [row] }), { status: 200 })));
+    const read = async () => {
+      const lookup = await getCommunityPrices(['371'], 'mikhal');
+      return lookup.status === 'found' ? lookup.prices[0] : undefined;
+    };
+
+    it('keeps a price only Huzounet knows, with its origin and no median', async () => {
+      answer({ ...base, latestOrigin: 'external' });
+      await expect(read()).resolves.toEqual({ ...base, serverId: 'mikhal', latestOrigin: 'external' });
+    });
+
+    it('keeps what Huzounet says of its price, and nothing else', async () => {
+      answer({ ...base, latestOrigin: 'external', latestFragile: 'provisional' });
+      expect((await read())?.latestFragile).toBe('provisional');
+      answer({ ...base, latestOrigin: 'external', latestFragile: 'stale' });
+      expect((await read())?.latestFragile).toBe('stale');
+      answer({ ...base, latestOrigin: 'external', latestFragile: 'doubtful' });
+      expect(await read()).toMatchObject({ latestOrigin: 'external', latestFragile: undefined });
+      answer({ ...base, latestOrigin: 'bot', latestFragile: 'stale' });
+      expect(await read()).toMatchObject({ latestOrigin: 'bot', latestFragile: undefined });
+    });
+  });
+
+  describe('refreshExternalPrices (specs/046)', () => {
+    it('asks the API to read the items of a server again, and tells how many prices were read', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ refreshed: 2 }), { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+      await expect(refreshExternalPrices('mikhal', ['371', '372'])).resolves.toEqual({ status: 'ok', refreshed: 2 });
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(String(url)).toMatch(/\/external-prices\/refresh$/);
+      expect(init.method).toBe('POST');
+      expect(init.headers).toMatchObject({ 'Content-Type': 'application/json', Authorization: expect.stringMatching(/^Bearer /) });
+      expect(JSON.parse(init.body)).toEqual({ serverId: 'mikhal', ids: ['371', '372'] });
+    });
+
+    it.each([
+      [429, { error: 'too-soon' }, 'too-soon'],
+      [404, { error: 'unknown-server' }, 'unknown-server'],
+      [503, { error: 'disabled' }, 'disabled'],
+      [502, { error: 'unavailable' }, 'unavailable'],
+      [400, { error: 'invalid' }, 'unavailable'],
+      [401, { error: 'Unauthorized' }, 'unavailable'],
+      [200, { done: true }, 'unavailable'],
+    ])('reads a %i answer %j as %s', async (status, body, expected) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status })));
+      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: expected });
+    });
+
+    it('never throws: an unreadable body is unavailable, a network error is unreachable', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<html>', { status: 200 })));
+      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: 'unavailable' });
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+      await expect(refreshExternalPrices('mikhal', ['371'])).resolves.toEqual({ status: 'unreachable' });
+    });
+
+    it('makes the next reads fresh ones once prices were read, not when nothing changed', async () => {
+      vi.resetModules();
+      const api = await import('../../src/services/community-price-api');
+      const fetchMock = vi.fn(async (url: string) => new Response(JSON.stringify(String(url).includes('/refresh') ? { refreshed: calls.shift() } : { serverId: 'mikhal', prices: [] }), { status: 200 }));
+      const calls = [0, 3];
+      vi.stubGlobal('fetch', fetchMock);
+      await api.refreshExternalPrices('mikhal', ['371']);
+      await api.getCommunityPrices(['371'], 'mikhal');
+      expect(String(fetchMock.mock.calls[1][0])).not.toContain('fresh=1');
+      await api.refreshExternalPrices('mikhal', ['371']);
+      await api.getCommunityPrices(['371'], 'mikhal');
+      expect(String(fetchMock.mock.calls[3][0])).toContain('fresh=1');
     });
   });
 });

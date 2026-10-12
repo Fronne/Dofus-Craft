@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ResourcePrice, ServerId } from '../../domain/types';
 import { prices } from '../../persistence/indexeddb-resource-price-repository';
 import type { ResourcePriceRepository } from '../../persistence/resource-price-repository';
@@ -28,6 +28,9 @@ export function useResourcePrices(
   // "haven't checked yet" — skipping that check is exactly what let a stale community median
   // overwrite an already-persisted price on a remount race (FR-006 of specs/004).
   const [loaded, setLoaded] = useState(false);
+  // specs/046-hdv-huzounet-load: bumped by `reload()` to read the carnet again after something else
+  // wrote to it (a batch of prices loaded for the whole tab), keeping `data` meanwhile.
+  const [version, setVersion] = useState(0);
   const generationRef = useRef(0);
   useEffect(() => {
     generationRef.current += 1;
@@ -50,7 +53,8 @@ export function useResourcePrices(
         setError('Impossible de charger les prix enregistrés.');
         setLoaded(true);
       });
-  }, [serverId, ids.join(','), repository]);
+  }, [serverId, ids.join(','), repository, version]);
+  const reload = useCallback(() => setVersion((value) => value + 1), []);
   async function save(id: string, value: number, updatedAt?: string) {
     if (!serverId) return;
     try {
@@ -70,5 +74,5 @@ export function useResourcePrices(
       return rest;
     });
   }
-  return { data, save, remove, error, loaded };
+  return { data, save, remove, error, loaded, reload };
 }

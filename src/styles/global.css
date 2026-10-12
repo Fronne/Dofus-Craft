@@ -1471,6 +1471,14 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .hdv-price-filter + .hdv-price-filter { border-left: 1px solid var(--border); }
 .hdv-price-filter--active { background: var(--gold-soft); color: var(--gold-bright); }
 .hdv-note { margin: var(--space-3) 0 0; color: var(--text-muted); font-size: .85rem; }
+/* specs/046-hdv-huzounet-load: the « Charger depuis Huzounet » button, its progress and its message. */
+.hdv-count { flex-shrink: 0; }
+.hdv-huzounet { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .5rem .75rem; }
+.hdv-huzounet-button { padding: .45rem .9rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.hdv-huzounet-button:hover:not(:disabled) { border-color: var(--gold-bright); color: var(--gold-bright); }
+.hdv-huzounet-button:disabled { opacity: .55; cursor: not-allowed; }
+.hdv-huzounet-hint, .hdv-huzounet-status { font-weight: 400; }
+.hdv-huzounet-progress { width: 8rem; accent-color: var(--gold-bright); }
 .hdv-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
 .hdv-row { border-bottom: 1px solid var(--border); }
 .hdv-row:last-child { border-bottom: 0; }
@@ -1536,7 +1544,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .fm-danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .fm-delete { color: var(--danger); }
 
-.fm-rune-caption { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); white-space: normal; }
+.fm-rune-caption, .hdv-item-caption { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); white-space: normal; }
 .fm-origin { flex-basis: 100%; color: var(--gold-bright); font-size: .78rem; }
 
 .fm-import { margin-bottom: var(--space-4); }

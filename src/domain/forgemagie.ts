@@ -57,16 +57,18 @@ export function summarizeByItem(lines: PurchaseLine[]): ItemSummary[] {
     .sort((a, b) => b.totalKamas - a.totalKamas);
 }
 
-export type PriceOrigin = 'manual' | 'capture' | 'bot';
+// specs/046-hdv-huzounet-load: 'external' is a price the API read on Huzounet, not one shared by the group.
+export type PriceOrigin = 'manual' | 'capture' | 'bot' | 'external';
 
 export const PRICE_ORIGIN_LABELS: Record<PriceOrigin, string> = {
   manual: 'Saisie manuelle',
   capture: 'Capture',
   bot: 'Bot Discord',
+  external: 'Huzounet',
 };
 
 export function isPriceOrigin(value: unknown): value is PriceOrigin {
-  return value === 'manual' || value === 'capture' || value === 'bot';
+  return value === 'manual' || value === 'capture' || value === 'bot' || value === 'external';
 }
 
 // --- Forgemagie API shapes (contracts/fm-site-api.md) ---

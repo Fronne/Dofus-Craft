@@ -87,7 +87,9 @@ export function CommunityResourcePriceRow({
   async function handleCommit(rawValue: string): Promise<'accepted' | 'rejected' | void> {
     if (!isValidKamas(rawValue)) return;
     const amount = Number(rawValue);
-    if (communityState.kind === 'found') {
+    // specs/046-hdv-huzounet-load: a price only Huzounet knows comes without a median (sampleSize 0) —
+    // nothing to compare with, like a resource's very first contribution (specs/007 FR-008).
+    if (communityState.kind === 'found' && communityState.price.sampleSize > 0) {
       const deviationPercent = computeDeviationPercent(amount, communityState.price.medianAmountKamas);
       if (deviationPercent > OUTLIER_THRESHOLD_PERCENT) {
         const confirmed = await confirmOutlier({

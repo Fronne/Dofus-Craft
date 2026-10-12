@@ -158,8 +158,9 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
 
 - Un objet de l'onglet que Huzounet ne connaît pas : il reste sans prix, sans message d'erreur ; il compte
   dans la progression comme traité.
-- Un prix que Huzounet ne soutient plus (contesté, exclu) : l'API retire le prix qu'elle gardait ; la ligne
-  retombe sur le dernier prix partagé, ou sur « sans prix ».
+- Un prix que Huzounet ne soutient plus (contesté, exclu) : l'API retire le prix qu'elle gardait. Le
+  carnet de l'appareil garde le dernier prix qu'il a reçu, avec sa date : il n'est pas effacé, il perd sa
+  mention « Huzounet » et finit en « Prix ancien » (comportement du carnet, inchangé ici).
 - Le joueur clique deux fois de suite sur le bouton : un seul chargement tourne à la fois.
 - Deux joueurs chargent le même onglet au même moment : chacun peut recevoir le refus « lecture trop
   récente » ; l'attente puis la reprise automatique de la User Story 3 s'appliquent.

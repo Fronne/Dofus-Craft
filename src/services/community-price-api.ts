@@ -1,5 +1,6 @@
 import type { CommunityPrice } from '../domain/types';
 import { isPriceOrigin } from '../domain/forgemagie';
+import type { RefreshOutcome } from '../domain/huzounet-load';
 import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
@@ -49,9 +50,14 @@ function isCommunityPriceRow(value: unknown): value is CommunityPrice {
 
 // specs/025-rune-purchase-import: `latestOrigin` is optional (an older Worker doesn't send it) and an
 // unknown value is dropped rather than shown — the page then shows it as a manual entry.
+// specs/046-hdv-huzounet-load: `latestFragile` only means something for a price read on Huzounet.
 function withKnownOrigin(price: CommunityPrice): CommunityPrice {
-  if (price.latestOrigin === undefined || isPriceOrigin(price.latestOrigin)) return price;
-  return { ...price, latestOrigin: undefined };
+  const latestOrigin = isPriceOrigin(price.latestOrigin) ? price.latestOrigin : undefined;
+  const latestFragile = latestOrigin === 'external' && (price.latestFragile === 'stale' || price.latestFragile === 'provisional')
+    ? price.latestFragile
+    : undefined;
+  if (latestOrigin === price.latestOrigin && latestFragile === price.latestFragile) return price;
+  return { ...price, latestOrigin, latestFragile };
 }
 
 export type CommunityPriceLookup =
@@ -213,6 +219,35 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
   }));
   if (results.some((prices) => prices === undefined)) return { status: 'unavailable' };
   return { status: 'found', prices: results.flatMap((prices) => prices ?? []) };
+}
+
+// specs/046-hdv-huzounet-load (contracts/external-prices-refresh.md): asks the API to read again, on
+// Huzounet, the prices of up to 90 items of a server. Never throws. Once prices were read, the next
+// reads are fresh ones, like after this device's own contribution.
+export async function refreshExternalPrices(serverId: string, ids: string[]): Promise<RefreshOutcome> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/external-prices/refresh`, {
+      method: 'POST',
+      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ serverId, ids }),
+    });
+  } catch {
+    return { status: 'unreachable' };
+  }
+  if (response.status === 429) return { status: 'too-soon' };
+  if (response.status === 404) return { status: 'unknown-server' };
+  if (response.status === 503) return { status: 'disabled' };
+  if (!response.ok) return { status: 'unavailable' };
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!isRecord(payload) || typeof payload.refreshed !== 'number') return { status: 'unavailable' };
+  if (payload.refreshed > 0) freshReadsUntil = Date.now() + FRESH_READ_WINDOW_MS;
+  return { status: 'ok', refreshed: payload.refreshed };
 }
 
 // Sends resourceId/serverId/amountKamas plus an anonymous per-device deviceId (specs/004-community-price-sharing

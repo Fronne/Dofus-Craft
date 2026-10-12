@@ -9,7 +9,7 @@
 ## 1. Tests automatiques
 
 ```bash
-npx vitest run tests/unit/huzounet-load.test.ts tests/unit/community-price-api.test.ts tests/integration/hdv-huzounet-load.test.tsx tests/integration/hdv-page.test.tsx
+npx vitest run tests/unit/huzounet-load.test.ts tests/unit/community-price-api.test.ts tests/integration/hdv-huzounet-load.test.tsx tests/integration/huzounet-load-hook.test.tsx tests/integration/hdv-page.test.tsx
 ```
 
 Attendu : tout passe. Ce que ces tests prouvent :
@@ -46,6 +46,18 @@ bouton y déclenche de **vraies** lectures chez Huzounet. À faire une fois, sur
 
 Ne pas lancer l'onglet Ressources à répétition : chaque chargement complet fait environ 57 lectures chez
 Huzounet.
+
+## Résultats (12 octobre 2026)
+
+- Avant : 956 tests passent (plus 1 échec connu, sensible à la charge : « shows the latest shared price
+  over an older kept one » de `hdv-page.test.tsx`, qui passe seul) ; `npx tsc -b --noEmit` sans erreur.
+- Après : 1 018 tests passent (62 ajoutés : 21 de règles, 12 du client de l'API, 19 de la page, 10 de la
+  boucle de chargement) ; même échec connu, qui passe seul ; `npx tsc -b --noEmit` et
+  `npx eslint src tests --quiet` sans erreur.
+- À l'écran (site local, API de production en lecture) : bouton présent avec le nombre d'objets de
+  l'onglet (35, 128 avec « environ 10 s ») ; mentions « Huzounet · relevé ancien » sous le type des
+  croquettes ; en Mode personnel, bouton désactivé avec son explication. Le bouton n'a pas été cliqué en
+  Mode communautaire : un clic lit réellement Huzounet.
 
 ## Hors périmètre
 
