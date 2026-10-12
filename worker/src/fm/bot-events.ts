@@ -1,13 +1,13 @@
 import { isRecord, json, nowIso, readJson, unauthorized, upsertPlayerStatement, type FmDb, type FmEnv, type FmStatement } from './http';
 import {
-  clearCachedReadsIfPriced, isItemName, isKamasInteger, MAX_LINES, purchaseLineStatements, resolveBotLine,
+  botUncountedKamas, clearCachedReadsIfPriced, isItemName, isKamasInteger, MAX_LINES, purchaseLineStatements, resolveBotLine,
   unitPriceKamas, type PurchaseLineInput, type ResolvedLine,
 } from './purchases';
 
 // specs/025-rune-purchase-import (contracts/fm-bot-api.md, research R4): POST /fm/bot/events. The bot
 // sends one event per command or processed message. Like the bot, one open session per channel.
 
-const EVENT_TYPES = ['session-start', 'capture', 'session-reset', 'session-stop', 'channel-created', 'channel-archived', 'channel-deleted'] as const;
+const EVENT_TYPES = ['session-start', 'capture', 'session-reset', 'session-stop', 'channel-created', 'channel-archived', 'channel-deleted', 'channel-reopened'] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
 type CommonEvent = { type: EventType; eventId: string; channelId: string; channelName: string; occurredAt: string };
@@ -112,7 +112,8 @@ async function handleCapture(db: FmDb, event: CaptureEvent): Promise<{ answer: E
   const captureId = crypto.randomUUID();
   statements.push(db.prepare(
     `INSERT INTO fm_captures (id, session_id, discord_user_id, origin, spent_kamas, server_id, created_at) VALUES (?, ?, ?, 'bot', ?, ?, ?)`,
-  ).bind(captureId, sessionId, event.author.id, event.spentKamas, serverId, event.occurredAt));
+    // specs/044-fm-runes-only (FR-003): what the bot counted, less what it counted for lines that are not runes.
+  ).bind(captureId, sessionId, event.author.id, Math.max(0, event.spentKamas - botUncountedKamas(resolved)), serverId, event.occurredAt));
   statements.push(...purchaseLineStatements(db, captureId, resolved));
   return { answer: { status: 'ok', sessionId, duplicate: false, lines: answers }, statements };
 }
@@ -174,6 +175,12 @@ async function handleChannelEvent(db: FmDb, event: CommonEvent, author: Author |
           ? [db.prepare("UPDATE fm_bot_commands SET result_channel_id = ? WHERE id = ? AND type = 'create-channel'").bind(event.channelId, commandId)]
           : []),
       ],
+    };
+  }
+  if (event.type === 'channel-reopened') {
+    return {
+      answer: { status: 'ok', duplicate: false },
+      statements: [db.prepare("UPDATE fm_channels SET status = 'active', archived_at = NULL WHERE channel_id = ? AND status = 'archived'").bind(event.channelId)],
     };
   }
   const status = event.type === 'channel-archived' ? 'archived' : 'deleted';

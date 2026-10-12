@@ -1,4 +1,5 @@
 import { isRecord, json, nowIso, readJson, type FmDb, type FmStatement } from './http';
+import { insertItemStatement, parseNewItem, sessionItemStatements } from './items';
 import { sessionDetail } from './reads';
 
 // specs/028-site-started-sessions (contracts/fm-site-sessions-api.md): starting, stopping and resending
@@ -28,6 +29,9 @@ export async function startSession(request: Request, db: FmDb, viewerId: string)
   }
   const channelId = body.channelId;
   const fmItemId = (body.fmItemId as string | null | undefined) ?? null;
+  // specs/032: or an equipment, for which a new item is created with the session.
+  const newItem = fmItemId === null && body.item !== undefined && body.item !== null ? parseNewItem(body.item) : null;
+  if (newItem === undefined) return json({ error: 'item (itemId, itemName and imageUrl as for a new item) is invalid' }, 400);
   const name = await myActiveChannelName(db, viewerId, channelId);
   if (!name) return json({ error: 'not-your-channel' }, 403);
   if (fmItemId) {
@@ -39,12 +43,17 @@ export async function startSession(request: Request, db: FmDb, viewerId: string)
 
   const sessionId = crypto.randomUUID();
   const at = nowIso();
+  const newItemId = newItem ? crypto.randomUUID() : null;
+  const chosenItemId = newItemId ?? fmItemId;
   try {
     await db.batch([
+      ...(newItem ? [insertItemStatement(db, newItemId!, viewerId, newItem)] : []),
       db.prepare(
         `INSERT INTO fm_sessions (id, channel_id, channel_name, status, opened_at, fm_item_id, owner_discord_user_id, origin, sync_status)
          VALUES (?, ?, ?, 'open', ?, ?, ?, 'site', 'pending')`,
-      ).bind(sessionId, channelId, name, at, fmItemId, viewerId),
+      ).bind(sessionId, channelId, name, at, null, viewerId),
+      // specs/032 (FR-024): the item chosen at the start is the channel's, like one chosen in the detail.
+      ...(chosenItemId ? sessionItemStatements(db, { id: sessionId, channel_id: channelId, own_channel: 1 }, chosenItemId) : []),
       openCommand(db, sessionId, channelId, at),
     ]);
   } catch {

@@ -194,11 +194,9 @@ describe('private players', () => {
 
 // specs/030-private-fm-sessions (FR-005, FR-006, research R5).
 describe('profiles', () => {
-  it('list no one but the viewer, and another player\'s profile is not found, public or private', async () => {
+  it('are the viewer\'s only: another player\'s profile is not found, public or private', async () => {
     const { fm, token } = await sessionWithTwoPlayers();
 
-    const { players } = await (await fm.call('GET', '/fm/players', { token })).json() as { players: { displayName: string }[] };
-    expect(players.map((player) => player.displayName)).toEqual(['Alice']);
     const unknown = await fm.call('GET', '/fm/players/nope', { token });
     const bob = await fm.call('GET', '/fm/players/2', { token });
     expect(bob.status).toBe(404);

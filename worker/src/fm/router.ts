@@ -7,7 +7,10 @@ import { resendSession, startSession, stopSession } from './site-sessions';
 import { attachChannelItem, listMyChannels, readChannelRequest, requestChannel } from './channels';
 import { attachSession, createItem, deleteItem, detachSession, readItemRecap, renameItem } from './items';
 import { deleteMe, getMe, patchMe } from './me';
-import { listPlayers, playerProfile, sessionDetail, sessionsPage } from './reads';
+import { playerProfile, sessionDetail, sessionsPage } from './reads';
+import { archiveSeance, listSeances, readSeance, removeSeanceItem, reopenSeance, setSeanceItem } from './seances';
+import { listPlayers } from './players';
+import { correctCaptureLines } from './captures';
 
 // specs/025-rune-purchase-import: every /fm/* route, handled before the Worker's COMMUNITY_API_KEY check
 // (research R3) — each one has its own authentication: the bot's key, or the site's session token.
@@ -32,6 +35,20 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
     if (method === 'PATCH') return patchMe(request, env.DB, viewerId);
     if (method === 'DELETE') return deleteMe(env.DB, viewerId);
   }
+  // specs/045-restore-production-worker (contracts/api.md): the séances de FM and the correction of a capture.
+  if (method === 'GET' && pathname === '/fm/seances') return listSeances(env.DB, viewerId);
+  const seanceMatch = /^\/fm\/seances\/([^/]+)(?:\/(archive|reopen|item))?$/.exec(pathname);
+  if (seanceMatch) {
+    const seanceId = decodeURIComponent(seanceMatch[1]);
+    const action = seanceMatch[2];
+    if (method === 'GET' && !action) return readSeance(env.DB, viewerId, seanceId);
+    if (method === 'POST' && action === 'archive') return archiveSeance(env.DB, viewerId, seanceId);
+    if (method === 'POST' && action === 'reopen') return reopenSeance(env.DB, viewerId, seanceId);
+    if (method === 'PUT' && action === 'item') return setSeanceItem(request, env.DB, viewerId, seanceId);
+    if (method === 'DELETE' && action === 'item') return removeSeanceItem(env.DB, viewerId, seanceId);
+  }
+  const captureLinesMatch = /^\/fm\/captures\/([^/]+)\/lines$/.exec(pathname);
+  if (method === 'PUT' && captureLinesMatch) return correctCaptureLines(request, env.DB, viewerId, decodeURIComponent(captureLinesMatch[1]));
   // specs/029-channel-ownership (contracts/fm-channels-api.md).
   if (method === 'GET' && pathname === '/fm/channels') return listMyChannels(env.DB, viewerId);
   if (method === 'POST' && pathname === '/fm/channels') return requestChannel(request, env.DB, viewerId);

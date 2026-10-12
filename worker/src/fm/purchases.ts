@@ -1,7 +1,7 @@
 import { fetchCurrentMedian, insertContribution } from '../contribution';
 import { clearReadCache } from '../read-cache';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../outlier';
-import { lookupItem } from './item-names';
+import { lookupItem, normalizeItemName } from './item-names';
 import { sha256Hex, type FmDb } from './http';
 
 // specs/025-rune-purchase-import (research R8, FR-019): the resource price a purchase line creates, or
@@ -56,13 +56,28 @@ export async function recordLinePrice(db: FmDb, input: {
   return { priceStatus: 'recorded', contributionId };
 }
 
-export type ResolvedLine = PurchaseLineInput & { itemId: string | null; unitPriceKamas: number; priceStatus: PriceStatus; contributionId: string | null };
+// `readName`: the name as it was read, when the item was recovered from it (specs/038). `counted`: whether
+// the line counts in the spending — only runes do (specs/044-fm-runes-only).
+export type ResolvedLine = PurchaseLineInput & {
+  readName: string | null; itemId: string | null; unitPriceKamas: number; priceStatus: PriceStatus; contributionId: string | null; counted: boolean;
+};
 
-// A bot line: recognized by its exact name, priced on the player's server, outliers left out.
-export async function resolveBotLine(db: FmDb, line: PurchaseLineInput, player: { discordUserId: string; serverId: string | null }): Promise<ResolvedLine> {
-  const unit = unitPriceKamas(line);
-  const lookup = lookupItem(line.name);
-  if (lookup.status !== 'found') return { ...line, itemId: null, unitPriceKamas: unit, priceStatus: lookup.status, contributionId: null };
+export const isRuneName = (name: string) => normalizeItemName(name).startsWith('rune ');
+
+// The bot only counts the lines above this total in what it reports as spent.
+const BOT_COUNTS_ABOVE_KAMAS = 1000;
+export const botUncountedKamas = (lines: { counted: boolean; totalKamas: number }[]) =>
+  lines.reduce((total, line) => total + (!line.counted && line.totalKamas > BOT_COUNTS_ABOVE_KAMAS ? line.totalKamas : 0), 0);
+
+// A bot line: recognized by its name, priced on the player's server, outliers left out.
+export async function resolveBotLine(db: FmDb, sent: PurchaseLineInput, player: { discordUserId: string; serverId: string | null }): Promise<ResolvedLine> {
+  const unit = unitPriceKamas(sent);
+  const lookup = lookupItem(sent.name);
+  if (lookup.status !== 'found') {
+    return { ...sent, readName: null, itemId: null, unitPriceKamas: unit, priceStatus: lookup.status, contributionId: null, counted: isRuneName(sent.name) };
+  }
+  const named = lookup.name ? { ...sent, name: lookup.name, readName: sent.name.trim() } : { ...sent, readName: null };
+  const line = { ...named, counted: isRuneName(named.name) };
   if (!player.serverId) return { ...line, itemId: lookup.itemId, unitPriceKamas: unit, priceStatus: 'no-server', contributionId: null };
   const { priceStatus, contributionId } = await recordLinePrice(db, {
     itemId: lookup.itemId,
@@ -82,7 +97,7 @@ export function clearCachedReadsIfPriced(lines: { priceStatus: PriceStatus }[]):
 
 export function purchaseLineStatements(db: FmDb, captureId: string, lines: ResolvedLine[]) {
   return lines.map((line, position) => db.prepare(
-    `INSERT INTO fm_purchase_lines (id, capture_id, position, item_name, item_id, quantity, total_kamas, unit_price_kamas, contribution_id, price_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(crypto.randomUUID(), captureId, position, line.name.trim(), line.itemId, line.quantity, line.totalKamas, line.unitPriceKamas, line.contributionId, line.priceStatus));
+    `INSERT INTO fm_purchase_lines (id, capture_id, position, item_name, original_item_name, item_id, quantity, total_kamas, unit_price_kamas, contribution_id, price_status, counted)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(crypto.randomUUID(), captureId, position, line.name.trim(), line.readName, line.itemId, line.quantity, line.totalKamas, line.unitPriceKamas, line.contributionId, line.priceStatus, line.counted ? 1 : 0));
 }

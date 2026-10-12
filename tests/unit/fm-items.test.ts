@@ -75,7 +75,9 @@ describe('attaching a session (US1)', () => {
     const sessionId = await session('42', 1000);
     const response = await attach(sessionId, item.id);
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ fmItem: { id: item.id, name: 'Rtograf PA', owner: { displayName: 'Cyril' } }, canAttach: false, canDetach: true });
+    expect(await response.json()).toMatchObject({
+      fmItem: { id: item.id, name: 'Rtograf PA', imageUrl: rtograf.imageUrl, owner: { displayName: 'Cyril' } }, canAttach: true, canDetach: true,
+    });
 
     const { sessions } = await (await fm.call('GET', '/fm/sessions', { token: cyril })).json() as { sessions: Session[] };
     expect(sessions[0].fmItem).toMatchObject({ id: item.id, name: 'Rtograf PA' });
@@ -116,17 +118,20 @@ describe('attaching a session (US1)', () => {
     expect((await attach('unknown', cyrilItem.id)).status).toBe(404);
   });
 
-  it('attaches a session to one item only: the first one wins', async () => {
-    const { createItem, session, attach } = await setup();
+  // specs/045-restore-production-worker (US3): the item is changed at any time; a session still has one only.
+  it('changes the item of a session already attached', async () => {
+    const { fm, cyril, createItem, session, attach } = await setup();
     const first = await createItem();
     const other = await createItem(undefined, { ...rtograf, label: 'Rtograf PO' });
     const sessionId = await session('42', 1000);
 
     expect((await attach(sessionId, first.id)).status).toBe(200);
-    expect((await attach(sessionId, first.id)).status).toBe(409);
+    expect((await attach(sessionId, first.id)).status).toBe(200);
     const second = await attach(sessionId, other.id);
-    expect(second.status).toBe(409);
-    expect(await second.json()).toEqual({ error: 'already-attached' });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toMatchObject({ fmItem: { id: other.id, name: 'Rtograf PO' }, fmItemSource: 'session' });
+    expect(await (await fm.call('GET', `/fm/items/${first.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 0, totalKamas: 0 });
+    expect(await (await fm.call('GET', `/fm/items/${other.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 1, totalKamas: 1000 });
   });
 
   // specs/030 (research R6): another player's session is not found, like an unknown one.
@@ -156,7 +161,7 @@ describe('attaching a session to a new item', () => {
 
     const response = await attachNew(fm, sessionId, cyril);
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou', owner: { displayName: 'Cyril' } }, canAttach: false, canDetach: true });
+    expect(await response.json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou', imageUrl: coiffe.imageUrl, owner: { displayName: 'Cyril' } }, canAttach: true, canDetach: true });
     const profile = await (await fm.call('GET', '/fm/players/42', { token: cyril })).json() as { fmItems: Item[] };
     expect(profile.fmItems).toMatchObject([{ itemName: 'Coiffe Bouftou', label: null, totalKamas: 1000, sessionCount: 1 }]);
   });
@@ -171,35 +176,35 @@ describe('attaching a session to a new item', () => {
     expect(itemCount(fm)).toBe(0);
   });
 
-  it('creates nothing for a session already attached, by hand or through its channel', async () => {
+  // specs/045-restore-production-worker (US3): a new item replaces the one the session had.
+  it('replaces the item of a session already attached, which keeps existing', async () => {
     const { fm, cyril, createItem, session, attach } = await setup();
     const item = await createItem();
     const attached = await session('42', 1000);
     await attach(attached, item.id);
-    const conflict = await attachNew(fm, attached, cyril);
-    expect(conflict.status).toBe(409);
-    expect(await conflict.json()).toEqual({ error: 'already-attached' });
 
-    const inChannel = await session('42', 1000, [doAirLine], 'channel-perso');
-    fm.sqlite.prepare("INSERT INTO fm_channels (channel_id, channel_name, owner_discord_user_id, status, fm_item_id, created_at) VALUES ('channel-perso', 'fm-perso', '42', 'active', ?, '2026-09-30T10:00:00.000Z')").run(item.id);
-    expect((await attachNew(fm, inChannel, cyril)).status).toBe(409);
-    expect(itemCount(fm)).toBe(1);
+    const replaced = await attachNew(fm, attached, cyril);
+    expect(replaced.status).toBe(200);
+    expect(await replaced.json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou' }, fmItemSource: 'session' });
+    expect(itemCount(fm)).toBe(2);
   });
 
-  // research R4, FR-012: attached by another click between the checks and the batch.
-  it('removes the new item again when the session was attached in the meantime', async () => {
+  it('gives the item to the whole channel when the session is in one of the player\'s own', async () => {
     const { fm, cyril, createItem, session } = await setup();
     const item = await createItem();
-    const sessionId = await session('42', 1000);
-    const batch = fm.d1.batch.bind(fm.d1);
-    fm.d1.batch = async (statements) => {
-      fm.sqlite.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ?').run(item.id, sessionId);
-      return batch(statements);
-    };
+    const first = await session('42', 1000, [doAirLine], 'channel-perso');
+    const second = await session('42', 500, [doAirLine], 'channel-perso');
+    fm.sqlite.prepare("INSERT INTO fm_channels (channel_id, channel_name, owner_discord_user_id, status, fm_item_id, created_at) VALUES ('channel-perso', 'fm-perso', '42', 'active', ?, '2026-09-30T10:00:00.000Z')").run(item.id);
 
-    const conflict = await attachNew(fm, sessionId, cyril);
-    expect(conflict.status).toBe(409);
-    expect(fm.query<{ id: string }>('SELECT id FROM fm_items')).toEqual([{ id: item.id }]);
+    const changed = await attachNew(fm, first, cyril);
+    expect(await changed.json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou' }, fmItemSource: 'channel', canDetach: true });
+    expect(await (await fm.call('GET', `/fm/sessions/${second}`, { token: cyril })).json()).toMatchObject({ fmItem: { name: 'Coiffe Bouftou' }, fmItemSource: 'channel' });
+    expect(fm.query('SELECT fm_item_id FROM fm_sessions')).toEqual([{ fm_item_id: null }, { fm_item_id: null }]);
+
+    // Removing it from one session removes it from the channel.
+    const removed = await fm.call('DELETE', `/fm/sessions/${second}/item`, { token: cyril });
+    expect(await removed.json()).toMatchObject({ fmItem: null, canDetach: false });
+    expect(fm.query('SELECT fm_item_id FROM fm_channels')).toEqual([{ fm_item_id: null }]);
   });
 
   it('creates nothing for another player\'s session, answered like an unknown one', async () => {

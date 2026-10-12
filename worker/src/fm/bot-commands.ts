@@ -13,21 +13,23 @@ export function isBotAuthorized(request: Request, env: FmEnv): boolean {
 }
 
 type CommandRow = {
-  id: string; type: 'open' | 'close' | 'create-channel'; channel_id: string | null; channel_name: string | null;
+  id: string; type: 'open' | 'close' | 'create-channel' | 'archive-channel' | 'reopen-channel'; channel_id: string | null; channel_name: string | null;
   player_id: string | null; display_name: string | null; label: string | null; item_name: string | null; requested_name: string | null;
 };
 
 export async function listCommands(request: Request, env: FmEnv): Promise<Response> {
   if (!isBotAuthorized(request, env)) return unauthorized();
-  // open / close: the session's owner and item; create-channel (specs/029): the requester and the item chosen.
+  // open / close: the session's owner and item; create-channel (specs/029): the requester and the item chosen;
+  // archive-channel / reopen-channel (specs/033): the channel itself, named from `fm_channels`.
   const { results } = await env.DB.prepare(
-    `SELECT c.id, c.type, c.channel_id, s.channel_name, c.requested_name,
+    `SELECT c.id, c.type, c.channel_id, COALESCE(s.channel_name, ch.channel_name) AS channel_name, c.requested_name,
             COALESCE(s.owner_discord_user_id, c.requester_discord_user_id) AS player_id, p.display_name,
             i.label, i.item_name
      FROM fm_bot_commands c
      LEFT JOIN fm_sessions s ON s.id = c.session_id
      LEFT JOIN fm_players p ON p.discord_user_id = COALESCE(s.owner_discord_user_id, c.requester_discord_user_id)
-     LEFT JOIN fm_items i ON i.id = COALESCE(s.fm_item_id, c.fm_item_id)
+     LEFT JOIN fm_channels ch ON ch.channel_id = c.channel_id
+     LEFT JOIN fm_items i ON i.id = COALESCE(s.fm_item_id, ch.fm_item_id, c.fm_item_id)
      WHERE c.status = 'pending'
      ORDER BY c.created_at, c.rowid`,
   ).all<CommandRow>();
@@ -41,6 +43,7 @@ export async function listCommands(request: Request, env: FmEnv): Promise<Respon
         return { id: row.id, type: row.type, guildId: env.DISCORD_GUILD_ID ?? null, name: row.requested_name, player: player(row), item: item(row) };
       }
       if (row.type === 'open') return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name, player: player(row), item: item(row) };
+      if (row.type === 'reopen-channel') return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name, player: player(row) };
       return { id: row.id, type: row.type, channelId: row.channel_id, channelName: row.channel_name };
     }),
   });
@@ -54,7 +57,7 @@ export async function acknowledgeCommand(request: Request, env: FmEnv, commandId
   const error = status === 'failed' && isRecord(body) && typeof body.error === 'string' ? body.error.trim().slice(0, MAX_ERROR_LENGTH) || null : null;
 
   const command = await env.DB.prepare('SELECT id, type, session_id, status FROM fm_bot_commands WHERE id = ?')
-    .bind(commandId).first<{ id: string; type: 'open' | 'close' | 'create-channel'; session_id: string | null; status: string }>();
+    .bind(commandId).first<{ id: string; type: CommandRow['type']; session_id: string | null; status: string }>();
   // specs/029: a created channel's id, given back with a successful create-channel.
   const channelId = isRecord(body) && typeof body.channelId === 'string' && body.channelId ? body.channelId : null;
   if (!command) return json({ error: 'Not found' }, 404);

@@ -32,7 +32,7 @@ describe('GET /fm/auth/login', () => {
     const location = await startLogin(fm);
 
     expect(`${location.origin}${location.pathname}`).toBe('https://discord.com/oauth2/authorize');
-    expect(location.searchParams.get('scope')).toBe('identify guilds.members.read');
+    expect(location.searchParams.get('scope')).toBe('identify guilds guilds.members.read');
     expect(location.searchParams.get('client_id')).toBe('client-id');
     expect(location.searchParams.get('redirect_uri')).toBe('https://api.test/fm/auth/callback');
     expect(fm.query('SELECT state FROM fm_oauth_states')).toEqual([{ state: location.searchParams.get('state') }]);

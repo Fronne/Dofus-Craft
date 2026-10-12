@@ -145,21 +145,26 @@ describe('a whole channel attached to an item (FR-011 to FR-013)', () => {
     expect(recap).toMatchObject({ totalKamas: 150000, sessionCount: 2 });
     expect(recap.sessions.map((entry) => entry.id).sort()).toEqual([past, future].sort());
     expect(await (await fm.call('GET', `/fm/sessions/${past}`, { token: cyril })).json())
-      .toMatchObject({ fmItem: { id: rtograf.id }, fmItemSource: 'channel', canAttach: false, canDetach: false });
+      .toMatchObject({ fmItem: { id: rtograf.id }, fmItemSource: 'channel', canAttach: true, canDetach: true });
   });
 
-  it('keeps a session attached by hand to its own item', async () => {
+  // specs/045-restore-production-worker (US3): in a channel of the player's own, the item is the channel's.
+  it('gives the channel the item chosen on one of its sessions', async () => {
     const { fm, cyril, created, item, session } = await setup();
     await created('c1');
     const pa = await item(cyril, 'Rtograf PA');
     const po = await item(cyril, 'Rtograf PO');
-    const byHand = await session('c1');
-    await fm.call('PUT', `/fm/sessions/${byHand}/item`, { token: cyril, body: { fmItemId: po.id } });
-    await fm.call('PUT', '/fm/channels/c1/item', { token: cyril, body: { fmItemId: pa.id } });
+    const first = await session('c1');
+    const other = await session('c1');
+    await fm.call('PUT', `/fm/sessions/${first}/item`, { token: cyril, body: { fmItemId: po.id } });
 
-    expect(await (await fm.call('GET', `/fm/sessions/${byHand}`, { token: cyril })).json()).toMatchObject({ fmItem: { id: po.id }, fmItemSource: 'session' });
-    expect(await (await fm.call('GET', `/fm/items/${pa.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 0 });
-    expect(await (await fm.call('GET', `/fm/items/${po.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 1 });
+    expect(await (await fm.call('GET', `/fm/sessions/${other}`, { token: cyril })).json()).toMatchObject({ fmItem: { id: po.id }, fmItemSource: 'channel' });
+    expect(await (await fm.call('GET', `/fm/items/${po.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 2 });
+
+    await fm.call('PUT', '/fm/channels/c1/item', { token: cyril, body: { fmItemId: pa.id } });
+    expect(await (await fm.call('GET', `/fm/sessions/${first}`, { token: cyril })).json()).toMatchObject({ fmItem: { id: pa.id }, fmItemSource: 'channel' });
+    expect(await (await fm.call('GET', `/fm/items/${pa.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 2 });
+    expect(await (await fm.call('GET', `/fm/items/${po.id}`, { token: cyril })).json()).toMatchObject({ sessionCount: 0 });
   });
 
   it('detaches a channel, and lets only its owner change it', async () => {

@@ -1,7 +1,7 @@
 import { isRecord, json, nowIso, readJson, type FmDb } from './http';
 import { isPriceableItemId } from './item-names';
 import {
-  clearCachedReadsIfPriced, isItemName, isKamasInteger, MAX_LINES, purchaseLineStatements, recordLinePrice,
+  clearCachedReadsIfPriced, isItemName, isKamasInteger, isRuneName, MAX_LINES, purchaseLineStatements, recordLinePrice,
   unitPriceKamas, type ResolvedLine,
 } from './purchases';
 
@@ -50,6 +50,9 @@ export async function handleImport(request: Request, db: FmDb, discordUserId: st
       : { priceStatus: 'personal-mode' as const, contributionId: undefined };
     resolved.push({
       name: line.itemName,
+      // The player checked the lines on the site: nothing is recovered from a misread name (specs/038).
+      readName: null,
+      counted: isRuneName(line.itemName),
       quantity: line.quantity,
       totalKamas: line.totalKamas,
       itemId: line.itemId,
@@ -61,7 +64,7 @@ export async function handleImport(request: Request, db: FmDb, discordUserId: st
   clearCachedReadsIfPriced(resolved);
 
   const captureId = crypto.randomUUID();
-  const spentKamas = resolved.reduce((total, line) => total + line.totalKamas, 0);
+  const spentKamas = resolved.reduce((total, line) => total + (line.counted ? line.totalKamas : 0), 0);
   await db.batch([
     db.prepare(`INSERT INTO fm_captures (id, session_id, discord_user_id, origin, spent_kamas, server_id, created_at) VALUES (?, ?, ?, 'capture', ?, ?, ?)`)
       .bind(captureId, sessionId, discordUserId, spentKamas, serverId, nowIso()),

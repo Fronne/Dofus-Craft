@@ -2,13 +2,15 @@ import { isRecord, json, noContent, readJson, type FmDb } from './http';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): the logged-in player's own profile.
 
-type MeRow = { discord_user_id: string; display_name: string; avatar_url: string | null; server_id: string | null; is_private: number; first_login_at: string | null };
+type MeRow = { discord_user_id: string; display_name: string; avatar_url: string | null; server_id: string | null; is_private: number; first_login_at: string | null; guild_name: string | null };
 
 const MAX_SERVER_ID_LENGTH = 64;
 
 async function readMe(db: FmDb, discordUserId: string) {
   const row = await db.prepare(
-    'SELECT discord_user_id, display_name, avatar_url, server_id, is_private, first_login_at FROM fm_players WHERE discord_user_id = ?',
+    `SELECT discord_user_id, display_name, avatar_url, server_id, is_private, first_login_at,
+            (SELECT name FROM fm_guild WHERE id = 'current') AS guild_name
+     FROM fm_players WHERE discord_user_id = ?`,
   ).bind(discordUserId).first<MeRow>();
   if (!row) return undefined;
   return {
@@ -18,6 +20,7 @@ async function readMe(db: FmDb, discordUserId: string) {
     serverId: row.server_id,
     isPrivate: row.is_private === 1,
     firstLoginAt: row.first_login_at,
+    guildName: row.guild_name,
   };
 }
 

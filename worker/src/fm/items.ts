@@ -1,4 +1,4 @@
-import { isRecord, json, noContent, nowIso, readJson, type FmDb } from './http';
+import { isRecord, json, noContent, nowIso, readJson, type FmDb, type FmStatement } from './http';
 import { effectiveItemSql, ITEMS_SELECT, itemSummaries, ownedItems, placeholders, SESSION_COLUMNS, sessionDetail, withPlayers, type ItemRow, type SessionRow } from './reads';
 
 // specs/027-fm-item-recap (contracts/fm-items-api.md): the items a player forgemages ("objets en FM"),
@@ -31,6 +31,14 @@ function parseItemInput(value: unknown): ItemInput | undefined {
   return { itemId, itemName: itemName.trim(), imageUrl: (imageUrl as string | null | undefined) ?? null, label: label.label };
 }
 
+// An equipment chosen in place of an existing item: a new item, without a label.
+export const parseNewItem = (value: unknown) => (isRecord(value) ? parseItemInput({ ...value, label: null }) : undefined);
+
+export const insertItemStatement = (db: FmDb, id: string, viewerId: string, item: ItemInput): FmStatement =>
+  db.prepare(
+    `INSERT INTO fm_items (id, owner_discord_user_id, item_id, item_name, item_image_url, label, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, viewerId, item.itemId, item.itemName, item.imageUrl, item.label, nowIso());
+
 async function ownItem(db: FmDb, viewerId: string, id: string) {
   const [item] = await ownedItems(db, viewerId, 'i.id = ? AND i.owner_discord_user_id = ?', id, viewerId);
   return item;
@@ -44,9 +52,7 @@ export async function createItem(request: Request, db: FmDb, viewerId: string): 
     return json({ error: `itemId (digits), itemName (1 to ${MAX_ITEM_NAME_LENGTH} characters), imageUrl (${ICON_PREFIX}… or null) and an optional label (1 to ${MAX_LABEL_LENGTH} characters) are required` }, 400);
   }
   const id = crypto.randomUUID();
-  await db.prepare(
-    `INSERT INTO fm_items (id, owner_discord_user_id, item_id, item_name, item_image_url, label, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, viewerId, input.itemId, input.itemName, input.imageUrl, input.label, nowIso()).run();
+  await insertItemStatement(db, id, viewerId, input).run();
   return json(await ownItem(db, viewerId, id), 201);
 }
 
@@ -98,55 +104,47 @@ export async function readItemRecap(db: FmDb, viewerId: string, id: string): Pro
   });
 }
 
+// specs/032 (FR-022 to FR-024): the item is chosen, changed or removed at any time. In one of the viewer's
+// own channels it is the channel's — every session of the channel follows; elsewhere it is the session's.
+type ItemTarget = { id: string; channel_id: string; own_channel: number | null };
+
+async function itemTarget(db: FmDb, viewerId: string, sessionId: string) {
+  return db.prepare(
+    `SELECT s.id, s.channel_id,
+            (SELECT 1 FROM fm_channels ch WHERE ch.channel_id = s.channel_id AND ch.owner_discord_user_id = ?) AS own_channel
+     FROM fm_sessions s WHERE s.id = ? AND s.owner_discord_user_id = ?`,
+  ).bind(viewerId, sessionId, viewerId).first<ItemTarget>();
+}
+
+export function sessionItemStatements(db: FmDb, target: ItemTarget, fmItemId: string | null): FmStatement[] {
+  return target.own_channel
+    ? [
+      db.prepare('UPDATE fm_channels SET fm_item_id = ? WHERE channel_id = ?').bind(fmItemId, target.channel_id),
+      db.prepare('UPDATE fm_sessions SET fm_item_id = NULL WHERE channel_id = ?').bind(target.channel_id),
+    ]
+    : [db.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ?').bind(fmItemId, target.id)];
+}
+
 export async function attachSession(request: Request, db: FmDb, viewerId: string, sessionId: string): Promise<Response> {
   const body = await readJson(request);
   const fmItemId = isRecord(body) && typeof body.fmItemId === 'string' ? body.fmItemId : undefined;
   // specs/031-fm-session-captures (FR-011): or an equipment, for which a new item is created.
-  const newItem = isRecord(body) && fmItemId === undefined && isRecord(body.item) ? parseItemInput({ ...body.item, label: null }) : undefined;
+  const newItem = isRecord(body) && fmItemId === undefined ? parseNewItem(body.item) : undefined;
   if (!fmItemId && !newItem) return json({ error: 'fmItemId, or item (itemId, itemName and imageUrl as for a new item), is required' }, 400);
   // specs/030 FR-004: the viewer attaches only their own session, to their own item.
-  const session = await db.prepare('SELECT id, fm_item_id FROM fm_sessions WHERE id = ? AND owner_discord_user_id = ?')
-    .bind(sessionId, viewerId).first<{ id: string; fm_item_id: string | null }>();
-  if (!session || (fmItemId && !(await ownItem(db, viewerId, fmItemId)))) return notFound();
-  // FR-006: an attached session, even to this very item, is refused.
-  if (session.fm_item_id !== null) return json({ error: 'already-attached' }, 409);
-  // specs/029: a session of a channel attached to an item already counts for that item.
-  const channelItem = await db.prepare(
-    'SELECT ch.fm_item_id FROM fm_channels ch JOIN fm_sessions s ON s.channel_id = ch.channel_id WHERE s.id = ? AND ch.fm_item_id IS NOT NULL',
-  ).bind(sessionId).first();
-  if (channelItem) return json({ error: 'already-attached' }, 409);
-
-  // research R2: the condition in the same statement makes « the first one to attach wins » safe.
-  const attachStatement = (id: string) => db.prepare('UPDATE fm_sessions SET fm_item_id = ? WHERE id = ? AND fm_item_id IS NULL').bind(id, sessionId);
-  let targetId: string;
-  if (fmItemId) {
-    targetId = fmItemId;
-    await attachStatement(targetId).run();
-  } else {
-    // specs/031 (research R4, FR-012): one batch — a transaction — creates the item, attaches the
-    // session, and removes the item again if the session was attached in the meantime.
-    targetId = crypto.randomUUID();
-    const item = newItem!;
-    await db.batch([
-      db.prepare(
-        `INSERT INTO fm_items (id, owner_discord_user_id, item_id, item_name, item_image_url, label, created_at) VALUES (?, ?, ?, ?, ?, NULL, ?)`,
-      ).bind(targetId, viewerId, item.itemId, item.itemName, item.imageUrl, nowIso()),
-      attachStatement(targetId),
-      db.prepare('DELETE FROM fm_items WHERE id = ? AND NOT EXISTS (SELECT 1 FROM fm_sessions WHERE fm_item_id = ?)').bind(targetId, targetId),
-    ]);
-  }
-  const attached = await db.prepare('SELECT fm_item_id FROM fm_sessions WHERE id = ?').bind(sessionId).first<{ fm_item_id: string | null }>();
-  if (attached?.fm_item_id !== targetId) return json({ error: 'already-attached' }, 409);
+  const target = await itemTarget(db, viewerId, sessionId);
+  if (!target || (fmItemId && !(await ownItem(db, viewerId, fmItemId)))) return notFound();
+  const targetId = fmItemId ?? crypto.randomUUID();
+  await db.batch([
+    ...(newItem ? [insertItemStatement(db, targetId, viewerId, newItem)] : []),
+    ...sessionItemStatements(db, target, targetId),
+  ]);
   return json(await sessionDetail(db, viewerId, sessionId));
 }
 
 export async function detachSession(db: FmDb, viewerId: string, sessionId: string): Promise<Response> {
-  const row = await db.prepare(
-    `SELECT s.fm_item_id, i.owner_discord_user_id FROM fm_sessions s LEFT JOIN fm_items i ON i.id = s.fm_item_id
-     WHERE s.id = ? AND s.owner_discord_user_id = ?`,
-  ).bind(sessionId, viewerId).first<{ fm_item_id: string | null; owner_discord_user_id: string | null }>();
-  // specs/030 (research R6): the session and its item must both be the viewer's, or it is not found.
-  if (!row || !row.fm_item_id || row.owner_discord_user_id !== viewerId) return notFound();
-  await db.prepare('UPDATE fm_sessions SET fm_item_id = NULL WHERE id = ? AND fm_item_id = ?').bind(sessionId, row.fm_item_id).run();
+  const target = await itemTarget(db, viewerId, sessionId);
+  if (!target) return notFound();
+  await db.batch(sessionItemStatements(db, target, null));
   return json(await sessionDetail(db, viewerId, sessionId));
 }

@@ -1,4 +1,5 @@
 import { isRecord, json, nowIso, readJson, type FmDb } from './http';
+import { insertItemStatement, parseNewItem } from './items';
 
 // specs/029-channel-ownership (contracts/fm-channels-api.md): a player's personal FM channels, created by the
 // Discord bot (bot-events.ts), asking the bot to create one from the site, and attaching a whole channel
@@ -56,6 +57,9 @@ export async function requestChannel(request: Request, db: FmDb, viewerId: strin
   const name = isRecord(body) && typeof body.name === 'string' ? body.name.trim() : '';
   const fmItemId = isRecord(body) && typeof body.fmItemId === 'string' && body.fmItemId ? body.fmItemId : null;
   if (!name || name.length > MAX_NAME_LENGTH) return json({ error: `name must be 1 to ${MAX_NAME_LENGTH} characters` }, 400);
+  // specs/032: or an equipment, for which a new item is created with the channel's request.
+  const newItem = !fmItemId && isRecord(body) && body.item !== undefined && body.item !== null ? parseNewItem(body.item) : null;
+  if (newItem === undefined) return json({ error: 'item (itemId, itemName and imageUrl as for a new item) is invalid' }, 400);
   if (fmItemId && !(await ownItem(db, viewerId, fmItemId))) return notFound();
 
   const used = await db.prepare(
@@ -65,10 +69,14 @@ export async function requestChannel(request: Request, db: FmDb, viewerId: strin
   if ((used?.n ?? 0) >= MAX_ACTIVE_CHANNELS) return json({ error: 'channel-limit' }, 409);
 
   const requestId = crypto.randomUUID();
-  await db.prepare(
-    `INSERT INTO fm_bot_commands (id, type, status, created_at, requested_name, requester_discord_user_id, fm_item_id)
-     VALUES (?, 'create-channel', 'pending', ?, ?, ?, ?)`,
-  ).bind(requestId, nowIso(), name, viewerId, fmItemId).run();
+  const newItemId = newItem ? crypto.randomUUID() : null;
+  await db.batch([
+    ...(newItem ? [insertItemStatement(db, newItemId!, viewerId, newItem)] : []),
+    db.prepare(
+      `INSERT INTO fm_bot_commands (id, type, status, created_at, requested_name, requester_discord_user_id, fm_item_id)
+       VALUES (?, 'create-channel', 'pending', ?, ?, ?, ?)`,
+    ).bind(requestId, nowIso(), name, viewerId, newItemId ?? fmItemId),
+  ]);
   return json({ requestId }, 202);
 }
 
