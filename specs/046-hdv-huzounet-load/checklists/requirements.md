@@ -33,6 +33,5 @@
 
 - Les tailles de tranche et délais cités (90 objets, cinq secondes, deux minutes) sont les règles de
   l'API existante (fonctionnalité 045), reprises comme contraintes et non comme choix d'implémentation.
-- Trois hypothèses sont à faire confirmer par le joueur avant le plan : bouton réservé au Mode
-  communautaire, chargement limité aux objets retenus par les filtres, et poids d'un chargement complet de
-  l'onglet Ressources chez Huzounet (voir « Assumptions »).
+- Les trois points ouverts (portée du bouton, plafond, Mode personnel) ont été tranchés le 12 octobre :
+  voir « Clarifications » dans la spec.

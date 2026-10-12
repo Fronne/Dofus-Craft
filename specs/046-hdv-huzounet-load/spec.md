@@ -21,6 +21,17 @@ centaines d'objets, il veut pouvoir demander en une fois les prix de l'onglet qu
 Tailles des onglets au 12 octobre 2026 : Ressources 2 537 objets, Consommables 128, Créatures 35,
 Runes 105.
 
+## Clarifications
+
+### Session 2026-10-12
+
+- Q: Que charge le bouton : les objets retenus par les filtres, ou tout l'onglet ? → A: Toujours tout
+  l'onglet, quels que soient les filtres.
+- Q: Faut-il plafonner le nombre d'objets par clic (l'onglet Ressources en compte 2 537) ? → A: Non, pas
+  de plafond : un clic charge l'onglet entier.
+- Q: Que fait le bouton en Mode personnel ? → A: Il est inactif, avec l'explication ; le carnet personnel
+  n'est jamais modifié.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Charger les prix de l'onglet affiché (Priority: P1)
@@ -49,8 +60,8 @@ les prix reçus apparaissent dans la liste et dans le compteur « N objets sur M
 4. **Given** un chargement terminé où rien n'a changé (tout a été lu il y a moins de deux minutes),
    **When** il s'achève, **Then** le joueur lit que les prix sont déjà à jour.
 5. **Given** un filtre actif (recherche, type ou stat, « Sans prix », « Prix ancien »), **When** le joueur
-   clique sur le bouton, **Then** seuls les objets que le filtre retient sont demandés, et le libellé du
-   bouton annonce ce nombre avant le clic.
+   clique sur le bouton, **Then** tous les objets de l'onglet sont demandés, pas seulement ceux que le
+   filtre retient ; le bouton annonce ce nombre avant le clic.
 6. **Given** chacun des quatre onglets, **When** le joueur l'ouvre, **Then** le bouton y est présent et
    porte sur les objets de cet onglet uniquement.
 
@@ -139,8 +150,8 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
 3. **Given** un serveur que le site croit relu mais que l'API refuse, **When** le joueur clique,
    **Then** il lit « Les prix de ce serveur ne sont pas relus » et le chargement s'arrête à la première
    tranche.
-4. **Given** aucun objet retenu par les filtres, **When** la page s'affiche, **Then** le bouton est
-   inactif.
+4. **Given** des filtres qui ne retiennent aucun objet, **When** la page s'affiche, **Then** le bouton
+   reste actif : il porte sur tout l'onglet.
 
 ### Edge Cases
 
@@ -154,8 +165,7 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
 - Le joueur saisit un prix sur une ligne pendant le chargement : sa saisie n'est ni perdue ni écrasée par
   l'arrivée d'une tranche.
 - L'onglet Créatures (35 objets) tient en une seule tranche : la progression passe directement à la fin.
-- Le filtre change pendant un chargement : le chargement continue sur les objets retenus au moment du
-  clic.
+- Le filtre change pendant un chargement : le chargement continue, il ne dépend pas des filtres.
 - La liste des objets de l'onglet n'a pas pu être chargée (état déjà géré par la page) : le bouton n'est
   pas proposé.
 
@@ -164,8 +174,9 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
 ### Functional Requirements
 
 - **FR-001**: La page HDV DOIT proposer, dans chacun de ses quatre onglets, une action « Charger depuis
-  Huzounet » portant sur les objets de l'onglet que les filtres actifs retiennent.
-- **FR-002**: Le libellé de l'action DOIT annoncer avant le clic le nombre d'objets concernés.
+  Huzounet » portant sur tous les objets de l'onglet, quels que soient les filtres actifs.
+- **FR-002**: L'action DOIT annoncer avant le clic le nombre d'objets de l'onglet, et, au-delà d'une
+  tranche, que le chargement prend du temps (durée approximative).
 - **FR-003**: Le chargement DOIT demander les objets par tranches de 90 au plus, l'une après l'autre, en
   laissant au moins cinq secondes entre deux demandes.
 - **FR-004**: Pendant un chargement, la page DOIT afficher une progression (objets traités sur objets à
@@ -183,7 +194,7 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
   injoignable) DOIT arrêter le chargement avec un message propre à sa cause, sans redemande automatique.
 - **FR-010**: Un seul chargement DOIT pouvoir tourner à la fois sur la page.
 - **FR-011**: L'action DOIT être inactive, avec la raison lisible, en Mode personnel, sur un serveur non
-  relu, et quand aucun objet n'est retenu ; dans ces cas aucune demande n'est envoyée.
+  relu ; dans ces cas aucune demande n'est envoyée.
 - **FR-012**: En Mode communautaire, le prix affiché d'un objet DOIT être le plus récent entre le dernier
   prix partagé par le groupe et le prix lu sur Huzounet, y compris pour un objet que seul Huzounet
   tarifie.
@@ -229,12 +240,12 @@ que Mikhal, et vérifier l'état du bouton et l'explication donnée, sans aucun 
   du carnet personnel. Copier ces prix dans le carnet personnel n'est pas demandé.
 - Seul le serveur Mikhal est relu aujourd'hui ; la liste des serveurs relus est connue du site et se
   change au même endroit que dans l'API.
-- Charger « l'onglet » signifie charger les objets que les filtres actifs retiennent ; sans filtre, tout
-  l'onglet. Cela limite le nombre de lectures faites chez Huzounet à ce que le joueur regarde.
-- L'onglet Ressources entier représente environ 29 demandes à l'API et 57 lectures chez Huzounet par
-  clic. C'est dans les limites que l'API applique déjà (fonctionnalité 045), mais c'est plus qu'un passage
-  de nuit complet : si l'auteur de Huzounet le juge trop lourd, le remède est de plafonner le nombre
-  d'objets par chargement, sans changer le reste.
+- Charger « l'onglet » signifie charger tous ses objets, sans plafond (décision du 12 octobre). L'onglet
+  Ressources entier représente environ 29 demandes à l'API et 57 lectures chez Huzounet par clic, en trois
+  minutes environ. C'est dans les limites que l'API applique déjà (fonctionnalité 045) — une lecture par
+  seconde au plus, rien de redemandé avant deux minutes — mais c'est plus qu'un passage de nuit complet :
+  si l'auteur de Huzounet le juge trop lourd, le remède sera un plafond par chargement, sans changer le
+  reste.
 - Les autres écrans perdus (fonctionnalités 032 à 044), dont le bouton d'actualisation de la page
   Recherche, sont hors périmètre ; ce qui est écrit ici pour lire les prix externes est fait pour leur
   resservir.
