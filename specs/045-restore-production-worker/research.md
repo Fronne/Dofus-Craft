@@ -51,12 +51,18 @@
   `/external-prices/refresh` en production répond 400 à un corps invalide, et non 503.
   La fréquence du passage planifié n'est pas lisible dans le code : il distingue le cron de purge
   (`0 3 * * MON`) de tout autre déclenchement. La valeur exacte est à relever dans le tableau de bord
-  Cloudflare (Worker, Settings, Trigger Events) avant tout déploiement. Une valeur provisoire est
-  écrite dans `wrangler.toml`, marquée « à confirmer ».
+  Cloudflare (Worker, Settings, Trigger Events) avant tout déploiement.
+  Relevé le 12 octobre : le tableau de bord affiche « Every 5 minutes, between 02:00 AM and … » (texte
+  coupé), et la base de production le confirme — les prix y sont écrits à 02:00, 02:05, 02:10… UTC, la
+  lecture du lundi 12 (jour de découverte, la plus longue) s'étant terminée à 02:50. `wrangler.toml`
+  porte donc `*/5 2-4 * * *` : le début et le pas sont vérifiés, l'heure de fin (4) ne l'est pas. Elle
+  est sans effet sur Huzounet : une lecture du jour terminée n'est pas recommencée.
 - **Rationale**: déployer avec une fréquence différente changerait le nombre de lectures faites chez
   Huzounet, ce que l'autorisation de son auteur encadre.
 - **Alternatives considered**: déduire la fréquence de `external_price_sync` (une ligne par serveur et
-  par jour : ne donne pas l'intervalle).
+  par jour : ne donne pas l'intervalle) ; c'est `external_prices.fetched_at` qui la donne. La fenêtre
+  de modification du tableau de bord, elle, affiche une valeur par défaut (`*/30 * * * *`) et non le
+  déclencheur en place.
 
 ## R6 — Fichiers de données
 

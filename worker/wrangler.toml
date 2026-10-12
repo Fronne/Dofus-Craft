@@ -13,11 +13,12 @@ database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 # FR-013). Weekly is plenty: expired rows are already ignored at read time in between.
 [triggers]
 # specs/045-restore-production-worker: every other trigger reads Huzounet's prices (src/huzounet.ts), 12
-# requests at most a run. FREQUENCY TO CONFIRM in the Cloudflare dashboard (Worker > Settings > Trigger
-# Events) before any deploy: the production value is not readable from the deployed code (research R5).
-# Seen there on 2026-10-12: « every 5 minutes, between 02:00 AM and … » (UTC, end hour not read yet);
-# the value below is a placeholder until it is.
-crons = ["0 3 * * MON", "*/30 * * * *"]
+# requests at most a run: every 5 minutes from 02:00 UTC, as in production (research R5 — the prices in
+# the production database are written at 02:00, 02:05, … and a Monday's read ends around 02:50). A day's
+# read that is complete is not started again, so the runs after it ask Huzounet nothing. The END HOUR
+# (4) is not read from production: check it in the Cloudflare dashboard (Worker > Settings > Trigger
+# Events), a deploy replacing the triggers there.
+crons = ["0 3 * * MON", "*/5 2-4 * * *"]
 
 # At most 60 contributions per minute from one IP (worker/src/index.ts). A player filling a whole
 # recipe stays far below; a script flooding the median does not.

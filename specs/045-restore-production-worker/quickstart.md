@@ -30,8 +30,8 @@ migrations 0001 à 0015, et comparer leurs tables et colonnes à celles de la pr
 
 ## 5. Avant tout déploiement (hors de cette fonctionnalité)
 
-Relever la fréquence du passage planifié dans le tableau de bord Cloudflare et la confirmer dans
-`worker/wrangler.toml` (research R5).
+Comparer les déclencheurs du tableau de bord Cloudflare à ceux de `worker/wrangler.toml` (research R5) :
+un déploiement les remplace. Seule l'heure de fin du passage Huzounet reste à confirmer.
 
 ## Résultats
 
@@ -57,6 +57,6 @@ Relevés le 2026-10-12, sous Node 22.
 - **Structure de la base** : `tests/unit/worker-schema.test.ts` vérifie les tables et colonnes de
   `worker/schema.sql` et que les migrations 0007 à 0015 mènent aux mêmes tables Forgemagie et de prix
   externes.
-- **Reste à faire avant tout déploiement du Worker** : la fréquence du passage planifié. Relevé partiel
-  dans le tableau de bord : « toutes les 5 minutes, entre 02:00 et … » (UTC) ; l'heure de fin manque, et
-  `worker/wrangler.toml` porte encore une valeur provisoire (`*/30 * * * *`).
+- **Fréquence du passage planifié** : toutes les 5 minutes à partir de 02:00 UTC, vérifié dans la base de
+  production (research R5) ; `worker/wrangler.toml` porte `*/5 2-4 * * *`. Seule l'heure de fin n'est pas
+  relevée ; elle ne change pas le nombre de lectures faites chez Huzounet.
