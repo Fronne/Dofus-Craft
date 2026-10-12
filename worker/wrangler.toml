@@ -31,7 +31,7 @@ namespace_id = "1001"
 # specs/025-rune-purchase-import (page Forgemagie). Where the Discord login sends the player back
 # (research R3). For local work, override it in worker/.dev.vars: SITE_URL=http://localhost:5173
 [vars]
-SITE_URL = "https://dofus-craft.dofus-craft.workers.dev"
+SITE_URL = "https://dofus-craft.handy-apps.workers.dev"
 
 # Forgemagie secrets, not declared here — set each one with:
 #   wrangler secret put <NAME> --config worker/wrangler.toml

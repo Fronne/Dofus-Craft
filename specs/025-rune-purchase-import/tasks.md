@@ -34,7 +34,7 @@ Site dans `src/`, Worker dans `worker/src/` (code FM dans `worker/src/fm/`), scr
 **Purpose** : dépendance, configuration et scripts.
 
 - [X] T001 Ajouter la dépendance `tesseract.js` (dernière version majeure stable) dans package.json via `npm install tesseract.js`. Elle est **uniquement** importée dynamiquement (`await import('tesseract.js')`), jamais au chargement d'une page (research R9).
-- [X] T002 [P] Documenter dans worker/wrangler.toml, en commentaire comme `COMMUNITY_API_KEY`, les secrets `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID` et `FM_BOT_API_KEY` (commande `wrangler secret put … --config worker/wrangler.toml`), et ajouter la variable publique `SITE_URL = "https://dofus-craft.dofus-craft.workers.dev"` dans `[vars]` ; ajouter `worker/.dev.vars` à .gitignore s'il n'y est pas.
+- [X] T002 [P] Documenter dans worker/wrangler.toml, en commentaire comme `COMMUNITY_API_KEY`, les secrets `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID` et `FM_BOT_API_KEY` (commande `wrangler secret put … --config worker/wrangler.toml`), et ajouter la variable publique `SITE_URL = "https://dofus-craft.handy-apps.workers.dev"` dans `[vars]` ; ajouter `worker/.dev.vars` à .gitignore s'il n'y est pas.
 - [X] T003 [P] Ajouter le script `"worker:db:migrate-forgemagie"` dans package.json, sur le modèle de `worker:db:migrate-contribution-kind`, qui exécute `worker/migrations/0007_add_forgemagie.sql` sur la base distante.
 
 ---

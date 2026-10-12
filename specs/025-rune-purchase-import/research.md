@@ -64,7 +64,7 @@ dans l'en-tête `Authorization: Bearer <jeton>` pour les routes FM. Le Worker ne
 **SHA-256 du jeton**, avec une date d'expiration de 30 jours. La déconnexion supprime la ligne.
 
 **Rationale** :
-- Le site (`dofus-craft.dofus-craft.workers.dev`) et l'API
+- Le site (`dofus-craft.handy-apps.workers.dev`) et l'API
   (`dofus-craft-community-price-api.….workers.dev`) sont sur des origines différentes : un cookie de
   l'API serait un cookie tiers, bloqué par Safari et de plus en plus par Chrome. Un jeton porteur
   fonctionne partout, sans changer la configuration CORS (`Access-Control-Allow-Origin: *`,

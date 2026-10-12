@@ -23,7 +23,7 @@ database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 # TEAM_DOMAIN: https://<team-name>.cloudflareaccess.com ; POLICY_AUD: the application's AUD tag.
 [vars]
 TEAM_DOMAIN = "https://autumn-mouse-e57d.cloudflareaccess.com"
-POLICY_AUD = "559b66f2f253603d28cafa5bcd874c70609e3df91dccf2882b00af82b77f4cb5"
+POLICY_AUD = "416fd7bb648d27081356c08d8a7f84a39b711f231391483542b3ca041eba9928"
 
 # OWNER_EMAIL is a secret (a personal address, never committed):
 #   npx wrangler secret put OWNER_EMAIL --config admin-worker/wrangler.toml

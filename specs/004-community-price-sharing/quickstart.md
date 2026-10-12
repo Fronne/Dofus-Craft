@@ -275,7 +275,7 @@ bouton n'existait dans le DOM que lorsque `shareConsent === true`.
   écrits et devraient être exécutés dans un environnement où Chromium peut se lancer avant de
   considérer cette fonctionnalité entièrement validée.
 - Vérification manuelle du schéma (section ci-dessus) : ✅ exécutée en conditions réelles le
-  2026-09-16 contre le Worker effectivement déployé (`https://dofus-craft-community-price-api.dofus-craft.workers.dev`)
+  2026-09-16 contre le Worker effectivement déployé (`https://dofus-craft-community-price-api.handy-apps.workers.dev`)
   et sa base D1 : `GET /community-price` sans données renvoie 404 ; `POST`/`DELETE` sans la clé
   `COMMUNITY_API_KEY` renvoient 401 ; trois contributions valides (1000, 1100, 900) plus une valeur
   aberrante (1 000 000) donnent une médiane de 1000 kamas avec `sampleSize: 3` — la valeur
@@ -372,7 +372,7 @@ bouton n'existait dans le DOM que lorsque `shareConsent === true`.
   réelle `dofus-craft-community-prices` (1 ligne modifiée — le schéma, pas les données). Vérification
   `PRAGMA table_info` : colonne `device_id TEXT NOT NULL DEFAULT ''` bien présente.
 - Redéploiement du Worker (`npm run worker:deploy`, T010) : ✅ effectué
-  (`https://dofus-craft-community-price-api.dofus-craft.workers.dev`). Vérification manuelle en
+  (`https://dofus-craft-community-price-api.handy-apps.workers.dev`). Vérification manuelle en
   conditions réelles : un `POST /community-price` sans `deviceId` renvoie désormais `400` ; un envoi
   complet avec `deviceId` est accepté (`201`) et stocké avec la bonne valeur dans `device_id` ;
   contribution et clé de test nettoyées après vérification (`DELETE ... WHERE resource_id =
