@@ -205,6 +205,8 @@ describe('HDV page — loading a tab from Huzounet (specs/046)', { timeout: 30_0
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1500, { latestFragile }));
       await openHdv('community');
       await waitFor(() => expect(within(rowOf(CROQUETTE.name)!).getByText(mention)).toBeInTheDocument());
+      // Under the price it qualifies, not under the item type.
+      expect(within(rowOf(CROQUETTE.name)!).getByText(mention).closest('.price-under')).not.toBeNull();
     });
 
     it('says nothing of Huzounet when the group shared a more recent price', async () => {

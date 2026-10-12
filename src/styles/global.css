@@ -658,6 +658,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .price-line .price-input-cell { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: .35rem; width: 100%; justify-self: end; }
 .price-line .kamas-input-wrap { flex: 1; min-width: 0; }
 .price-resource-formatted { grid-column: 3; grid-row: 2; justify-self: end; text-align: right; color: var(--success); font-size: .85rem; font-weight: 700; }
+.price-under { grid-column: 3; grid-row: 2; justify-self: end; text-align: right; }
 .price-line em { grid-column: 1 / -1; }
 
 /* specs/015: on a craftable ingredient, which of buying or crafting is counted, with both unit amounts. */
@@ -1321,7 +1322,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   .card > img { max-width: 100px; max-height: 100px; }
   .price-line { grid-template-columns: 1fr 60px; }
   .price-line .price-input-cell { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; }
-  .price-resource-formatted { grid-column: 1 / -1; grid-row: auto; justify-self: start; text-align: left; }
+  .price-resource-formatted, .price-under { grid-column: 1 / -1; grid-row: auto; justify-self: start; text-align: left; }
   .pinned-price-migration-notice { margin: 0 var(--space-3) var(--space-3); flex-direction: column; align-items: flex-start; }
 }
 
@@ -1634,8 +1635,8 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-field { display: grid; justify-items: start; gap: var(--space-1); }
 .fm-field-label { font-weight: 700; }
 .fm-danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border); }
-.fm-rune-caption, .hdv-item-caption { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); white-space: normal; }
-.fm-origin { flex-basis: 100%; color: var(--gold-bright); font-size: .78rem; }
+.fm-rune-caption { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); white-space: normal; }
+.fm-origin { color: var(--gold-bright); font-size: .78rem; }
 .fm-import { margin: var(--space-4) 0; }
 .fm-dropzone { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-3) var(--space-4); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); color: var(--text-muted); }
 .fm-dropzone p { flex: 1 1 240px; margin: 0; font-size: .9rem; }

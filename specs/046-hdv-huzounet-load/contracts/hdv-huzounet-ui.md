@@ -36,8 +36,8 @@ la minute supérieure.
 
 ## Mention d'origine sur une ligne (Mode communautaire, tous les onglets)
 
-Sous le nom de l'objet, à la suite du type (ou de la stat pour une rune), dans le `span.fm-origin`
-existant :
+Sous le champ de prix de la ligne (et non plus à la suite du type ou de la stat), dans le
+`span.fm-origin` existant :
 
 | Dernier prix connu de l'API | Mention |
 |-----------------------------|---------|

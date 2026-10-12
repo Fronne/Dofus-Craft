@@ -52,13 +52,12 @@ function originLabel(mention: LatestMention): string {
   return mention.fragile ? `${label} · ${FRAGILE_LABELS[mention.fragile]}` : label;
 }
 
-function RuneCaption({ rune, mention }: { rune: RuneItem; mention?: LatestMention }) {
+function RuneCaption({ rune }: { rune: RuneItem }) {
   const asset = rune.characteristicId === null ? undefined : CHARACTERISTIC_ASSET_BY_ID[rune.characteristicId];
   return (
     <span className="hdv-item-type fm-rune-caption">
       {asset && <CharacteristicIcon asset={asset} size={16} />}
       {rune.statLabel}
-      {mention && <span className="fm-origin">{originLabel(mention)}</span>}
     </span>
   );
 }
@@ -291,30 +290,32 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
             ) : (
               <>
                 <ul className="hdv-list">
-                  {visible.map((item) => (
-                    <li key={item.id} className="hdv-row">
-                      <PriceEntryField
-                        resource={{ id: item.id, name: item.name, imageUrl: item.imageUrl }}
-                        quantity={1}
-                        // A unit price only: no « × 1 » subtotal repeating it.
-                        subtotalKamas={null}
-                        caption={item.rune
-                          ? <RuneCaption rune={item.rune} mention={mentionOf(item.id)} />
-                          : (
-                            <span className="hdv-item-type hdv-item-caption">
-                              {typeNames[String(item.typeId)]}
-                              {mentionOf(item.id)?.origin === 'external' && <span className="fm-origin">{originLabel(mentionOf(item.id)!)}</span>}
-                            </span>
-                          )}
-                        priceMode={priceMode}
-                        serverId={serverId}
-                        input={inputs[item.id]}
-                        onInput={(value) => setInputs((current) => ({ ...current, [item.id]: value }))}
-                        carnet={{ data: carnet, save, remove, loaded }}
-                        onSaved={onSaved}
-                      />
-                    </li>
-                  ))}
+                  {visible.map((item) => {
+                    const mention = mentionOf(item.id);
+                    // An item only tells « Huzounet »; a rune tells every origin (specs/026).
+                    const shownMention = item.rune || mention?.origin === 'external' ? mention : undefined;
+                    return (
+                      <li key={item.id} className="hdv-row">
+                        <PriceEntryField
+                          resource={{ id: item.id, name: item.name, imageUrl: item.imageUrl }}
+                          quantity={1}
+                          // A unit price only: no « × 1 » subtotal repeating it.
+                          subtotalKamas={null}
+                          caption={item.rune
+                            ? <RuneCaption rune={item.rune} />
+                            : <span className="hdv-item-type">{typeNames[String(item.typeId)]}</span>}
+                          // Under the price it qualifies, not under the type.
+                          underPrice={shownMention && <span className="fm-origin">{originLabel(shownMention)}</span>}
+                          priceMode={priceMode}
+                          serverId={serverId}
+                          input={inputs[item.id]}
+                          onInput={(value) => setInputs((current) => ({ ...current, [item.id]: value }))}
+                          carnet={{ data: carnet, save, remove, loaded }}
+                          onSaved={onSaved}
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
                 {visible.length < filtered.length && (
                   <div ref={endRef} className="profit-list-end" role="status">

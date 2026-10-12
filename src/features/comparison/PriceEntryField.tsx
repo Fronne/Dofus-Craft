@@ -20,6 +20,7 @@ export function PriceEntryField({
   retained,
   subtotalKamas,
   caption,
+  underPrice,
   onSaved,
 }: {
   resource: Resource;
@@ -39,6 +40,8 @@ export function PriceEntryField({
   subtotalKamas?: number | null;
   /** Shown instead of « × quantity » (HDV page: the item type). */
   caption?: ReactNode;
+  /** Shown under the price field (HDV page: where the price shown comes from). */
+  underPrice?: ReactNode;
   /** Called once a price has been written to, or removed from, the carnet. */
   onSaved?: (resourceId: string) => void;
 }) {
@@ -77,6 +80,7 @@ export function PriceEntryField({
         retained={retained}
         subtotalKamas={subtotalKamas}
         caption={caption}
+        underPrice={underPrice}
       />
     );
   }
@@ -91,6 +95,7 @@ export function PriceEntryField({
       retained={retained}
       subtotalKamas={subtotalKamas}
       caption={caption}
+      underPrice={underPrice}
     />
   );
 }
