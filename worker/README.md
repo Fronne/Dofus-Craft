@@ -41,6 +41,11 @@ npm run worker:db:migrate-forgemagie        # migration 0007, before deploying t
 npm run worker:db:migrate-fm-items          # migration 0008 (specs/027: items in FM), same rule
 npm run worker:db:migrate-site-sessions     # migration 0009 (specs/028: sessions started from the site)
 npm run worker:db:migrate-fm-channels       # migration 0010 (specs/029: personal FM channels)
+npm run worker:db:migrate-external-prices   # migration 0011 (specs/045: prices read from Huzounet)
+npm run worker:db:migrate-fm-guild          # migration 0012 (specs/045: the group's server name)
+npm run worker:db:migrate-line-corrections  # migration 0013 (specs/045: corrected capture lines)
+npm run worker:db:migrate-line-read-name    # migration 0014 (specs/045: name as read, lines that count)
+npm run worker:db:migrate-channel-commands  # migration 0015 (specs/045: archive / reopen a channel)
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
@@ -54,12 +59,36 @@ give the bot's author, with the `FM_BOT_API_KEY` value (privately). After a Dofu
 `node scripts/build-rune-items.mjs` rebuilds the rune list and the item-name index
 (`src/fm/priceable-items.json`).
 
+Migrations 0011 to 0015 were written back from the production database, which already has them:
+they are for a new database only.
+
+## Huzounet prices (specs/045-restore-production-worker)
+
+The Worker reads the HDV prices published by huzounet.fr, with its author's permission, for the
+server Mikhal only (`src/huzounet.ts`): 50 items a request, one request a second, 12 requests a
+scheduled run, carried on by a cursor from one run to the next. The prices are kept in
+`external_prices`, beside what the players share, and the most recent of both is the one the price
+reads give (`src/external-price.ts`). `POST /external-prices/refresh` reads up to 90 items on demand.
+`HUZOUNET_SYNC = "1"` in `wrangler.toml` turns both on; any other value turns them off.
+
+The second cron of `wrangler.toml` drives the scheduled read. **Check it against the Worker's
+triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
+
+## Same code as production
+
+The source of the Worker deployed on 2026-10-02 was lost and written back from the deployed code
+(specs/045). `bash scripts/compare-worker-bundle.sh` (Node 22) builds the Worker without deploying it
+and compares it to that deployed code, kept in `backups/production-2026-10-12/` (not committed): the
+only expected difference is the site's address in the `User-Agent` sent to Huzounet.
+
 ## Files
 
 - `src/index.ts` — the routes: anonymous reads `GET /community-price`, `GET /latest-price`
   (specs/016), `GET /item-prices` (specs/019), `GET /price-history` (specs/017, specs/018), `GET /info-message` (specs/020) and
   `GET /player-counters`; keyed writes
-  `POST /community-price` and `POST /visit`.
+  `POST /community-price`, `POST /visit` and `POST /external-prices/refresh` (specs/045).
+- `src/huzounet.ts`, `src/external-price.ts` — the prices read from Huzounet (specs/045), unit-tested
+  via `tests/unit/huzounet-*.test.ts` and `tests/unit/external-price.test.ts`.
 - `src/price-history.ts` — every shared price of the last 24 hours, 7 days and 30 days, outliers dropped
   per window, no device id (specs/018), unit-tested via `tests/unit/price-history-aggregation.test.ts`.
 - `src/median.ts` — pure statistics (median + outlier exclusion), unit-tested from the repo root
@@ -70,7 +99,9 @@ give the bot's author, with the `FM_BOT_API_KEY` value (privately). After a Dofu
   `imports.ts`, `purchases.ts` (the prices purchases create), `items.ts` (specs/027: items in FM,
   attaching a session, an item's recap), `channels.ts` (specs/029: personal channels created by the bot), `site-sessions.ts` and `bot-commands.ts` (specs/028: sessions
   started or stopped from the site, and the queue the bot polls every 10 seconds — see
-  `../specs/028-site-started-sessions/contracts/fm-bot-commands.md`). Tested from the repo root via
+  `../specs/028-site-started-sessions/contracts/fm-bot-commands.md`), `seances.ts` (specs/045: a
+  channel and its sessions as one séance de FM, archived and reopened), `captures.ts` (specs/045:
+  correcting a capture's lines) and `players.ts` (specs/045: the group's players). Tested from the repo root via
   `tests/unit/fm-*.test.ts`.
 - `schema.sql` — D1 table definition, applied with `npm run worker:db:init`.
 

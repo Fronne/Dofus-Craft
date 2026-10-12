@@ -15,6 +15,8 @@ database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 # specs/045-restore-production-worker: every other trigger reads Huzounet's prices (src/huzounet.ts), 12
 # requests at most a run. FREQUENCY TO CONFIRM in the Cloudflare dashboard (Worker > Settings > Trigger
 # Events) before any deploy: the production value is not readable from the deployed code (research R5).
+# Seen there on 2026-10-12: « every 5 minutes, between 02:00 AM and … » (UTC, end hour not read yet);
+# the value below is a placeholder until it is.
 crons = ["0 3 * * MON", "*/30 * * * *"]
 
 # At most 60 contributions per minute from one IP (worker/src/index.ts). A player filling a whole

@@ -5,12 +5,13 @@ import { createFmWorker } from '../support/fm-worker';
 // specs/025-rune-purchase-import (US1, research R2-R3): the Discord login, with Discord simulated.
 afterEach(() => vi.unstubAllGlobals());
 
-function stubDiscord(member: 'member' | 'not-member' | 'token-error') {
+function stubDiscord(member: 'member' | 'not-member' | 'token-error', guilds?: unknown) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith('/oauth2/token')) {
       return member === 'token-error' ? new Response('{}', { status: 400 }) : Response.json({ access_token: 'discord-access' });
     }
+    if (url.endsWith('/users/@me/guilds') && guilds !== undefined) return Response.json(guilds);
     if (url.endsWith('/users/@me')) return Response.json({ id: '42', username: 'cyril', global_name: 'Cyril', avatar: 'abc' });
     if (url.endsWith('/users/@me/guilds/guild-1/member')) {
       return member === 'member' ? Response.json({ roles: [] }) : new Response('{"code":10004}', { status: 404 });
@@ -21,8 +22,8 @@ function stubDiscord(member: 'member' | 'not-member' | 'token-error') {
   return fetchMock;
 }
 
-async function startLogin(fm: ReturnType<typeof createFmWorker>) {
-  const response = await fm.call('GET', '/fm/auth/login');
+async function startLogin(fm: ReturnType<typeof createFmWorker>, query = '') {
+  const response = await fm.call('GET', `/fm/auth/login${query}`);
   return new URL(response.headers.get('Location')!);
 }
 
@@ -82,6 +83,58 @@ describe('GET /fm/auth/callback', () => {
     const state = (await startLogin(fm)).searchParams.get('state')!;
     expect((await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`)).headers.get('Location')).toBe(failed);
     expect(fm.query('SELECT * FROM fm_players')).toEqual([]);
+  });
+});
+
+// specs/045-restore-production-worker (US5): the name of the group's server, and a site run locally.
+describe('the group\'s server name', () => {
+  const login = async (fm: ReturnType<typeof createFmWorker>) => {
+    const state = (await startLogin(fm)).searchParams.get('state')!;
+    return (await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`)).headers.get('Location')!;
+  };
+
+  it('is read among the player\'s servers at login, kept once, and given with the profile', async () => {
+    const fm = createFmWorker();
+    stubDiscord('member', [{ id: 'other', name: 'Ailleurs' }, { id: 'guild-1', name: '  Les Forgemages  ' }]);
+    const token = (await login(fm)).split('#session=')[1];
+    expect(fm.query('SELECT id, name FROM fm_guild')).toEqual([{ id: 'current', name: 'Les Forgemages' }]);
+    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ guildName: 'Les Forgemages' });
+
+    stubDiscord('member', [{ id: 'guild-1', name: 'Nouveau nom' }]);
+    await login(fm);
+    expect(fm.query('SELECT id, name FROM fm_guild')).toEqual([{ id: 'current', name: 'Nouveau nom' }]);
+  });
+
+  it('never blocks the login when it cannot be read', async () => {
+    const fm = createFmWorker();
+    for (const guilds of [undefined, 'oops', [{ id: 'other', name: 'Ailleurs' }], [{ id: 'guild-1', name: '   ' }]]) {
+      stubDiscord('member', guilds);
+      expect(await login(fm)).toMatch(/#session=[0-9a-f]{64}$/);
+    }
+    expect(fm.query('SELECT * FROM fm_guild')).toEqual([]);
+    const token = await fm.login('42');
+    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ guildName: null });
+  });
+});
+
+describe('a site run on the developer\'s machine', () => {
+  const back = async (returnTo: string, member: 'member' | 'not-member' = 'member') => {
+    const fm = createFmWorker();
+    stubDiscord(member);
+    const state = (await startLogin(fm, `?return_to=${encodeURIComponent(returnTo)}`)).searchParams.get('state')!;
+    return (await fm.call('GET', `/fm/auth/callback?code=abc&state=${encodeURIComponent(state)}`)).headers.get('Location')!;
+  };
+
+  it('is sent back to itself, on localhost or 127.0.0.1, after a login or a refusal', async () => {
+    expect(await back('http://localhost:5173/forgemagie?x=1')).toMatch(/^http:\/\/localhost:5173\/forgemagie#session=[0-9a-f]{64}$/);
+    expect(await back('http://127.0.0.1:4173')).toMatch(/^http:\/\/127\.0\.0\.1:4173\/forgemagie#session=/);
+    expect(await back('http://localhost:5173', 'not-member')).toBe('http://localhost:5173/forgemagie#error=not-member');
+  });
+
+  it('ignores any other address: the player goes back to the site', async () => {
+    for (const returnTo of ['https://evil.test', 'https://localhost:5173', 'http://localhost.evil.test', 'not a url']) {
+      expect(await back(returnTo)).toMatch(/^https:\/\/site\.test\/forgemagie#session=/);
+    }
   });
 });
 

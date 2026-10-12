@@ -35,4 +35,28 @@ Relever la fréquence du passage planifié dans le tableau de bord Cloudflare et
 
 ## Résultats
 
-À remplir à la fin de l'implémentation.
+Relevés le 2026-10-12, sous Node 22.
+
+- **Tests** (`npm test`) : 956 réussis, 1 échec. L'échec (`tests/integration/hdv-page.test.tsx`, « shows the
+  latest shared price over an older kept one ») existait avant la fonctionnalité et concerne le site, hors
+  périmètre (FR-016). Avant : 893 réussis, le même échec. 63 tests ajoutés, dans 7 nouveaux fichiers
+  (`worker-schema`, `external-price`, `huzounet-sync`, `huzounet-refresh-route`, `fm-seances`,
+  `fm-captures`, `fm-players`) et dans les fichiers existants adaptés.
+- **Types** (`npx tsc -p worker/tsconfig.json`) : aucune erreur.
+- **Lint** (`npm run lint`) : aucune erreur dans `worker/` ni dans `tests/` ; les 3 erreurs restantes sont
+  dans `scripts/seed-carnet-mikhal.js`, antérieures. Le dossier `backups/` est désormais ignoré.
+- **Identité avec la production** (`bash scripts/compare-worker-bundle.sh`) : 1 253 lignes différentes au
+  départ, 4 à la fin — la ligne `USER_AGENT` (adresse `handy-apps`, voulue) et le commentaire de carte
+  des sources ajouté par l'outil de construction.
+- **Routes appelées par le site en ligne** (SC-002), toutes présentes dans le Worker : `/community-price`,
+  `/community-prices`, `/latest-price`, `/item-prices`, `/price-history`, `/info-message`,
+  `/player-counters`, `/visit`, `/external-prices/refresh`, `/fm/auth/login`, `/fm/auth/logout`, `/fm/me`,
+  `/fm/players`, `/fm/players/:id`, `/fm/seances`, `/fm/seances/:id` (et `/archive`, `/reopen`, `/item`),
+  `/fm/captures/:id/lines`, `/fm/channels`, `/fm/channel-requests/:id`, `/fm/sessions`,
+  `/fm/sessions/:id`, `/fm/items/:id`, `/fm/imports`.
+- **Structure de la base** : `tests/unit/worker-schema.test.ts` vérifie les tables et colonnes de
+  `worker/schema.sql` et que les migrations 0007 à 0015 mènent aux mêmes tables Forgemagie et de prix
+  externes.
+- **Reste à faire avant tout déploiement du Worker** : la fréquence du passage planifié. Relevé partiel
+  dans le tableau de bord : « toutes les 5 minutes, entre 02:00 et … » (UTC) ; l'heure de fin manque, et
+  `worker/wrangler.toml` porte encore une valeur provisoire (`*/30 * * * *`).

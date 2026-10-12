@@ -38,6 +38,10 @@ describe('prices created by the bot', () => {
     ]));
     expect(answer).toEqual(['recorded', 'unknown-item']);
     expect(fm.query('SELECT resource_id FROM community_price_contributions')).toEqual([{ resource_id: '303' }]);
+    // specs/045-restore-production-worker (US4): neither counts in what was spent — the bot counted the
+    // first one only (above 1 000 kamas), which is taken off its count.
+    expect(fm.query('SELECT counted FROM fm_purchase_lines')).toEqual([{ counted: 0 }, { counted: 0 }]);
+    expect(fm.query('SELECT spent_kamas FROM fm_captures')).toEqual([{ spent_kamas: 600 }]);
   });
 
   it('creates no price for an unknown name or a player without a server, but keeps the spending', async () => {
