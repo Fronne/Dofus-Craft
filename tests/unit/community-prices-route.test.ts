@@ -75,7 +75,8 @@ describe('read cache (FR-012, FR-013)', () => {
 
     expect(first.headers['Cache-Control']).toBe('public, max-age=60');
     expect(second.body).toEqual(first.body);
-    expect(prepare).toHaveBeenCalledTimes(1);
+    // One read of the contributions and one of the external prices (specs/045), both for the first call only.
+    expect(prepare).toHaveBeenCalledTimes(2);
   });
 
   it('reads the database again with fresh=1, marked no-store', async () => {

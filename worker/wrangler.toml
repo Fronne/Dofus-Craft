@@ -12,7 +12,10 @@ database_id = "bfd3fab9-461c-4b72-9473-b8712bad5bc9"
 # Every Monday at 03:00 UTC: removes contributions older than 90 days (worker/src/retention.ts,
 # FR-013). Weekly is plenty: expired rows are already ignored at read time in between.
 [triggers]
-crons = ["0 3 * * MON"]
+# specs/045-restore-production-worker: every other trigger reads Huzounet's prices (src/huzounet.ts), 12
+# requests at most a run. FREQUENCY TO CONFIRM in the Cloudflare dashboard (Worker > Settings > Trigger
+# Events) before any deploy: the production value is not readable from the deployed code (research R5).
+crons = ["0 3 * * MON", "*/30 * * * *"]
 
 # At most 60 contributions per minute from one IP (worker/src/index.ts). A player filling a whole
 # recipe stays far below; a script flooding the median does not.
@@ -31,6 +34,8 @@ namespace_id = "1001"
 # specs/025-rune-purchase-import (page Forgemagie). Where the Discord login sends the player back
 # (research R3). For local work, override it in worker/.dev.vars: SITE_URL=http://localhost:5173
 [vars]
+# "1" turns the reading of Huzounet's prices on (scheduled runs and POST /external-prices/refresh).
+HUZOUNET_SYNC = "1"
 SITE_URL = "https://dofus-craft.handy-apps.workers.dev"
 
 # Forgemagie secrets, not declared here — set each one with:

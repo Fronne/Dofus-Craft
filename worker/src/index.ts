@@ -1,7 +1,9 @@
-import { purgeExpiredContributions } from './retention';
+import { purgeExpiredContributions, retentionCutoff } from './retention';
+import { purgeStaleExternalPrices, refreshHuzounetPrices, syncHuzounetPrices } from './huzounet';
 import { readPlayerCounters } from './player-counters';
 import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
+import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
 import { cachedRead, clearReadCache } from './read-cache';
@@ -19,7 +21,12 @@ export interface Env {
   DISCORD_GUILD_ID?: string;
   FM_BOT_API_KEY?: string;
   SITE_URL?: string;
+  // specs/045-restore-production-worker: "1" turns the reading of Huzounet's prices on (wrangler.toml).
+  HUZOUNET_SYNC?: string;
 }
+
+// The weekly retention's cron (wrangler.toml); any other trigger is the reading of Huzounet's prices.
+const RETENTION_CRON = '0 3 * * MON';
 
 function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -44,7 +51,8 @@ async function communityPriceResponse(url: URL, env: Env): Promise<{ status: num
   const serverId = url.searchParams.get('serverId');
   if (!resourceId || !serverId) return { status: 400, body: { error: 'resourceId and serverId are required' } };
 
-  const median = await fetchCurrentMedian(env.DB, resourceId, serverId);
+  const external = (await readExternalPrices(env.DB, serverId, [resourceId])).get(resourceId);
+  const median = withExternalPrice(await fetchCurrentMedian(env.DB, resourceId, serverId), external);
   // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
   // FR-012's outlier filtering) remains.
   if (!median) return { status: 404, body: null };
@@ -62,6 +70,8 @@ async function communityPriceResponse(url: URL, env: Env): Promise<{ status: num
       latestContributionAt: median.latestContributionAt,
       // specs/025-rune-purchase-import: the origin of that latest price (contracts/fm-site-api.md).
       latestOrigin: median.latestOrigin,
+      // specs/035: for a price read from Huzounet, whether its source calls it provisional or old.
+      latestFragile: median.latestFragile,
     },
   };
 }
@@ -179,6 +189,31 @@ export default {
       return handlePostContribution(request, env);
     }
 
+    // specs/045-restore-production-worker: a player asks for a recipe's prices to be read again now.
+    if (request.method === 'POST' && url.pathname === '/external-prices/refresh') {
+      if (env.HUZOUNET_SYNC !== '1') return json({ error: 'disabled' }, 503);
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      if (env.CONTRIBUTION_LIMITER && !(await env.CONTRIBUTION_LIMITER.limit({ key: ip })).success) {
+        return json({ error: 'too-soon' }, 429);
+      }
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON body' }, 400);
+      }
+      const record = (typeof body === 'object' && body !== null ? body : {}) as Record<string, unknown>;
+      const result = await refreshHuzounetPrices(env.DB, typeof record.serverId === 'string' ? record.serverId : '', record.ids, {
+        itemId: typeof record.itemId === 'string' ? record.itemId : undefined,
+      });
+      if (result.status === 'ok') {
+        if (result.refreshed > 0) clearReadCache();
+        return json({ refreshed: result.refreshed });
+      }
+      const status = { invalid: 400, 'unknown-server': 404, 'too-soon': 429, unavailable: 502 }[result.status];
+      return json({ error: result.status }, status);
+    }
+
     if (request.method === 'POST' && url.pathname === '/visit') {
       return handlePostVisit(request, env);
     }
@@ -186,8 +221,18 @@ export default {
     return json({ error: 'Not found' }, 404);
   },
 
-  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
-    const removed = await purgeExpiredContributions(env.DB);
-    console.log(`Retention: ${removed} contribution(s) older than 90 days removed (latest item prices kept)`);
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    if (controller.cron === RETENTION_CRON) {
+      const removed = await purgeExpiredContributions(env.DB);
+      console.log(`Retention: ${removed} contribution(s) older than 90 days removed (latest item prices kept)`);
+      await purgeStaleExternalPrices(env.DB, retentionCutoff());
+      return;
+    }
+    if (env.HUZOUNET_SYNC !== '1') return;
+    const result = await syncHuzounetPrices(env.DB);
+    if (result.written > 0) clearReadCache();
+    if (result.requests > 0 || result.error) {
+      console.log(`Huzounet: ${result.requests} request(s), ${result.written} price(s) written, ${result.removed} removed${result.error ? `, stopped: ${result.error}` : ''}`);
+    }
   },
 };

@@ -2,6 +2,7 @@ import { summarizeContributions, type ContributionRow, type ContributionsSummary
 import { retentionCutoff } from './retention';
 import { resolveOutlierFields } from './outlier';
 import { readLatestContribution } from './latest';
+import { readExternalPrices, withExternalPrice } from './external-price';
 
 // Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
 // or an abusive request, and would never be a real price.
@@ -111,12 +112,13 @@ export async function communityPricesResponse(db: ContributionDb, url: URL): Pro
     return { status: 400, body: { error: `serverId and 1 to ${MAX_BATCH_RESOURCE_IDS} resourceIds are required` } };
   }
   const medians = await fetchCurrentMedians(db, resourceIds, serverId);
+  const external = await readExternalPrices(db, serverId, resourceIds);
   return {
     status: 200,
     body: {
       serverId,
       prices: resourceIds.flatMap((resourceId) => {
-        const median = medians.get(resourceId);
+        const median = withExternalPrice(medians.get(resourceId), external.get(resourceId));
         return median ? [{ resourceId, ...median }] : [];
       }),
     },
