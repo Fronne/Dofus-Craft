@@ -92,8 +92,8 @@ navigation du bas est toujours là, comme avant.
 Sur la page Recherche, le joueur voit 6 résultats au lieu de 12, le bouton Filtres à droite du
 champ de recherche, et, filtres repliés, les filtres actifs sous forme de pastilles qu'il retire
 d'un clic. Quand un objet est sélectionné, la réponse — crafter ou acheter — est mise en valeur
-dans un bloc teinté, avec l'économie en or. Dans les effets de l'objet, chaque ligne porte un
-losange de la couleur de sa caractéristique.
+dans un bloc teinté, avec l'économie en or. Dans les effets de l'objet, chaque ligne garde
+l'icône de sa caractéristique.
 
 **Why this priority**: c'est la page qui a servi d'essai et dont chaque détail a été validé ; elle
 dépend du nouveau style (histoires 1 et 2) pour prendre tout son sens.
@@ -112,7 +112,7 @@ des ressources et les effets à la maquette.
    **Then** le choix le plus rentable est mis en valeur dans un bloc teinté, l'économie est en or,
    et les deux montants comparés restent visibles avec leurs barres.
 4. **Given** un objet qui a des effets, **When** le joueur lit le bloc Effets, **Then** chaque
-   ligne porte un losange de la couleur de sa caractéristique, et le nom de la caractéristique
+   ligne porte l'icône de sa caractéristique, et le nom de la caractéristique
    reste écrit.
 5. **Given** le tableau des ressources, **When** il s'affiche, **Then** la part de chaque ressource
    dans le coût est montrée par une barre turquoise, et les mentions « acheté » et « crafté » se
@@ -176,7 +176,6 @@ style, les autres réglages sont intacts.
   caractéristiques) : leurs couleurs restent celles du jeu.
 - Objet ou ressource sans image : la case vide garde la forme et la teinte prévues, sans casser
   l'alignement.
-- Effet dont la caractéristique n'a pas de couleur attribuée : le losange prend une teinte neutre.
 - Joueur qui demande à réduire les animations (réglage du système) : aucune animation décorative.
 - Appareil sur lequel l'effet de translucidité n'est pas disponible : la barre et les panneaux
   restent lisibles, sur un fond opaque.
@@ -256,8 +255,12 @@ style, les autres réglages sont intacts.
 - **FR-024**: Dans le tableau des ressources, la part de chaque ressource dans le coût MUST être
   montrée par une barre, et l'ancienneté de chaque prix par une icône (horloge ou alerte) et un
   texte.
-- **FR-025**: Dans le bloc Effets, chaque ligne MUST porter un losange de la couleur de sa
-  caractéristique ; une caractéristique sans couleur attribuée MUST prendre une teinte neutre.
+- **FR-025**: Dans le bloc Effets, chaque ligne MUST garder l'icône de caractéristique déjà utilisée par
+  l'application (révision 2026-10-13 : pas de losange coloré), le nom de la caractéristique écrit.
+- **FR-025a** (ajout du 2026-10-13): La page Recherche MUST reprendre la disposition de la maquette :
+  aide à droite du titre ; recherche sans cadre ; filtres actifs et nombre de résultats sur une même
+  ligne ; un seul bloc pour l'objet choisi et son verdict ; le tableau des ressources et le bloc
+  Effets côte à côte sur grand écran, l'un sous l'autre sur petit écran.
 
 **Réglages et continuité**
 

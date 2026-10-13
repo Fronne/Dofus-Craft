@@ -101,5 +101,4 @@
 
 .price-history-tooltip--start { transform: translate(-12px, calc(-100% - 10px)); }
 .price-history-tooltip--end { transform: translate(calc(-100% + 12px), calc(-100% - 10px)); }
-.item-history-button { right: auto; left: var(--space-5); }
 .item-history-button[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }

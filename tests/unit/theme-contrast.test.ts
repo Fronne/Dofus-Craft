@@ -70,7 +70,6 @@ function ratio(a: Rgba, b: Rgba): number {
 
 const TEXT = 4.5;
 const SHAPE = 3;
-const STATS = ['vitality', 'earth', 'fire', 'water', 'air', 'wisdom', 'critical', 'range', 'neutral'].map((name) => `--stat-${name}`);
 
 // [foregrounds, backgrounds (bottom layer last), minimum ratio]
 const PAIRS: Array<[string[], string[][], number]> = [
@@ -80,7 +79,6 @@ const PAIRS: Array<[string[], string[][], number]> = [
   [['--text'], [['--accent-soft', '--panel'], ['--link-soft', '--panel'], ['--kamas-soft', '--panel'], ['--warning-soft', '--panel']], TEXT],
   [['--warning', '--danger'], [['--panel'], ['--panel-strong']], SHAPE],
   [['--border-control'], [['--panel'], ['--bg']], SHAPE],
-  [STATS, [['--panel']], SHAPE],
 ];
 
 describe.each(Object.entries(themes))('contrastes du thème %s', (_name, tokens) => {

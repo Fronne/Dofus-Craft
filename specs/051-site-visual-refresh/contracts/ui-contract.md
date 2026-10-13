@@ -30,7 +30,6 @@ Texte ≥ 4,5:1, icône ou contour ≥ 3:1, dans les deux thèmes. Vérifiés pa
 | `--text` | `--accent-soft`, `--link-soft`, `--kamas-soft`, `--warning-soft` posés sur `--panel` |
 | `--warning`, `--danger` (icônes) | `--panel`, `--panel-strong` (3:1) |
 | `--border-control` (contour) | `--panel`, `--bg` (3:1) |
-| `--stat-*` (losanges) | `--panel` (3:1) |
 
 Les fonds translucides sont composés sur `--bg` avant le calcul.
 
@@ -79,7 +78,8 @@ Les fonds translucides sont composés sur `--bg` avant le calcul.
 | Verdict | bloc teinté d'accent ; losange coché ; choix gagnant en titre ; économie en `--kamas` ; deux barres (la plus basse en accent, l'autre neutre) |
 | Ressources | colonnes Ressource / Prix unitaire / Sous-total ; ancienneté par icône + texte ; barre de répartition `--link` sous chaque sous-total |
 | Sous-recette | trait vertical `--link` atténué ; mentions « acheté » (teinte or) et « crafté » (teinte turquoise) |
-| Effets | une ligne par effet, losange de la couleur de la caractéristique, valeur en `--text`, nom écrit |
+| Effets | panneau à côté des ressources ; une ligne par effet, icône de caractéristique du jeu, nom écrit |
+| Disposition | en-tête avec aide à droite ; recherche sans panneau ; pastilles et compteur sur une ligne ; un panneau objet + verdict ; ressources et effets côte à côte |
 
 ## 6. Ce qui ne change pas
 

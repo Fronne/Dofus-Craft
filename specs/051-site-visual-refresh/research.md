@@ -88,13 +88,12 @@
 
 ## 9. Couleurs des caractéristiques
 
-- **Decision**: une couleur par élément, portée par des jetons (`--stat-vitality`, `--stat-earth`,
-  `--stat-fire`, `--stat-water`, `--stat-air`, `--stat-wisdom`, `--stat-neutral`…) ; chaque
-  caractéristique est rattachée à son élément par une table de présentation à côté du composant
-  d'icône. Sans correspondance : `--stat-neutral`.
-- **Rationale**: FR-025 ; la table reste dans la présentation, pas dans le domaine, puisqu'elle ne
-  sert à aucun calcul.
-- **Alternatives considered**: couleur lue dans les données du jeu — elles n'en fournissent pas.
+- **Decision** (révisée le 2026-10-13) : les effets gardent l'icône de caractéristique déjà
+  utilisée par l'application (`CharacteristicIcon`). Les jetons `--stat-*` et la table
+  `stat-tones.ts` ont été retirés.
+- **Rationale**: FR-025 ; l'utilisateur a préféré les icônes existantes aux losanges colorés.
+- **Alternatives considered**: un losange coloré par élément — essayé, puis rejeté par
+  l'utilisateur.
 
 ## 10. Nombre de résultats
 

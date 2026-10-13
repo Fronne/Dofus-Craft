@@ -10,7 +10,7 @@ Remplacer les deux designs actuels (« Classique », « Moderne ») et les cinq 
 style, celui de la maquette validée : palette bleu-vert avec une couleur par rôle, polices Rowdies
 et Lexend, navigation en barre flottante en haut sur écran large, thème clair décliné dans le même
 esprit. Sur la page Recherche : 6 résultats, bloc verdict teinté, barres de répartition turquoise,
-losanges des effets colorés par élément.
+effets avec leur icône de caractéristique, disposition de la maquette (révision 2026-10-13).
 
 Approche : les feuilles de style du site ne contiennent aucune couleur en dur (tout passe par les
 jetons de `src/styles/theme.css`), donc l'essentiel du changement est une réécriture des jetons,
@@ -98,7 +98,7 @@ src/
 ├── features/
 │   ├── settings/ParametresPage.tsx        # retrait des réglages Design et Accent
 │   ├── catalogue/ItemResults.tsx          # 6 résultats, puis 12 de plus
-│   ├── catalogue/ItemDetail.tsx           # en-tête d'objet, effets à losange coloré
+│   ├── catalogue/ItemDetail.tsx           # en-tête d'objet et bloc Effets (icônes du jeu)
 │   ├── comparison/                        # bloc verdict teinté, barres
 │   └── search/                            # filtres, pastilles (déjà en place : couleurs seules)
 └── styles/

@@ -37,8 +37,8 @@ export function ItemSearch({
     ? (levelMin || '1') === (levelMax || '200') ? `Niveau ${levelMin}` : `Niveau ${levelMin || '1'} – ${levelMax || '200'}`
     : '';
   return (
-    <div className="search" data-tour="search">
-      <div className="search-row">
+    <div className="search">
+      <div className="search-row" data-tour="search">
         <label className="search-primary">
           <span className="search-label">Rechercher un objet ou une panoplie</span>
           <span className="search-input-wrap">
@@ -75,6 +75,18 @@ export function ItemSearch({
           <Icon name="chevron-down" size={16} className="filters-toggle-chevron" />
         </button>
       </div>
+      {/* Kept mounted while folded: a level change still waiting for its delay is not lost. */}
+      <fieldset className="filters-panel" id="search-filters-panel" hidden={!filtersOpen}>
+        <legend>Filtres</legend>
+        <CategoryFilter categories={categories} value={category} onChange={setCategory} />
+        <div className="level-filters">
+          <fieldset className="level-filter">
+            <legend>Niveau</legend>
+            <LevelRangeSlider levelMin={levelMin} setLevelMin={setLevelMin} levelMax={levelMax} setLevelMax={setLevelMax} />
+          </fieldset>
+        </div>
+      </fieldset>
+      {/* Last, so it shares its line with the results count (ItemResults) on a wide screen. */}
       {hasActiveFilters && (
         <div className="filters-bar">
           {categoryName && (
@@ -106,17 +118,6 @@ export function ItemSearch({
           </button>
         </div>
       )}
-      {/* Kept mounted while folded: a level change still waiting for its delay is not lost. */}
-      <fieldset className="filters-panel" id="search-filters-panel" hidden={!filtersOpen}>
-        <legend>Filtres</legend>
-        <CategoryFilter categories={categories} value={category} onChange={setCategory} />
-        <div className="level-filters">
-          <fieldset className="level-filter">
-            <legend>Niveau</legend>
-            <LevelRangeSlider levelMin={levelMin} setLevelMin={setLevelMin} levelMax={levelMax} setLevelMax={setLevelMax} />
-          </fieldset>
-        </div>
-      </fieldset>
     </div>
   );
 }

@@ -82,17 +82,6 @@
   --slot-border: #4b4570;
   --slot-glyph: #a39cd9;
 
-  /* One color per characteristic, by element (the diamond in front of an effect). */
-  --stat-vitality: #ff6b81;
-  --stat-earth: #c9955c;
-  --stat-fire: #ff7a45;
-  --stat-water: #5db7ff;
-  --stat-air: #7fdc6b;
-  --stat-wisdom: #b58cff;
-  --stat-critical: #ffb84d;
-  --stat-range: #5fd9cb;
-  --stat-neutral: #c5d8d4;
-
   /* Spacing scale (4px base). Prefer these over ad hoc rem values in new/edited rules. */
   --space-1: .25rem;
   --space-2: .5rem;
@@ -168,15 +157,6 @@
   --slot-bg: #e7e3f6;
   --slot-border: #c7bfe8;
   --slot-glyph: #5b4f9c;
-  --stat-vitality: #d63a55;
-  --stat-earth: #9a6a34;
-  --stat-fire: #d2551f;
-  --stat-water: #2f7fd0;
-  --stat-air: #2f8f2a;
-  --stat-wisdom: #7a4fd0;
-  --stat-critical: #a86a00;
-  --stat-range: #0e8a80;
-  --stat-neutral: #5f7a78;
 }
 
 /* The light sits on the root, not on <body>: body is only one viewport tall (html, body

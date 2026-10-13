@@ -90,7 +90,8 @@ export function ItemResults({
     resultsTopRef.current?.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   };
   return (
-    <div>
+    <div className="results-block">
+      {/* One line: how many were found, how many are shown, and the way to see more or fewer. */}
       <div className="results-meta" ref={resultsTopRef}>
         {/* While the catalogue is revalidating or the total count is still being computed, a single
             "Mise à jour…" takes the count's spot; the offline notice sits next to the count instead. */}
@@ -100,6 +101,26 @@ export function ItemResults({
           <span className="results-meta-count">
             <span>{total} {total === 1 ? 'objet trouvé' : 'objets trouvés'}</span>
             {syncStatus}
+          </span>
+        )}
+        {(hasMore || canCollapse) && (
+          <span className="results-more">
+            {!totalPending && <span className="results-more-count">{items.length} sur {total}</span>}
+            {hasMore && (
+              <button
+                type="button"
+                className="results-more-button"
+                disabled={isRevalidating}
+                onClick={() => setResultLimit(resultLimit + RESULTS_MORE_STEP)}
+              >
+                Afficher {RESULTS_MORE_STEP} de plus
+              </button>
+            )}
+            {canCollapse && (
+              <button type="button" className="results-collapse" onClick={collapse}>
+                Réduire
+              </button>
+            )}
           </span>
         )}
       </div>
@@ -118,28 +139,6 @@ export function ItemResults({
           </button>
         ))}
       </div>
-      {(hasMore || canCollapse) && (
-        <div className="results-more">
-          <div className="results-more-actions">
-            {hasMore && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-small"
-                disabled={isRevalidating}
-                onClick={() => setResultLimit(resultLimit + RESULTS_MORE_STEP)}
-              >
-                Afficher {RESULTS_MORE_STEP} de plus
-              </button>
-            )}
-            {canCollapse && (
-              <button type="button" className="results-collapse" onClick={collapse}>
-                Réduire
-              </button>
-            )}
-          </div>
-          {!totalPending && <span className="results-more-count">{items.length} sur {total}</span>}
-        </div>
-      )}
     </div>
   );
 }

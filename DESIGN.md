@@ -63,10 +63,8 @@ Règles :
 - Les teintes dérivées se calculent avec `color-mix()` à partir d'un jeton (`--accent-soft`,
   `--link-soft`, `--kamas-soft`, `--border-strong`…), jamais avec un `rgba()` recopié.
 - `--success` vaut l'accent : un gain et un choix gagnant ont la même couleur.
-- Les effets d'un objet ont un losange par caractéristique (`--stat-vitality`, `--stat-earth`,
-  `--stat-fire`, `--stat-water`, `--stat-air`, `--stat-wisdom`, `--stat-critical`, `--stat-range`,
-  `--stat-neutral` par défaut). La correspondance est dans `src/features/catalogue/stat-tones.ts` ;
-  le nom de la caractéristique reste toujours écrit.
+- Les effets d'un objet gardent l'icône de caractéristique du jeu (`CharacteristicIcon`), pas un
+  losange ; le nom de la caractéristique reste toujours écrit.
 - Un texte posé sur une image utilise `--on-image`, avec le voile `--image-veil` ou l'ombre
   `--on-image-shadow` pour rester lisible. Ces trois jetons ne changent pas avec le thème.
 - Les cases d'équipement gardent les couleurs du jeu (`--slot-bg`, `--slot-border`, `--slot-glyph`).
@@ -185,14 +183,30 @@ Un bouton fait 44 px de haut (36 px en `.btn-small`, 40 px pour `.icon-button`, 
 
 ### Page Recherche
 
+De haut en bas :
+
+- En-tête : titre et phrase à gauche, bouton d'aide rond à droite (`.page-header--with-action`).
+- Recherche posée sur la page, sans panneau (`.search-panel`, une grille à qui `.search` et
+  `.results-block` prêtent leurs enfants) : le champ et le bouton Filtres ; puis une ligne partagée
+  entre les filtres appliqués à gauche (pastilles `.filter-chip` qui se retirent d'un clic) et, à
+  droite, « N objets trouvés », « 6 sur N », « Afficher 12 de plus » et « Réduire » ; puis les
+  résultats, 6 par ligne sur grand écran. Les filtres restent repliés.
+- Un seul panneau pour l'objet choisi et son verdict (`.item-verdict-panel`) : image, nom, pastilles
+  catégorie et niveau, boutons Historique et Suivre à droite ; dessous, le verdict.
+- Une rangée (`.detail-row`) : « Prix des ressources » prend la place, « Effets » est à côté, et
+  passe dessous quand la largeur manque.
+
+Détails :
+
 - 6 résultats d'abord, puis « Afficher 12 de plus » ; « Réduire » revient à 6.
-- Le bouton Filtres est à droite du champ ; les filtres restent repliés. Chaque filtre appliqué
-  (catégorie, niveau) apparaît sous le champ en pastille (`.filter-chip`) qui le retire d'un clic.
 - Verdict tranché (fabriquer ou acheter) : bloc teinté d'accent, coche dans un losange, titre en
   Rowdies, économie en `--kamas`, la barre du montant le plus bas en accent et l'autre neutre. Un
   verdict incomplet ou à égalité reste sobre.
-- Prix des ressources : sous chaque ligne, une barre `--link` dit ce qu'elle pèse dans le coût de
-  craft (`.share-bar`, décorative : les montants sont écrits).
+- Verdict sur grand écran : quoi faire à gauche, les deux montants comparés à droite.
+- Prix des ressources : colonnes Ressource / Prix unitaire / Sous-total nommées une fois au-dessus
+  des lignes (`.prices-columns`, masquées sous 720 px) ; sous chaque ligne, une barre `--link` dit ce
+  qu'elle pèse dans le coût de craft (`.share-bar`, décorative : les montants sont écrits) ; en
+  pied, « Total du craft » en `--kamas`.
 
 ### Badges
 

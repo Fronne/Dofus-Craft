@@ -23,6 +23,34 @@ describe('ItemDetail recipe resources', () => {
     expect(screen.getByText('10 à 20 Vitalité')).toBeInTheDocument();
   });
 
+  // specs/051-site-visual-refresh: the Recherche page asks for the two parts separately.
+  it('shows only the identity, or only the effects, when one part is asked for', () => {
+    const detail = {
+      item: { id: '1', name: 'Trophée', level: 100, kind: 'Equipment' as const, categoryId: 'equipment-type-151' },
+      stats: [{ id: '125-0', label: '10 à 20 Vitalité', icon: 'tx_vitality', positive: true, isWeaponEffect: false }],
+      recipe: { id: 'recipe-1', itemId: '1', ingredients: [{ resourceId: '10', quantity: 1 }] },
+      resources: [{ id: '10', name: 'Fer' }],
+    };
+    const header = render(<ItemDetail part="header" detail={detail} onTogglePin={() => {}} />);
+    expect(screen.getByRole('heading', { name: 'Trophée' })).toBeInTheDocument();
+    expect(screen.getByText('Niveau : 100')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suivre' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Effets' })).not.toBeInTheDocument();
+    header.unmount();
+
+    const effects = render(<ItemDetail part="effects" detail={detail} onTogglePin={() => {}} />);
+    expect(screen.getByRole('heading', { name: 'Effets' })).toBeInTheDocument();
+    // The effect keeps the game's characteristic icon.
+    expect(screen.getByText('10 à 20 Vitalité').querySelector('img')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Trophée' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Suivre' })).not.toBeInTheDocument();
+    effects.unmount();
+
+    // Without an item, only one placeholder is shown.
+    const empty = render(<ItemDetail part="effects" />);
+    expect(empty.container).toBeEmptyDOMElement();
+  });
+
   it('does not show a weapon-specific info block for a non-weapon item', () => {
     const { container } = render(
       <ItemDetail

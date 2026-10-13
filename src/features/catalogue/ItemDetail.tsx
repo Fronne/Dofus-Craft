@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Category, Item, ItemStat, Recipe, Resource } from '../../domain/types';
 import { Icon } from '../../components/Icon';
-import { statTone } from './stat-tones';
+import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { CategoryIcon } from '../../components/CategoryIcon';
 
 type ItemDetailData = {
@@ -19,8 +19,7 @@ function StatList({ stats }: { stats: ItemStat[] }) {
     <ul>
       {stats.map((stat) => (
         <li key={stat.id} className={stat.positive ? 'stat-positive' : 'stat-negative'}>
-          {/* The diamond only adds a color: the characteristic stays written in the label. */}
-          <span className={`stat-diamond stat-diamond--${statTone(stat.icon)}`} aria-hidden="true" />
+          {stat.icon && <CharacteristicIcon asset={stat.icon} size={26} />}
           {stat.label}
         </li>
       ))}
@@ -34,31 +33,28 @@ export function ItemDetail({
   onTogglePin,
   history,
   pending = false,
+  part,
 }: {
   detail?: ItemDetailData;
   isPinned?: boolean;
   onTogglePin?: () => void;
-  // specs/017: the price-history button, in the card's top-left corner. Only passed in Mode communautaire.
+  // specs/017: the price-history button, next to « Suivre ». Only passed in Mode communautaire.
   history?: ReactNode;
   // The recipe and effects are still loading, or could not be loaded: « no recipe » and « no effect »
   // would be wrong then, so neither is said.
   pending?: boolean;
+  // specs/051-site-visual-refresh: the Recherche page shows the item's identity above the verdict and
+  // its effects beside the resource prices — each asked for on its own. Without it, both in one card.
+  part?: 'header' | 'effects';
 }) {
   if (!detail) {
-    return <section className="card"><p>Sélectionnez un objet pour voir ses détails.</p></section>;
+    return part === 'effects' ? null : <section className="card"><p>Sélectionnez un objet pour voir ses détails.</p></section>;
   }
 
   const { item, category, recipe, stats = [], panoplieName, isWeapon } = detail;
 
-  return (
-    <section className="card item-detail-card" data-tour="item-detail">
-      {onTogglePin && (
-        <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned} onClick={onTogglePin}>
-          <Icon name={isPinned ? 'bookmark-filled' : 'bookmark'} size={18} />
-          {isPinned ? 'Ne plus suivre' : 'Suivre'}
-        </button>
-      )}
-      {history}
+  const header = (
+    <div className="item-head">
       {item.imageUrl ? (
         <img src={item.imageUrl} alt={item.name} />
       ) : (
@@ -66,14 +62,34 @@ export function ItemDetail({
           {item.name}
         </div>
       )}
-      <h2>{item.name}</h2>
-      {panoplieName && <p className="item-set-name">Panoplie : {panoplieName}</p>}
-      {item.level !== undefined && <p>Niveau : {item.level}</p>}
-      {category && (
-        <p className="item-category">
-          Catégorie : <CategoryIcon categoryId={category.id} size={18} /> {category.label}
-        </p>
+      <div className="item-head-text">
+        <h2>{item.name}</h2>
+        {panoplieName && <p className="item-set-name">Panoplie : {panoplieName}</p>}
+        <div className="item-head-tags">
+          {category && (
+            <p className="item-category">
+              Catégorie : <CategoryIcon categoryId={category.id} size={18} /> {category.label}
+            </p>
+          )}
+          {item.level !== undefined && <p>Niveau : {item.level}</p>}
+        </div>
+      </div>
+      {(history || onTogglePin) && (
+        <div className="item-head-actions">
+          {history}
+          {onTogglePin && (
+            <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned} onClick={onTogglePin}>
+              <Icon name={isPinned ? 'bookmark-filled' : 'bookmark'} size={18} />
+              {isPinned ? 'Ne plus suivre' : 'Suivre'}
+            </button>
+          )}
+        </div>
       )}
+    </div>
+  );
+
+  const effects = (
+    <>
       {isWeapon ? (
         <>
           {stats.some((stat) => stat.isWeaponEffect) && (
@@ -102,6 +118,19 @@ export function ItemDetail({
         </section>
       )}
       {!recipe && !pending && <p>Aucune recette disponible pour cet objet.</p>}
+    </>
+  );
+
+  if (part === 'header') {
+    return <div className="item-detail-card" data-tour="item-detail">{header}</div>;
+  }
+  if (part === 'effects') {
+    return <aside className="panel item-effects">{effects}</aside>;
+  }
+  return (
+    <section className="card item-detail-card" data-tour="item-detail">
+      {header}
+      {effects}
     </section>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ResourcePrice } from '../../domain/types';
 import { compare } from '../../domain/craft-comparison';
-import { parseKamas } from '../../domain/kamas';
+import { formatKamas, parseKamas } from '../../domain/kamas';
 import { recipeRefreshIds, recipeRefreshMessage } from '../../domain/recipe-refresh';
 import { refreshRecipePrices } from '../../services/community-price-api';
 import { ItemSearch } from '../catalogue/ItemSearch';
@@ -369,11 +369,11 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
 
   return (
     <>
-      <header className="page-header">
-        <h1>Crafter ou acheter ?</h1>
-        <p>Calculez en quelques secondes si un craft Dofus est rentable.</p>
-      </header>
-      <section className="panel search-panel">
+      <header className="page-header page-header--with-action">
+        <div>
+          <h1>Crafter ou acheter ?</h1>
+          <p>Calculez en quelques secondes si un craft Dofus est rentable.</p>
+        </div>
         <button
           ref={helpButtonRef}
           type="button"
@@ -384,6 +384,8 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
         >
           <Icon name="info" size={18} />
         </button>
+      </header>
+      <section className="search-panel">
         <ItemSearch
           query={query}
           setQuery={setQuery}
@@ -419,8 +421,28 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
           <button type="button" className="btn btn-secondary btn-small" onClick={catalogue.retry}>Réessayer</button>
         </div>
       )}
-      {detail?.recipe && result && (
-        <section className="panel market-price-panel">
+      {!detail && <ItemDetail />}
+      {/* The chosen item and, right under its name, whether to craft or buy it. */}
+      {detail && (
+        <section className="panel market-price-panel item-verdict-panel">
+          <ItemDetail
+            part="header"
+            detail={detail}
+            isPinned={selected ? pinned.isPinned(selected) : false}
+            history={community && selectedItem && serverId
+              ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} label="Historique" className="pin-item-button item-history-button" />
+              : undefined}
+            onTogglePin={selectedItem
+              ? () => {
+                if (pinned.isPinned(selectedItem.id)) {
+                  pinned.unpin(selectedItem.id);
+                } else {
+                  pinned.pin(selectedItem);
+                }
+              }
+              : undefined}
+          />
+          {detail.recipe && result && (
           <div className="market-price-summary" data-tour="recommendation">
             <ComparisonVerdict
               result={result}
@@ -448,30 +470,15 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
               )}
             />
           </div>
+          )}
           {marketError && <p className="field-status field-status--error" role="alert">{marketError}</p>}
           {marketOutlierDialog}
         </section>
       )}
-      <div className="grid">
-        <ItemDetail
-          detail={detail}
-          pending={catalogue.detailLoading || Boolean(catalogue.detailError)}
-          isPinned={selected ? pinned.isPinned(selected) : false}
-          history={community && selectedItem && serverId
-            ? <PriceHistoryButton key={serverId} kind="item" id={selectedItem.id} name={selectedItem.name} serverId={serverId} label="Historique" className="pin-item-button item-history-button" />
-            : undefined}
-          onTogglePin={selectedItem
-            ? () => {
-              if (pinned.isPinned(selectedItem.id)) {
-                pinned.unpin(selectedItem.id);
-              } else {
-                pinned.pin(selectedItem);
-              }
-            }
-            : undefined}
-        />
+      {/* The resource prices take the room; the item's effects sit beside them, or under on a narrow screen. */}
+      <div className="detail-row">
         {detail?.recipe && (
-          <section className="card" data-tour="resource-prices">
+          <section className="panel resource-prices" data-tour="resource-prices">
             <div className="prices-head">
               <h2>Prix des ressources</h2>
               {community && serverId && selectedItem && (
@@ -483,6 +490,12 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                   {refresh.message && <p role="status">{refresh.message}</p>}
                 </div>
               )}
+            </div>
+            {/* Decorative: every field of a line already names what it is. */}
+            <div className="prices-columns" aria-hidden="true">
+              <span>Ressource</span>
+              <span>Prix unitaire</span>
+              <span>Sous-total</span>
             </div>
             {detail.recipe.ingredients.map((ingredient, index) => {
               const path = ingredient.resourceId;
@@ -504,9 +517,18 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                 />
               );
             })}
+            {/* The same amount as the verdict's craft cost, at the foot of the lines it adds up. */}
+            {result && (
+              <p className="prices-total">
+                <span>Total du craft</span>
+                <strong>{formatKamas(result.knownCraftCostKamas)}</strong>
+                {result.craftCostStatus === 'partial' && <small>(partiel)</small>}
+              </p>
+            )}
             {error && <p className="warning" role="alert">{error}</p>}
           </section>
         )}
+        <ItemDetail part="effects" detail={detail} pending={catalogue.detailLoading || Boolean(catalogue.detailError)} />
       </div>
       {tourOpen && (
         <GuidedTour

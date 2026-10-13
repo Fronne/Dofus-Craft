@@ -436,7 +436,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .results-meta .sync-status { font-size: inherit; font-weight: inherit; }
 .results-more { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-top: var(--space-5); }
 .results-more-count { color: var(--text-muted); font-size: .82rem; font-weight: 650; }
-.results-more-actions { display: flex; align-items: center; gap: var(--space-4); }
 .results-collapse { background: none; border: 0; padding: .4rem .25rem; color: var(--text-muted); font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer; }
 .results-collapse:hover { color: var(--accent-bright); text-decoration: underline; }
 
@@ -1384,8 +1383,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 
 /* specs/011-search-onboarding: help button + guided tour of the Recherche page. */
-.search-panel { position: relative; }
-.search-help-button { position: absolute; top: var(--space-4); right: var(--space-4); }
 
 .guided-tour {
   position: fixed;
@@ -1911,8 +1908,6 @@ input,
 
 /* ---------- Search page ---------- */
 
-/* Keeps the search title clear of the help button in the panel's top-right corner. */
-.search-panel .search-label { padding-right: 44px; }
 .category-icons button { border-radius: var(--radius-pill); padding-right: .95rem; }
 .results button img { border-radius: var(--radius-sm); }
 /* The verdict becomes a tinted inset instead of a column separated by a rule. */
@@ -1979,19 +1974,10 @@ input,
 .retained-cost--craft .retained-cost-option { background: var(--link-soft); color: var(--link); }
 .ingredient-children { border-left-color: color-mix(in srgb, var(--link) 35%, transparent); }
 
-/* Effects: one line each, a diamond in the color of the characteristic, the name written. */
+/* Effects: one line each, the characteristic icon of the game, the name written. */
 .item-stats { padding: 0; border: 0; background: none; }
 .item-stats li { gap: .625rem; padding: .3rem 0; color: var(--text); font-weight: 500; }
 .item-stats li.stat-positive { color: var(--text); }
-.stat-diamond { flex: 0 0 9px; width: 9px; height: 9px; margin: 0 .2rem; background: var(--stat-neutral); transform: rotate(45deg); }
-.stat-diamond--vitality { background: var(--stat-vitality); }
-.stat-diamond--earth { background: var(--stat-earth); }
-.stat-diamond--fire { background: var(--stat-fire); }
-.stat-diamond--water { background: var(--stat-water); }
-.stat-diamond--air { background: var(--stat-air); }
-.stat-diamond--wisdom { background: var(--stat-wisdom); }
-.stat-diamond--critical { background: var(--stat-critical); }
-.stat-diamond--range { background: var(--stat-range); }
 
 /* ---------- Links and link-like buttons (the link role, not the accent) ---------- */
 
@@ -2109,4 +2095,99 @@ select:focus {
 @keyframes modern-rise {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
+}
+
+/* ---------- Recherche page layout (specs/051-site-visual-refresh) ---------- */
+
+/* Title on the left, the help button on the right. */
+.page-header--with-action { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.search-help-button { position: static; flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; }
+
+/* The search sits on the page itself, without a panel around it: the field and the filters button,
+   then one line shared by the filters applied (left) and the results count (right), then the
+   results. `.search` and `.results-block` lend their children to this grid. */
+.search-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-5); }
+.search, .results-block { display: contents; }
+.search-panel > *, .search > *, .results-block > * { grid-column: 1 / -1; }
+/* The placeholder says the same; the label stays for screen readers. */
+.search-panel .search-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.search-row .search-primary { max-width: none; }
+.search > .filters-bar { grid-column: 1; margin-top: 0; }
+.results-block > .results-meta { grid-column: 2; justify-content: flex-end; min-height: 44px; margin-top: 0; padding-top: 0; border-top: 0; }
+.results-meta-count { color: var(--text); }
+.results-more { display: inline-flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 var(--space-3); margin-top: 0; }
+.results-more-count { color: var(--text-faint); font-size: .82rem; font-weight: 500; }
+.results-more-button, .results-collapse { min-height: 44px; padding: 0 var(--space-1); border: 0; background: none; color: var(--link); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; }
+.results-more-button:hover:not(:disabled), .results-collapse:hover { color: var(--link); text-decoration: underline; }
+.results-more-button:disabled { opacity: .5; cursor: default; }
+/* Six results across on a wide screen. */
+.results { grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: var(--space-2); margin-top: 0; }
+.results button { min-height: 56px; padding: .5rem .75rem; gap: .625rem; }
+.results button img, .result-image-fallback { flex-basis: 36px; width: 36px; height: 36px; }
+.result-item-name { font-size: .875rem; font-weight: 600; }
+.result-item-level { font-size: .8125rem; font-weight: 400; }
+.results button.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* One panel: the chosen item, then the verdict about it. */
+.item-verdict-panel { display: flex; flex-direction: column; gap: var(--space-5); }
+/* The panel is a column now: the summary takes the height of its content, not a 320px basis. */
+.item-verdict-panel .market-price-summary { flex: 0 0 auto; }
+.item-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); }
+.item-head > img, .item-head > .image-fallback { flex: 0 0 72px; width: 72px; height: 72px; min-height: 0; overflow: hidden; object-fit: contain; border-radius: var(--radius-md); background: var(--image-bg); font-size: .7rem; text-align: center; }
+.item-head-text { flex: 1 1 240px; min-width: 0; }
+.item-head h2 { margin: 0; font-size: clamp(1.35rem, 2.6vw, 1.75rem); line-height: 1.15; text-align: left; overflow-wrap: anywhere; }
+.item-head .item-set-name { margin: .25rem 0 0; text-align: left; }
+.item-head-tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.item-head-tags p { display: inline-flex; align-items: center; gap: .35rem; min-height: 28px; margin: 0; padding: 0 .65rem; border-radius: var(--radius-xs); background: var(--input-bg); color: var(--text-muted); font-size: .82rem; font-weight: 500; }
+.item-head-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
+.item-head-actions .pin-item-button { position: static; min-height: 44px; }
+/* « Suivre » is the action of this block; once followed it steps back to an outlined state. */
+.item-head-actions .pin-item-button:not(.item-history-button):not(.pinned) { border-color: transparent; background: var(--accent-gradient); color: var(--on-accent); font-size: .875rem; letter-spacing: .06em; text-transform: uppercase; }
+.item-head-actions .pin-item-button:not(.item-history-button):not(.pinned):hover { filter: brightness(1.08); }
+/* A card standing alone (no part asked for) keeps the same header, with its effects below. */
+.card.item-detail-card { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* The verdict: what to do on the left, the two amounts compared on the right. */
+@media (min-width: 961px) {
+  .item-verdict-panel .verdict { grid-template-columns: minmax(260px, 1fr) minmax(0, 1.5fr); align-items: center; column-gap: var(--space-6); }
+  .item-verdict-panel .verdict-savings { flex-basis: 100%; justify-items: start; text-align: left; }
+}
+
+/* The resource prices take the room; the effects sit beside them, or under on a narrow screen. */
+.detail-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-5); margin-top: var(--space-5); }
+.detail-row > .resource-prices { flex: 999 1 620px; min-width: 0; }
+.detail-row > .item-effects { flex: 1 1 280px; min-width: 0; }
+.detail-row > .panel + .panel { margin-top: 0; }
+.detail-row:empty { display: none; }
+.resource-prices .prices-head { margin-top: 0; }
+.resource-prices .prices-head h2 { display: flex; align-items: center; min-height: 36px; margin: 0; }
+.prices-columns { display: none; }
+.prices-total { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: flex-end; gap: var(--space-2) var(--space-3); margin: 0; padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.prices-total span { margin-right: auto; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: .02em; text-transform: uppercase; }
+.prices-total strong { color: var(--kamas); font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.prices-total small { color: var(--text-muted); }
+@media (min-width: 721px) {
+  /* Three columns named once above the lines: resource, unit price, subtotal. */
+  .prices-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 200px) 130px; column-gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); color: var(--text-faint); font-size: .75rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .prices-columns span:last-child { text-align: right; }
+  .resource-prices .price-line { grid-template-columns: minmax(0, 1fr) auto minmax(140px, 200px) 130px; }
+  .resource-prices .price-resource-formatted { grid-column: 4; grid-row: 1; font-size: .95rem; }
+  .resource-prices .share-bar { width: 130px; }
+}
+
+.item-effects h3 { margin: 0 0 var(--space-2); font-size: 1.15rem; }
+.item-effects .item-stats { margin-top: 0; }
+.item-effects .item-stats + .item-stats { margin-top: var(--space-5); }
+.item-effects .item-stats ul { gap: 0; margin: 0; }
+.item-effects .item-stats li { padding: .45rem 0; }
+.item-effects .item-stats li + li { border-top: 1px solid var(--border); }
+.item-effects > p { margin: var(--space-4) 0 0; color: var(--text-muted); }
+.item-effects > p:first-child { margin-top: 0; }
+
+@media (max-width: 720px) {
+  .search-panel { grid-template-columns: minmax(0, 1fr); }
+  .search > .filters-bar, .results-block > .results-meta { grid-column: 1; }
+  .results-block > .results-meta { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-3); }
+  .results { grid-template-columns: 1fr; }
+  .item-head-actions { margin-left: 0; }
 }

@@ -32,7 +32,6 @@ par le test de contraste puis par l'utilisateur.
 | Séparateur | `--border` | `rgba(120,220,205,.18)` | `rgba(13,60,66,.14)` |
 | Contour de champ | `--border-control` | `#5f8f8b` | `#6f8f8c` |
 | Contour d'une case d'objet | `--slot-border` | `rgba(120,220,205,.24)` | `rgba(13,60,66,.2)` |
-| Caractéristiques | `--stat-vitality`, `--stat-earth`, `--stat-fire`, `--stat-water`, `--stat-air`, `--stat-wisdom`, `--stat-critical`, `--stat-range`, `--stat-neutral` | `#ff6b81`, `#c9955c`, `#ff7a45`, `#5db7ff`, `#7fdc6b`, `#b58cff`, `#ffb84d`, `#5fd9cb`, `#c5d8d4` | nuances foncées de même teinte |
 | Police de titre | `--font-display` | Rowdies | identique |
 | Police de texte | `--font-body` | Lexend | identique |
 
