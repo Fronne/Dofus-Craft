@@ -56,7 +56,8 @@ champ, taper un montant, appuyer sur Entrée : le nouveau prix est affiché, par
 ### User Story 2 - Ne pas perdre un prix tapé quand la page se recharge (Priority: P2)
 
 Le joueur a tapé un montant et, sans être sorti du champ, recharge la page, la ferme ou change
-d'onglet. Le montant tapé est enregistré à ce moment-là, s'il ne l'a pas déjà été.
+de site. Le montant tapé est enregistré à ce moment-là, s'il ne l'a pas déjà été. Passer sur une autre
+fenêtre (le jeu, par exemple) au milieu d'une saisie n'enregistre rien : le montant peut être incomplet.
 
 **Why this priority**: sans cela, un prix relevé en jeu est perdu sans que le joueur s'en aperçoive.
 
@@ -94,8 +95,8 @@ retour, le champ montre le montant tapé.
 - **FR-001**: Les champs de prix (prix unitaire d'une ressource, prix HDV d'un objet) MUST être
   directement modifiables dans les deux modes, sur toutes les pages où ils apparaissent : aucun
   état verrouillé, aucun bouton « Modifier ».
-- **FR-002**: Un champ de prix MUST toujours montrer le symbole kamas à sa droite ; il est atténué
-  tant que le champ est vide.
+- **FR-002**: Un champ de prix qui contient un montant MUST montrer le symbole kamas à sa droite, à la
+  place de l'ancien bouton « Modifier ».
 - **FR-003**: Quand un champ de prix reçoit le focus (clic, toucher ou clavier), tout son contenu
   MUST être sélectionné.
 - **FR-004**: Quand le joueur quitte un champ de prix (Entrée, clic ailleurs, tabulation) avec une
@@ -106,7 +107,7 @@ retour, le champ montre le montant tapé.
 - **FR-006**: Échap MUST remettre le prix que le champ avait en entrant, sans rien enregistrer.
 - **FR-007**: En Mode communautaire, la confirmation de prix inhabituel MUST continuer de
   s'appliquer à la sortie du champ ; une annulation MUST remettre le prix précédent.
-- **FR-008**: Quand la page est rechargée, fermée ou mise en arrière-plan alors qu'un champ contient
+- **FR-008**: Quand la page est rechargée, fermée ou quittée alors qu'un champ contient
   un montant valide, modifié et pas encore enregistré, ce montant MUST être enregistré à ce
   moment-là, une seule fois.
 - **FR-009**: Dans le cas de FR-008, en Mode communautaire, un montant qui demanderait une
