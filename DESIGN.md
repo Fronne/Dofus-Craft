@@ -67,7 +67,7 @@ Règles :
   losange ; le nom de la caractéristique reste toujours écrit.
 - Un texte posé sur une image utilise `--on-image`, avec le voile `--image-veil` ou l'ombre
   `--on-image-shadow` pour rester lisible. Ces trois jetons ne changent pas avec le thème.
-- Les cases d'équipement gardent les couleurs du jeu (`--slot-bg`, `--slot-border`, `--slot-glyph`).
+- Les cases d'équipement des filtres de catégorie sont neutres (`--slot-bg`, `--slot-border`, `--slot-glyph`) ; seule celle de la catégorie choisie prend la couleur d'accent.
 - Les surfaces translucides (`--panel`, `--nav-bg`) laissent passer la lumière du fond ; un menu, un
   dialogue ou une bulle, qui passent au-dessus du contenu, sont opaques (`--panel-strong`).
 - Contraste minimal : 4,5:1 pour tout texte, 3:1 pour le contour d'un champ, une icône seule et un

@@ -75,12 +75,11 @@
   --image-bg: rgba(3, 14, 17, .45);
   --inner-bg: rgba(3, 14, 17, .4);
 
-  /* Equipment-slot swatch (category icons): matches the real Dofus equipment panel — dark
-     indigo slot, periwinkle glyph — rather than the app's own palette, so it only moves with
-     light/dark. */
-  --slot-bg: #332f4e;
-  --slot-border: #4b4570;
-  --slot-glyph: #a39cd9;
+  /* Equipment-slot swatch (category icons): a quiet slot in the theme's own neutrals; the
+     selected category alone takes the accent (global.css). */
+  --slot-bg: var(--inner-bg);
+  --slot-border: var(--border);
+  --slot-glyph: var(--text-muted);
 
   /* Spacing scale (4px base). Prefer these over ad hoc rem values in new/edited rules. */
   --space-1: .25rem;
@@ -154,9 +153,6 @@
   --button-bg: rgba(13, 60, 66, .05);
   --image-bg: rgba(13, 60, 66, .07);
   --inner-bg: rgba(13, 60, 66, .05);
-  --slot-bg: #e7e3f6;
-  --slot-border: #c7bfe8;
-  --slot-glyph: #5b4f9c;
 }
 
 /* The light sits on the root, not on <body>: body is only one viewport tall (html, body

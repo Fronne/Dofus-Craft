@@ -398,13 +398,10 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   border-color: var(--border-strong);
   color: var(--accent-bright);
 }
-/* Slot look matches the real Dofus equipment panel (indigo slot, periwinkle glyph) instead of
-   the app's own accent palette — via --slot-* (theme.css), which only shifts with light/dark,
-   not the accent, and is kept constant across hover/selected states since those are
-   already signaled by the button itself. The source PNGs are a single solid color with alpha
-   edges, so they're applied as a mask and tinted rather than drawn as-is — that's what lets a
-   swatch this small reproduce the game's light-on-dark glyph instead of the dark-on-transparent
-   original, and what makes a light-theme variant (dark glyph on a light slot) possible at all. */
+/* A quiet slot in the theme's neutrals (--slot-*, theme.css); only the selected category's slot
+   takes the accent, like its button. The source PNGs are a single solid color with alpha edges,
+   so they're applied as a mask and tinted rather than drawn as-is — that's what lets one image
+   serve both themes and both states. */
 .category-icon {
   display: grid;
   place-items: center;
@@ -428,6 +425,9 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   mask-size: contain;
 }
 .category-icon svg { color: var(--slot-glyph); }
+.category-icons button.selected .category-icon { border-color: var(--border-strong); }
+.category-icons button.selected .category-icon-glyph { background-color: var(--accent-bright); }
+.category-icons button.selected .category-icon svg { color: var(--accent-bright); }
 
 /* ---------- Results ---------- */
 
