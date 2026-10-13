@@ -153,7 +153,7 @@ it('fetches only the selected category instead of the whole catalogue when no se
   expect(requests.some((request) => request.includes('/items?') && !request.includes('typeId='))).toBe(false);
 });
 
-it('sorts by level then name before applying the result limit', async () => {
+it('sorts from the highest level down, then by name, before applying the result limit', async () => {
   vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
     if (input.includes('/item-types?')) {
       return Promise.resolve(new Response(JSON.stringify({
@@ -192,8 +192,8 @@ it('sorts by level then name before applying the result limit', async () => {
   await expect(searchItems('item', '', 0, 2)).resolves.toMatchObject({
     total: 4,
     data: [
-      { id: '2', name: 'Item Alpha', level: 1 },
-      { id: '1', name: 'Item Bêta', level: 1 },
+      { id: '4', name: 'Item Zénith', level: 100 },
+      { id: '3', name: 'Item Alpha', level: 20 },
     ],
   });
 });
@@ -226,8 +226,8 @@ it('excludes items without an exploitable recipe before sorting and limiting', a
   await expect(searchItems('craftable', '', 0, 12)).resolves.toMatchObject({
     total: 2,
     data: [
-      { id: '2', name: 'Craftable valide' },
       { id: '3', name: 'Craftable valide 2' },
+      { id: '2', name: 'Craftable valide' },
     ],
   });
 });

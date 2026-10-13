@@ -140,8 +140,9 @@ export async function searchItems(
     })
     .map(mapDofusDbItem)
     .filter((item): item is NonNullable<typeof item> => item !== undefined);
+  // Level 200 first, then down to the lowest levels; an item without a level comes last.
   items.sort((left, right) =>
-    (left.level ?? Number.POSITIVE_INFINITY) - (right.level ?? Number.POSITIVE_INFINITY) ||
+    (right.level ?? Number.NEGATIVE_INFINITY) - (left.level ?? Number.NEGATIVE_INFINITY) ||
     left.name.localeCompare(right.name, 'fr'),
   );
   return {

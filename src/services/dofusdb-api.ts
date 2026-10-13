@@ -119,9 +119,11 @@ export async function searchDofusDbItems(
   const params = new URLSearchParams({
     $limit: String(limit),
     $skip: String(skip),
-    $sort: sort,
     hasRecipe: 'true',
   });
+  // A leading « - » sorts from the highest value down.
+  if (sort.startsWith('-')) params.set(`$sort[${sort.slice(1)}]`, '-1');
+  else params.set('$sort', sort);
   const queryTokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
   const serverToken = [...queryTokens].sort((left, right) => right.length - left.length)[0];
   if (serverToken) params.set('name.fr[$regex]', toAccentInsensitiveRegex(serverToken));
@@ -148,7 +150,8 @@ export async function searchDofusDbItemsByName(query: string, signal?: AbortSign
 }
 
 export async function getDofusDbInitialItems(signal?: AbortSignal): Promise<DofusDbItem[]> {
-  const page = await searchDofusDbItems('', undefined, 0, 100, signal, 'level');
+  // The highest levels first, like the list they open (searchItems).
+  const page = await searchDofusDbItems('', undefined, 0, 100, signal, '-level');
   return page.data;
 }
 

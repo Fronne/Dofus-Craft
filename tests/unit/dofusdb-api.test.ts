@@ -129,7 +129,7 @@ describe('DofusDB API service', () => {
     expect(fetchMock.mock.calls[0][0]).not.toContain('typeId=');
   });
 
-  it('loads a lightweight initial page sorted by level', async () => {
+  it('loads a lightweight initial page sorted from the highest level down', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       total: 100,
       limit: 100,
@@ -140,7 +140,7 @@ describe('DofusDB API service', () => {
 
     await expect(getDofusDbInitialItems()).resolves.toHaveLength(1);
     const requestUrl = new URL(fetchMock.mock.calls[0][0]);
-    expect(requestUrl.searchParams.get('$sort')).toBe('level');
+    expect(requestUrl.searchParams.get('$sort[level]')).toBe('-1');
     expect(requestUrl.searchParams.get('$limit')).toBe('100');
   });
 });
