@@ -803,8 +803,9 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
   pointer-events: none;
 }
-.price-line small:hover .price-age-tooltip,
-.price-line:focus-within .price-age-tooltip {
+/* On the date line only: a click elsewhere on the line (copying the name, typing the price) must
+   not bring it up. */
+.price-line small:hover .price-age-tooltip {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
