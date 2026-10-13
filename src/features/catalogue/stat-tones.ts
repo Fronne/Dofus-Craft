@@ -6,7 +6,6 @@ export type StatTone = 'vitality' | 'earth' | 'fire' | 'water' | 'air' | 'wisdom
 const TONE_BY_ICON: Record<string, StatTone> = {
   tx_vitality: 'vitality',
   tx_lifePoints: 'vitality',
-  tx_health: 'vitality',
   tx_heal: 'vitality',
   tx_strength: 'earth',
   tx_strengthRes: 'earth',
@@ -18,7 +17,6 @@ const TONE_BY_ICON: Record<string, StatTone> = {
   tx_agilityRes: 'air',
   tx_wisdom: 'wisdom',
   tx_crit: 'critical',
-  tx_criticalHit: 'critical',
   tx_criticalDamage: 'critical',
   tx_criticalReduction: 'critical',
   tx_range: 'range',
@@ -26,5 +24,5 @@ const TONE_BY_ICON: Record<string, StatTone> = {
 
 // A characteristic without a color of its own (or without an icon at all) gets the neutral one.
 export function statTone(icon?: string): StatTone {
-  return (icon && TONE_BY_ICON[icon]) || 'neutral';
+  return icon && Object.hasOwn(TONE_BY_ICON, icon) ? TONE_BY_ICON[icon] : 'neutral';
 }

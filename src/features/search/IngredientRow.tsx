@@ -114,9 +114,11 @@ export function IngredientRow({
   const subtotalKamas = children !== undefined
     ? cost.unitKamas === undefined ? null : cost.unitKamas * quantity
     : undefined;
-  // Decorative: the amounts it is drawn from are written on the line. No bar without a known cost.
-  const share = shareOfKamas && cost.unitKamas !== undefined
-    ? Math.min(100, Math.max(2, (cost.unitKamas * quantity / shareOfKamas) * 100))
+  // Decorative: the amounts it is drawn from are written on the line. No bar without a known cost,
+  // nor for a line that costs nothing.
+  const lineKamas = cost.unitKamas === undefined ? 0 : cost.unitKamas * quantity;
+  const share = shareOfKamas && lineKamas > 0
+    ? Math.min(100, Math.max(2, (lineKamas / shareOfKamas) * 100))
     : undefined;
 
   return (
