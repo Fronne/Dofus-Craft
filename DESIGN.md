@@ -133,6 +133,12 @@ Base de 4 px. Seuls ces pas sont utilisés :
   valeur qui glisse (jauge, chevron). Les cartes entrent en 280 ms et la bulle des compteurs en
   200 ms (`modern-rise`). Rien ne bouge sans raison, et tout s'arrête sous
   `prefers-reduced-motion` (côté CSS, et `prefersReducedMotion()` côté script).
+- Animations ponctuelles : le verdict entre à chaque changement (losange qui rebondit, barres qui
+  se remplissent, économie qui compte — `useCountUp`), un champ de prix s'éclaire à
+  l'enregistrement (`playOnce`), une carte des Suivis s'efface avant de partir (`leaveThen`), les
+  listes arrivent en cascade, le losange du menu glisse d'une page à l'autre, le thème change en
+  fondu. Le halo du logo (Dofus Émeraude) est la seule animation continue.
+- Sur ordinateur (≥ 1024 px) toute l'interface est rendue à 90 % (`--ui-zoom`).
 
 ## 6. Composants
 

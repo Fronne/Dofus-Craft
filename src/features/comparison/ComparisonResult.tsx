@@ -3,6 +3,7 @@ import type { Comparison, Recommendation } from '../../domain/types';
 import { formatKamas, formatPercent } from '../../domain/kamas';
 import { Icon } from '../../components/Icon';
 import type { IconName } from '../../components/Icon';
+import { useCountUp } from './useCountUp';
 
 const labels: Record<Recommendation, string> = {
   craft: 'Fabriquer est plus rentable',
@@ -97,6 +98,11 @@ function VerdictBar({ label, value, max, partial, cheaper, field }: {
   );
 }
 
+// What the verdict saves, counted up when it appears and from one amount to the next after that.
+function SavingsAmount({ kamas }: { kamas: number }) {
+  return <strong>{formatKamas(useCountUp(kamas))}</strong>;
+}
+
 // specs/001 FR-010/FR-011/FR-016: the craft-or-buy verdict at a glance — the recommendation in large
 // type with what it saves (kamas and percentage, with its point of comparison), then the craft cost
 // and the HDV price as proportional bars, the cheaper one highlighted. An incomplete comparison
@@ -114,7 +120,8 @@ export function ComparisonVerdict({ result, marketPriceField }: { result: Compar
       : hint && hint.charAt(0).toUpperCase() + hint.slice(1);
   return (
     <div className={`verdict verdict--${recommendation}`}>
-      <div className="verdict-head">
+      {/* Keyed by the recommendation: a verdict that changes comes in again (global.css). */}
+      <div className="verdict-head" key={recommendation}>
         <span className="verdict-icon" aria-hidden="true"><Icon name={verdictIcons[recommendation]} size={22} /></span>
         <div className="verdict-text">
           <p className="verdict-title">{verdictTitles[recommendation]}</p>
@@ -122,7 +129,7 @@ export function ComparisonVerdict({ result, marketPriceField }: { result: Compar
         </div>
         {definitive && result.differenceKamas !== undefined && result.differenceKamas > 0 && (
           <div className="verdict-savings">
-            <strong>{formatKamas(result.differenceKamas)}</strong>
+            <SavingsAmount kamas={result.differenceKamas} />
             <span>
               d’économie
               {result.percentage !== undefined && (

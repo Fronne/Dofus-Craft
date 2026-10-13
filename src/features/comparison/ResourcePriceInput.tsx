@@ -72,6 +72,9 @@ export function ResourcePriceInput({
     priceAge === 'stale' || priceAge === 'expired'
       ? 'Prix ancien, peut différer du prix actuel en jeu.'
       : undefined;
+  const subtotal = subtotalKamas !== undefined
+    ? subtotalKamas ?? undefined
+    : value && valid ? Number(value) * quantity : undefined;
   return (
     <label className={`price-line${priceAgeClass}`} htmlFor={inputId}>
       <span className="price-resource">
@@ -85,6 +88,8 @@ export function ResourcePriceInput({
         <small>
           Dernière mise à jour : {formatRelativeTime(updatedAt)}
           {priceNote && <span className="price-note"> · {priceNote}</span>}
+          {/* The price-history button follows the date it gives the story of. */}
+          {history}
           {priceAgeTooltip && (
             <span className="price-age-tooltip" role="tooltip">
               {priceAgeTooltip}
@@ -92,7 +97,8 @@ export function ResourcePriceInput({
           )}
         </small>
       )}
-      {/* The price field, with the price-history button right after it. */}
+      {/* The price field; the price-history button comes right after it only while the price has no
+          date to sit next to. */}
       <span className="price-input-cell">
         <span className="kamas-input-wrap">
           <input
@@ -111,11 +117,12 @@ export function ResourcePriceInput({
           />
           {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
         </span>
-        {history}
+        {!updatedAt && history}
       </span>
-      {subtotalKamas !== undefined
-        ? subtotalKamas !== null && <b className="price-resource-formatted">{formatKamas(subtotalKamas)}</b>
-        : value && valid && <b className="price-resource-formatted">{formatKamas(Number(value) * quantity)}</b>}
+      {subtotal !== undefined
+        ? <b className="price-resource-formatted">{formatKamas(subtotal)}</b>
+        // No subtotal yet: a dash holds its column where the lines sit under column titles (global.css).
+        : <b className="price-resource-formatted price-resource-formatted--empty" aria-hidden="true">—</b>}
       {retained}
       {!valid && <em id={errorId} role="alert">Entrez un nombre entier positif ou zéro.</em>}
     </label>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Category, Item, ItemStat, Recipe, Resource } from '../../domain/types';
 import { Icon } from '../../components/Icon';
+import { playOnce } from '../../services/motion';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { CategoryIcon } from '../../components/CategoryIcon';
 
@@ -78,7 +79,13 @@ export function ItemDetail({
         <div className="item-head-actions">
           {history}
           {onTogglePin && (
-            <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned} onClick={onTogglePin}>
+            <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned}
+              onClick={(event) => {
+                // The bookmark bounces when the item starts being followed (global.css).
+                if (!isPinned) playOnce(event.currentTarget, 'pop');
+                onTogglePin();
+              }}
+            >
               <Icon name={isPinned ? 'bookmark-filled' : 'bookmark'} size={18} />
               {isPinned ? 'Ne plus suivre' : 'Suivre'}
             </button>

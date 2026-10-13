@@ -11,6 +11,7 @@ import { ItemDetail } from '../catalogue/ItemDetail';
 import { PriceHistoryButton } from '../comparison/PriceHistoryButton';
 import { MarketPriceInput } from '../comparison/MarketPriceInput';
 import { ComparisonVerdict } from '../comparison/ComparisonResult';
+import { useCountUp } from '../comparison/useCountUp';
 import { useResourcePrices } from '../comparison/useResourcePrices';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
 import { computeDeviationPercent, needsItemPriceConfirmation } from '../../domain/outlier-threshold';
@@ -33,6 +34,11 @@ import { IngredientRow, type PriceFieldProps } from './IngredientRow';
 import { PriceEntryField } from '../comparison/PriceEntryField';
 
 const SEARCH_CONTEXT_STORAGE_KEY = 'craftcheck-recherche-context';
+
+// The craft total, counted from one amount to the next as prices are typed — never from zero.
+function CraftTotal({ kamas }: { kamas: number }) {
+  return <strong>{formatKamas(useCountUp(kamas, kamas))}</strong>;
+}
 
 export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
@@ -539,7 +545,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
             {result && (
               <p className="prices-total">
                 <span>Total du craft</span>
-                <strong>{formatKamas(result.knownCraftCostKamas)}</strong>
+                <CraftTotal kamas={result.knownCraftCostKamas} />
                 {result.craftCostStatus === 'partial' && <small>(partiel)</small>}
               </p>
             )}

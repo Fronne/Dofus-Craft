@@ -50,7 +50,7 @@ export function MarketPriceInput({
         // Only a placeholder: an actual 0 would count as a real HDV price and skew the verdict.
         placeholder="0"
       />
-      {/* Always shown, faded until a price is typed, so the field reads as an amount in kamas. */}
+      {/* Always shown, even before a price is typed, so the field reads as an amount in kamas. */}
       <img
         src={KAMAS_ICON_URL}
         alt="kamas"

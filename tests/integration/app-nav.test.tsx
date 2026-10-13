@@ -44,8 +44,9 @@ describe('navigation principale (specs/051)', () => {
     getSiteSettings.mockResolvedValue({ forgemagiePage: true });
     const nav = open('/');
     await within(nav).findByRole('link', { name: 'Forgemagie' });
-    expect(nav).toHaveTextContent(/^DCDofusCraft/);
+    expect(nav).toHaveTextContent(/^DofusCraft/);
     expect(entries(nav)).toEqual([
+      'DofusCraft, aller à la recherche',
       'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie',
       'Serveur actif Mikhal', 'Paramètres', 'Activer le thème clair',
     ]);

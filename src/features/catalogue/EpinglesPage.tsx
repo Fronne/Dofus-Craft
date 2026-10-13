@@ -18,6 +18,7 @@ import type { RecipeTree, ResourcePrice } from '../../domain/types';
 import { syncCommunityPrices } from '../comparison/community-gap-fill';
 import { formatKamas } from '../../domain/kamas';
 import type { PinnedItem } from '../../persistence/pinned-items';
+import { leaveThen } from '../../services/motion';
 
 type PinnedPriceSummary = {
   craftCostKamas?: number;
@@ -457,9 +458,12 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                       type="button"
                       className="icon-button pinned-card-remove"
                       aria-label={`Ne plus suivre ${entry.item.name}`}
-                      onClick={() => {
-                        setRemoved(entry);
-                        unpin(entry.item.id);
+                      onClick={(event) => {
+                        // The card fades out before it goes (global.css).
+                        leaveThen(event.currentTarget.closest<HTMLElement>('.pinned-card'), () => {
+                          setRemoved(entry);
+                          unpin(entry.item.id);
+                        });
                       }}
                     >
                       <Icon name="close" size={16} />

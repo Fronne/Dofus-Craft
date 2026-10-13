@@ -1,5 +1,6 @@
 import { useEffect, useRef, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { isValidKamas, normalizeKamasInput } from '../../domain/kamas';
+import { playOnce } from '../../services/motion';
 
 // specs/052-direct-price-entry: how a price field is typed in, the same for a resource's unit price
 // and an item's HDV price. Focusing the field selects its content, ready to be replaced; leaving it
@@ -89,7 +90,7 @@ export function usePriceEntry({
       keepSelectionRef.current = false;
       onChange(normalizeKamasInput(rawValue));
     },
-    onBlur: () => {
+    onBlur: (event: FocusEvent<HTMLInputElement>) => {
       keepSelectionRef.current = false;
       const typed = typedRef.current;
       typedRef.current = false;
@@ -100,6 +101,10 @@ export function usePriceEntry({
       }
       onBlur?.(value);
       if (!typed || value === startValueRef.current) return;
+      // The field lights up briefly (global.css): with no button to press, this is the sign that the
+      // price was taken. Right away, without waiting for the group's answer: a late flash reads as
+      // something else.
+      if (value !== '' && isValidKamas(value)) playOnce(event.currentTarget, 'saved');
       const previousValue = startValueRef.current;
       const result = onCommit?.(value);
       if (result) {

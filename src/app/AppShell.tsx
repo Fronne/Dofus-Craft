@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
@@ -20,6 +20,7 @@ import { useForgemagiePageEnabled } from './useForgemagiePageEnabled';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
+import { prefersReducedMotion } from '../services/motion';
 import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
@@ -84,12 +85,37 @@ export function AppShell() {
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    const root = document.documentElement;
+    // A theme chosen by the player (not the one the page opens with) fades in: every color glides
+    // for a moment (global.css).
+    const switching = root.dataset.theme !== undefined && root.dataset.theme !== theme;
+    root.dataset.theme = theme;
     window.localStorage.setItem('craftcheck-theme', theme);
+    if (!switching || prefersReducedMotion()) return;
+    root.dataset.themeSwitching = '';
+    const done = window.setTimeout(() => delete root.dataset.themeSwitching, 400);
+    return () => window.clearTimeout(done);
   }, [theme]);
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
+  // The side illustrations drift up slowly while the page scrolls, for a sense of depth: a
+  // twentieth of the scroll, 48px at most (global.css reads --side-art-shift).
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function' || prefersReducedMotion()) return;
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        document.documentElement.style.setProperty('--side-art-shift', `${Math.min(window.scrollY / 20, 48)}px`);
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
   useEffect(() => {
     void recordVisit();
   }, []);
@@ -115,17 +141,44 @@ export function AppShell() {
     mainRef.current?.focus({ preventScroll: true });
   }, [pathname]);
 
+  // The diamond under the current page's link slides from one link to the next: its place is the
+  // middle of the active link's bottom edge, handed to the list as CSS variables (global.css). No
+  // active link (Paramètres), no diamond.
+  const navListRef = useRef<HTMLUListElement>(null);
+  useLayoutEffect(() => {
+    const list = navListRef.current;
+    if (!list) return;
+    const place = () => {
+      const item = list.querySelector<HTMLElement>('.app-nav-link.active')?.parentElement;
+      list.style.setProperty('--nav-marker-on', item ? '1' : '0');
+      if (!item) return;
+      list.style.setProperty('--nav-marker-x', `${item.offsetLeft + item.offsetWidth / 2}px`);
+      // Its own line when the links wrap on two.
+      list.style.setProperty('--nav-marker-y', `${item.offsetTop + item.offsetHeight}px`);
+    };
+    place();
+    // It slides only once it has been placed a first time: it must not glide in when the page opens.
+    const ready = requestAnimationFrame(() => { list.dataset.markerReady = ''; });
+    // The links move when the web font arrives or when the list of pages changes.
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(place) : undefined;
+    observer?.observe(list);
+    return () => {
+      cancelAnimationFrame(ready);
+      observer?.disconnect();
+    };
+  }, [pathname, forgemagieEnabled]);
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#contenu">Aller au contenu</a>
       <nav className="app-nav" aria-label="Navigation principale">
-        <div className="app-nav-brand">
-          <span className="app-nav-brand-mark" aria-hidden="true">DC</span>
+        <Link className="app-nav-brand" to={ROUTES.search} aria-label="DofusCraft, aller à la recherche">
+          <img className="app-nav-brand-mark" src="/dofus-emeraude.png" alt="" width="44" height="44" />
           <span className="app-nav-brand-name">
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
-        </div>
-        <ul className="app-nav-list">
+        </Link>
+        <ul className="app-nav-list" ref={navListRef}>
           {NAV_ITEMS.filter((item) => forgemagieEnabled || item.to !== ROUTES.forgemagie).map((item) => (
             <li key={item.to}>
               <NavLink
@@ -166,6 +219,8 @@ export function AppShell() {
         <main className="app-page" id="contenu" tabIndex={-1} ref={mainRef}>
           <InfoBanner />
           <ErrorBoundary key={pathname}>
+          {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
+          <div className="page-enter">
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
             <Route path={ROUTES.home} element={<Navigate to={ROUTES.search} replace />} />
@@ -202,6 +257,7 @@ export function AppShell() {
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </div>
           </ErrorBoundary>
         </main>
       </div>
