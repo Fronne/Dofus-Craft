@@ -66,6 +66,7 @@ export function ItemSearch({
           aria-controls="search-filters-panel"
           onClick={() => setFiltersOpen((open) => !open)}
         >
+          <Icon name="filter" size={18} />
           <span>Filtres</span>
           {activeFilterCount > 0 && (
             <span className="filters-toggle-count" aria-label={`${activeFilterCount} actif${activeFilterCount > 1 ? 's' : ''}`}>

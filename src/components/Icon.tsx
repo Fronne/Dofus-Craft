@@ -9,6 +9,7 @@ export type IconName =
   | 'users'
   | 'chevron-down'
   | 'close'
+  | 'filter'
   | 'check'
   | 'server'
   | 'grid'
@@ -117,6 +118,8 @@ const paths: Record<IconName, { filled?: boolean; children: string }> = {
   },
   'chevron-down': { children: '<polyline points="6 9 12 15 18 9"/>' },
   close: { children: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>' },
+  // Three shortening lines, for the button that unfolds the search filters.
+  filter: { children: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
   check: { children: '<polyline points="5 13 9.5 17.5 19 7"/>' },
   server: {
     children:
