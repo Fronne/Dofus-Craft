@@ -2231,3 +2231,26 @@ select:focus {
   .resource-prices .retained-cost-row .ingredient-toggle:hover, .resource-prices .retained-cost-row .ingredient-toggle[aria-expanded="true"] { background: none; color: var(--link); text-decoration: underline; }
 }
 .prices-total { border-top-width: 2px; border-top-color: var(--border-strong); }
+
+/* ---------- Side illustrations (wide screens) ----------
+   One Dofus illustration on each side of the content column, so a wide screen is not two empty
+   bands. They stay beside the column — never under what the player reads or clicks — and their
+   muted colors and fade are baked into the files (scripts/build-side-illustrations.mjs). */
+@media (min-width: 1340px) {
+  body { --side-art: calc((100vw - 1216px) / 2); }
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    z-index: 0;
+    width: var(--side-art);
+    background: top / cover no-repeat;
+    opacity: .4;
+    pointer-events: none;
+  }
+  body::before { left: 0; background-image: url(/backgrounds/songe-gauche.webp?v=6); background-position: top right; }
+  body::after { right: 0; background-image: url(/backgrounds/songe-droite.webp?v=6); background-position: top left; }
+  .app-shell { position: relative; z-index: 1; }
+  :root[data-theme="light"] body::before, :root[data-theme="light"] body::after { opacity: .22; }
+}

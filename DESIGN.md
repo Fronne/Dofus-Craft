@@ -67,6 +67,7 @@ Règles :
   losange ; le nom de la caractéristique reste toujours écrit.
 - Un texte posé sur une image utilise `--on-image`, avec le voile `--image-veil` ou l'ombre
   `--on-image-shadow` pour rester lisible. Ces trois jetons ne changent pas avec le thème.
+- Sur écran large (à partir de 1340 px), les marges de part et d'autre du contenu portent chacune une moitié de l'illustration « Songe infini » d'Ankama (`public/backgrounds/`), à 40 % d'opacité (22 % en thème clair). Elles ne passent jamais sous le contenu ; leur fondu et leurs couleurs adoucies sont enregistrés dans les fichiers par `scripts/build-side-illustrations.mjs`.
 - Les cases d'équipement des filtres de catégorie sont neutres (`--slot-bg`, `--slot-border`, `--slot-glyph`) ; seule celle de la catégorie choisie prend la couleur d'accent.
 - Les surfaces translucides (`--panel`, `--nav-bg`) laissent passer la lumière du fond ; un menu, un
   dialogue ou une bulle, qui passent au-dessus du contenu, sont opaques (`--panel-strong`).
