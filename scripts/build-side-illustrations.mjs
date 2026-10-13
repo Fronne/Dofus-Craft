@@ -4,6 +4,7 @@
 // The muted colors and the fade on all four sides are baked into the file, so the page only has
 // to place it and set its opacity — no CSS mask, which browsers do not all composite the same way.
 import path from 'node:path';
+// sharp is not a declared dependency: it is the copy wrangler installs. Run `npm i -D sharp` if it goes missing.
 import sharp from 'sharp';
 
 const sourceFile = process.argv[2];

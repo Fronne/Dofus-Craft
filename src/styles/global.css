@@ -2237,7 +2237,8 @@ select:focus {
    bands. They stay beside the column — never under what the player reads or clicks — and their
    muted colors and fade are baked into the files (scripts/build-side-illustrations.mjs). */
 @media (min-width: 1340px) {
-  body { --side-art: calc((100vw - 1216px) / 2); }
+  /* 1248px: the content column (1232px) plus room for the scrollbar that 100vw counts in. */
+  body { --side-art: calc((100vw - 1248px) / 2); }
   body::before, body::after {
     content: '';
     position: fixed;
