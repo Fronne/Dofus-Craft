@@ -17,14 +17,10 @@ import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import { useForgemagiePageEnabled } from './useForgemagiePageEnabled';
-import type { AccentColorId } from '../domain/accent-colors';
-import { getAccentColorId, setAccentColorId } from '../persistence/accent-color-preference';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
 import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
-import type { DesignId } from '../domain/designs';
-import { applyDesign, getDesignId, setDesignId } from '../persistence/design-preference';
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
@@ -85,29 +81,15 @@ export function AppShell() {
       ? 'light'
       : 'dark';
   });
-  const [accentColor, setAccentColor] = useState<AccentColorId>(() => getAccentColorId());
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
-  const [design, setDesignState] = useState<DesignId>(() => getDesignId());
-  // Saved only on the player's own choice, so the default can change without being frozen in.
-  const chooseDesign = (designId: DesignId) => {
-    setDesignState(designId);
-    setDesignId(designId);
-  };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem('craftcheck-theme', theme);
   }, [theme]);
   useEffect(() => {
-    document.documentElement.dataset.accent = accentColor;
-    setAccentColorId(accentColor);
-  }, [accentColor]);
-  useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
-  useEffect(() => {
-    applyDesign(design);
-  }, [design]);
   useEffect(() => {
     void recordVisit();
   }, []);
@@ -143,7 +125,6 @@ export function AppShell() {
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
         </div>
-        <ServerSwitcher />
         <ul className="app-nav-list">
           {NAV_ITEMS.filter((item) => forgemagieEnabled || item.to !== ROUTES.forgemagie).map((item) => (
             <li key={item.to}>
@@ -158,8 +139,10 @@ export function AppShell() {
             </li>
           ))}
         </ul>
-        {/* Paramètres is reached from this icon, not from the page list above. */}
+        {/* specs/051-site-visual-refresh: the right end of the top bar — active server, then
+            Paramètres (reached from this icon, not from the page list) and the theme toggle. */}
         <div className="app-nav-footer">
+          <ServerSwitcher />
           <NavLink
             to={ROUTES.settings}
             className={({ isActive }) => `icon-button app-nav-settings${isActive ? ' active' : ''}`}
@@ -212,12 +195,8 @@ export function AppShell() {
                 <ParametresPage
                   theme={theme}
                   setTheme={setTheme}
-                  accentColor={accentColor}
-                  setAccentColor={setAccentColor}
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
-                  design={design}
-                  setDesign={chooseDesign}
                 />
               }
             />

@@ -6,6 +6,11 @@
 
 **Status**: Draft
 
+> **Remplacée le 2026-10-13** par [specs/051-site-visual-refresh](../051-site-visual-refresh/spec.md) :
+> les designs « Classique » et « Moderne » et le réglage « Design » de Paramètres n'existent plus ;
+> le site a un seul style. Les règles utiles du design « Moderne » ont été reprises dans
+> `src/styles/global.css`.
+
 **Input**: User description: "Proposer un nouveau design « Moderne épuré » pour toute l'application (même organisation des pages qu'aujourd'hui, allure modernisée : typographie plus soignée, cartes plus aérées, ombres douces, coins plus arrondis, dégradés doux, micro-animations discrètes), sans changer les parcours ni les fonctionnalités. Le joueur choisit dans Paramètres entre « Classique » (le design actuel, inchangé) et « Nouveau » ; le choix s'applique immédiatement, est mémorisé sur l'appareil, et permet de revenir à l'ancien design en un clic sans redéploiement. Le nouveau design doit fonctionner en thème clair et sombre, avec les couleurs d'accent existantes, sur ordinateur et mobile. Une fois le choix définitif fait, le design non retenu sera supprimé."
 
 ## User Scenarios & Testing *(mandatory)*

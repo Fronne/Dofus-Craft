@@ -493,6 +493,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                   path={path}
                   quantity={ingredient.quantity}
                   cost={topCosts[index]}
+                  shareOfKamas={result?.knownCraftCostKamas}
                   tourTarget={index === firstCraftable ? 'craftable-ingredient' : undefined}
                   tree={recipeTree}
                   expandedPaths={expandedPaths}

@@ -1,30 +1,17 @@
-import type { CSSProperties } from 'react';
 import { Icon } from '../../components/Icon';
-import { accentColors } from '../../domain/accent-colors';
-import type { AccentColorId } from '../../domain/accent-colors';
-import { designs } from '../../domain/designs';
-import type { DesignId } from '../../domain/designs';
 import { priceModes } from '../../domain/price-modes';
 import type { PriceMode } from '../../domain/price-modes';
 
 export function ParametresPage({
   theme,
   setTheme,
-  accentColor,
-  setAccentColor,
   priceMode,
   setPriceMode,
-  design,
-  setDesign,
 }: {
   theme: 'dark' | 'light';
   setTheme: (value: 'dark' | 'light') => void;
-  accentColor: AccentColorId;
-  setAccentColor: (value: AccentColorId) => void;
   priceMode: PriceMode;
   setPriceMode: (value: PriceMode) => void;
-  design: DesignId;
-  setDesign: (value: DesignId) => void;
 }) {
   return (
     <>
@@ -32,26 +19,6 @@ export function ParametresPage({
         <h1>Paramètres</h1>
         <p>Personnalisez l'apparence et la gestion de vos prix.</p>
       </header>
-
-      <section className="panel settings-section">
-        <h2>Design</h2>
-        <p className="settings-section-description">
-          Choisissez entre le design moderne et le design classique ; vous pouvez en changer à tout moment.
-        </p>
-        <div className="settings-choice-row">
-          {designs.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={design === option.id ? 'settings-choice selected' : 'settings-choice'}
-              aria-pressed={design === option.id}
-              onClick={() => setDesign(option.id)}
-            >
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
 
       <section className="panel settings-section">
         <h2>Thème</h2>
@@ -77,27 +44,6 @@ export function ParametresPage({
             <Icon name="moon" size={18} />
             <span>Thème sombre</span>
           </button>
-        </div>
-      </section>
-
-      <section className="panel settings-section">
-        <h2>Couleur principale</h2>
-        <p className="settings-section-description">
-          Utilisée pour les boutons, les éléments actifs, les liens et la sélection, quel que soit
-          le thème choisi.
-        </p>
-        <div className="settings-swatch-row">
-          {accentColors.map((accent) => (
-            <button
-              key={accent.id}
-              type="button"
-              className={accentColor === accent.id ? 'accent-swatch selected' : 'accent-swatch'}
-              style={{ '--swatch-color': accent.swatch } as CSSProperties}
-              aria-label={accent.label}
-              aria-pressed={accentColor === accent.id}
-              onClick={() => setAccentColor(accent.id)}
-            />
-          ))}
         </div>
       </section>
 

@@ -57,6 +57,7 @@ export function IngredientRow({
   choices,
   onChoose,
   tourTarget,
+  shareOfKamas,
 }: {
   path: string;
   quantity: number;
@@ -69,6 +70,9 @@ export function IngredientRow({
   onChoose: (resourceId: string, choice: IngredientChoice | undefined) => void;
   // The guided tour's `data-tour` target (specs/011), set on the first craftable top-level line.
   tourTarget?: string;
+  // specs/051-site-visual-refresh (FR-022): the known craft cost, given to the top-level lines only —
+  // each then draws the share of it that its own cost stands for.
+  shareOfKamas?: number;
 }) {
   const resource = tree.resources[cost.resourceId] ?? { id: cost.resourceId, name: cost.resourceId };
   const children = cost.children;
@@ -110,10 +114,19 @@ export function IngredientRow({
   const subtotalKamas = children !== undefined
     ? cost.unitKamas === undefined ? null : cost.unitKamas * quantity
     : undefined;
+  // Decorative: the amounts it is drawn from are written on the line. No bar without a known cost.
+  const share = shareOfKamas && cost.unitKamas !== undefined
+    ? Math.min(100, Math.max(2, (cost.unitKamas * quantity / shareOfKamas) * 100))
+    : undefined;
 
   return (
     <div className="ingredient-row" data-tour={tourTarget}>
       {renderPriceField({ resource, quantity, retained, subtotalKamas })}
+      {share !== undefined && (
+        <span className="share-bar" aria-hidden="true">
+          <span style={{ width: `${share}%` }} />
+        </span>
+      )}
       {expanded && (
         <div className="ingredient-children">
           {children.map((child) => {

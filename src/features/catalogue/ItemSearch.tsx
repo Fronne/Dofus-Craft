@@ -30,29 +30,35 @@ export function ItemSearch({
   const hasActiveFilters = Boolean(query || category || levelMin || levelMax);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilterCount = (category ? 1 : 0) + (levelMin || levelMax ? 1 : 0);
+  // specs/051-site-visual-refresh (FR-020): the filters applied stay readable while the panel is
+  // folded, each as a chip that removes it in one click.
+  const categoryName = category ? categories.find((entry) => entry.id === category)?.label ?? 'Catégorie' : '';
+  const levelLabel = levelMin || levelMax
+    ? (levelMin || '1') === (levelMax || '200') ? `Niveau ${levelMin}` : `Niveau ${levelMin || '1'} – ${levelMax || '200'}`
+    : '';
   return (
     <div className="search" data-tour="search">
-      <label className="search-primary">
-        <span className="search-label">Rechercher un objet ou une panoplie</span>
-        <span className="search-input-wrap">
-          <Icon name="search" size={22} className="search-input-icon" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            // Down or Enter leaves the field for the first result, without a detour through the filters.
-            onKeyDown={(event) => {
-              if (event.key !== 'ArrowDown' && event.key !== 'Enter') return;
-              const first = document.querySelector<HTMLElement>('.results > button');
-              if (!first) return;
-              event.preventDefault();
-              first.focus();
-            }}
-            placeholder="Rechercher un objet ou une panoplie..."
-          />
-        </span>
-      </label>
-      {/* The filters stay folded until asked for; the count says some are applied while they are hidden. */}
-      <div className="filters-bar">
+      <div className="search-row">
+        <label className="search-primary">
+          <span className="search-label">Rechercher un objet ou une panoplie</span>
+          <span className="search-input-wrap">
+            <Icon name="search" size={22} className="search-input-icon" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              // Down or Enter leaves the field for the first result, without a detour through the filters.
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' && event.key !== 'Enter') return;
+                const first = document.querySelector<HTMLElement>('.results > button');
+                if (!first) return;
+                event.preventDefault();
+                first.focus();
+              }}
+              placeholder="Rechercher un objet ou une panoplie..."
+            />
+          </span>
+        </label>
+        {/* The filters stay folded until asked for; the count says some are applied while they are hidden. */}
         <button
           type="button"
           className="filters-toggle"
@@ -68,12 +74,38 @@ export function ItemSearch({
           )}
           <Icon name="chevron-down" size={16} className="filters-toggle-chevron" />
         </button>
-        {hasActiveFilters && (
+      </div>
+      {hasActiveFilters && (
+        <div className="filters-bar">
+          {categoryName && (
+            <button type="button" className="filter-chip" aria-label={`Retirer le filtre ${categoryName}`} onClick={() => setCategory('')}>
+              <span className="filter-chip-body">
+                <span>{categoryName}</span>
+                <Icon name="close" size={14} />
+              </span>
+            </button>
+          )}
+          {levelLabel && (
+            <button
+              type="button"
+              className="filter-chip"
+              aria-label={`Retirer le filtre ${levelLabel}`}
+              onClick={() => {
+                setLevelMin('');
+                setLevelMax('');
+              }}
+            >
+              <span className="filter-chip-body">
+                <span>{levelLabel}</span>
+                <Icon name="close" size={14} />
+              </span>
+            </button>
+          )}
           <button type="button" className="reset-filters" onClick={onReset}>
             Réinitialiser les filtres
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {/* Kept mounted while folded: a level change still waiting for its delay is not lost. */}
       <fieldset className="filters-panel" id="search-filters-panel" hidden={!filtersOpen}>
         <legend>Filtres</legend>

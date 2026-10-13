@@ -18,7 +18,7 @@
 .admin-counter-who > div { flex: 1 1 auto; min-width: 0; }
 .admin-counter-player { font-weight: 800; overflow-wrap: break-word; }
 .admin-counter-meta { color: var(--text-muted); font-size: .82rem; }
-.admin-counter-current { color: var(--gold-bright); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.admin-counter-current { color: var(--accent-bright); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .admin-counter-target { display: flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: .88rem; }
 /* The single column may shrink below a long player name (which then ends with an ellipsis). */
 .admin-counter { min-width: 0; grid-template-columns: minmax(0, 1fr); }
@@ -61,7 +61,7 @@
   text-align: left;
   cursor: pointer;
 }
-.admin-target-results button.selected { border-color: var(--gold); background: var(--gold-soft); }
+.admin-target-results button.selected { border-color: var(--accent); background: var(--accent-soft); }
 
 @media (max-width: 480px) {
   .admin-counter-current { font-size: 1.2rem; }

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Category, Item, ItemStat, Recipe, Resource } from '../../domain/types';
 import { Icon } from '../../components/Icon';
-import { CharacteristicIcon } from '../../components/CharacteristicIcon';
+import { statTone } from './stat-tones';
 import { CategoryIcon } from '../../components/CategoryIcon';
 
 type ItemDetailData = {
@@ -19,7 +19,8 @@ function StatList({ stats }: { stats: ItemStat[] }) {
     <ul>
       {stats.map((stat) => (
         <li key={stat.id} className={stat.positive ? 'stat-positive' : 'stat-negative'}>
-          {stat.icon && <CharacteristicIcon asset={stat.icon} size={26} />}
+          {/* The diamond only adds a color: the characteristic stays written in the label. */}
+          <span className={`stat-diamond stat-diamond--${statTone(stat.icon)}`} aria-hidden="true" />
           {stat.label}
         </li>
       ))}

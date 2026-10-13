@@ -60,9 +60,10 @@ const verdictTitles: Record<Recommendation, string> = {
   'insufficient-data': 'Comparaison incomplète',
 };
 
+// A decided verdict shows a check, drawn in a diamond (specs/051-site-visual-refresh, FR-021).
 const verdictIcons: Record<Recommendation, IconName> = {
-  craft: 'package',
-  buy: 'coins',
+  craft: 'check',
+  buy: 'check',
   equal: 'info',
   'insufficient-data': 'info',
 };

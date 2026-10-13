@@ -40,7 +40,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 import App from '../../src/app/App';
 
 const CATEGORIES = [{ id: 'cat-1', label: 'Épées', sortOrder: 1, kind: 'Equipment' as const, typeIds: [] }];
-const SEARCH_KEY = 'search::::12';
+const SEARCH_KEY = 'search::::6';
 const ITEM = { id: 'item-1', name: 'Épée Boueuse', level: 1, kind: 'Equipment' as const, categoryId: 'cat-1' };
 const SEARCH_PAGE_V1 = { total: 1, limit: 12, skip: 0, data: [ITEM] };
 const DETAIL_V1 = {

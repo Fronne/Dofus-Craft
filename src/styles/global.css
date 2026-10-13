@@ -5,23 +5,23 @@ body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
-  background:
-    var(--bg-glow),
-    var(--bg);
+  /* No background here: the page's light is painted on the root (theme.css). */
 }
 
 .eyebrow {
   display: inline-block;
-  color: var(--gold-bright);
+  color: var(--accent-bright);
   font-size: .76rem;
   font-weight: 800;
   letter-spacing: .16em;
   text-transform: uppercase;
 }
 
-h1 { margin: .5rem 0 .5rem; color: var(--text); font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.15; letter-spacing: -.03em; }
-h2 { color: var(--text); font-size: 1.15rem; letter-spacing: -.01em; }
-h3 { color: var(--text); font-size: 1rem; font-weight: 700; }
+/* Titles are set in the display face, in capitals; it has a single weight (400). */
+h1, h2, h3 { color: var(--text); font-family: var(--font-display); font-weight: 400; text-transform: uppercase; text-wrap: balance; }
+h1 { margin: .5rem 0 .5rem; font-size: clamp(1.6rem, 3.4vw, 2rem); line-height: 1.15; letter-spacing: .01em; }
+h2 { font-size: 1.25rem; line-height: 1.2; letter-spacing: .02em; }
+h3 { font-size: 1.05rem; line-height: 1.25; letter-spacing: .02em; }
 .muted, small { color: var(--text-muted); }
 small { display: block; margin-top: .75rem; font-size: .8rem; }
 .warning, em { color: var(--danger); font-style: normal; font-weight: 650; }
@@ -30,81 +30,106 @@ small { display: block; margin-top: .75rem; font-size: .8rem; }
 * { box-sizing: border-box; }
 button, a { transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast); }
 
-/* ---------- App shell (sidebar) ---------- */
+/* ---------- App shell (top bar) ---------- */
 
+/* specs/051-site-visual-refresh: on a wide screen the navigation is a bar floating at the top of
+   the page, as wide as the content; under 960px it turns into the bottom tab bar (see Responsive). */
 .app-shell {
+  --app-width: 1280px;
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
 }
 
 .app-nav {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  flex: 0 0 240px;
-  padding: var(--space-5) var(--space-4);
-  border-right: 1px solid var(--border);
-  background: var(--panel-strong);
-  /* height: 100vh is required, not decorative: without it the flex row's default align-items:
-     stretch matches .app-nav's box to .app-shell-main's full content height, so on a page taller
-     than the viewport the sticky box itself becomes page-tall too. Content laid out inside it
-     (in particular .app-nav-footer, pushed to the box's bottom by .app-nav-list's flex: 1) then
-     sits far below the viewport, invisible until you scroll all the way to the bottom of the
-     page. Pinning the box to exactly one viewport tall keeps its own bottom edge — and anything
-     flex-pushed to it — aligned with the viewport's bottom at all times. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  flex: 0 0 auto;
+  width: calc(100% - 2 * var(--space-6));
+  max-width: calc(var(--app-width) - 2 * var(--space-6));
+  margin: var(--space-3) auto 0;
+  padding: .625rem var(--space-3) .625rem 1.125rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--nav-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-sm);
   position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100dvh;
+  top: var(--space-3);
+  z-index: 20;
+}
+/* Without the blur, what scrolls under the bar would show through its text. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .app-nav { background: var(--panel-strong); }
 }
 
 .app-nav-brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 0 var(--space-2);
 }
 .app-nav-brand-mark {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-md);
-  background: var(--gold-soft);
-  color: var(--gold-bright);
-  font-weight: 800;
-  font-size: .8rem;
-  letter-spacing: .02em;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-size: .94rem;
 }
-.app-nav-brand-name { font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; color: var(--text); }
-.app-nav-brand-accent { color: var(--gold-bright); }
+.app-nav-brand-name { font-family: var(--font-display); font-size: 1.19rem; line-height: 1.1; color: var(--text); }
+.app-nav-brand-accent { color: var(--accent-bright); }
 
-.app-nav-list { display: flex; flex-direction: column; flex: 1 1 auto; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
+.app-nav-list { display: flex; flex-wrap: wrap; align-items: center; flex: 0 1 auto; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
 .app-nav-link {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: .65rem var(--space-3);
-  border-radius: var(--radius-md);
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 .875rem;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-weight: 650;
+  font-size: .94rem;
+  font-weight: 500;
   text-decoration: none;
-  border-left: 3px solid transparent;
+  white-space: nowrap;
 }
 .app-nav-link:hover { background: var(--button-bg); color: var(--text); }
 .app-nav-link.active {
-  background: var(--gold-soft);
-  color: var(--gold-bright);
-  border-left-color: var(--gold);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+/* The diamond that marks the current page, astride the bar's bottom edge. */
+.app-nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 80%, transparent);
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 
 .app-shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 
-.app-nav-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex: 0 0 auto; }
-.app-nav-settings.active { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-bright); }
+.app-nav-footer { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; margin-left: auto; }
+.app-nav-footer .icon-button { border-color: transparent; background: none; }
+.app-nav-footer .icon-button:hover { background: var(--button-bg); }
+.app-nav-settings.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-bright); }
 
-.app-page { flex: 1 1 auto; max-width: 1180px; width: 100%; margin: 0 auto; padding: var(--space-6); }
+.app-page { flex: 1 1 auto; max-width: var(--app-width); width: 100%; margin: 0 auto; padding: var(--space-5) var(--space-6) var(--space-6); }
 
 .page-header { margin: 0 0 var(--space-5); }
 .page-header p { max-width: 620px; margin: .35rem 0 0; color: var(--text-muted); font-size: 1rem; }
@@ -127,7 +152,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   cursor: pointer;
   text-decoration: none;
 }
-.icon-button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.icon-button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 .icon-button--sm { width: 32px; height: 32px; }
 
 /* ---------- Buttons ---------- */
@@ -145,10 +170,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   text-decoration: none;
   cursor: pointer;
 }
-.btn-primary { background: var(--gold); border-color: var(--gold); color: var(--on-accent); }
-.btn-primary:hover:not(:disabled) { background: var(--gold-bright); border-color: var(--gold-bright); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-bright); border-color: var(--accent-bright); }
 .btn-secondary { background: var(--button-bg); border-color: var(--border); color: var(--text); }
-.btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 /* A destructive action: told apart by more than its label, and never the accent color on hover. */
 .btn-danger { background: transparent; border-color: color-mix(in srgb, var(--danger) 55%, transparent); color: var(--danger); }
 .btn-danger:hover:not(:disabled) { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
@@ -198,18 +223,18 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   color: var(--text);
 }
 textarea { display: block; width: 100%; line-height: 1.5; resize: vertical; }
-input[type=checkbox], input[type=radio] { accent-color: var(--gold); }
+input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .search input::placeholder, input::placeholder, textarea::placeholder { color: var(--text-faint); }
 input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--danger); }
 .search-primary { max-width: 780px; }
-.search-label { color: var(--text); font-size: 1.05rem; font-weight: 800; }
+.search-label { color: var(--text); font-size: 1rem; font-weight: 600; }
 .search-input-wrap { position: relative; display: block; width: 100%; }
 .search-input-icon {
   position: absolute;
   top: 50%;
   left: var(--space-4);
   z-index: 1;
-  color: var(--gold-bright);
+  color: var(--link);
   transform: translateY(-50%);
   pointer-events: none;
 }
@@ -224,7 +249,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* The Recherche page's main search is the one large field of the site. */
 .search-primary .search-input-wrap > input { min-height: var(--control-lg); padding: .75rem .85rem .75rem 3.25rem; font-size: 1.05rem; }
 .search-primary .search-input-wrap > .search-input-icon { left: var(--space-4); width: 22px; height: 22px; }
-.search-primary input:focus { border-color: var(--gold-bright); }
+.search-primary input:focus { border-color: var(--accent-bright); }
 
 .filters-panel {
   display: grid;
@@ -243,12 +268,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .filters-panel .level-filter legend { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 0 0 .35rem; color: var(--text); font-size: .82rem; font-weight: 700; }
 .level-slider { position: relative; display: grid; gap: .35rem; padding-top: .1rem; }
 /* The current range sits on the legend's line, at the right. */
-.level-slider-value { position: absolute; top: -1.75rem; right: 0; color: var(--gold-bright); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.level-slider-value { position: absolute; top: -1.75rem; right: 0; color: var(--accent-bright); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .level-slider-track { position: relative; height: 28px; }
 .level-slider-track::before,
 .level-slider-fill { content: ''; position: absolute; top: 50%; height: 6px; border-radius: var(--radius-pill); transform: translateY(-50%); }
 .level-slider-track::before { left: 0; right: 0; background: var(--border); }
-.level-slider-fill { background: var(--gold); }
+.level-slider-fill { background: var(--accent); }
 /* Both inputs span the whole track; only their handles catch the pointer, so each can be grabbed. */
 .level-slider-track input[type='range'] {
   position: absolute;
@@ -272,7 +297,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid var(--gold);
+  border: 2px solid var(--accent);
   border-radius: 50%;
   background: var(--panel-strong);
   box-shadow: var(--shadow-sm);
@@ -282,58 +307,77 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .level-slider-track input[type='range']::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  border: 2px solid var(--gold);
+  border: 2px solid var(--accent);
   border-radius: 50%;
   background: var(--panel-strong);
   box-shadow: var(--shadow-sm);
   cursor: grab;
   pointer-events: auto;
 }
-/* The focus cue lives on the handle only: beats the whole-field halo the "Nouveau" design gives every
-   input on focus (design-modern.css), which would draw a pill around the track. */
+/* The focus cue lives on the handle only: beats the whole-field halo every input gets on focus
+   (Buttons and fields, below), which would draw a pill around the track. */
 :root .level-slider-track input[type='range']:focus,
 :root .level-slider-track input[type='range']:focus-visible { border: 0; box-shadow: none; outline: none; }
-.level-slider-track input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--gold-bright); }
-.level-slider-track input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--gold-bright); }
+.level-slider-track input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--accent-bright); }
+.level-slider-track input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--accent-bright); }
 .level-slider-bounds { display: flex; justify-content: space-between; color: var(--text-faint); font-size: .75rem; font-weight: 650; }
 .reset-filters {
-  align-self: flex-start;
-  min-height: 38px;
-  padding: .45rem .8rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-muted);
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--link);
+  font-size: .875rem;
+  font-weight: 600;
   cursor: pointer;
 }
-.reset-filters:hover { border-color: var(--border-strong); color: var(--gold-bright); background: var(--gold-soft); }
-/* The button that unfolds the filters, and the reset next to it. */
-.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
-.filters-bar .reset-filters { align-self: auto; }
+.reset-filters:hover { text-decoration: underline; }
+/* The search field and, at its right, the button that unfolds the filters. */
+.search-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.search-row .search-primary { flex: 1 1 320px; min-width: 0; max-width: 780px; }
+/* Under the field: the filters applied, each removed in one click, then the reset. */
+.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); margin-top: calc(-1 * var(--space-3)); }
+/* The button is the 44px target; the chip drawn inside it stays slim. */
+.filter-chip { display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
+.filter-chip-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 34px;
+  padding: 0 .625rem 0 .875rem;
+  border: 1px solid color-mix(in srgb, var(--link) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background: var(--link-soft);
+  font-size: .875rem;
+  font-weight: 500;
+}
+.filter-chip-body svg { color: var(--link); }
+.filter-chip:hover .filter-chip-body { border-color: var(--link); }
 .filters-toggle {
   display: inline-flex;
   align-items: center;
-  gap: .45rem;
-  min-height: 38px;
-  padding: .45rem .8rem;
+  gap: .625rem;
+  min-height: var(--control-lg);
+  padding: 0 1.125rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: transparent;
+  background: var(--button-bg);
   color: var(--text);
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
-.filters-toggle:hover, .filters-toggle[aria-expanded="true"] { border-color: var(--border-strong); color: var(--gold-bright); background: var(--gold-soft); }
+.filters-toggle:hover, .filters-toggle[aria-expanded="true"] { border-color: var(--border-strong); color: var(--accent-bright); background: var(--accent-soft); }
 .filters-toggle-chevron { transition: transform .15s ease; }
 .filters-toggle[aria-expanded="true"] .filters-toggle-chevron { transform: rotate(180deg); }
 .filters-toggle-count {
-  min-width: 1.35rem;
-  padding: 0 .35rem;
+  min-width: 1.375rem;
+  padding: 0 .375rem;
   border-radius: var(--radius-pill);
-  background: var(--gold);
-  color: var(--panel-strong);
-  font-size: .75rem;
-  line-height: 1.35rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.375rem;
   text-align: center;
 }
 
@@ -350,13 +394,13 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 .category-icons button { display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .75rem; font-size: .88rem; }
 .category-icons button:hover, .category-icons button.selected {
-  background: var(--gold-soft);
+  background: var(--accent-soft);
   border-color: var(--border-strong);
-  color: var(--gold-bright);
+  color: var(--accent-bright);
 }
 /* Slot look matches the real Dofus equipment panel (indigo slot, periwinkle glyph) instead of
    the app's own accent palette — via --slot-* (theme.css), which only shifts with light/dark,
-   not the --accent-* presets, and is kept constant across hover/selected states since those are
+   not the accent, and is kept constant across hover/selected states since those are
    already signaled by the button itself. The source PNGs are a single solid color with alpha
    edges, so they're applied as a mask and tinted rather than drawn as-is — that's what lets a
    swatch this small reproduce the game's light-on-dark glyph instead of the dark-on-transparent
@@ -394,7 +438,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .results-more-count { color: var(--text-muted); font-size: .82rem; font-weight: 650; }
 .results-more-actions { display: flex; align-items: center; gap: var(--space-4); }
 .results-collapse { background: none; border: 0; padding: .4rem .25rem; color: var(--text-muted); font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer; }
-.results-collapse:hover { color: var(--gold-bright); text-decoration: underline; }
+.results-collapse:hover { color: var(--accent-bright); text-decoration: underline; }
 
 .loading-spinner {
   display: inline-block;
@@ -402,7 +446,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   height: 14px;
   flex: 0 0 auto;
   border: 2px solid var(--border);
-  border-top-color: var(--gold-bright);
+  border-top-color: var(--accent-bright);
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
@@ -422,7 +466,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   box-shadow: var(--shadow-sm);
 }
 .results button:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: var(--border-strong); }
-.results button.selected { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.results button.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .results button img, .result-image-fallback { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; border-radius: var(--radius-sm); background: var(--image-bg); }
 .result-image-fallback { display: grid; place-items: center; color: var(--text-muted); font-weight: 750; }
 .result-item-info { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
@@ -494,9 +538,9 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
    shows while something is actively being dragged over this exact group. */
 .pinned-collection-body { border-radius: var(--radius-md); transition: background-color var(--transition-fast); }
 .pinned-collection-body-drag-over {
-  outline: 2px dashed var(--gold-bright);
+  outline: 2px dashed var(--accent-bright);
   outline-offset: 4px;
-  background: var(--gold-soft);
+  background: var(--accent-soft);
 }
 .pinned-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-4); }
 /* 005-pinned-item-collections: stacked into three rows (name/level, prices, collection) rather
@@ -516,7 +560,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .pinned-card-dragging { opacity: .4; cursor: grabbing; }
 .pinned-card-top { display: flex; align-items: center; gap: var(--space-3); }
 .pinned-card-main { flex: 1 1 auto; display: flex; align-items: center; gap: var(--space-3); min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; text-decoration: none; cursor: pointer; }
-.pinned-card-main:hover .pinned-card-name { color: var(--gold-bright); }
+.pinned-card-main:hover .pinned-card-name { color: var(--accent-bright); }
 .pinned-card img, .pinned-card-fallback { width: 40px; height: 40px; flex: 0 0 40px; object-fit: contain; border-radius: var(--radius-sm); background: var(--image-bg); }
 .pinned-card-fallback { display: grid; place-items: center; color: var(--text-muted); font-weight: 750; }
 .pinned-card-info { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
@@ -553,7 +597,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   color: inherit;
   text-decoration: none;
 }
-.pinned-preview-card:hover .pinned-card-name { color: var(--gold-bright); }
+.pinned-preview-card:hover .pinned-card-name { color: var(--accent-bright); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4); align-items: stretch; }
 
@@ -578,8 +622,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 .pin-item-button:hover, .pin-item-button.pinned {
   border-color: var(--border-strong);
-  background: var(--gold-soft);
-  color: var(--gold-bright);
+  background: var(--accent-soft);
+  color: var(--accent-bright);
 }
 
 .resource-display { display: inline-flex; align-items: center; gap: .55rem; min-width: 0; }
@@ -607,13 +651,13 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
-.resource-name-copy:hover, .resource-name-copy:focus-visible { background: var(--gold-soft); }
-.resource-name-copy:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.resource-name-copy:hover, .resource-name-copy:focus-visible { background: var(--accent-soft); }
+.resource-name-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .resource-name-copy-icon { margin-left: .3rem; vertical-align: -2px; opacity: 0; color: var(--text-muted); transition: opacity var(--transition-fast); }
 .resource-name-copy:hover .resource-name-copy-icon,
 .resource-name-copy:focus-visible .resource-name-copy-icon,
 .resource-name-copy.is-copied .resource-name-copy-icon { opacity: 1; }
-.resource-name-copy.is-copied .resource-name-copy-icon { color: var(--gold); }
+.resource-name-copy.is-copied .resource-name-copy-icon { color: var(--accent); }
 /* Floats above the name, styled like the app's other tooltips, so the row never changes height. */
 .resource-name-copied {
   position: absolute;
@@ -694,7 +738,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 
 /* specs/015: on a craftable ingredient, which of buying or crafting is counted, with both unit amounts. */
 .retained-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; font-size: .8rem; color: var(--text-muted); }
-.retained-cost-option { padding: .05rem .5rem; border-radius: var(--radius-pill); background: var(--gold-soft); color: var(--gold-bright); font-weight: 700; }
+.retained-cost-option { padding: .05rem .5rem; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-bright); font-weight: 700; }
 .retained-cost--craft .retained-cost-option { background: var(--success-soft); color: var(--success); }
 .retained-cost--missing .retained-cost-option { background: var(--warning-soft); color: var(--warning); }
 .retained-cost-forced { font-weight: 700; }
@@ -710,11 +754,11 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .retained-cost-row .ingredient-toggle { margin-left: auto; }
 .retained-cost-row .retained-cost { flex-basis: 100%; }
 .ingredient-toggle { padding: .2rem .55rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
-.ingredient-toggle:hover, .ingredient-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.ingredient-toggle:hover, .ingredient-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 .ingredient-choice { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
 .ingredient-choice button { padding: .2rem .55rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
 .ingredient-choice button + button { border-left: 1px solid var(--border); }
-.ingredient-choice button[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
+.ingredient-choice button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-bright); }
 .ingredient-children { margin: 0 0 var(--space-2) var(--space-3); padding-left: var(--space-3); border-left: 2px solid var(--border); }
 .ingredient-children .ingredient-row:last-child { border-bottom: 0; }
 
@@ -793,7 +837,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .market-price-panel .market-price-summary { padding-left: 0; border-left: 0; }
 .verdict { display: grid; gap: var(--space-3); }
 .verdict-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.verdict-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 50%; background: var(--gold-soft); color: var(--gold-bright); }
+.verdict-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-bright); }
 .verdict--craft .verdict-icon, .verdict--buy .verdict-icon { background: var(--success-soft); color: var(--success); }
 .verdict--insufficient-data .verdict-icon { background: var(--warning-soft); color: var(--warning); }
 .verdict-text { flex: 1 1 180px; min-width: 0; }
@@ -859,7 +903,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
   transform: translateY(-50%);
 }
-.kamas-input-edit-button:hover { color: var(--gold-bright); background: var(--gold-soft); }
+.kamas-input-edit-button:hover { color: var(--accent-bright); background: var(--accent-soft); }
 
 /* ---------- Server switcher & onboarding ---------- */
 
@@ -879,12 +923,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
 }
 .server-switcher-trigger:hover,
-.server-switcher-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); }
+.server-switcher-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); }
 .server-switcher-trigger:hover .server-switcher-icon,
 .server-switcher-trigger:hover .server-switcher-chevron,
 .server-switcher-trigger[aria-expanded="true"] .server-switcher-icon,
-.server-switcher-trigger[aria-expanded="true"] .server-switcher-chevron { color: var(--gold-bright); }
-.server-switcher-icon { flex: 0 0 auto; color: var(--gold-bright); }
+.server-switcher-trigger[aria-expanded="true"] .server-switcher-chevron { color: var(--accent-bright); }
+.server-switcher-icon { flex: 0 0 auto; color: var(--accent-bright); }
 .server-switcher-text { display: flex; align-items: baseline; gap: .5rem; min-width: 0; text-align: left; }
 .server-switcher-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
 .server-switcher-value { color: var(--text); font-weight: 700; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -921,7 +965,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
 }
 .server-switcher-option:hover, .server-switcher-option:focus-visible { background: var(--button-bg); }
-.server-switcher-option.selected { background: var(--gold-soft); color: var(--gold-bright); }
+.server-switcher-option.selected { background: var(--accent-soft); color: var(--accent-bright); }
 
 .server-onboarding { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: var(--space-4); }
 .server-onboarding-card {
@@ -962,8 +1006,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
 }
 .settings-choice:hover { border-color: var(--border-strong); }
-.settings-choice.selected { border-color: var(--gold-bright); background: var(--gold-soft); color: var(--gold-bright); }
-.settings-swatch-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.settings-choice.selected { border-color: var(--accent-bright); background: var(--accent-soft); color: var(--accent-bright); }
 .settings-price-mode-list { display: grid; gap: var(--space-3); max-width: 520px; }
 
 .price-mode-option {
@@ -980,8 +1023,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .price-mode-option-label { display: flex; align-items: center; gap: .5rem; font-weight: 700; }
 .price-mode-option-description { color: var(--text-muted); font-size: .85rem; line-height: 1.4; }
 .price-mode-option:hover { border-color: var(--border-strong); }
-.price-mode-option.selected { border-color: var(--gold-bright); background: var(--gold-soft); }
-.price-mode-option.selected .price-mode-option-label { color: var(--gold-bright); }
+.price-mode-option.selected { border-color: var(--accent-bright); background: var(--accent-soft); }
+.price-mode-option.selected .price-mode-option-label { color: var(--accent-bright); }
 .price-mode-option-disabled { cursor: not-allowed; opacity: .7; }
 .price-mode-option-disabled:hover { border-color: var(--border); }
 .price-mode-option-badge {
@@ -993,30 +1036,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   border-radius: var(--radius-pill);
   background: var(--panel-soft);
   color: var(--text);
-}
-
-.accent-swatch {
-  width: 40px;
-  height: 40px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--swatch-color);
-  cursor: pointer;
-  padding: 0;
-  position: relative;
-}
-.accent-swatch:hover { transform: scale(1.08); }
-.accent-swatch.selected { border-color: var(--text); }
-.accent-swatch.selected::after {
-  content: '✓';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: var(--on-image);
-  font-size: .8rem;
-  font-weight: 800;
-  text-shadow: var(--on-image-shadow);
 }
 
 .price-mode-notice {
@@ -1150,7 +1169,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   background: var(--panel);
   box-shadow: var(--shadow-sm);
 }
-.stat-tile-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--radius-md); background: var(--gold-soft); color: var(--gold-bright); }
+.stat-tile-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-bright); }
 .stat-tile-body { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .stat-tile-label { color: var(--text-muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .stat-tile-value { color: var(--text); font-size: 1.15rem; font-weight: 800; overflow-wrap: anywhere; }
@@ -1180,12 +1199,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 .profit-sort { padding: .25rem 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-align: right; cursor: pointer; white-space: nowrap; }
 .profit-sort:first-child { text-align: left; }
-.profit-sort:hover, .profit-sort--active { color: var(--gold-bright); }
+.profit-sort:hover, .profit-sort--active { color: var(--accent-bright); }
 .profit-list { list-style: none; margin: 0; padding: 0; }
 .profit-row { align-items: start; padding: var(--space-3) 0; border-bottom: 1px solid var(--border); }
 .profit-row:last-child { border-bottom: 0; }
 .profit-row-main { display: flex; align-self: center; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; cursor: pointer; }
-.profit-row-main:hover .resource-display > span:last-child { color: var(--gold-bright); }
+.profit-row-main:hover .resource-display > span:last-child { color: var(--accent-bright); }
 .profit-cell { display: grid; justify-items: end; gap: .15rem; font-variant-numeric: tabular-nums; }
 .profit-cell b { font-weight: 700; white-space: nowrap; }
 .profit-cell small { font-size: .75rem; color: var(--text-muted); }
@@ -1214,7 +1233,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   cursor: pointer;
 }
 .back-to-top svg { transform: rotate(180deg); }
-.back-to-top:hover { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.back-to-top:hover { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 @media (max-width: 960px) {
   /* Above the bottom tab bar. */
   .back-to-top { right: var(--space-3); bottom: calc(72px + var(--space-3)); }
@@ -1250,16 +1269,16 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .pet-level-field--secondary { max-width: 16rem; font-size: .78rem; }
 .pet-level-field--secondary input { min-height: var(--control-sm); padding: .3rem .6rem; font-size: .85rem; }
 .pet-xp-needed { display: grid; gap: .1rem; margin: 0; color: var(--text-muted); font-size: .85rem; }
-.pet-xp-needed b { color: var(--gold-bright); font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.pet-xp-needed b { color: var(--accent-bright); font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
 /* specs/022 FR-012: Almanax of 23 July switch (+50 % pet XP). */
 .pet-almanax-switch { position: relative; display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; cursor: pointer; font-size: .9rem; font-weight: 600; }
 .pet-almanax-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .pet-almanax-switch-track { position: relative; flex: none; width: 40px; height: 22px; border-radius: var(--radius-pill); background: var(--text-faint); transition: background var(--transition-fast); }
 .pet-almanax-switch-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel-strong); transition: transform var(--transition-fast); }
-.pet-almanax-switch input:checked + .pet-almanax-switch-track { background: var(--gold-bright); }
+.pet-almanax-switch input:checked + .pet-almanax-switch-track { background: var(--accent-bright); }
 .pet-almanax-switch input:checked + .pet-almanax-switch-track::after { transform: translateX(18px); }
-.pet-almanax-switch input:focus-visible + .pet-almanax-switch-track { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
-.pet-almanax-switch small { color: var(--gold-bright); font-weight: 700; }
+.pet-almanax-switch input:focus-visible + .pet-almanax-switch-track { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.pet-almanax-switch small { color: var(--accent-bright); font-weight: 700; }
 @media (max-width: 720px) {
   .pet-levels-panel { grid-template-columns: 1fr; }
   .pet-levels-result { padding: var(--space-4) 0 0; border-left: 0; border-top: 1px solid var(--border); }
@@ -1285,8 +1304,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   background: var(--panel-strong);
   color: var(--text);
 }
-.info-banner--info { border-left-color: var(--gold); }
-.info-banner--info .info-banner-icon { color: var(--gold-bright); }
+.info-banner--info { border-left-color: var(--accent); }
+.info-banner--info .info-banner-icon { color: var(--accent-bright); }
 .info-banner--important { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--panel-strong)); }
 .info-banner--important .info-banner-icon { color: var(--danger); }
 .info-banner-icon { flex: none; margin-top: .15rem; }
@@ -1296,36 +1315,42 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* ---------- Responsive ---------- */
 
 @media (max-width: 960px) {
-  .app-shell { flex-direction: column; }
+  /* The top bar becomes the bottom tab bar. Never keep a backdrop-filter on .app-nav here: it
+     would become the containing block of the server switcher, which is fixed to the top of the
+     viewport on small screens, and drop it onto the tab bar. */
   .app-nav {
     position: fixed;
     inset: auto 0 0 0;
-    /* Cancel the desktop height: 100vh: with bottom: 0 (from inset) a fixed height would anchor
-       the box's bottom to the screen's bottom and stretch it upward to fill the full screen,
-       ballooning this icon row over the whole viewport instead of staying a thin bottom bar. */
-    height: auto;
     z-index: 10;
-    flex-direction: row;
+    flex-wrap: nowrap;
     justify-content: space-around;
     gap: 0;
+    width: auto;
+    max-width: none;
+    margin: 0;
     padding: .4rem;
-    border-right: 0;
+    border: 0;
     border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: var(--panel-strong);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
+  .app-nav-link.active::after { content: none; }
   .app-nav-brand { display: none; }
   /* Every entry takes an equal share of the bar and may shrink, so the last ones (Forgemagie,
      Paramètres) are never pushed off a narrow screen; a label that doesn't fit is cut, not wrapped. */
-  .app-nav-list { flex: 1 1 0; flex-direction: row; gap: 0; min-width: 0; }
+  .app-nav-list { flex: 1 1 0; flex-wrap: nowrap; gap: 0; min-width: 0; }
   .app-nav-list > li { flex: 1 1 0; min-width: 0; }
-  .app-nav-link { flex-direction: column; gap: .2rem; min-width: 0; padding: .4rem .1rem; border-left: 0; border-radius: var(--radius-sm); font-size: clamp(.62rem, 2.7vw, .72rem); text-align: center; min-height: 48px; justify-content: center; }
+  .app-nav-link { flex-direction: column; gap: .2rem; min-width: 0; padding: .4rem .1rem; border-radius: var(--radius-sm); font-size: clamp(.62rem, 2.7vw, .72rem); font-weight: 600; text-align: center; min-height: 48px; justify-content: center; }
   .app-nav-link > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .app-nav-link.active { border-left-color: transparent; }
   /* The theme toggle and version drop out on mobile (the toggle is redundant with Paramètres' own
      theme controls); only the Paramètres icon stays, as the last tab. The server switcher escapes
      .app-nav entirely: .app-nav is the bottom tab bar here, with no room for a text dropdown, so
      it's pinned to the top of the screen instead. */
-  .app-nav-footer > :not(.app-nav-settings) { display: none; }
-  .app-nav-footer { flex: 0 0 44px; justify-content: center; }
+  .app-nav-footer > :not(.app-nav-settings):not(.server-switcher) { display: none; }
+  .app-nav-footer { flex: 0 0 44px; justify-content: center; margin-left: 0; }
   .app-nav-settings { align-self: center; flex: 0 0 auto; width: 44px; height: 44px; }
   .server-switcher {
     position: fixed;
@@ -1383,7 +1408,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   position: fixed;
   border-radius: var(--radius-lg);
   box-shadow: 0 0 0 100vmax var(--scrim);
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--accent);
   pointer-events: none;
 }
 .guided-tour-bubble {
@@ -1407,10 +1432,10 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .guided-tour-bubble .tour-example-caption { margin: 0 0 var(--space-1); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
 .tour-example .price-line { grid-template-columns: minmax(0, 1fr) auto auto; }
 .tour-example-price { grid-column: 3; grid-row: 1; justify-self: end; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-.tour-example .ingredient-toggle[data-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.tour-example .ingredient-toggle[data-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 .guided-tour-bubble h2 { margin: 0 0 var(--space-2); font-size: 1.05rem; }
 .guided-tour-bubble p { margin: 0 0 var(--space-3); font-size: .92rem; line-height: 1.45; color: var(--text-muted); }
-.guided-tour-bubble .guided-tour-progress { margin: 0 0 var(--space-1); font-size: .78rem; font-weight: 700; color: var(--gold-bright); }
+.guided-tour-bubble .guided-tour-progress { margin: 0 0 var(--space-1); font-size: .78rem; font-weight: 700; color: var(--accent-bright); }
 .guided-tour-bubble .guided-tour-hint { font-style: italic; }
 .guided-tour-points { margin: 0 0 var(--space-3); padding-left: 1.1rem; display: grid; gap: .3rem; font-size: .9rem; color: var(--text-muted); }
 .guided-tour-points strong { color: var(--text); }
@@ -1453,7 +1478,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
    percentage height alone doesn't hold in this grid, so the image would spill below the circle. */
 .dungeon-counter-trigger img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: center 75%; }
 .dungeon-counter-trigger:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.dungeon-counter-trigger[aria-expanded="true"] { border-color: var(--gold); }
+.dungeon-counter-trigger[aria-expanded="true"] { border-color: var(--accent); }
 .dungeon-counter-badge {
   position: absolute;
   top: -4px;
@@ -1463,7 +1488,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   padding: 0 6px;
   border: 2px solid var(--panel-strong);
   border-radius: var(--radius-pill);
-  background: var(--gold);
+  background: var(--accent);
   color: var(--on-accent);
   font-size: .72rem;
   font-weight: 800;
@@ -1495,7 +1520,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .dungeon-counter-class { color: var(--text-muted); font-size: .8rem; }
 .dungeon-counter-close { flex: 0 0 auto; width: 32px; height: 32px; }
 .dungeon-counter-value { display: flex; align-items: baseline; gap: var(--space-2); }
-.dungeon-counter-value strong { color: var(--gold-bright); font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.dungeon-counter-value strong { color: var(--accent-bright); font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .dungeon-counter-value span { color: var(--text-muted); font-weight: 700; }
 .dungeon-counter-resource {
   display: flex;
@@ -1533,21 +1558,21 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .hdv-tab--icon { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
 .hdv-tab--icon svg { flex: none; }
 .hdv-tab:hover { color: var(--text); }
-.hdv-tab--active { border-bottom-color: var(--gold-bright); color: var(--gold-bright); }
+.hdv-tab--active { border-bottom-color: var(--accent-bright); color: var(--accent-bright); }
 .hdv-type-filter { min-width: 0; max-width: 100%; padding: 0 var(--space-3); }
 .hdv-price-filters { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
 .hdv-price-filter { min-height: 36px; padding: .35rem .75rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
 .hdv-price-filter + .hdv-price-filter { border-left: 1px solid var(--border); }
-.hdv-price-filter--active { background: var(--gold-soft); color: var(--gold-bright); }
+.hdv-price-filter--active { background: var(--accent-soft); color: var(--accent-bright); }
 .hdv-note { margin: var(--space-3) 0 0; color: var(--text-muted); font-size: .85rem; }
 /* specs/046-hdv-huzounet-load: the « Charger depuis Huzounet » button, its progress and its message. */
 .hdv-count { flex-shrink: 0; }
 .hdv-huzounet { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .5rem .75rem; }
 .hdv-huzounet-button { min-height: var(--control-md); padding: .45rem .9rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--button-bg); color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
-.hdv-huzounet-button:hover:not(:disabled) { border-color: var(--gold-bright); color: var(--gold-bright); }
+.hdv-huzounet-button:hover:not(:disabled) { border-color: var(--accent-bright); color: var(--accent-bright); }
 .hdv-huzounet-button:disabled { opacity: .55; cursor: not-allowed; }
 .hdv-huzounet-hint, .hdv-huzounet-status { font-weight: 400; }
-.hdv-huzounet-progress { width: 8rem; accent-color: var(--gold-bright); }
+.hdv-huzounet-progress { width: 8rem; accent-color: var(--accent-bright); }
 .hdv-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
 .hdv-row { border-bottom: 1px solid var(--border); }
 .hdv-row:last-child { border-bottom: 0; }
@@ -1572,13 +1597,13 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .fm-player-name { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
 .fm-player--private .fm-player-name { color: var(--text-muted); font-style: italic; font-weight: 400; }
 .fm-avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
-.fm-avatar--empty { display: inline-grid; place-items: center; background: var(--gold-soft); color: var(--gold-bright); font-size: .75rem; font-weight: 700; }
+.fm-avatar--empty { display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent-bright); font-size: .75rem; font-weight: 700; }
 .fm-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fm-status { padding: .1rem .55rem; border-radius: var(--radius-pill); font-size: .75rem; font-weight: 700; }
-.fm-status--open { background: var(--gold-soft); color: var(--gold-bright); }
+.fm-status--open { background: var(--accent-soft); color: var(--accent-bright); }
 .fm-status--closed, .fm-status--archived { border: 1px solid var(--border); color: var(--text-muted); }
-.fm-status--running { background: var(--gold-soft); color: var(--gold-bright); }
-.fm-status--paused { border: 1px solid var(--gold-bright); color: var(--gold-bright); }
+.fm-status--running { background: var(--accent-soft); color: var(--accent-bright); }
+.fm-status--paused { border: 1px solid var(--accent-bright); color: var(--accent-bright); }
 .fm-status { flex: none; white-space: nowrap; }
 .fm-seance-card { grid-template-columns: auto minmax(0,1fr) auto; align-items: center; column-gap: var(--space-3); }
 .fm-seance-card .fm-item-icon { width: 40px; height: 40px; }
@@ -1610,7 +1635,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .fm-player-chevron { grid-column: 3; }
 .fm-fold-chevron { display: grid; place-items: center; flex: none; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-pill); color: var(--text-muted); transition: color var(--transition-enter), background-color var(--transition-enter); }
 .fm-fold-chevron svg { transition: transform var(--transition-enter); }
-summary:hover > .fm-fold-chevron, details[open] > summary > .fm-fold-chevron { background: var(--gold-soft); color: var(--gold-bright); }
+summary:hover > .fm-fold-chevron, details[open] > summary > .fm-fold-chevron { background: var(--accent-soft); color: var(--accent-bright); }
 details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-capture > summary { position: relative; padding-right: 2.25rem; }
 .fm-capture > summary > .fm-fold-chevron { position: absolute; right: 0; top: 50%; margin-top: -.875rem; }
@@ -1619,8 +1644,8 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-player-fold .fm-player-seance { cursor: default; background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .fm-player-fold .fm-player-seance:hover { border-color: var(--border); }
 .fm-capture.fm-session-fold { border: 0; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); background: color-mix(in srgb, var(--bg) 70%, transparent); }
-.fm-capture.fm-session-fold--open { background: var(--gold-soft); }
-.fm-session-fold--open > summary b { color: var(--gold-bright); }
+.fm-capture.fm-session-fold--open { background: var(--accent-soft); }
+.fm-session-fold--open > summary b { color: var(--accent-bright); }
 .fm-session-fold > summary .fm-capture-heading { display: grid; gap: .1rem; }
 .fm-session-fold > .fm-capture-list { gap: 0; margin: var(--space-2) 0 0; padding-left: var(--space-4); }
 .fm-session-fold .fm-capture { border: 0; padding: var(--space-1) 0; }
@@ -1635,17 +1660,17 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-session-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .fm-session-channel { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fm-session-date, .fm-session-dates { color: var(--text-muted); font-size: .85rem; }
-.fm-session-total { color: var(--gold-bright); font-weight: 700; font-variant-numeric: tabular-nums; }
+.fm-session-total { color: var(--accent-bright); font-weight: 700; font-variant-numeric: tabular-nums; }
 .fm-back { margin-bottom: var(--space-3); }
 .fm-back-icon { transform: rotate(90deg); }
 .fm-section-title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-1); }
 .fm-subtitle { margin: var(--space-4) 0 var(--space-2); font-size: 1rem; }
 .fm-total { margin: var(--space-2) 0 0; }
-.fm-total strong { color: var(--gold-bright); }
+.fm-total strong { color: var(--accent-bright); }
 .fm-spend-list { display: grid; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
 .fm-spend-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
 .fm-link { padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; text-decoration: underline; text-decoration-color: var(--border-strong); cursor: pointer; }
-.fm-link:hover { color: var(--gold-bright); }
+.fm-link:hover { color: var(--accent-bright); }
 /* A purchases table wider than the screen scrolls inside its own frame, never the whole page. */
 .fm-table-scroll { max-width: 100%; overflow-x: auto; }
 .fm-items { width: 100%; border-collapse: collapse; font-size: .9rem; }
@@ -1655,7 +1680,7 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-items tbody tr:nth-child(2n) { background: color-mix(in srgb, var(--panel-strong) 45%, transparent); }
 .fm-items tfoot th, .fm-items tfoot td { border-bottom: 0; border-top: 2px solid var(--border-strong); font-weight: 800; }
 .fm-unit-price { white-space: nowrap; }
-.fm-corrected { padding: .05rem .45rem; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); color: var(--gold-bright); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.fm-corrected { padding: .05rem .45rem; border: 1px solid var(--border-strong); border-radius: var(--radius-pill); color: var(--accent-bright); font-size: .72rem; font-weight: 700; white-space: nowrap; }
 .fm-correct { margin: var(--space-1) 0 var(--space-2); }
 .fm-correction { display: grid; gap: var(--space-2); margin-bottom: var(--space-2); }
 .fm-correction p { margin: 0; }
@@ -1673,7 +1698,7 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-dropzone { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-3) var(--space-4); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); color: var(--text-muted); }
 .fm-dropzone p { flex: 1 1 240px; margin: 0; font-size: .9rem; }
 .fm-dropzone b { color: var(--text); }
-.fm-dropzone--active { border-color: var(--gold-bright); background: var(--gold-soft); }
+.fm-dropzone--active { border-color: var(--accent-bright); background: var(--accent-soft); }
 .fm-import-lines { margin-top: var(--space-3); }
 .fm-import-lines td:first-child { text-align: center; }
 .fm-line--skipped { opacity: .7; }
@@ -1690,7 +1715,7 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-picker { display: grid; gap: var(--space-2); }
 .fm-picker-results { display: grid; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
 .fm-picker-result { display: flex; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.fm-picker-result:hover:not(:disabled) { border-color: var(--border-strong); background: var(--gold-soft); }
+.fm-picker-result:hover:not(:disabled) { border-color: var(--border-strong); background: var(--accent-soft); }
 .fm-session-item { display: flex; align-items: center; gap: var(--space-2) var(--space-3); flex-wrap: wrap; margin: var(--space-2) 0; }
 .fm-session-item p { margin: 0; }
 .fm-start { margin-bottom: var(--space-3); }
@@ -1703,7 +1728,7 @@ details[open] > summary > .fm-fold-chevron svg { transform: rotate(180deg); }
 .fm-session-detail .fm-session-item { margin: 0 0 var(--space-4); }
 .fm-item-chip { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border: 1px solid var(--border); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; }
 button.fm-item-chip { cursor: pointer; }
-button.fm-item-chip:hover { border-color: var(--gold-bright); background: var(--gold-soft); }
+button.fm-item-chip:hover { border-color: var(--accent-bright); background: var(--accent-soft); }
 .fm-item-chip .fm-item-icon { width: 40px; height: 40px; }
 .fm-item-chip-text { display: grid; line-height: 1.2; }
 .fm-item-chip-label { color: var(--text-muted); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
@@ -1714,7 +1739,7 @@ button.fm-item-chip:hover { border-color: var(--gold-bright); background: var(--
 @media (max-width: 640px) { .fm-detail-stats .stat-tile:first-child { grid-column: 1 / -1; } }
 @media (max-width: 640px) { .fm-detail-stats .stat-tile-icon { display: none; } }
 .fm-sync { justify-self: start; padding: .1rem .55rem; border-radius: var(--radius-pill); font-size: .75rem; font-weight: 700; border: 1px solid var(--border); color: var(--text-muted); }
-.fm-sync--opened { border-color: transparent; background: var(--gold-soft); color: var(--gold-bright); }
+.fm-sync--opened { border-color: transparent; background: var(--accent-soft); color: var(--accent-bright); }
 .fm-sync--stale, .fm-sync--failed { border-color: var(--danger); color: var(--danger); }
 @media (max-width: 640px) { .fm-items { font-size: .82rem; } }
 @media (max-width: 640px) { .fm-items th, .fm-items td { padding: var(--space-1); } }
@@ -1768,7 +1793,7 @@ button.fm-item-chip:hover { border-color: var(--gold-bright); background: var(--
   z-index: 40;
   padding: .6rem 1rem;
   border-radius: var(--radius-md);
-  background: var(--gold);
+  background: var(--accent);
   color: var(--on-accent);
   font-weight: 700;
   text-decoration: none;
@@ -1793,19 +1818,18 @@ button:disabled, input:disabled, select:disabled, textarea:disabled, fieldset:di
 .price-mode-option-disabled:disabled { opacity: .7; }
 /* Pressed: every button and link-button answers the click itself, not only the hover. */
 button:not(:disabled):active, a.btn:active, a.icon-button:active, .app-nav-link:active { transform: translateY(1px); filter: brightness(.92); }
-/* These two are positioned with a transform of their own: only the dimming applies. */
+/* Positioned with a transform of its own: only the dimming applies. */
 .kamas-input-edit-button:not(:disabled):active { transform: translateY(-50%); }
-.accent-swatch:not(:disabled):active { transform: scale(.96); }
 
 /* Hover, for the controls that had none. */
 .ingredient-choice button:hover:not([aria-pressed="true"]),
 .hdv-price-filter:hover:not(.hdv-price-filter--active):not(:disabled),
 .price-history-grouping:hover:not([aria-pressed="true"]) { background: var(--button-bg); color: var(--text); }
 .outlier-confirm-dialog-actions button:hover:not(:disabled),
-.pinned-price-migration-notice button:hover { border-color: var(--border-strong); background: var(--gold-soft); }
+.pinned-price-migration-notice button:hover { border-color: var(--border-strong); background: var(--accent-soft); }
 .outlier-confirm-dialog-actions .outlier-confirm-dialog-confirm:hover:not(:disabled) { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .price-history-invite:hover { text-decoration-thickness: 2px; }
-.pet-almanax-switch:hover .pet-almanax-switch-track { box-shadow: 0 0 0 3px var(--gold-soft); }
+.pet-almanax-switch:hover .pet-almanax-switch-track { box-shadow: 0 0 0 3px var(--accent-soft); }
 
 /* ---------- Motion (neutralized by prefers-reduced-motion in theme.css) ---------- */
 
@@ -1853,6 +1877,236 @@ details[open] > :not(summary) { animation: rise-in var(--transition-enter); }
 .page-header + .inline-retry, .pinned-collections-toolbar + .inline-retry { margin-bottom: var(--space-4); }
 
 @media (pointer: coarse), (max-width: 960px) {
-  .accent-swatch { width: 44px; height: 44px; }
   .pin-item-button { min-height: 44px; }
+}
+/* ---------- Site style (specs/051-site-visual-refresh; formerly the « Moderne » design) ---------- */
+
+/* ---------- Typography ---------- */
+
+.page-header { margin-bottom: var(--space-6); }
+.page-header p { font-size: 1.02rem; line-height: 1.6; }
+.eyebrow { letter-spacing: .12em; font-weight: 700; }
+
+/* ---------- Panels and cards ---------- */
+
+.panel,
+.card,
+.result {
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  animation: modern-rise 280ms cubic-bezier(.2, .7, .3, 1) both;
+}
+
+/* Section titles inside cards read left-aligned like every other card title; the item card keeps
+   its centered name under the image. */
+.card:not(.item-detail-card) h2 { margin-top: 0; text-align: left; }
+
+/* Prices line up digit by digit. */
+input,
+.price-resource-formatted,
+.price-overview-row b,
+.market-price-summary strong,
+.pinned-card-prices,
+.stat-tile-value { font-variant-numeric: tabular-nums; }
+
+/* ---------- Search page ---------- */
+
+/* Keeps the search title clear of the help button in the panel's top-right corner. */
+.search-panel .search-label { padding-right: 44px; }
+.category-icons button { border-radius: var(--radius-pill); padding-right: .95rem; }
+.results button img { border-radius: var(--radius-sm); }
+/* The verdict becomes a tinted inset instead of a column separated by a rule. */
+.market-price-summary {
+  padding: var(--space-4) var(--space-5);
+  border-left: 0;
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+}
+.market-price-summary .badge { align-self: flex-start; padding: .3rem .7rem; font-size: .88rem; }
+/* The HDV panel stays compact: it is read at a glance, between the search and the recipe. */
+.market-price-panel { padding-top: var(--space-5); padding-bottom: var(--space-5); }
+/* Badge and craft cost share a line when there is room; the savings sentence, when present,
+   always gets its own line below them. */
+.market-price-panel .market-price-summary {
+  flex: 1 1 320px;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+  gap: .3rem var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.market-price-panel .market-price-summary > :nth-child(3) { flex-basis: 100%; }
+.price-line { padding: var(--space-3) 0; }
+
+/* A decided verdict (craft or buy) stands out on the accent tint; an incomplete one stays plain. */
+.market-price-panel .market-price-summary:has(.verdict--craft, .verdict--buy) {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 55%, transparent);
+}
+.market-price-summary p.verdict-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; line-height: 1.1; letter-spacing: .01em; text-transform: uppercase; }
+.market-price-summary .verdict--craft p.verdict-title,
+.market-price-summary .verdict--buy p.verdict-title { color: var(--accent-bright); }
+/* The check sits in a diamond: the box is turned, the icon turned back. */
+.verdict--craft .verdict-icon,
+.verdict--buy .verdict-icon {
+  flex-basis: 40px;
+  height: 40px;
+  margin: 0 .5rem;
+  border-radius: var(--radius-xs);
+  background: var(--accent-gradient);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--on-accent);
+  transform: rotate(45deg);
+}
+.verdict--craft .verdict-icon svg,
+.verdict--buy .verdict-icon svg { transform: rotate(-45deg); }
+.market-price-summary .verdict-savings strong { color: var(--kamas); font-weight: 700; }
+.verdict-bar-track { background: var(--input-bg); }
+.verdict-bar-fill { background: color-mix(in srgb, var(--text-faint) 75%, transparent); }
+.verdict-bar--cheaper .verdict-bar-fill {
+  background: linear-gradient(90deg, var(--accent-gradient-to), var(--accent-bright));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Resource prices: what each line weighs in the craft cost, under its subtotal. */
+.share-bar { display: block; width: min(185px, 100%); height: 5px; margin: 0 0 var(--space-2) auto; border-radius: var(--radius-pill); background: var(--input-bg); overflow: hidden; }
+.share-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--link); }
+.price-resource-formatted { color: var(--text); }
+/* Bought is money (gold), crafted is the other way (turquoise); the word says it, the tint follows. */
+.retained-cost-option { border-radius: var(--radius-xs); background: var(--kamas-soft); color: var(--kamas); }
+.retained-cost--craft .retained-cost-option { background: var(--link-soft); color: var(--link); }
+.ingredient-children { border-left-color: color-mix(in srgb, var(--link) 35%, transparent); }
+
+/* Effects: one line each, a diamond in the color of the characteristic, the name written. */
+.item-stats { padding: 0; border: 0; background: none; }
+.item-stats li { gap: .625rem; padding: .3rem 0; color: var(--text); font-weight: 500; }
+.item-stats li.stat-positive { color: var(--text); }
+.stat-diamond { flex: 0 0 9px; width: 9px; height: 9px; margin: 0 .2rem; background: var(--stat-neutral); transform: rotate(45deg); }
+.stat-diamond--vitality { background: var(--stat-vitality); }
+.stat-diamond--earth { background: var(--stat-earth); }
+.stat-diamond--fire { background: var(--stat-fire); }
+.stat-diamond--water { background: var(--stat-water); }
+.stat-diamond--air { background: var(--stat-air); }
+.stat-diamond--wisdom { background: var(--stat-wisdom); }
+.stat-diamond--critical { background: var(--stat-critical); }
+.stat-diamond--range { background: var(--stat-range); }
+
+/* ---------- Links and link-like buttons (the link role, not the accent) ---------- */
+
+a:not([class]) { color: var(--link); }
+.results-collapse,
+.price-history-invite,
+.fm-link { color: var(--link); }
+.results-collapse:hover,
+.fm-link:hover { color: var(--link); text-decoration: underline; }
+
+/* ---------- Home and pinned items ---------- */
+
+.stat-tile {
+  background: color-mix(in srgb, var(--panel-strong) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+.pinned-card,
+.pinned-preview-card { border-radius: var(--radius-md); background: var(--panel-strong); }
+.pinned-card:hover,
+.pinned-preview-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* ---------- Buttons and fields ---------- */
+
+.btn,
+.settings-choice { font-weight: 650; }
+.btn-primary {
+  font-size: .875rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.btn:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
+.settings-choice:hover:not(:disabled) { transform: translateY(-1px); }
+/* Pressed: back down from the hover lift. */
+.btn:active:not(:disabled),
+.icon-button:active:not(:disabled),
+.settings-choice:active:not(:disabled),
+.results button:active { transform: translateY(1px); }
+.settings-choice.selected {
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+input,
+select {
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  outline: none;
+}
+
+/* ---------- Search results ---------- */
+
+.results button { border-radius: var(--radius-md); }
+.results button:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.results button.selected {
+  box-shadow: inset 0 0 0 1px var(--accent), 0 10px 26px -14px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* ---------- Dialogs and bubbles ---------- */
+
+.guided-tour-bubble,
+.outlier-confirm-dialog {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.guided-tour-cutout { border-radius: var(--radius-lg); }
+
+/* ---------- Dungeon counter bubble (specs/013) ---------- */
+
+.dungeon-counter-trigger { border-width: 3px; box-shadow: 0 10px 28px -8px color-mix(in srgb, var(--accent) 55%, transparent); }
+.dungeon-counter-panel { border-color: var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+.dungeon-counter-panel { animation: modern-rise 200ms cubic-bezier(.2, .7, .3, 1) both; }
+
+/* ---------- Small screens: keep the classic spacing there ---------- */
+
+@media (max-width: 960px) {
+  /* A floating tab bar, inset from the screen edges. */
+  .app-nav {
+    inset: auto 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+    padding: .35rem;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--panel-strong);
+    box-shadow: var(--shadow);
+  }
+  .app-nav-link { border-radius: 16px; }
+  .app-nav-link.active { box-shadow: none; }
+  .app-page { padding-bottom: calc(64px + 20px + var(--space-4)); }
+  /* The server switcher floats as a pill at the top instead of a full-width bar. */
+  .server-switcher { background: transparent; border-bottom: 0; }
+  .server-switcher-trigger {
+    background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@media (max-width: 720px) {
+  .panel,
+  .card,
+  .result { padding: var(--space-4); border-radius: var(--radius-md); }
+  .page-header { margin-bottom: var(--space-5); }
+  .market-price-summary { padding: var(--space-4); border-top: 0; }
+}
+
+/* ---------- Motion (neutralized by prefers-reduced-motion in theme.css) ---------- */
+
+@keyframes modern-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }

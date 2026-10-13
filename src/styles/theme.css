@@ -1,85 +1,97 @@
+/* specs/051-site-visual-refresh: one style for the whole site. Every color has one role, the same
+   on every page: accent (green) for the main action, the selected state and the winning choice;
+   kamas (gold) for money; link (turquoise) for links, secondary actions and share bars; warning
+   (amber) and danger (coral) for the age of a price and for errors. DESIGN.md lists them. */
+@import '@fontsource-variable/lexend';
+@import '@fontsource/rowdies/400.css';
+
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #edf2f7;
-  background: #0b1018;
+  --font-body: 'Lexend Variable', Lexend, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: Rowdies, 'Trebuchet MS', 'Lexend Variable', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
+  color: #f6eed6;
   font-synthesis: none;
   color-scheme: dark;
-  --bg: #0b1018;
-  --panel: rgba(19, 29, 44, .88);
-  --panel-strong: #172236;
-  --panel-soft: #202d42;
-  --text: #edf2f7;
-  --text-muted: #93a4ba;
-  --text-faint: #8a9ab0;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
+  --bg: #08181c;
+  --panel: rgba(18, 52, 58, .78);
+  --panel-strong: #11333a;
+  --panel-soft: #16424a;
+  --text: #f6eed6;
+  --text-muted: #c5d8d4;
+  --text-faint: #93b0ac;
   /* Text and icons drawn on the accent color (primary button, counter badge). */
-  --on-accent: #0b1018;
+  --on-accent: #10200a;
 
-  /* Accent color presets: one base + "bright" hue per theme, chosen so it
-     stays readable on both dark and light backgrounds. --gold/--gold-bright
-     below always point at the active preset for the active theme; every
-     other accent-derived token (--gold-soft, --border-strong) is computed
-     from --gold, so switching preset or theme updates the whole app. */
-  --accent-blue-dark: #5b9dee;
-  --accent-blue-bright-dark: #7db4f5;
-  --accent-blue-light: #2f6fd1;
-  --accent-blue-bright-light: #1f57ad;
-  --accent-red-dark: #e2685f;
-  --accent-red-bright-dark: #ef8880;
-  --accent-red-light: #c53d33;
-  --accent-red-bright-light: #a52e26;
-  --accent-green-dark: #4fbf74;
-  --accent-green-bright-dark: #74d694;
-  --accent-green-light: #27803f;
-  --accent-green-bright-light: #1f7038;
-  --accent-purple-dark: #a480e0;
-  --accent-purple-bright-dark: #bb9cee;
-  --accent-purple-light: #7c4fc7;
-  --accent-purple-bright-light: #6238a8;
-  --accent-orange-dark: #e2984f;
-  --accent-orange-bright-dark: #efb474;
-  --accent-orange-light: #b05c15;
-  --accent-orange-bright-light: #a3560f;
+  --accent: #a5d43a;
+  --accent-bright: #b6e24a;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-gradient-from: #b1dc35;
+  --accent-gradient-to: #84b41c;
+  --accent-gradient: linear-gradient(180deg, var(--accent-gradient-from), var(--accent-gradient-to));
+  --border-strong: color-mix(in srgb, var(--accent) 55%, transparent);
 
-  --gold: var(--accent-blue-dark);
-  --gold-bright: var(--accent-blue-bright-dark);
-  --gold-soft: color-mix(in srgb, var(--gold) 13%, transparent);
-  --border-strong: color-mix(in srgb, var(--gold) 55%, transparent);
+  /* Money: the kamas symbol and the amounts put forward (the savings of a verdict). */
+  --kamas: #ffc94d;
+  --kamas-edge: #c98f1f;
+  --kamas-soft: color-mix(in srgb, var(--kamas) 16%, transparent);
+  /* Links, link-like buttons and the share bars. */
+  --link: #5fd9cb;
+  --link-strong: #2aa79b;
+  --link-soft: color-mix(in srgb, var(--link) 15%, transparent);
 
-  --danger: #f38b8b;
-  --success: #4fbf74;
-  --success-soft: color-mix(in srgb, var(--success) 14%, transparent);
-  --warning: #e2b04f;
-  --warning-soft: color-mix(in srgb, var(--warning) 14%, transparent);
-  --border: rgba(148, 171, 201, .18);
+  --danger: #ff8a75;
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+  --success: #a5d43a;
+  --success-soft: color-mix(in srgb, var(--success) 16%, transparent);
+  --warning: #ffb84d;
+  --warning-soft: color-mix(in srgb, var(--warning) 12%, transparent);
+  --border: rgba(120, 220, 205, .18);
   /* Outline of a field (input, select, textarea): the only thing that marks where to type, so it
      keeps a 3:1 contrast with the card, unlike --border which only separates. */
-  --border-control: #6b7c93;
+  --border-control: #5f8f8b;
   /* Veil behind a dialog or the guided tour. */
-  --scrim: rgba(9, 13, 20, .6);
+  --scrim: rgba(3, 12, 14, .66);
   /* Text drawn on a picture or on a color sample, and the veil that keeps it readable: the same in
      both themes, because the picture does not change with the theme. */
   --on-image: #ffffff;
   --on-image-shadow: 0 1px 2px rgba(0, 0, 0, .5);
   --image-veil: linear-gradient(180deg, rgba(9, 13, 20, .88) 0%, rgba(9, 13, 20, .68) 38%, rgba(9, 13, 20, .8) 100%);
-  /* Two faint glows behind the classic page background. */
+  /* Light behind the page: a turquoise and a green glow at the top, fainter ones lower down. */
   --bg-glow:
-    radial-gradient(circle at 15% 0%, rgba(45, 77, 113, .18), transparent 34rem),
-    radial-gradient(circle at 90% 12%, rgba(108, 77, 30, .09), transparent 28rem);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .16), 0 1px 1px rgba(0, 0, 0, .08);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, .22);
-  --shadow: 0 12px 32px rgba(0, 0, 0, .28);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .42), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .22), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .14), transparent 70%),
+    radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
+    linear-gradient(180deg, #0d2f36 0%, #0a2228 32%, #071619 100%);
+  /* The top navigation bar: see-through, since the page scrolls under it. */
+  --nav-bg: rgba(8, 28, 32, .72);
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .18), 0 10px 28px -12px rgba(0, 0, 0, .45);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, .18), 0 18px 40px -14px rgba(0, 0, 0, .55);
+  --shadow: 0 24px 60px -18px rgba(0, 0, 0, .6);
   --panel-gradient: var(--panel);
-  --input-bg: rgba(7, 13, 23, .55);
-  --button-bg: rgba(255, 255, 255, .035);
-  --image-bg: rgba(255, 255, 255, .06);
-  --inner-bg: rgba(7, 13, 23, .22);
+  --input-bg: rgba(3, 14, 17, .55);
+  --button-bg: rgba(120, 220, 205, .07);
+  --image-bg: rgba(3, 14, 17, .45);
+  --inner-bg: rgba(3, 14, 17, .4);
 
   /* Equipment-slot swatch (category icons): matches the real Dofus equipment panel — dark
-     indigo slot, periwinkle glyph — rather than the app's own accent palette, so it doesn't
-     move with --accent-* presets, only with light/dark. */
+     indigo slot, periwinkle glyph — rather than the app's own palette, so it only moves with
+     light/dark. */
   --slot-bg: #332f4e;
   --slot-border: #4b4570;
   --slot-glyph: #a39cd9;
+
+  /* One color per characteristic, by element (the diamond in front of an effect). */
+  --stat-vitality: #ff6b81;
+  --stat-earth: #c9955c;
+  --stat-fire: #ff7a45;
+  --stat-water: #5db7ff;
+  --stat-air: #7fdc6b;
+  --stat-wisdom: #b58cff;
+  --stat-critical: #ffb84d;
+  --stat-range: #5fd9cb;
+  --stat-neutral: #c5d8d4;
 
   /* Spacing scale (4px base). Prefer these over ad hoc rem values in new/edited rules. */
   --space-1: .25rem;
@@ -93,12 +105,12 @@
   /* Corner radius scale — subtle, not "pill" everywhere. */
   --radius-xs: .375rem;
   --radius-sm: .5rem;
-  --radius-md: .75rem;
-  --radius-lg: 1rem;
+  --radius-md: .625rem;
+  --radius-lg: .875rem;
   --radius-pill: 999px;
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
-  --transition-fast: 120ms ease;
+  --transition-fast: 180ms cubic-bezier(.2, .7, .3, 1);
   /* A panel, a tab or an unfolded block coming in, and a value that slides (gauge, chevron). */
   --transition-enter: 160ms ease;
 
@@ -109,59 +121,80 @@
   --control-sm: 36px;
 }
 
-:root[data-accent="red"]    { --gold: var(--accent-red-dark);    --gold-bright: var(--accent-red-bright-dark); }
-:root[data-accent="green"]  { --gold: var(--accent-green-dark);  --gold-bright: var(--accent-green-bright-dark); }
-:root[data-accent="purple"] { --gold: var(--accent-purple-dark); --gold-bright: var(--accent-purple-bright-dark); }
-:root[data-accent="orange"] { --gold: var(--accent-orange-dark); --gold-bright: var(--accent-orange-bright-dark); }
-
 :root[data-theme="light"] {
-  color: #253246;
-  background: #eef1f5;
+  color: #0f2d33;
   color-scheme: light;
-  --bg: #eef1f5;
-  --panel: rgba(255, 255, 255, .92);
+  --bg: #eaf3f1;
+  --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #e5eaf1;
-  --text: #253246;
-  --text-muted: #566477;
-  --text-faint: #5f6d80;
+  --panel-soft: #dcebe8;
+  --text: #0f2d33;
+  --text-muted: #3d5a5f;
+  --text-faint: #4a6665;
   --on-accent: #ffffff;
-  --gold: var(--accent-blue-light);
-  --gold-bright: var(--accent-blue-bright-light);
-  --danger: #b94b4b;
-  --success: #1f7038;
-  --success-soft: color-mix(in srgb, var(--success) 10%, transparent);
-  --warning: #85600a;
+  --accent: #3f7d0c;
+  --accent-bright: #2f6406;
+  --accent-soft: color-mix(in srgb, var(--accent) 13%, transparent);
+  --accent-gradient-from: #3f7d0c;
+  --accent-gradient-to: #33690a;
+  --kamas: #8a5a00;
+  --kamas-edge: #b97f12;
+  --kamas-soft: color-mix(in srgb, var(--kamas) 12%, transparent);
+  --link: #0b6f68;
+  --link-strong: #0e8a80;
+  --link-soft: color-mix(in srgb, var(--link) 11%, transparent);
+  --danger: #b3391f;
+  --danger-soft: color-mix(in srgb, var(--danger) 10%, transparent);
+  --success: #3f7d0c;
+  --success-soft: color-mix(in srgb, var(--success) 11%, transparent);
+  --warning: #8a5300;
   --warning-soft: color-mix(in srgb, var(--warning) 10%, transparent);
-  --border: rgba(45, 67, 94, .16);
-  --border-control: #8794a6;
-  --shadow-sm: 0 1px 2px rgba(53, 69, 91, .06), 0 1px 1px rgba(53, 69, 91, .04);
-  --shadow-md: 0 6px 16px rgba(53, 69, 91, .1);
-  --shadow: 0 10px 28px rgba(53, 69, 91, .16);
-  --panel-gradient: var(--panel);
-  --input-bg: rgba(232, 237, 244, .78);
-  --button-bg: rgba(39, 62, 90, .045);
-  --image-bg: rgba(39, 62, 90, .07);
-  --inner-bg: rgba(224, 230, 238, .48);
+  --border: rgba(13, 60, 66, .14);
+  --border-control: #6f8f8c;
+  --scrim: rgba(9, 30, 34, .5);
+  --bg-glow:
+    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .2), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .16), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .08), transparent 70%),
+    linear-gradient(180deg, #eef6f4 0%, #e2efec 100%);
+  --nav-bg: rgba(255, 255, 255, .78);
+  --shadow-sm: 0 1px 2px rgba(13, 60, 66, .05), 0 10px 28px -14px rgba(13, 60, 66, .16);
+  --shadow-md: 0 2px 4px rgba(13, 60, 66, .06), 0 18px 40px -16px rgba(13, 60, 66, .22);
+  --shadow: 0 24px 60px -20px rgba(13, 60, 66, .28);
+  --input-bg: rgba(13, 60, 66, .06);
+  --button-bg: rgba(13, 60, 66, .05);
+  --image-bg: rgba(13, 60, 66, .07);
+  --inner-bg: rgba(13, 60, 66, .05);
   --slot-bg: #e7e3f6;
   --slot-border: #c7bfe8;
   --slot-glyph: #5b4f9c;
+  --stat-vitality: #d63a55;
+  --stat-earth: #9a6a34;
+  --stat-fire: #d2551f;
+  --stat-water: #2f7fd0;
+  --stat-air: #2f8f2a;
+  --stat-wisdom: #7a4fd0;
+  --stat-critical: #a86a00;
+  --stat-range: #0e8a80;
+  --stat-neutral: #5f7a78;
 }
 
-:root[data-theme="light"][data-accent="red"]    { --gold: var(--accent-red-light);    --gold-bright: var(--accent-red-bright-light); }
-:root[data-theme="light"][data-accent="green"]  { --gold: var(--accent-green-light);  --gold-bright: var(--accent-green-bright-light); }
-:root[data-theme="light"][data-accent="purple"] { --gold: var(--accent-purple-light); --gold-bright: var(--accent-purple-bright-light); }
-:root[data-theme="light"][data-accent="orange"] { --gold: var(--accent-orange-light); --gold-bright: var(--accent-orange-bright-light); }
+/* The light sits on the root, not on <body>: body is only one viewport tall (html, body
+   { height: 100% }), so a fixed gradient there left a hard edge on the plain root background
+   once the page was scrolled. */
+:root { background: var(--bg-glow), var(--bg); background-attachment: fixed; }
+/* Touch devices repaint a fixed background on every scroll frame, or ignore it: there the light
+   scrolls with the page. */
+@media (pointer: coarse) { :root { background-attachment: scroll; } }
 
 * { box-sizing: border-box; }
-html { background: var(--bg); }
 body { font-size: 1rem; line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
-  outline: 2px solid var(--gold-bright);
+  outline: 2px solid var(--accent-bright);
   outline-offset: 2px;
 }
-::selection { background: var(--gold-soft); color: var(--gold-bright); }
+::selection { background: var(--accent-soft); color: var(--accent-bright); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

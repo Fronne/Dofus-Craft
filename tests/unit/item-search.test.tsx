@@ -111,4 +111,52 @@ describe('ItemSearch result limit', () => {
 
     expect(screen.getByRole('button', { name: 'Réinitialiser les filtres' })).toBeInTheDocument();
   });
+
+  // specs/051-site-visual-refresh (FR-020)
+  it('shows each active filter as a chip that removes it in one click, the panel staying folded', () => {
+    const setCategory = vi.fn();
+    const setLevelMin = vi.fn();
+    const setLevelMax = vi.fn();
+    render(
+      <ItemSearch
+        query=""
+        setQuery={vi.fn()}
+        category="equipment-type-17"
+        setCategory={setCategory}
+        levelMin="190"
+        setLevelMin={setLevelMin}
+        levelMax=""
+        setLevelMax={setLevelMax}
+        onReset={vi.fn()}
+        categories={[{ id: 'equipment-type-17', label: 'Cape', sortOrder: 1, kind: 'Equipment', typeIds: [17] }]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /^Filtres/ })).toHaveTextContent('2');
+    expect(screen.getByLabelText('Niveau min')).not.toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Cape' }));
+    expect(setCategory).toHaveBeenCalledWith('');
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Niveau 190 – 200' }));
+    expect(setLevelMin).toHaveBeenCalledWith('');
+    expect(setLevelMax).toHaveBeenCalledWith('');
+  });
+
+  it('shows no chip for the text typed in the search field', () => {
+    render(
+      <ItemSearch
+        query="cape"
+        setQuery={vi.fn()}
+        category=""
+        setCategory={vi.fn()}
+        levelMin=""
+        setLevelMin={vi.fn()}
+        levelMax=""
+        setLevelMax={vi.fn()}
+        onReset={vi.fn()}
+        categories={[]}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /^Retirer le filtre/ })).not.toBeInTheDocument();
+  });
 });

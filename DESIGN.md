@@ -4,88 +4,101 @@ Ce document décrit le design tel qu'il est codé. Toute nouvelle page ou tout n
 suit ; si une règle doit changer, on la change ici et dans `src/styles/theme.css` en même temps.
 
 Les valeurs vivent dans `src/styles/theme.css` (jetons), les composants dans `src/styles/global.css`
-et `src/styles/comparison.css`. `src/styles/design-modern.css` ne contient que les retouches du
-design « Moderne », toutes préfixées par `:root[data-design="modern"]`.
+et `src/styles/comparison.css`. Le site a un seul style (specs/051-site-visual-refresh), décliné en
+thème sombre et en thème clair.
 
 ## 1. Principes
 
-- **Un outil, pas une vitrine** : dense, lisible, sans décor. Le contenu utile (prix, verdict) passe
-  avant tout le reste.
+- **Un outil, pas une vitrine** : dense, lisible. Le contenu utile (prix, verdict) passe avant tout
+  le reste ; la couleur sert à le faire ressortir, pas à décorer.
 - **Une seule action principale par écran** : un seul bouton plein (`.btn-primary`) visible à la fois.
+- **Une couleur par rôle** : la même couleur veut dire la même chose sur toutes les pages (section 2).
 - **Jamais de valeur écrite en dur** : couleur, espacement, rayon, ombre et durée viennent d'un jeton.
   Seule exception : la durée d'une boucle de chargement (`spin`, `skeleton-shimmer`).
-- **Deux thèmes, cinq accents, deux designs** : tout doit rester lisible dans chaque combinaison
-  (`data-theme`, `data-accent`, `data-design` sur `<html>`).
+- **Deux thèmes** : tout doit rester lisible en sombre et en clair (`data-theme` sur `<html>`).
+- **Pas de visuel d'Ankama** dans l'habillage : le motif du site est le losange, dessiné en CSS. Les
+  images d'objets et de ressources viennent du catalogue.
 
 ## 2. Couleurs
 
+### Rôles
+
+| Rôle | Jeton | Où |
+| --- | --- | --- |
+| Action principale, sélection, choix gagnant | `--accent` (vert) | bouton plein, résultat choisi, rubrique active, option active, verdict, barre du montant le plus bas |
+| Kamas mis en avant | `--kamas` (or) | économie du verdict, mention « acheté » |
+| Lien, action secondaire | `--link` (turquoise) | liens, boutons-liens, icône de recherche, pastilles de filtre, mention « crafté », barres de répartition |
+| Prix vieillissant, avertissement | `--warning` (ambre) | date d'un prix ancien, bandeau d'avertissement |
+| Prix périmé, erreur, destructif | `--danger` (corail) | date d'un prix périmé, messages d'erreur, boutons de suppression |
+
+### Valeurs
+
 | Rôle | Jeton | Sombre | Clair |
 | --- | --- | --- | --- |
-| Fond de page | `--bg` | `#0b1018` | `#eef1f5` |
-| Carte | `--panel` | `rgba(19,29,44,.88)` | `rgba(255,255,255,.92)` |
-| Carte opaque (menus, bulles) | `--panel-strong` | `#172236` | `#ffffff` |
-| Surface secondaire | `--panel-soft` | `#202d42` | `#e5eaf1` |
-| Texte | `--text` | `#edf2f7` | `#253246` |
-| Texte secondaire | `--text-muted` | `#93a4ba` | `#566477` |
-| Texte discret (dates, notes) | `--text-faint` | `#8a9ab0` | `#5f6d80` |
-| Accent | `--gold` | `#5b9dee` | `#2f6fd1` |
-| Accent vif (liens, focus) | `--gold-bright` | `#7db4f5` | `#1f57ad` |
-| Texte posé sur l'accent | `--on-accent` | `#0b1018` | `#ffffff` |
-| Séparateur | `--border` | `rgba(148,171,201,.18)` | `rgba(45,67,94,.16)` |
-| Contour d'un champ | `--border-control` | `#6b7c93` | `#8794a6` |
-| Succès / gain | `--success` | `#4fbf74` | `#1f7038` |
-| Avertissement | `--warning` | `#e2b04f` | `#85600a` |
-| Erreur / destructif | `--danger` | `#f38b8b` | `#b94b4b` |
-| Voile derrière un dialogue | `--scrim` | `rgba(9,13,20,.6)` | identique |
+| Fond de page | `--bg` | `#08181c` | `#eaf3f1` |
+| Lumière derrière la page | `--bg-glow` | halos turquoise et vert | les mêmes, atténués |
+| Carte (translucide) | `--panel` | `rgba(18,52,58,.78)` | `rgba(255,255,255,.86)` |
+| Carte opaque (menus, bulles) | `--panel-strong` | `#11333a` | `#ffffff` |
+| Surface secondaire | `--panel-soft` | `#16424a` | `#dcebe8` |
+| Barre de navigation | `--nav-bg` | `rgba(8,28,32,.72)` | `rgba(255,255,255,.78)` |
+| Texte | `--text` | `#f6eed6` | `#0f2d33` |
+| Texte secondaire | `--text-muted` | `#c5d8d4` | `#3d5a5f` |
+| Texte discret (dates, notes) | `--text-faint` | `#93b0ac` | `#4a6665` |
+| Accent | `--accent` | `#a5d43a` | `#3f7d0c` |
+| Accent vif (texte, focus) | `--accent-bright` | `#b6e24a` | `#2f6406` |
+| Dégradé du bouton plein | `--accent-gradient` | `#b1dc35` → `#84b41c` | `#3f7d0c` → `#33690a` |
+| Texte posé sur l'accent | `--on-accent` | `#10200a` | `#ffffff` |
+| Kamas | `--kamas` | `#ffc94d` | `#8a5a00` |
+| Lien | `--link` | `#5fd9cb` | `#0b6f68` |
+| Avertissement | `--warning` | `#ffb84d` | `#8a5300` |
+| Erreur / destructif | `--danger` | `#ff8a75` | `#b3391f` |
+| Séparateur | `--border` | `rgba(120,220,205,.18)` | `rgba(13,60,66,.14)` |
+| Contour d'un champ | `--border-control` | `#5f8f8b` | `#6f8f8c` |
+| Fond d'un champ | `--input-bg` | `rgba(3,14,17,.55)` | `rgba(13,60,66,.06)` |
+| Voile derrière un dialogue | `--scrim` | `rgba(3,12,14,.66)` | `rgba(9,30,34,.5)` |
 | Texte posé sur une image | `--on-image` | `#ffffff` | identique |
-
-Le design « Moderne » remplace cinq de ces valeurs ; toutes les autres sont communes aux deux designs.
-
-| Jeton | Moderne sombre | Moderne clair |
-| --- | --- | --- |
-| `--bg` | `#0a0f17` | `#f3f5f9` |
-| `--panel-strong` | `#141d2c` | `#ffffff` |
-| `--panel-soft` | `#1c2739` | `#eef1f6` |
-| `--border` | `rgba(148,171,201,.11)` | `rgba(45,67,94,.09)` |
-| `--input-bg` | `rgba(5,9,16,.45)` | `#f5f7fb` |
 
 Règles :
 
-- `--gold` et `--gold-bright` suivent l'accent choisi par le joueur (bleu, rouge, vert, violet,
-  orange). Leur nom est historique : ce sont **l'accent**, pas une couleur dorée.
-- Les teintes dérivées se calculent avec `color-mix()` à partir d'un jeton (`--gold-soft`,
-  `--border-strong`, `--success-soft`…), jamais avec un `rgba()` recopié.
-- Un texte posé sur une image (bannière d'accueil, coche d'une pastille de couleur) utilise
-  `--on-image`, avec le voile `--image-veil` ou l'ombre `--on-image-shadow` pour rester lisible. Ces
-  trois jetons ne changent pas avec le thème, parce que l'image ne change pas.
-- Les cases d'équipement gardent les couleurs du jeu (`--slot-bg`, `--slot-border`, `--slot-glyph`) :
-  elles ne suivent ni l'accent ni le design.
-- Contraste minimal : 4,5:1 pour tout texte, 3:1 pour le contour d'un champ et pour une icône seule.
-  `--text-faint` est la teinte la plus claire autorisée pour du texte.
+- Les teintes dérivées se calculent avec `color-mix()` à partir d'un jeton (`--accent-soft`,
+  `--link-soft`, `--kamas-soft`, `--border-strong`…), jamais avec un `rgba()` recopié.
+- `--success` vaut l'accent : un gain et un choix gagnant ont la même couleur.
+- Les effets d'un objet ont un losange par caractéristique (`--stat-vitality`, `--stat-earth`,
+  `--stat-fire`, `--stat-water`, `--stat-air`, `--stat-wisdom`, `--stat-critical`, `--stat-range`,
+  `--stat-neutral` par défaut). La correspondance est dans `src/features/catalogue/stat-tones.ts` ;
+  le nom de la caractéristique reste toujours écrit.
+- Un texte posé sur une image utilise `--on-image`, avec le voile `--image-veil` ou l'ombre
+  `--on-image-shadow` pour rester lisible. Ces trois jetons ne changent pas avec le thème.
+- Les cases d'équipement gardent les couleurs du jeu (`--slot-bg`, `--slot-border`, `--slot-glyph`).
+- Les surfaces translucides (`--panel`, `--nav-bg`) laissent passer la lumière du fond ; un menu, un
+  dialogue ou une bulle, qui passent au-dessus du contenu, sont opaques (`--panel-strong`).
+- Contraste minimal : 4,5:1 pour tout texte, 3:1 pour le contour d'un champ, une icône seule et un
+  losange. `tests/unit/theme-contrast.test.ts` le vérifie dans les deux thèmes à partir de
+  `theme.css` : un jeton modifié est contrôlé sans toucher au test.
 - Une couleur ne porte jamais seule une information : un prix ancien a aussi son libellé, un gain a
   son signe, une erreur son message.
 
 ## 3. Typographie
 
-Police : Inter, puis la police système. Seul le design « Moderne » utilise la police embarquée
-« Inter Variable » (`@fontsource-variable/inter`) ; en « Classique », Inter s'affiche si elle est
-installée sur l'appareil, sinon c'est la police système. Corps à `1rem` (16 px), interligne `1.5`.
+Deux polices embarquées : **Rowdies** (`--font-display`, une seule graisse, 400) pour les titres, en
+capitales ; **Lexend** (`--font-body`, variable) pour tout le reste. Corps à `1rem` (16 px),
+interligne `1.5`.
 
-| Usage | Classique | Moderne |
-| --- | --- | --- |
-| Titre de page (`h1`) | `clamp(1.75rem, 4vw, 2.5rem)`, 700, espacement `-.03em` | `clamp(2rem, 4vw, 2.75rem)`, 760, espacement `-.035em` |
-| Titre de section (`h2`) | `1.15rem`, 700 | identique, espacement `-.02em` |
-| Titre d'une carte (`.card h2`) | `1.3rem`, centré | `1.2rem`, aligné à gauche (centré sur la fiche d'un objet) |
-| Sous-titre (`h3`) | `1rem`, 700 | identique |
-| Rubrique d'une carte (`.card h3`) | `.82rem`, capitales, 800, `--text-muted` | identique |
-| Corps | `1rem`, 400 | identique ; phrase d'en-tête de page à `1.02rem`, interligne `1.6` |
-| Texte secondaire, libellé de champ | `.85rem` à `.9rem` (libellé de champ : `.88rem`, 700) | identique |
-| Note, date, légende | `.8rem`, 400 | identique |
-| Sur-titre (`.eyebrow`) | `.76rem`, capitales, espacement `.16em`, 800 | `.76rem`, capitales, espacement `.12em`, 700 |
+| Usage | Règle |
+| --- | --- |
+| Titre de page (`h1`) | Rowdies, capitales, `clamp(1.6rem, 3.4vw, 2rem)`, espacement `.01em` |
+| Titre de section (`h2`) | Rowdies, capitales, `1.25rem`, espacement `.02em` ; aligné à gauche dans une carte, centré sur la fiche d'un objet |
+| Sous-titre (`h3`) | Rowdies, capitales, `1.05rem` |
+| Rubrique d'une carte (`.card h3`) | `.82rem`, capitales, `--text-muted` |
+| Titre du verdict | Rowdies, capitales, `1.6rem`, `--accent-bright` quand le verdict est tranché |
+| Corps | Lexend, `1rem`, 400 ; phrase d'en-tête de page à `1.02rem`, interligne `1.6` |
+| Texte secondaire, libellé de champ | `.85rem` à `.9rem` (libellé de champ : `.88rem`, 700) |
+| Note, date, légende | `.8rem`, 400 |
+| Sur-titre (`.eyebrow`) | `.76rem`, capitales, espacement `.12em`, 700 |
 
 - Une page a un seul `h1`, puis des `h2`, puis des `h3` : on ne saute pas de niveau.
-- Les montants en kamas utilisent des chiffres tabulaires (`font-variant-numeric: tabular-nums`) dès
-  qu'ils sont alignés en colonne. Le design « Moderne » l'applique aussi aux champs de saisie et aux prix affichés.
+- Les montants en kamas, les champs de saisie et les prix affichés utilisent des chiffres tabulaires
+  (`font-variant-numeric: tabular-nums`).
 - Aucun texte sous `.72rem` (11,5 px). Seule exception : le libellé de la barre de navigation basse,
   qui descend jusqu'à `.62rem` sur un écran étroit pour ne pas être coupé.
 
@@ -99,71 +112,91 @@ Base de 4 px. Seuls ces pas sont utilisés :
 | `--space-2` | 8 px | entre deux éléments d'une même ligne |
 | `--space-3` | 12 px | marge intérieure d'un bouton, d'une ligne de liste |
 | `--space-4` | 16 px | entre deux blocs d'une carte, gouttière mobile |
-| `--space-5` | 24 px | marge intérieure d'une carte (Classique) |
-| `--space-6` | 32 px | entre deux cartes, marge intérieure d'une carte (Moderne) |
+| `--space-5` | 24 px | entre la barre de navigation et le contenu |
+| `--space-6` | 32 px | entre deux cartes, marge intérieure d'une carte |
 | `--space-7` | 48 px | respiration d'un état vide |
 
 ## 5. Rayons, ombres, mouvement
 
-| Jeton | Classique | Moderne | Usage |
-| --- | --- | --- | --- |
-| `--radius-xs` | 6 px | 6 px | pastilles, petits boutons |
-| `--radius-sm` | 8 px | 10 px | images d'objet, petits blocs |
-| `--radius-md` | 12 px | 16 px | boutons, champs, lignes, bulles |
-| `--radius-lg` | 16 px | 22 px | cartes, dialogues |
-| `--radius-pill` | 999 px | 999 px | badges, avatars |
+| Jeton | Valeur | Usage |
+| --- | --- | --- |
+| `--radius-xs` | 6 px | pastilles, petits boutons, mentions « acheté » / « crafté » |
+| `--radius-sm` | 8 px | images d'objet, petits blocs, rubriques de la navigation |
+| `--radius-md` | 10 px | boutons, champs, lignes, barre de navigation |
+| `--radius-lg` | 14 px | cartes, dialogues |
+| `--radius-pill` | 999 px | badges, avatars, pastilles de filtre |
 
 - Ombres : `--shadow-sm` (élément posé), `--shadow-md` (menu, bulle, survol d'une carte),
-  `--shadow` (dialogue). Trois niveaux, pas d'ombre écrite à la main. Le design « Moderne » redéfinit
-  ces trois jetons en ombres plus larges et plus douces ; il ajoute une lueur de la couleur d'accent
-  sous le bouton principal et sous l'élément sélectionné.
-- Mouvement : `--transition-fast` pour les survols (120 ms en Classique, 180 ms en Moderne) ;
-  `--transition-enter` (160 ms) pour l'apparition d'un panneau, d'un onglet ou d'un bloc déplié
-  (`rise-in`, `fade-in`) et pour une valeur qui glisse (jauge, chevron). En « Moderne », les cartes
-  entrent en 280 ms et la bulle des compteurs en 200 ms (`modern-rise`). Rien ne bouge sans raison,
-  et tout s'arrête sous `prefers-reduced-motion` (côté CSS, et `prefersReducedMotion()` côté script).
+  `--shadow` (dialogue). Trois niveaux, pas d'ombre écrite à la main. Une lueur de la couleur
+  d'accent accompagne le bouton plein, l'élément sélectionné et le losange du verdict.
+- Mouvement : `--transition-fast` (180 ms) pour les survols ; `--transition-enter` (160 ms) pour
+  l'apparition d'un panneau, d'un onglet ou d'un bloc déplié (`rise-in`, `fade-in`) et pour une
+  valeur qui glisse (jauge, chevron). Les cartes entrent en 280 ms et la bulle des compteurs en
+  200 ms (`modern-rise`). Rien ne bouge sans raison, et tout s'arrête sous
+  `prefers-reduced-motion` (côté CSS, et `prefersReducedMotion()` côté script).
 
 ## 6. Composants
+
+### Navigation
+
+- **961 px et plus** : une barre flottante en haut (`.app-nav`), arrondie, de la largeur du contenu,
+  qui reste en haut pendant le défilement. De gauche à droite : la marque, les rubriques, puis à
+  droite le serveur actif, Paramètres et la bascule de thème. Fond `--nav-bg` avec un flou
+  (`backdrop-filter`), opaque là où le flou n'existe pas. La rubrique active a un fond
+  `--accent-soft` et un losange `--accent` à cheval sur le bord bas de la barre. Quand tout ne tient
+  pas sur une ligne, la barre passe sur deux lignes sans rien masquer.
+- **960 px et moins** : la barre basse à onglets, avec le serveur actif épinglé en haut de l'écran.
+  Jamais de `backdrop-filter` sur `.app-nav` à ces largeurs : il deviendrait le bloc de référence
+  du sélecteur de serveur, qui est fixé à la fenêtre.
 
 ### Boutons
 
 | Classe | Rôle | Quand |
 | --- | --- | --- |
-| `.btn .btn-primary` | plein, couleur d'accent, texte `--on-accent` | l'action principale de l'écran, une seule |
+| `.btn .btn-primary` | plein, `--accent-gradient`, texte `--on-accent` | l'action principale de l'écran, une seule |
 | `.btn .btn-secondary` | contour | toutes les autres actions |
 | `.btn .btn-danger` | contour et texte `--danger` | supprimer, archiver |
 | `.icon-button` | icône seule, toujours avec `aria-label` | actions répétées dans une ligne |
 | `.btn-small` | variante compacte | à l'intérieur d'une carte ou d'un tableau |
+| bouton-lien (`.reset-filters`, `.results-collapse`…) | texte `--link`, sans contour, zone de 44 px | action secondaire dans une phrase ou une ligne |
 
 Un lien qui mène à une autre page et sert d'action principale d'un état vide prend aussi
 `.btn .btn-primary`.
 
 Un bouton fait 44 px de haut (36 px en `.btn-small`, 40 px pour `.icon-button`, 32 px pour
-`.icon-button--sm`), avec le rayon
-`--radius-md`. En « Moderne », le bouton principal porte un dégradé de `--gold-bright` vers `--gold`
-et tout bouton se soulève de 1 px au survol.
+`.icon-button--sm`), avec le rayon `--radius-md`, et se soulève de 1 px au survol.
 
 ### Champs
 
-- Hauteur : `--control-lg` (56 px) pour la grande recherche de la page Recherche uniquement,
-  `--control-md` (44 px) partout ailleurs, `--control-sm` (36 px) dans un tableau.
-- Contour `--border-control`, fond `--input-bg`, rayon `--radius-md`.
+- Hauteur : `--control-lg` (56 px) pour la grande recherche de la page Recherche et le bouton
+  Filtres à sa droite uniquement, `--control-md` (44 px) partout ailleurs, `--control-sm` (36 px)
+  dans un tableau.
+- Contour `--border-control`, fond `--input-bg`, rayon `--radius-md`. Au focus : contour `--accent`
+  et halo de 4 px `--accent-soft`.
 - Chaque champ a un libellé visible ou un `aria-label` ; le texte d'exemple ne remplace jamais le libellé.
 - Un champ de prix valide avec Entrée et reprend sa valeur d'origine avec Échap.
 
 ### Cartes et pages
 
 - Une page = un `<header class="page-header">` (`h1` + une phrase), puis des `.panel`.
-- `.panel` : fond `--panel-gradient` (égal à `--panel` en Classique ; en Moderne, `--panel-strong`, avec un
-  léger reflet clair en haut en thème sombre),
-  contour `--border`, rayon `--radius-lg`, ombre `--shadow-sm`, marge intérieure `--space-5`
-  (`--space-6` en Moderne). Sous 720 px : marge `--space-4` et rayon `--radius-md` dans les deux designs.
+- `.panel` : fond `--panel`, contour `--border`, rayon `--radius-lg`, ombre `--shadow-sm`, marge
+  intérieure `--space-6`. Sous 720 px : marge `--space-4` et rayon `--radius-md`.
 - Les grilles utilisent `minmax(0, 1fr)` pour ne jamais déborder sur mobile.
+
+### Page Recherche
+
+- 6 résultats d'abord, puis « Afficher 12 de plus » ; « Réduire » revient à 6.
+- Le bouton Filtres est à droite du champ ; les filtres restent repliés. Chaque filtre appliqué
+  (catégorie, niveau) apparaît sous le champ en pastille (`.filter-chip`) qui le retire d'un clic.
+- Verdict tranché (fabriquer ou acheter) : bloc teinté d'accent, coche dans un losange, titre en
+  Rowdies, économie en `--kamas`, la barre du montant le plus bas en accent et l'autre neutre. Un
+  verdict incomplet ou à égalité reste sobre.
+- Prix des ressources : sous chaque ligne, une barre `--link` dit ce qu'elle pèse dans le coût de
+  craft (`.share-bar`, décorative : les montants sont écrits).
 
 ### Badges
 
-`.badge` : pastille en forme de pilule (`--radius-pill`), texte à `.92rem` et graisse 750. En
-« Moderne », le badge du verdict de prix est un peu plus petit (`.88rem`).
+`.badge` : pastille en forme de pilule (`--radius-pill`), texte à `.92rem` et graisse 750.
 
 | Classe | Fond | Texte | Quand |
 | --- | --- | --- | --- |
@@ -197,7 +230,7 @@ l'ordre de tabulation ; les flèches, Début et Fin passent de l'un à l'autre
 | Désactivé | opacité `.55`, curseur `not-allowed`, pas d'effet de survol |
 | En cours | le bouton est désactivé et son libellé change (« Enregistrement… ») |
 | Survol / appui | tout élément cliquable a un survol et un état `:active` |
-| Focus | contour de 2 px `--gold-bright`, décalé de 2 px, sur tout élément atteignable au clavier ; en « Moderne », un champ prend à la place un contour `--gold` et un halo de 4 px `--gold-soft` |
+| Focus | contour de 2 px `--accent-bright`, décalé de 2 px, sur tout élément atteignable au clavier ; un champ prend à la place un contour `--accent` et un halo de 4 px `--accent-soft` |
 | Destructif | une confirmation avant, ou un « Annuler » juste après |
 
 ## 8. Mobile
@@ -209,6 +242,7 @@ l'ordre de tabulation ; les flèches, Début et Fin passent de l'un à l'autre
 - Les hauteurs plein écran utilisent `dvh`. La même règle en `vh` est écrite juste avant, pour les
   navigateurs qui ne connaissent pas `dvh`.
 - Taille de police des champs : 16 px au moins, pour éviter le zoom automatique d'iOS.
+- La lumière du fond est fixée à la fenêtre ; sur un appareil tactile, elle défile avec la page.
 
 ## 9. Ton et libellés
 

@@ -24,7 +24,7 @@ function blockingErrorMessage(hasData: boolean, error: unknown, fallback: string
   return error instanceof Error ? error.message : fallback;
 }
 
-export function useCatalogue(query: string, categoryId: string, selectedId: string, levelFilter = '', resultLimit = 12) {
+export function useCatalogue(query: string, categoryId: string, selectedId: string, levelFilter = '', resultLimit = 6) {
   const [catalogueWarm, setCatalogueWarm] = useState(false);
   // Goes up on « Réessayer »: the search and the detail then ask the network again.
   const [attempt, setAttempt] = useState(0);

@@ -20,8 +20,8 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 ## Phase 1: Setup
 
-- [ ] T001 Ajouter `@fontsource-variable/lexend` et `@fontsource/rowdies`, retirer `@fontsource-variable/inter` dans `package.json` (et le fichier de verrouillage utilisé par le projet)
-- [ ] T002 Relever l'état de départ : lancer `npm run typecheck`, `npm run lint` et `npm run test` et noter le résultat, pour distinguer plus tard une régression d'un échec déjà présent
+- [X] T001 Ajouter `@fontsource-variable/lexend` et `@fontsource/rowdies`, retirer `@fontsource-variable/inter` dans `package.json` (et le fichier de verrouillage utilisé par le projet)
+- [X] T002 Relever l'état de départ : lancer `npm run typecheck`, `npm run lint` et `npm run test` et noter le résultat, pour distinguer plus tard une régression d'un échec déjà présent
 
 ---
 
@@ -29,14 +29,14 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **⚠️ Bloquant** : aucune histoire ne peut commencer avant la fin de cette phase.
 
-- [ ] T003 Écrire le test de contraste `tests/unit/theme-contrast.test.ts` : lit `src/styles/theme.css`, résout les jetons des thèmes sombre et clair, compose les fonds translucides sur `--bg`, et vérifie chaque couple de la section 2 de `contracts/ui-contract.md` (texte ≥ 4,5:1 ; icônes, contours et losanges ≥ 3:1). Il doit échouer avant T004
-- [ ] T004 Réécrire les jetons de `src/styles/theme.css` selon `data-model.md` : thème sombre de la maquette, thème clair décliné, nouveaux jetons `--accent*`, `--kamas*`, `--link*`, `--nav-bg`, `--accent-gradient`, `--stat-*`, `--font-display`, `--font-body` ; supprimer les vingt jetons `--accent-<couleur>-*` et les sélecteurs `[data-accent]` ; importer les deux polices
-- [ ] T005 Renommer `--gold`, `--gold-bright`, `--gold-soft` en `--accent`, `--accent-bright`, `--accent-soft` dans `src/styles/global.css`, `src/styles/comparison.css`, `admin/admin.css` et tout fichier `src/**/*.tsx` qui les cite
-- [ ] T006 Reprendre dans `src/styles/global.css` les règles utiles de `src/styles/design-modern.css` (sans le préfixe `[data-design]`), puis supprimer `src/styles/design-modern.css` et ses imports dans `src/main.tsx` et `admin/main.tsx`
-- [ ] T007 [P] Créer `src/persistence/retired-style-preferences.ts` : efface du `localStorage` les clés du design et de l'accent, sans jamais lever d'erreur ; l'appeler au démarrage dans `src/main.tsx`
-- [ ] T008 Supprimer `src/domain/designs.ts`, `src/domain/accent-colors.ts`, `src/persistence/design-preference.ts`, `src/persistence/accent-color-preference.ts` et leurs usages dans `src/app/AppShell.tsx` et `src/main.tsx` (plus d'attributs `data-design` ni `data-accent`)
-- [ ] T009 Supprimer les tests devenus sans objet : `tests/unit/design-preference.test.ts`, `tests/unit/design-modern-css-scope.test.ts`, `tests/integration/design-setting.test.tsx`
-- [ ] T010 [P] Mettre à jour la couleur de thème du navigateur (`theme-color`) dans `index.html` avec la valeur de `--bg` sombre
+- [X] T003 Écrire le test de contraste `tests/unit/theme-contrast.test.ts` : lit `src/styles/theme.css`, résout les jetons des thèmes sombre et clair, compose les fonds translucides sur `--bg`, et vérifie chaque couple de la section 2 de `contracts/ui-contract.md` (texte ≥ 4,5:1 ; icônes, contours et losanges ≥ 3:1). Il doit échouer avant T004
+- [X] T004 Réécrire les jetons de `src/styles/theme.css` selon `data-model.md` : thème sombre de la maquette, thème clair décliné, nouveaux jetons `--accent*`, `--kamas*`, `--link*`, `--nav-bg`, `--accent-gradient`, `--stat-*`, `--font-display`, `--font-body` ; supprimer les vingt jetons `--accent-<couleur>-*` et les sélecteurs `[data-accent]` ; importer les deux polices
+- [X] T005 Renommer `--gold`, `--gold-bright`, `--gold-soft` en `--accent`, `--accent-bright`, `--accent-soft` dans `src/styles/global.css`, `src/styles/comparison.css`, `admin/admin.css` et tout fichier `src/**/*.tsx` qui les cite
+- [X] T006 Reprendre dans `src/styles/global.css` les règles utiles de `src/styles/design-modern.css` (sans le préfixe `[data-design]`), puis supprimer `src/styles/design-modern.css` et ses imports dans `src/main.tsx` et `admin/main.tsx`
+- [X] T007 [P] Créer `src/persistence/retired-style-preferences.ts` : efface du `localStorage` les clés du design et de l'accent, sans jamais lever d'erreur ; l'appeler au démarrage dans `src/main.tsx`
+- [X] T008 Supprimer `src/domain/designs.ts`, `src/domain/accent-colors.ts`, `src/persistence/design-preference.ts`, `src/persistence/accent-color-preference.ts` et leurs usages dans `src/app/AppShell.tsx` et `src/main.tsx` (plus d'attributs `data-design` ni `data-accent`)
+- [X] T009 Supprimer les tests devenus sans objet : `tests/unit/design-preference.test.ts`, `tests/unit/design-modern-css-scope.test.ts`, `tests/integration/design-setting.test.tsx`
+- [X] T010 [P] Mettre à jour la couleur de thème du navigateur (`theme-color`) dans `index.html` avec la valeur de `--bg` sombre
 
 **Checkpoint** : le site se lance, `npm run typecheck` passe, le test de contraste est vert.
 
@@ -48,13 +48,13 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **Independent Test** : parcours 1 de `quickstart.md`.
 
-- [ ] T011 [US1] Appliquer le fond de page dans `src/styles/global.css` : `--bg-glow` sur la coque, fixé à la fenêtre, avec repli pour les appareils tactiles (research §7)
-- [ ] T012 [US1] Appliquer les polices dans `src/styles/global.css` : `--font-body` sur la racine, `--font-display` en capitales sur les titres de page et de section, chiffres tabulaires sur les montants
-- [ ] T013 [US1] Aligner les composants communs de `src/styles/global.css` sur la section 4 de `contracts/ui-contract.md` : panneaux, champs, bouton plein (`--accent-gradient`), bouton secondaire, pastilles, sélecteurs segmentés, cases d'objet, menus, dialogues et bulles opaques
-- [ ] T014 [US1] Passer les liens et boutons-liens au rôle `--link` dans `src/styles/global.css` et `src/styles/comparison.css` (research §3), en laissant sélection, bouton plein et focus sur l'accent
-- [ ] T015 [US1] Passer le symbole et les montants de kamas mis en avant au rôle `--kamas`, les avertissements à `--warning` et les erreurs à `--danger` dans `src/styles/global.css` et `src/styles/comparison.css`
-- [ ] T016 [US1] Revoir chaque page en thème sombre (Recherche, Suivis, Rentabilité, HDV, XP Familier, Forgemagie, Paramètres, choix du serveur, visite guidée, bandeau d'information, compteurs, graphiques d'historique) et corriger dans `src/styles/global.css` tout élément resté hors palette ou illisible
-- [ ] T017 [P] [US1] Aligner `admin/admin.css` et `admin/main.tsx` pour que l'application d'administration prenne le nouveau style
+- [X] T011 [US1] Appliquer le fond de page dans `src/styles/global.css` : `--bg-glow` sur la coque, fixé à la fenêtre, avec repli pour les appareils tactiles (research §7)
+- [X] T012 [US1] Appliquer les polices dans `src/styles/global.css` : `--font-body` sur la racine, `--font-display` en capitales sur les titres de page et de section, chiffres tabulaires sur les montants
+- [X] T013 [US1] Aligner les composants communs de `src/styles/global.css` sur la section 4 de `contracts/ui-contract.md` : panneaux, champs, bouton plein (`--accent-gradient`), bouton secondaire, pastilles, sélecteurs segmentés, cases d'objet, menus, dialogues et bulles opaques
+- [X] T014 [US1] Passer les liens et boutons-liens au rôle `--link` dans `src/styles/global.css` et `src/styles/comparison.css` (research §3), en laissant sélection, bouton plein et focus sur l'accent
+- [X] T015 [US1] Passer le symbole et les montants de kamas mis en avant au rôle `--kamas`, les avertissements à `--warning` et les erreurs à `--danger` dans `src/styles/global.css` et `src/styles/comparison.css`
+- [X] T016 [US1] Revoir chaque page en thème sombre (Recherche, Suivis, Rentabilité, HDV, XP Familier, Forgemagie, Paramètres, choix du serveur, visite guidée, bandeau d'information, compteurs, graphiques d'historique) et corriger dans `src/styles/global.css` tout élément resté hors palette ou illisible
+- [X] T017 [P] [US1] Aligner `admin/admin.css` et `admin/main.tsx` pour que l'application d'administration prenne le nouveau style
 
 **Checkpoint** : parcours 1 de `quickstart.md` validé.
 
@@ -66,10 +66,10 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **Independent Test** : parcours 2 de `quickstart.md`.
 
-- [ ] T018 [US2] Écrire `tests/integration/app-nav.test.tsx` : la navigation contient, dans l'ordre, la marque, les rubriques, puis le serveur actif, Paramètres et la bascule de thème ; la rubrique active porte `aria-current="page"` ; Forgemagie est absente quand la page est désactivée
-- [ ] T019 [US2] Réordonner le balisage de la navigation dans `src/app/AppShell.tsx` : marque, liste des rubriques, puis un groupe de droite avec `ServerSwitcher`, le lien Paramètres et la bascule de thème
-- [ ] T020 [US2] Écrire dans `src/styles/global.css` la barre du haut au-dessus de 960 px : coque en colonne, barre `sticky`, arrondie, centrée sur la largeur du contenu, fond `--nav-bg` avec flou et repli opaque sous `@supports not (backdrop-filter: blur(1px))`, rubrique active avec fond `--accent-soft` et losange `--accent`, passage sur deux lignes quand tout ne tient pas
-- [ ] T021 [US2] Vérifier dans `src/styles/global.css` que les règles sous 960 px donnent la même navigation du bas qu'avant avec le nouveau balisage (sélecteur de serveur, pied de navigation), et ajuster les marges du contenu maintenant que la colonne a disparu (dont la règle `.app-shell:has(.player-counters)`)
+- [X] T018 [US2] Écrire `tests/integration/app-nav.test.tsx` : la navigation contient, dans l'ordre, la marque, les rubriques, puis le serveur actif, Paramètres et la bascule de thème ; la rubrique active porte `aria-current="page"` ; Forgemagie est absente quand la page est désactivée
+- [X] T019 [US2] Réordonner le balisage de la navigation dans `src/app/AppShell.tsx` : marque, liste des rubriques, puis un groupe de droite avec `ServerSwitcher`, le lien Paramètres et la bascule de thème
+- [X] T020 [US2] Écrire dans `src/styles/global.css` la barre du haut au-dessus de 960 px : coque en colonne, barre `sticky`, arrondie, centrée sur la largeur du contenu, fond `--nav-bg` avec flou et repli opaque sous `@supports not (backdrop-filter: blur(1px))`, rubrique active avec fond `--accent-soft` et losange `--accent`, passage sur deux lignes quand tout ne tient pas
+- [X] T021 [US2] Vérifier dans `src/styles/global.css` que les règles sous 960 px donnent la même navigation du bas qu'avant avec le nouveau balisage (sélecteur de serveur, pied de navigation), et ajuster les marges du contenu maintenant que la colonne a disparu (dont la règle `.app-shell:has(.player-counters)`)
 
 **Checkpoint** : parcours 2 et 6 de `quickstart.md` validés.
 
@@ -81,12 +81,12 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **Independent Test** : parcours 3 de `quickstart.md`.
 
-- [ ] T022 [US3] Écrire `tests/integration/search-results-page-size.test.tsx` : 6 résultats par défaut quand la recherche en renvoie davantage ; « Afficher 12 de plus » en montre 18 ; adapter les tests existants qui supposaient 12
-- [ ] T023 [US3] Dans `src/features/catalogue/ItemResults.tsx`, passer `RESULTS_PAGE_SIZE` à 6 et ajouter un pas de 12 pour « Afficher 12 de plus » ; vérifier l'usage du paramètre `limit` dans `src/features/search/RecherchePage.tsx`
-- [ ] T024 [US3] Mettre le bloc verdict aux normes de la maquette dans `src/features/comparison/` et `src/styles/comparison.css` : bloc teinté d'accent, losange coché, économie en `--kamas`, barre du montant le plus bas en accent et l'autre neutre
-- [ ] T025 [US3] Dans le tableau des ressources (`src/features/comparison/`, `src/styles/comparison.css`) : barre de répartition `--link` sous chaque sous-total, mentions « acheté » (teinte or) et « crafté » (teinte turquoise), trait vertical des sous-recettes
-- [ ] T026 [US3] Bloc Effets (`src/features/catalogue/ItemDetail.tsx` et le composant d'effets) : losange coloré par caractéristique via une table de présentation caractéristique → jeton `--stat-*`, teinte neutre par défaut ; le nom de la caractéristique reste écrit
-- [ ] T027 [US3] Vérifier filtres, pastilles et résultat sélectionné de la page Recherche contre la section 5 de `contracts/ui-contract.md` et corriger les écarts dans `src/styles/global.css`
+- [X] T022 [US3] Écrire `tests/integration/search-results-page-size.test.tsx` : 6 résultats par défaut quand la recherche en renvoie davantage ; « Afficher 12 de plus » en montre 18 ; adapter les tests existants qui supposaient 12
+- [X] T023 [US3] Dans `src/features/catalogue/ItemResults.tsx`, passer `RESULTS_PAGE_SIZE` à 6 et ajouter un pas de 12 pour « Afficher 12 de plus » ; vérifier l'usage du paramètre `limit` dans `src/features/search/RecherchePage.tsx`
+- [X] T024 [US3] Mettre le bloc verdict aux normes de la maquette dans `src/features/comparison/` et `src/styles/comparison.css` : bloc teinté d'accent, losange coché, économie en `--kamas`, barre du montant le plus bas en accent et l'autre neutre
+- [X] T025 [US3] Dans le tableau des ressources (`src/features/comparison/`, `src/styles/comparison.css`) : barre de répartition `--link` sous chaque sous-total, mentions « acheté » (teinte or) et « crafté » (teinte turquoise), trait vertical des sous-recettes
+- [X] T026 [US3] Bloc Effets (`src/features/catalogue/ItemDetail.tsx` et le composant d'effets) : losange coloré par caractéristique via une table de présentation caractéristique → jeton `--stat-*`, teinte neutre par défaut ; le nom de la caractéristique reste écrit
+- [X] T027 [US3] Vérifier filtres, pastilles et résultat sélectionné de la page Recherche contre la section 5 de `contracts/ui-contract.md` et corriger les écarts dans `src/styles/global.css`
 
 **Checkpoint** : parcours 3 de `quickstart.md` validé à 1440 px contre la maquette.
 
@@ -98,8 +98,8 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **Independent Test** : parcours 4 de `quickstart.md`.
 
-- [ ] T028 [US4] Revoir chaque page en thème clair et ajuster les jetons clairs de `src/styles/theme.css` (le test de contraste doit rester vert)
-- [ ] T029 [US4] Corriger dans `src/styles/global.css` et `src/styles/comparison.css` les éléments qui ne se lisent bien que dans un thème (ombres, halos, voiles, graphiques)
+- [X] T028 [US4] Revoir chaque page en thème clair et ajuster les jetons clairs de `src/styles/theme.css` (le test de contraste doit rester vert)
+- [X] T029 [US4] Corriger dans `src/styles/global.css` et `src/styles/comparison.css` les éléments qui ne se lisent bien que dans un thème (ombres, halos, voiles, graphiques)
 
 **Checkpoint** : parcours 4 de `quickstart.md` validé.
 
@@ -111,8 +111,8 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 **Independent Test** : parcours 5 de `quickstart.md`.
 
-- [ ] T030 [US5] Écrire `tests/integration/settings-style.test.tsx` (Paramètres n'affiche ni réglage « Design » ni réglage d'accent ; les autres réglages sont là) et `tests/unit/retired-style-preferences.test.ts` (les deux clés sont effacées ; aucune erreur si le stockage est indisponible)
-- [ ] T031 [US5] Retirer de `src/features/settings/ParametresPage.tsx` les réglages Design et Accent et leurs propriétés, et de `src/app/AppShell.tsx` les propriétés correspondantes passées à la page
+- [X] T030 [US5] Écrire `tests/integration/settings-style.test.tsx` (Paramètres n'affiche ni réglage « Design » ni réglage d'accent ; les autres réglages sont là) et `tests/unit/retired-style-preferences.test.ts` (les deux clés sont effacées ; aucune erreur si le stockage est indisponible)
+- [X] T031 [US5] Retirer de `src/features/settings/ParametresPage.tsx` les réglages Design et Accent et leurs propriétés, et de `src/app/AppShell.tsx` les propriétés correspondantes passées à la page
 
 **Checkpoint** : parcours 5 de `quickstart.md` validé.
 
@@ -120,10 +120,10 @@ mêmes fondations (jetons de style), d'où une phase 2 conséquente.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T032 Réécrire `DESIGN.md` : un seul style, nouveaux jetons et rôles, navigation en haut, plus de mention des designs ni des accents (FR-029)
-- [ ] T033 [P] Noter dans `specs/012-modern-design/spec.md` que les deux designs sont remplacés par la fonctionnalité 051
-- [ ] T034 Contrôler les largeurs 320, 375, 768, 960, 961, 1280 et 1920 px dans les deux thèmes (parcours 6) et la réduction des animations (parcours 7)
-- [ ] T035 Lancer `npm run typecheck`, `npm run lint`, `npm run test` et `npm run test:e2e` ; corriger jusqu'au vert sans modifier d'attente portant sur un calcul ou une donnée (SC-005)
+- [X] T032 Réécrire `DESIGN.md` : un seul style, nouveaux jetons et rôles, navigation en haut, plus de mention des designs ni des accents (FR-029)
+- [X] T033 [P] Noter dans `specs/012-modern-design/spec.md` que les deux designs sont remplacés par la fonctionnalité 051
+- [X] T034 Contrôler les largeurs 320, 375, 768, 960, 961, 1280 et 1920 px dans les deux thèmes (parcours 6) et la réduction des animations (parcours 7)
+- [X] T035 Lancer `npm run typecheck`, `npm run lint`, `npm run test` et `npm run test:e2e` ; corriger jusqu'au vert sans modifier d'attente portant sur un calcul ou une donnée (SC-005)
 - [ ] T036 Montrer le thème clair et le site réalisé à l'utilisateur et recueillir son accord avant toute fusion (SC-007)
 
 ---

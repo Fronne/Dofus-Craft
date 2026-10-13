@@ -5,8 +5,11 @@ import { SkeletonCard } from '../../components/SkeletonCard';
 import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
 import { prefersReducedMotion } from '../../services/motion';
 
-// How many more results each « Afficher plus » click reveals (also the initial page size).
-export const RESULTS_PAGE_SIZE = 12;
+// specs/051-site-visual-refresh (FR-018): the first page shows 6 results, so the chosen item's
+// detail stays close to the search field.
+export const RESULTS_PAGE_SIZE = 6;
+// How many more results each « Afficher plus » click reveals.
+export const RESULTS_MORE_STEP = 12;
 
 export function ItemResults({
   items,
@@ -123,9 +126,9 @@ export function ItemResults({
                 type="button"
                 className="btn btn-secondary btn-small"
                 disabled={isRevalidating}
-                onClick={() => setResultLimit(resultLimit + RESULTS_PAGE_SIZE)}
+                onClick={() => setResultLimit(resultLimit + RESULTS_MORE_STEP)}
               >
-                Afficher {RESULTS_PAGE_SIZE} de plus
+                Afficher {RESULTS_MORE_STEP} de plus
               </button>
             )}
             {canCollapse && (

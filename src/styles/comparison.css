@@ -19,7 +19,7 @@
   cursor: pointer;
 }
 .price-history-trigger:hover,
-.price-history-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.price-history-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
 
 /* Fixed to the viewport: PriceHistoryButton sets top/left from the trigger's position. */
 .price-history-panel {
@@ -57,11 +57,11 @@
 .price-history-groupings { display: inline-flex; justify-self: start; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
 .price-history-grouping { min-height: 32px; padding: .25rem .75rem; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
 .price-history-grouping + .price-history-grouping { border-left: 1px solid var(--border); }
-.price-history-grouping[aria-pressed="true"] { background: var(--gold-soft); color: var(--gold-bright); }
+.price-history-grouping[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-bright); }
 .price-history-message { display: grid; gap: .35rem; min-height: 5rem; align-content: center; margin: 0; color: var(--text-muted); }
 .price-history-message p { margin: 0; }
 .price-history-message strong { color: var(--text); }
-.price-history-invite { justify-self: start; padding: 0; border: 0; background: none; color: var(--gold-bright); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.price-history-invite { justify-self: start; padding: 0; border: 0; background: none; color: var(--accent-bright); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .price-history-skeleton {
   aspect-ratio: 320 / 150;
   border-radius: var(--radius-sm);
@@ -76,9 +76,9 @@
 .price-history-tick { fill: var(--text-muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
 .price-history-plot { fill: transparent; cursor: crosshair; }
 .price-history-crosshair { stroke: var(--text-faint); stroke-width: 1; pointer-events: none; }
-.price-history-line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.price-history-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
 /* Markers: accent fill with a 2px surface ring; a single-price point is hollow (FR-005). */
-.price-history-point { fill: var(--gold); stroke: var(--panel-strong); stroke-width: 2; cursor: pointer; }
+.price-history-point { fill: var(--accent); stroke: var(--panel-strong); stroke-width: 2; cursor: pointer; }
 .price-history-point--active { r: 5.5; }
 .price-history-point:focus { outline: none; }
 .price-history-point:focus-visible { stroke: var(--text); }
@@ -102,4 +102,4 @@
 .price-history-tooltip--start { transform: translate(-12px, calc(-100% - 10px)); }
 .price-history-tooltip--end { transform: translate(calc(-100% + 12px), calc(-100% - 10px)); }
 .item-history-button { right: auto; left: var(--space-5); }
-.item-history-button[aria-expanded="true"] { border-color: var(--border-strong); background: var(--gold-soft); color: var(--gold-bright); }
+.item-history-button[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
