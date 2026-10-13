@@ -11,6 +11,7 @@ export function usePriceEntry({
   onBlur,
   onCommit,
   onUnloadCommit,
+  onTypingChange,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -24,6 +25,9 @@ export function usePriceEntry({
   // FR-008/FR-009: called instead of `onCommit` when the page unloads with a typed, valid, changed
   // value — no confirmation can be shown then, so the caller skips a price that would need one.
   onUnloadCommit?: (value: string) => void;
+  // True at the player's first keystroke, false when the field is left (Escape included) — never
+  // for a value this hook puts back itself.
+  onTypingChange?: (typing: boolean) => void;
 }) {
   // The value the current typing started from, taken at the first keystroke rather than at focus:
   // a price arriving from the group while the field merely has focus is not the player's edit.
@@ -77,7 +81,10 @@ export function usePriceEntry({
     },
     onChange: (rawValue: string) => {
       // `value` is still the prop from before this keystroke: the parent has not re-rendered yet.
-      if (!typedRef.current) startValueRef.current = value;
+      if (!typedRef.current) {
+        startValueRef.current = value;
+        onTypingChange?.(true);
+      }
       typedRef.current = true;
       keepSelectionRef.current = false;
       onChange(normalizeKamasInput(rawValue));
@@ -86,6 +93,7 @@ export function usePriceEntry({
       keepSelectionRef.current = false;
       const typed = typedRef.current;
       typedRef.current = false;
+      onTypingChange?.(false);
       if (cancelledRef.current) {
         cancelledRef.current = false;
         return;

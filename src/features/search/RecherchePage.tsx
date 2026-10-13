@@ -194,6 +194,9 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   // a shared price read meanwhile must not replace what the player is typing.
   const marketTypingRef = useRef(false);
   useEffect(() => {
+    marketTypingRef.current = false;
+  }, [community, selected, serverId]);
+  useEffect(() => {
     if (!community || marketTypingRef.current) return;
     if (sharedItemPrice.kind === 'found') setMarket(String(sharedItemPrice.price.amountKamas));
     // Only "nothing shared" empties the field: an unreachable service must never wipe what's shown
@@ -466,11 +469,10 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                     updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
                     onCommit={community ? commitMarketPrice : undefined}
                     onUnloadCommit={community ? commitMarketPriceOnUnload : undefined}
-                    onBlur={() => {
-                      marketTypingRef.current = false;
+                    onTypingChange={(typing) => {
+                      marketTypingRef.current = typing;
                     }}
                     onChange={(value) => {
-                      marketTypingRef.current = true;
                       setMarket(value);
                       // Mode communautaire shares on commit (above), never into the local price.
                       if (!community && selectedItem && serverId) {

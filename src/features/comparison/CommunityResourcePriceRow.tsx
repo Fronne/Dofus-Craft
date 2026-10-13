@@ -95,7 +95,8 @@ export function CommunityResourcePriceRow({
   }
 
   async function handleCommit(rawValue: string): Promise<'accepted' | 'rejected' | void> {
-    if (!isValidKamas(rawValue)) return;
+    // An emptied field is not a price of 0 to share.
+    if (rawValue === '' || !isValidKamas(rawValue)) return;
     const amount = Number(rawValue);
     const deviationPercent = outlierDeviation(amount);
     if (deviationPercent !== undefined && communityState.kind === 'found') {

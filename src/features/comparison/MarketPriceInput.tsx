@@ -10,7 +10,7 @@ export function MarketPriceInput({
   updatedAt,
   onCommit,
   onUnloadCommit,
-  onBlur,
+  onTypingChange,
   history,
 }: {
   value: string;
@@ -24,14 +24,14 @@ export function MarketPriceInput({
   // specs/052-direct-price-entry (FR-008/FR-009): the page unloads with a typed price not shared
   // yet — shared then, without any confirmation.
   onUnloadCommit?: (value: string) => void;
-  // Called on every blur: the caller knows the player is done typing.
-  onBlur?: (value: string) => void;
+  // True while the player is typing in the field, false once it is left.
+  onTypingChange?: (typing: boolean) => void;
   // specs/017: the price-history button, beside the field. Only passed in Mode communautaire.
   history?: ReactNode;
 }) {
   const valid = isValidKamas(value);
   // specs/052-direct-price-entry: same typing behaviour as a resource price (see usePriceEntry).
-  const entry = usePriceEntry({ value, onChange, onBlur, onCommit, onUnloadCommit });
+  const entry = usePriceEntry({ value, onChange, onCommit, onUnloadCommit, onTypingChange });
   const priceAge = classifyPriceAge(updatedAt);
   const ageClass = priceAge === 'stale' ? ' market-date--stale' : priceAge === 'expired' ? ' market-date--expired' : '';
   const field = (
