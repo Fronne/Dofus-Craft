@@ -83,8 +83,11 @@ function VerdictBar({ label, value, max, partial, cheaper, field }: {
     <div className={`verdict-bar${cheaper ? ' verdict-bar--cheaper' : ''}`}>
       {field ?? (
         <p className="verdict-bar-label">
-          {label} : {value !== undefined ? <strong>{formatKamas(value)}</strong> : <span className="verdict-bar-empty">non renseigné</span>}
-          {partial && ' (partiel)'}
+          {/* The amount is its own box: on a wide screen it sits at the right of the bar. */}
+          {label} : <span className="verdict-bar-amount">
+            {value !== undefined ? <strong>{formatKamas(value)}</strong> : <span className="verdict-bar-empty">non renseigné</span>}
+            {partial && ' (partiel)'}
+          </span>
         </p>
       )}
       <span className="verdict-bar-track" aria-hidden="true">

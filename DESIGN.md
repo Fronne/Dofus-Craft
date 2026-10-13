@@ -202,7 +202,12 @@ Détails :
 - Verdict tranché (fabriquer ou acheter) : bloc teinté d'accent, coche dans un losange, titre en
   Rowdies, économie en `--kamas`, la barre du montant le plus bas en accent et l'autre neutre. Un
   verdict incomplet ou à égalité reste sobre.
-- Verdict sur grand écran : quoi faire à gauche, les deux montants comparés à droite.
+- Verdict : à gauche le losange, le choix en grand et l'économie dessous ; à droite les deux
+  montants, chacun sur une ligne « libellé, barre, montant » (le champ du prix HDV tient la place du
+  montant). Sous 720 px, le montant repasse au-dessus de sa barre.
+- Lignes de ressources compactes (au-dessus de 720 px) : image, nom et quantité avec l'ancienneté
+  du prix dessous, prix unitaire, sous-total avec sa barre de répartition juste dessous. Une
+  ressource craftable ajoute une seule ligne : choix, mention, montants, « Voir la recette ».
 - Prix des ressources : colonnes Ressource / Prix unitaire / Sous-total nommées une fois au-dessus
   des lignes (`.prices-columns`, masquées sous 720 px) ; sous chaque ligne, une barre `--link` dit ce
   qu'elle pèse dans le coût de craft (`.share-bar`, décorative : les montants sont écrits) ; en
