@@ -58,7 +58,7 @@ src/features/comparison/
 src/features/search/RecherchePage.tsx   # prix HDV : onUnloadCommit
 src/services/community-price-api.ts     # keepalive sur l'envoi d'un prix
 src/styles/global.css                   # retrait du style du bouton Modifier
-tests/unit/price-entry.test.tsx         # nouveau
+tests/unit/resource-price-input.test.tsx # cas de saisie directe et de déchargement
 tests/unit/resource-price-input.test.tsx, tests/integration/* # adaptation (plus de bouton)
 specs/004, specs/016                    # note de remplacement
 DESIGN.md

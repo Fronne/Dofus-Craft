@@ -871,9 +871,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
    a value is typed. padding-right stays reserved even while the suffix is absent so the input
    doesn't resize/jump as soon as typing starts. */
 .kamas-input-wrap { position: relative; display: block; }
-.kamas-input-wrap input { width: 100%; box-sizing: border-box; padding-right: 3.1rem; }
-/* Empty field: no kamas icon nor edit button to make room for, so « Prix unitaire » fits in full. */
-.kamas-input-wrap input:placeholder-shown { padding-right: .75rem; text-overflow: ellipsis; }
+/* specs/052-direct-price-entry: the amount is right-aligned and stops before the kamas symbol. */
+.kamas-input-wrap input { width: 100%; box-sizing: border-box; padding-right: 2.1rem; text-align: right; font-variant-numeric: tabular-nums; }
+/* Empty field without a symbol: « Prix unitaire » fits in full, read from the left. */
+.kamas-input-wrap input:placeholder-shown { padding-right: .75rem; text-align: left; text-overflow: ellipsis; }
+/* The HDV price always shows its symbol, faded while empty: its placeholder stays clear of it too. */
+.kamas-input-wrap:has(.kamas-input-suffix) input:placeholder-shown { padding-right: 2.1rem; text-align: right; }
 .kamas-input-suffix {
   position: absolute;
   top: 50%;
@@ -885,24 +888,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   pointer-events: none;
 }
 .kamas-input-suffix--empty { opacity: .35; }
-.kamas-input-wrap input[readonly] { color: var(--text-muted); cursor: default; }
-.kamas-input-edit-button {
-  position: absolute;
-  top: 50%;
-  right: .4rem;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-faint);
-  cursor: pointer;
-  transform: translateY(-50%);
-}
-.kamas-input-edit-button:hover { color: var(--accent-bright); background: var(--accent-soft); }
 
 /* ---------- Server switcher & onboarding ---------- */
 
@@ -1815,9 +1800,6 @@ button:disabled, input:disabled, select:disabled, textarea:disabled, fieldset:di
 .price-mode-option-disabled:disabled { opacity: .7; }
 /* Pressed: every button and link-button answers the click itself, not only the hover. */
 button:not(:disabled):active, a.btn:active, a.icon-button:active, .app-nav-link:active { transform: translateY(1px); filter: brightness(.92); }
-/* Positioned with a transform of its own: only the dimming applies. */
-.kamas-input-edit-button:not(:disabled):active { transform: translateY(-50%); }
-
 /* Hover, for the controls that had none. */
 .ingredient-choice button:hover:not([aria-pressed="true"]),
 .hdv-price-filter:hover:not(.hdv-price-filter--active):not(:disabled),
@@ -2217,7 +2199,7 @@ select:focus {
   .item-verdict-panel .verdict-bar-amount { box-sizing: border-box; width: 150px; padding-right: 2.1rem; color: var(--text); font-size: 1.0625rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
   .item-verdict-panel .verdict-market-field .market { max-width: none; }
   .item-verdict-panel .verdict-market-field .kamas-input-wrap { width: 150px; }
-  .item-verdict-panel .verdict-market-field input { font-size: 1.0625rem; font-weight: 600; text-align: right; }
+  .item-verdict-panel .verdict-market-field input { font-size: 1.0625rem; font-weight: 600; }
 }
 
 @media (min-width: 721px) {
@@ -2235,7 +2217,6 @@ select:focus {
   .resource-prices .price-line:not(:has(> small)) .price-resource-quantity { grid-row: 1 / span 2; align-self: center; }
   .resource-prices .price-line .price-input-cell { grid-column: 4; grid-row: 1 / span 2; justify-self: start; }
   .resource-prices .price-line .kamas-input-wrap { flex: 0 0 140px; }
-  .resource-prices .price-line .kamas-input-wrap input { text-align: right; }
   .resource-prices .price-resource-formatted { grid-column: 5; grid-row: 1 / span 2; font-size: .9375rem; font-weight: 600; }
   .resource-prices .price-line .retained-cost-row { grid-row: 3; }
   .resource-prices .price-line em { grid-row: 4; }

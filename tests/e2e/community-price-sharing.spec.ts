@@ -47,9 +47,6 @@ test('pre-fills the resource price field with the community median, directly edi
   // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
   await expect(page.getByText(/contribution/)).toHaveCount(0);
 
-  // Once pre-filled, the field locks (lockWhenFilled) to guard against an accidental keystroke —
-  // "Modifier ce prix" unlocks it, same convention as the confirmed-edit test below.
-  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('4500');
   await expect(priceInput).toHaveValue('4 500');
 });
@@ -117,7 +114,6 @@ test('confirming an edit to a resource price field sends exactly one contributio
   // specs/004 (révision du 2026-09-25): the contribution count is no longer shown.
   await expect(page.getByText(/contribution/)).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('4500');
   await priceInput.blur();
 
@@ -151,7 +147,6 @@ test('shows the last known community price as stale, rather than breaking, when 
   // The carnet already holds the value from the earlier successful fetch — the field, driven by
   // that carnet (not by the now-unavailable live fetch), remains fully usable throughout.
   await expect(priceInput).toHaveValue('1 500');
-  await page.getByRole('button', { name: 'Modifier ce prix' }).first().click();
   await priceInput.fill('1000');
   await expect(priceInput).toHaveValue('1 000');
 });

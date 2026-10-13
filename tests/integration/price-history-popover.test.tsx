@@ -215,7 +215,7 @@ describe('price history popover (specs/017)', () => {
       fireEvent.click(itemHistoryButton());
       await screen.findByRole('dialog', { name: 'Historique du prix de Épée Boueuse' });
       expect(getPriceHistory).toHaveBeenCalledWith('item', 'item-1', 'mikhal');
-      expect(hdv).toHaveAttribute('readonly');
+      expect(hdv).not.toHaveAttribute('readonly');
       expect(hdv).not.toHaveFocus();
       expect(hdv).toHaveValue('6 000');
     });

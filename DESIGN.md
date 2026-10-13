@@ -213,6 +213,14 @@ Détails :
   qu'elle pèse dans le coût de craft (`.share-bar`, décorative : les montants sont écrits) ; en
   pied, « Total du craft » en `--kamas`.
 
+### Champs de prix
+
+Les champs en kamas (`.kamas-input-wrap` : prix unitaire d'une ressource, prix HDV) se modifient
+directement, sans état verrouillé ni bouton « Modifier » (specs/052-direct-price-entry). Le montant
+est aligné à droite et s'arrête avant le symbole kamas ; le focus sélectionne tout le montant ; la
+sortie du champ (Entrée, clic ailleurs, Tab) enregistre, Échap annule. La logique commune est dans
+`src/features/comparison/usePriceEntry.ts`.
+
 ### Badges
 
 `.badge` : pastille en forme de pilule (`--radius-pill`), texte à `.92rem` et graisse 750.

@@ -266,7 +266,6 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
       price: { resourceId: 'resource-1', serverId: 'mikhal', medianAmountKamas: 5500, sampleSize: 4, latestAmountKamas: 5500, latestContributionAt: '2026-09-01T12:00:00.000Z' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '6000' } });
     fireEvent.blur(input);
 
@@ -291,7 +290,6 @@ describe('community price prefill in Mode communautaire (specs/004-community-pri
     await waitFor(() => expect(input).toHaveValue('5 000'));
     const callsBeforeCommit = getCommunityPrice.mock.calls.length;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '6000' } });
     fireEvent.blur(input);
 

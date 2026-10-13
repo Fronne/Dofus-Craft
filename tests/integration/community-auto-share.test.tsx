@@ -113,7 +113,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 200'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1000' } });
     fireEvent.blur(input);
 
@@ -141,7 +140,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 200'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.blur(input);
 
     expect(fetchMock.mock.calls.every(([url, init]) => !isPost(url as string, init as RequestInit | undefined))).toBe(true);
@@ -162,7 +160,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 200'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1000' } });
     fireEvent.blur(input);
 
@@ -188,7 +185,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 000'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1300' } });
     fireEvent.blur(input);
 
@@ -215,7 +211,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 000'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1300' } });
     fireEvent.blur(input);
 
@@ -245,7 +240,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 000'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1300' } });
     fireEvent.blur(input);
 
@@ -274,7 +268,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
     const input = await screen.findByPlaceholderText('Prix unitaire');
     await waitFor(() => expect(input).toHaveValue('1 000'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '1150' } });
     fireEvent.blur(input);
 
@@ -307,7 +300,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
       const input = await screen.findByPlaceholderText('Prix unitaire');
       await waitFor(() => expect(input).toHaveValue('1 100'));
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
       fireEvent.change(input, { target: { value: '2000' } });
       fireEvent.blur(input);
 
@@ -329,7 +321,6 @@ describe('auto-sharing a resource price on commit (specs/004-community-price-sha
 
       const input = await screen.findByPlaceholderText('Prix unitaire');
       await waitFor(() => expect(input).toHaveValue('1 100'));
-      fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
       fireEvent.change(input, { target: { value: '1200' } });
       fireEvent.blur(input);
 

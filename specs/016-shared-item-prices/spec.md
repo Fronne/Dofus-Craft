@@ -6,6 +6,10 @@
 
 **Status**: Draft
 
+> **Révision du 2026-10-13** ([specs/052-direct-price-entry](../052-direct-price-entry/spec.md)) : le champ de prix
+> n'est plus verrouillé et n'a plus de bouton « Modifier » ; il se modifie directement, son contenu
+> est sélectionné au focus et le prix part à la sortie du champ s'il a changé.
+
 **Input**: User description: "Pour le prix des équipements je veux finalement qu'il soit partagé en
 mode communautaire avec tous les utilisateurs." Précisions du joueur : pas de médiane pour les
 objets, juste le prix le plus frais ; une confirmation si le prix saisi est vraiment très différent

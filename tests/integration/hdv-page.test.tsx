@@ -183,9 +183,8 @@ describe('HDV page (specs/023)', () => {
       await openHdv('community');
       await waitFor(() => expect(normalize(priceInput(CROQUETTE.name).value)).toBe('1 000'));
       const row = rowOf(CROQUETTE.name)!;
-      expect(priceInput(CROQUETTE.name)).toHaveAttribute('readonly');
+      expect(priceInput(CROQUETTE.name)).not.toHaveAttribute('readonly');
       expect(within(row).getByRole('button', { name: 'Historique du prix' })).toBeInTheDocument();
-      fireEvent.click(within(row).getByRole('button', { name: 'Modifier ce prix' }));
       typePrice(CROQUETTE.name, '9000');
       expect(await screen.findByRole('button', { name: 'Annuler' })).toBeInTheDocument();
     });

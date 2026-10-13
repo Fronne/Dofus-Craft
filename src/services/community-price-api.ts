@@ -306,6 +306,8 @@ export async function submitCommunityPrice(
       method: 'POST',
       headers: apiHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(kind ? { resourceId, serverId, amountKamas, deviceId, kind } : { resourceId, serverId, amountKamas, deviceId }),
+      // specs/052-direct-price-entry: a price typed just before the page unloads is still sent.
+      keepalive: true,
     });
   } catch {
     return undefined;

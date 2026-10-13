@@ -190,8 +190,11 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
   useEffect(() => {
     if (community) setMarket('');
   }, [community, selected, serverId]);
+  // specs/052-direct-price-entry: true from the first keystroke in the HDV field until it is left —
+  // a shared price read meanwhile must not replace what the player is typing.
+  const marketTypingRef = useRef(false);
   useEffect(() => {
-    if (!community) return;
+    if (!community || marketTypingRef.current) return;
     if (sharedItemPrice.kind === 'found') setMarket(String(sharedItemPrice.price.amountKamas));
     // Only "nothing shared" empties the field: an unreachable service must never wipe what's shown
     // or what the player just typed (FR-011).
@@ -316,6 +319,15 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
     }
     await commitSharedItemPrice(amount);
     return 'accepted';
+  };
+  // specs/052-direct-price-entry (FR-008/FR-009): the page unloads with a typed HDV price not shared
+  // yet. No confirmation can be shown then: a price that would need one is left out.
+  const commitMarketPriceOnUnload = (value: string) => {
+    const amount = parseKamas(value);
+    if (amount === undefined) return;
+    const latest = sharedItemPrice.kind === 'found' ? sharedItemPrice.price.amountKamas : undefined;
+    if (latest !== undefined && needsItemPriceConfirmation(amount, latest)) return;
+    void commitSharedItemPrice(amount);
   };
 
   // Top-level lines' retained costs. The guided tour's "Ingrédients craftables" step points at the
@@ -451,10 +463,14 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                   <label htmlFor="market-price-input" className="market-price-label">Prix HDV</label>
                   <MarketPriceInput
                     value={market}
-                    lockWhenFilled={community}
                     updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
                     onCommit={community ? commitMarketPrice : undefined}
+                    onUnloadCommit={community ? commitMarketPriceOnUnload : undefined}
+                    onBlur={() => {
+                      marketTypingRef.current = false;
+                    }}
                     onChange={(value) => {
+                      marketTypingRef.current = true;
                       setMarket(value);
                       // Mode communautaire shares on commit (above), never into the local price.
                       if (!community && selectedItem && serverId) {

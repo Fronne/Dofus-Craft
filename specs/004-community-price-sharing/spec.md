@@ -7,6 +7,10 @@
 **Status**: Draft (révision 6 ; FR-015 amendée par specs/006-anonymous-visit-count, FR-018 amendée par
 révision 6 ci-dessous)
 
+> **Révision du 2026-10-13** ([specs/052-direct-price-entry](../052-direct-price-entry/spec.md)) : le champ de prix
+> n'est plus verrouillé et n'a plus de bouton « Modifier » ; il se modifie directement, son contenu
+> est sélectionné au focus et le prix part à la sortie du champ s'il a changé.
+
 **Input**: User description: "En Mode communautaire, retirer le choix explicite de partager ou non
 ses prix personnels : le partage devient la valeur par défaut de ce mode. Décisions actées au fil
 de la clarification avec le joueur : le bouton de partage groupé (`specs/004-community-price-sharing`

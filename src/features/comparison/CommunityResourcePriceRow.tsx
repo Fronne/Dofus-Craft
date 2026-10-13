@@ -85,24 +85,39 @@ export function CommunityResourcePriceRow({
   // FR-007 (specs/007): canceling that confirmation must leave "dernière mise à jour" and the
   // contribution count untouched — so `onPersist` only runs once the confirmation (if any) has
   // actually been accepted, never merely because the field was blurred.
+  // How far `amount` is from the known median, when that is far enough to ask for a confirmation.
+  // specs/046-hdv-huzounet-load: a price only Huzounet knows comes without a median (sampleSize 0) —
+  // nothing to compare with, like a resource's very first contribution (specs/007 FR-008).
+  function outlierDeviation(amount: number): number | undefined {
+    if (communityState.kind !== 'found' || communityState.price.sampleSize === 0) return undefined;
+    const deviationPercent = computeDeviationPercent(amount, communityState.price.medianAmountKamas);
+    return deviationPercent > OUTLIER_THRESHOLD_PERCENT ? deviationPercent : undefined;
+  }
+
   async function handleCommit(rawValue: string): Promise<'accepted' | 'rejected' | void> {
     if (!isValidKamas(rawValue)) return;
     const amount = Number(rawValue);
-    // specs/046-hdv-huzounet-load: a price only Huzounet knows comes without a median (sampleSize 0) —
-    // nothing to compare with, like a resource's very first contribution (specs/007 FR-008).
-    if (communityState.kind === 'found' && communityState.price.sampleSize > 0) {
-      const deviationPercent = computeDeviationPercent(amount, communityState.price.medianAmountKamas);
-      if (deviationPercent > OUTLIER_THRESHOLD_PERCENT) {
-        const confirmed = await confirmOutlier({
-          medianAmountKamas: communityState.price.medianAmountKamas,
-          enteredAmountKamas: amount,
-          deviationPercent,
-        });
-        if (!confirmed) return 'rejected';
-      }
+    const deviationPercent = outlierDeviation(amount);
+    if (deviationPercent !== undefined && communityState.kind === 'found') {
+      const confirmed = await confirmOutlier({
+        medianAmountKamas: communityState.price.medianAmountKamas,
+        enteredAmountKamas: amount,
+        deviationPercent,
+      });
+      if (!confirmed) return 'rejected';
     }
     onPersist(amount);
     await commit(amount);
+  }
+
+  // specs/052-direct-price-entry (FR-008/FR-009): the page unloads with a typed price not shared yet.
+  // No confirmation can be shown then: a price that would need one is left out.
+  function handleUnloadCommit(rawValue: string) {
+    if (!isValidKamas(rawValue)) return;
+    const amount = Number(rawValue);
+    if (outlierDeviation(amount) !== undefined) return;
+    onPersist(amount);
+    void commit(amount);
   }
 
   // specs/047-recherche-refresh-prices (FR-008): a Huzounet price its source calls provisional or old
@@ -121,9 +136,9 @@ export function CommunityResourcePriceRow({
         quantity={quantity}
         value={value}
         updatedAt={carnetEntry?.updatedAt ?? (communityState.kind === 'found' ? communityState.price.latestContributionAt : undefined)}
-        lockWhenFilled
         onChange={onChange}
         onCommit={handleCommit}
+        onUnloadCommit={handleUnloadCommit}
         retained={retained}
         subtotalKamas={subtotalKamas}
         caption={caption}

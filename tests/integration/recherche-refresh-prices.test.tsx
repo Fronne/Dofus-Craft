@@ -144,7 +144,6 @@ describe('bouton « Actualiser les prix » de la page Recherche (specs/047-reche
   it('never replaces a price being typed (FR-007)', async () => {
     await openRecherche();
     await waitFor(() => expect(priceField()).toHaveValue('120'));
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(priceField(), { target: { value: '999' } });
 
     getCommunityPrice.mockResolvedValue(price(500, minutesAgo(0), { latestOrigin: 'external' }));
@@ -233,7 +232,6 @@ describe('mention d’un prix Huzounet fragile sur une ligne de ressource (specs
     await openRecherche();
     await screen.findByText(/· peu de relevés/);
     await waitFor(() => expect(priceField()).toHaveValue('120'));
-    fireEvent.click(screen.getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(priceField(), { target: { value: '999' } });
     await waitFor(() => expect(document.querySelector('.price-note')).toBeNull());
   });

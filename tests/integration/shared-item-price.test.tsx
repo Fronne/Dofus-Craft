@@ -74,8 +74,8 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     getLatestItemPrice.mockResolvedValue(found(6000));
     const input = await openDagues();
     await waitFor(() => expect(input).toHaveValue('6 000'));
-    expect(input).toHaveAttribute('readonly');
-    expect(within(hdvRow()).getByRole('button', { name: 'Modifier ce prix' })).toBeInTheDocument();
+    expect(input).not.toHaveAttribute('readonly');
+    expect(within(hdvRow()).queryByRole('button', { name: 'Modifier ce prix' })).not.toBeInTheDocument();
     expect(hdvRow()).toHaveTextContent(/Dernière mise à jour/);
     expect(hdvRow()).not.toHaveTextContent(/contribution/);
   });
@@ -110,14 +110,13 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     fireEvent.blur(input);
     await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('208', 'mikhal', 7000, 'item'));
     await waitFor(() => expect(hdvRow()).toHaveTextContent('Dernière mise à jour : maintenant'));
-    expect(input).toHaveAttribute('readonly');
+    expect(input).not.toHaveAttribute('readonly');
   });
 
   it('shares nothing when the edit button is used and the field left unchanged (US2, FR-005)', async () => {
     getLatestItemPrice.mockResolvedValue(found(6000));
     const input = await openDagues();
     await waitFor(() => expect(input).toHaveValue('6 000'));
-    fireEvent.click(within(hdvRow()).getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.blur(input);
     fireEvent.doubleClick(input);
     fireEvent.blur(input);
@@ -143,7 +142,6 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     const input = await openDagues();
     await waitFor(() => expect(input).toHaveValue('10 000'));
 
-    fireEvent.click(within(hdvRow()).getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '100000' } });
     fireEvent.blur(input);
     const dialog = await screen.findByRole('dialog', { hidden: true });
@@ -163,13 +161,11 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     const input = await openDagues();
     await waitFor(() => expect(input).toHaveValue('10 000'));
 
-    fireEvent.click(within(hdvRow()).getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '14000' } });
     fireEvent.blur(input);
     await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('208', 'mikhal', 14000, 'item'));
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument();
 
-    fireEvent.click(within(hdvRow()).getByRole('button', { name: 'Modifier ce prix' }));
     fireEvent.change(input, { target: { value: '100000' } });
     fireEvent.blur(input);
     const dialog = await screen.findByRole('dialog', { hidden: true });

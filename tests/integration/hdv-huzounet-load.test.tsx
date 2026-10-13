@@ -227,7 +227,6 @@ describe('HDV page — loading a tab from Huzounet (specs/046)', { timeout: 30_0
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1500));
       await openHdv('community');
       await waitFor(() => expect(priceInput(CROQUETTE.name).value.replace(/\s/g, '')).toBe('1500'));
-      fireEvent.click(within(rowOf(CROQUETTE.name)!).getByRole('button', { name: 'Modifier ce prix' }));
       const input = priceInput(CROQUETTE.name);
       fireEvent.focus(input);
       fireEvent.change(input, { target: { value: '9000' } });
@@ -305,7 +304,6 @@ describe('HDV page — loading a tab from Huzounet (specs/046)', { timeout: 30_0
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1500));
       await openHdv('community');
       await waitFor(() => expect(priceInput(CROQUETTE.name).value.replace(/\s/g, '')).toBe('1500'));
-      fireEvent.click(within(rowOf(CROQUETTE.name)!).getByRole('button', { name: 'Modifier ce prix' }));
       fireEvent.focus(priceInput(CROQUETTE.name));
       fireEvent.change(priceInput(CROQUETTE.name), { target: { value: '77' } });
       known.set(CROQUETTE.id, huzounetPrice(CROQUETTE.id, 1600, { latestContributionAt: '2026-10-12T12:00:00.000Z' }));
