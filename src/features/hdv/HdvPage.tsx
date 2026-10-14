@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
@@ -19,16 +19,13 @@ import {
   type HdvId,
   type HdvSort,
 } from '../../domain/hdv';
-import { loadableIds, loadAvailability } from '../../domain/huzounet-load';
 import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
 import { PriceEntryField } from '../comparison/PriceEntryField';
 import { useResourcePrices } from '../comparison/useResourcePrices';
-import { HuzounetLoadButton } from './HuzounetLoadButton';
 import { useHdvItems } from './useHdvItems';
 import { useHdvPriceSummary } from './useHdvPriceSummary';
-import { useHuzounetLoad } from './useHuzounetLoad';
 import { tabOnKey } from '../../components/tab-keys';
 
 // specs/023-hdv-price-entry: record the prices of an in-game HDV in one pass, one tab per HDV, with
@@ -104,17 +101,9 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
     : filterHdvItems(tabItems, { query, typeId });
   const filtered = sortHdvLines(byCategory, summary.prices, sort);
   const { visible, endRef, loadingMore, reset } = useLoadMoreOnScroll(filtered);
-  const { data: carnet, save, remove, loaded, reload, error: carnetError } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
+  const { data: carnet, save, remove, loaded, error: carnetError } = useResourcePrices(serverId, visible.map((item) => item.id), resourcePricesFor(priceMode));
   const { priced, total } = countPriced(tabLines, summary.prices);
   const refreshSummary = summary.refresh;
-  // specs/046-hdv-huzounet-load: the button covers every item of the tab, whatever the filters (FR-001).
-  const tabIds = useMemo(() => loadableIds(tabLines.map((item) => item.id)), [tabLines]);
-  // The prices of a request are in the carnet: the count and the displayed lines follow (FR-005). A value being typed lives in `inputs`, which none of these touch (FR-015).
-  const onSliceLoaded = useCallback(() => {
-    refreshSummary();
-    reload();
-  }, [refreshSummary, reload]);
-  const huzounet = useHuzounetLoad({ serverId, priceMode, tab, ids: tabIds, onSliceLoaded });
 
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
@@ -238,15 +227,6 @@ export function HdvPage({ priceMode }: { priceMode: PriceMode }) {
               <span role="status" className="hdv-count">
                 {!summary.loaded ? 'Lecture des prix…' : summary.failed ? 'Lecture des prix impossible' : `${priced} ${isRunes ? (priced > 1 ? 'runes' : 'rune') : (priced > 1 ? 'objets' : 'objet')} sur ${total} ${priced > 1 ? 'ont' : 'a'} un prix`}
               </span>
-              {tabIds.length > 0 && (
-                <HuzounetLoadButton
-                  availability={loadAvailability(priceMode, serverId)}
-                  count={tabIds.length}
-                  state={huzounet.state}
-                  onStart={() => void huzounet.start()}
-                  onStop={huzounet.stop}
-                />
-              )}
             </div>
 
             {tab === 'animals' && (
