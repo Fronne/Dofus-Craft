@@ -6,6 +6,8 @@ import type { Recipe, Resource } from '../../src/domain/types';
 
 // jest-dom normalizes the received text's whitespace but not the expected string.
 const n = (value: string) => value.replace(/\u202f/g, ' ');
+// The verdict shows its amounts with the kamas icon, not the word « kamas »: only the number is text.
+const verdictAmount = (value: number) => new Intl.NumberFormat('fr-FR').format(value);
 
 // specs/015 quickstart.md: Dagues de Fouraille = 2 × Planche Agglomérée (craftable) + 3 × Peau de
 // Larve Bleue ; Planche Agglomérée = 10 × Bois de Frêne.
@@ -76,7 +78,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
   it('counts a craftable ingredient at its recipe cost when that is cheaper (US1, scénario 1)', async () => {
     await openDagues({ '16489': 5000, '362': 100, '303': 200 });
 
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(4300)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(4300)}`)));
     const planche = line('Planche Agglomérée');
     expect(within(planche).getByText('Crafté')).toBeInTheDocument();
     expect(planche).toHaveTextContent(n(`Achat : ${formatKamas(5000)}`));
@@ -89,7 +91,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
     await openDagues({ '16489': 5000, '362': 100, '303': 600 });
 
     await waitFor(() => expect(within(line('Planche Agglomérée')).getByText('Acheté')).toBeInTheDocument());
-    expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(10300)}`));
+    expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(10300)}`));
   });
 
   it('unfolds a craftable ingredient into its recipe and prices a sub-resource from there (US2)', async () => {
@@ -110,7 +112,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
     fireEvent.change(input, { target: { value: '200' } });
     fireEvent.blur(input);
 
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(4300)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(4300)}`)));
     await waitFor(async () => expect((await prices.getMany('mikhal', ['303']))['303']?.unitPriceKamas).toBe(200));
     // The plank's carnet price is untouched: its recipe cost is never stored as a price (FR-008).
     expect((await prices.getMany('mikhal', ['16489']))['16489']?.unitPriceKamas).toBe(5000);
@@ -125,7 +127,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
     // 2 per wood × 10 wood per plank × 2 planks.
     expect(line('Sève')).toHaveTextContent('× 40');
     // Sève 5 → Bois 10 → Planche 100 → 2 × 100 + 3 × 100.
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(500)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(500)}`)));
   });
 
   it('forces buying or crafting an ingredient, everywhere and across visits (US3)', async () => {
@@ -136,7 +138,7 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
     expect(within(planche).getByRole('button', { name: 'Auto' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(within(planche).getByRole('button', { name: 'Acheter' }));
 
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(10300)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(10300)}`)));
     expect(within(line('Planche Agglomérée')).getByText('Acheté')).toBeInTheDocument();
     expect(within(line('Planche Agglomérée')).getByText(/votre choix/)).toBeInTheDocument();
     expect(within(line('Planche Agglomérée')).getByRole('button', { name: 'Acheter' })).toHaveAttribute('aria-pressed', 'true');
@@ -144,10 +146,10 @@ describe('coût de craft des ressources intermédiaires (specs/015)', () => {
     // Still forced after leaving and coming back.
     document.body.innerHTML = '';
     render(<App />);
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(10300)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(10300)}`)));
 
     fireEvent.click(within(line('Planche Agglomérée')).getByRole('button', { name: 'Auto' }));
-    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${formatKamas(4300)}`)));
+    await waitFor(() => expect(screen.getByText(/Coût de craft/)).toHaveTextContent(n(`Coût de craft : ${verdictAmount(4300)}`)));
   });
 
   it('reports a forced option with no known value as a missing price, without switching to the other one (US3)', async () => {

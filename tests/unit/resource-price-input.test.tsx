@@ -168,7 +168,7 @@ describe('ResourcePriceInput price age highlighting', () => {
 
 // specs/008-stale-resource-highlight: US3 — hovering a row with an old price explains that it may
 // no longer match the in-game price.
-describe('ResourcePriceInput price age tooltip', () => {
+describe('ResourcePriceInput price age styling', () => {
   afterEach(() => {
     document.body.innerHTML = '';
   });
@@ -187,20 +187,17 @@ describe('ResourcePriceInput price age tooltip', () => {
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
-  it('renders an explanatory tooltip when the price is stale (3-7 days)', () => {
+  // User feedback 2026-10-14: the stale/expired price tooltip is gone — the colored date says enough.
+  it('renders no tooltip when the price is stale (3-7 days)', () => {
     render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(4)} onChange={vi.fn()} />);
 
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      "Prix ancien, peut différer du prix actuel en jeu.",
-    );
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
-  it('renders an explanatory tooltip when the price is expired (>= 7 days)', () => {
+  it('renders no tooltip when the price is expired (>= 7 days)', () => {
     render(<ResourcePriceInput resource={resource} quantity={1} value="500" updatedAt={daysAgo(10)} onChange={vi.fn()} />);
 
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      "Prix ancien, peut différer du prix actuel en jeu.",
-    );
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 });
 

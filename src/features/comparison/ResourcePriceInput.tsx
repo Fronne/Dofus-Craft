@@ -66,12 +66,6 @@ export function ResourcePriceInput({
   const priceAge = classifyPriceAge(updatedAt);
   const priceAgeClass =
     priceAge === 'stale' ? ' price-line--stale' : priceAge === 'expired' ? ' price-line--expired' : '';
-  // FR-010/FR-011: same 'stale'/'expired' condition as the coloring above, so the tooltip never
-  // appears without the visual cue that motivates it (or vice versa).
-  const priceAgeTooltip =
-    priceAge === 'stale' || priceAge === 'expired'
-      ? 'Prix ancien, peut différer du prix actuel en jeu.'
-      : undefined;
   const subtotal = subtotalKamas !== undefined
     ? subtotalKamas ?? undefined
     : value && valid ? Number(value) * quantity : undefined;
@@ -90,11 +84,6 @@ export function ResourcePriceInput({
           {priceNote && <span className="price-note"> · {priceNote}</span>}
           {/* The price-history button follows the date it gives the story of. */}
           {history}
-          {priceAgeTooltip && (
-            <span className="price-age-tooltip" role="tooltip">
-              {priceAgeTooltip}
-            </span>
-          )}
         </small>
       )}
       {/* The price field; the price-history button comes right after it only while the price has no

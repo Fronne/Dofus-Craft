@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Comparison, Recommendation } from '../../domain/types';
-import { formatKamas, formatPercent } from '../../domain/kamas';
+import { formatPercent } from '../../domain/kamas';
 import { Icon } from '../../components/Icon';
 import type { IconName } from '../../components/Icon';
+import { Kamas } from '../prices/PricesPage';
 import { useCountUp } from './useCountUp';
 
 const labels: Record<Recommendation, string> = {
@@ -86,7 +87,7 @@ function VerdictBar({ label, value, max, partial, cheaper, field }: {
         <p className="verdict-bar-label">
           {/* The amount is its own box: on a wide screen it sits at the right of the bar. */}
           {label} : <span className="verdict-bar-amount">
-            {value !== undefined ? <strong>{formatKamas(value)}</strong> : <span className="verdict-bar-empty">non renseigné</span>}
+            {value !== undefined ? <strong><Kamas value={value} /></strong> : <span className="verdict-bar-empty">non renseigné</span>}
             {partial && ' (partiel)'}
           </span>
         </p>
@@ -100,7 +101,7 @@ function VerdictBar({ label, value, max, partial, cheaper, field }: {
 
 // What the verdict saves, counted up when it appears and from one amount to the next after that.
 function SavingsAmount({ kamas }: { kamas: number }) {
-  return <strong>{formatKamas(useCountUp(kamas))}</strong>;
+  return <strong><Kamas value={useCountUp(kamas)} /></strong>;
 }
 
 // specs/001 FR-010/FR-011/FR-016: the craft-or-buy verdict at a glance — the recommendation in large
