@@ -234,4 +234,74 @@ describe('Prix page — craft profit (specs/019)', () => {
       expect(screen.getByText('1 objet')).toBeInTheDocument();
     });
   });
+
+  // specs/054-rentabilite-prechargee: the list of a previous visit, kept on the device.
+  describe('liste gardée d’une visite à l’autre', () => {
+    const keptRow = (id: string, name: string, profitKamas: number) => ({
+      item: { id, name },
+      marketPriceKamas: 100000,
+      marketPriceDate: recent,
+      craftCostKamas: 100000 - profitKamas,
+      profitKamas,
+    });
+    const keep = (mode: 'community' | 'personal', rows: ReturnType<typeof keptRow>[]) => window.localStorage.setItem(
+      `craftcheck-craft-profits:mikhal:${mode}`,
+      JSON.stringify({ formatVersion: 1, computedAt: new Date(Date.now() - 86_400_000).toISOString(), rows }),
+    );
+    const keptNote = () => screen.queryByText(/^Liste du \d\d\/\d\d à \d\d:\d\d — /);
+
+    it('shows the kept list at once with its date, then replaces it with the fresh one', async () => {
+      keep('community', [keptRow('vieil', 'Vieil objet', 5000)]);
+      await openPrices('community');
+      expect(names()).toEqual(['Vieil objet']);
+      expect(screen.queryByText(/Calcul en cours/)).not.toBeInTheDocument();
+      expect(keptNote()).toHaveTextContent('mise à jour en cours…');
+
+      await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
+      expect(keptNote()).not.toBeInTheDocument();
+    });
+
+    it('keeps a complete list for the next visit', async () => {
+      await openPrices('community');
+      await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
+      const stored = JSON.parse(window.localStorage.getItem('craftcheck-craft-profits:mikhal:community') ?? 'null');
+      expect(stored.rows.map((row: { item: { name: string } }) => row.item.name).sort()).toEqual(['Anneau', 'Bottes', 'Coiffe']);
+      expect(window.localStorage.getItem('craftcheck-craft-profits:mikhal:personal')).toBeNull();
+    });
+
+    it('keeps showing the kept list when its update fails, and says so', async () => {
+      keep('community', [keptRow('vieil', 'Vieil objet', 5000)]);
+      getSharedItemPrices.mockResolvedValue({ status: 'unavailable' });
+      await openPrices('community');
+      await waitFor(() => expect(keptNote()).toHaveTextContent('mise à jour impossible pour le moment.'));
+      expect(names()).toEqual(['Vieil objet']);
+      expect(screen.queryByText('Rentabilité indisponible')).not.toBeInTheDocument();
+    });
+
+    it('never shows the list kept for the other price mode', async () => {
+      keep('personal', [keptRow('vieil', 'Vieil objet', 5000)]);
+      await openPrices('community');
+      expect(names()).not.toContain('Vieil objet');
+      await waitFor(() => expect(names()).toEqual(['Anneau', 'Bottes', 'Coiffe']));
+      expect(names()).not.toContain('Vieil objet');
+    });
+
+    it('lets the player search the kept list during the update, and keeps the search after it', async () => {
+      keep('community', [keptRow('anneau', 'Anneau', 99000), keptRow('vieil', 'Vieil objet', 5000)]);
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => { release = resolve; });
+      getSharedItemPrices.mockImplementation(async () => {
+        await gate;
+        return { status: 'found', items: Object.entries(HDV).map(([itemId, amountKamas]) => ({ itemId, amountKamas, contributedAt: recent })) };
+      });
+      await openPrices('community');
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher un objet' }), { target: { value: 'ann' } });
+      expect(names()).toEqual(['Anneau']);
+
+      release();
+      await waitFor(() => expect(keptNote()).not.toBeInTheDocument());
+      expect(names()).toEqual(['Anneau']);
+      expect(normalize(rowOf('Anneau').querySelector('.profit-value')?.textContent ?? null)).toBe('Bénéfice+12 000');
+    });
+  });
 });

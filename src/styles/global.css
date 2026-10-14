@@ -1178,6 +1178,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* specs/019-craft-profit-list: the Prix page, one line per profitable item. */
 .profit-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); }
 .profit-toolbar .prices-search { margin: 0; flex: 1 1 240px; }
+/* specs/054: the date of a list kept from a previous visit, while its update runs. */
+.profit-kept-note { margin: 0; color: var(--text-muted); font-size: .85rem; font-style: italic; }
 .profit-head, .profit-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 9rem 9rem 9.5rem 4.5rem;

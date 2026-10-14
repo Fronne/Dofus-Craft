@@ -184,3 +184,12 @@ demande de prix partagés pour les 8 ressources, avec des valeurs identiques à 
 Chaque entrée de `GET /community-prices` gagne le champ optionnel `latestOrigin` (`manual`, `capture`
 ou `bot`), l'origine de la contribution la plus récente. Le site le lit sans l'exiger : absent, il
 vaut `manual`. Rien d'autre ne change dans la réponse.
+
+## Révision (2026-10-14) : liste gardée et départ immédiat (specs/054-rentabilite-prechargee)
+
+- FR-006 : la préparation de la liste (page Rentabilité, ex-Prix) démarre dès que le catalogue est
+  prêt, sans attendre que le site soit inactif ; hors de la page, jusqu'à 4 chargements simultanés
+  (au lieu de 2), chacun cédant d'abord la main au navigateur.
+- L'hypothèse « la liste Prix préparée n'est pas gardée d'une visite à l'autre » est remplacée : la
+  dernière liste complète est gardée sur l'appareil par serveur + mode et affichée tout de suite avec
+  sa date, le temps que la liste à jour soit calculée (voir specs/054).

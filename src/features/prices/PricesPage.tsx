@@ -32,6 +32,15 @@ export function Kamas({ value, signed = false }: { value: number; signed?: boole
   );
 }
 
+// specs/054 (contracts/ui-rentabilite.md): « Liste du 13/10 à 21:40 », the date of a list kept from a
+// previous visit.
+const keptDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' });
+const keptTime = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+function keptListLabel(keptAt: string) {
+  const date = new Date(keptAt);
+  return `Liste du ${keptDate.format(date)} à ${keptTime.format(date)}`;
+}
+
 function signedPercent(value: number) {
   return value > 0 ? `+${value} %` : value < 0 ? `−${-value} %` : '0 %';
 }
@@ -113,7 +122,7 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ProfitSort>(DEFAULT_PROFIT_SORT);
   const [attempt, setAttempt] = useState(0);
-  const { status, rows, done, total } = useCraftProfits(serverId, priceMode, attempt);
+  const { status, rows, done, total, keptAt, refreshFailed } = useCraftProfits(serverId, priceMode, attempt);
   const serverName = servers.find((server) => server.id === serverId)?.name;
 
   const filtered = sortProfitRows(filterProfitRows(rows, query), sort);
@@ -164,6 +173,11 @@ export function PricesPage({ priceMode }: { priceMode: PriceMode }) {
             </div>
             {status === 'loading' && (
               <p className="empty" role="status">Calcul en cours…{total > 0 ? ` (${done} / ${total})` : ''}</p>
+            )}
+            {keptAt && (
+              <p className="profit-kept-note" role="status">
+                {keptListLabel(keptAt)} — {refreshFailed ? 'mise à jour impossible pour le moment.' : 'mise à jour en cours…'}
+              </p>
             )}
             {status === 'ready' && rows.length === 0 ? (
               <EmptyState
