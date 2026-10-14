@@ -27,17 +27,19 @@ async function openFamilier(page: Page) {
 }
 
 test.describe('Familier page (specs/022)', () => {
-  test('shows the XP needed and the cheapest resource', async ({ page }) => {
+  // specs/055-refonte-xp-familier: that single priced food is the 1st of the podium, seen without scrolling.
+  test('shows the XP to give and the cheapest resource on the podium', async ({ page }) => {
     await openFamilier(page);
-    await expect(page.locator('.pet-xp-needed')).toContainText(/2\s859 XP/);
-    const row = page.locator('li.pet-food-row').filter({ hasText: 'Peau de Rat' });
-    await expect(row).toContainText(/10\s810/);
+    await expect(page.locator('.pet-xp-needed b')).toHaveText(/2\s859/);
+    const card = page.locator('.pet-podium-card').filter({ hasText: 'Peau de Rat' });
+    await expect(card).toContainText(/10\s810/);
+    await expect(card).toBeInViewport();
   });
 
   test('fits a phone screen without horizontal scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 740 });
     await openFamilier(page);
-    await expect(page.locator('li.pet-food-row').first()).toBeVisible();
+    await expect(page.locator('.pet-podium-card').first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

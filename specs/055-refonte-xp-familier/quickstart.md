@@ -17,7 +17,7 @@ npx eslint src tests
 
 1. Niveau actuel 85, niveau visé 100 : barre à 26,2 %, « Niveau 85 · 47 003 XP », XP à donner
    132 589.
-2. Le podium montre 3 cartes triées par coût total ; la 2e et la 3e indiquent « +N k » = écart avec
+2. Le podium montre 3 cartes triées par coût total ; la 2e et la 3e indiquent « +N kamas » = écart avec
    la 1re.
 3. Taper « kamat » dans « Viser une ressource précise », choisir Kamatrix : quantité, prix, coût,
    écart en %, « 1 unité = 0,019 % » (avec les prix du moment, les valeurs varient).

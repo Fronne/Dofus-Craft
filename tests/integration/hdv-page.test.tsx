@@ -161,7 +161,7 @@ describe('HDV page (specs/023)', () => {
       await screen.findByRole('heading', { name: 'XP Familier' });
       fireEvent.change(screen.getByLabelText('XP totale du familier'), { target: { value: '1703' } });
       fireEvent.change(screen.getByLabelText('Niveau visé'), { target: { value: '60' } });
-      await waitFor(() => expect(document.querySelector('li.pet-food-row')?.textContent).toContain(CROQUETTE.name));
+      await waitFor(() => expect(document.querySelector('.pet-podium-card')?.textContent).toContain(CROQUETTE.name)); // specs/055
     });
 
     // specs/024-latest-community-price (US3, scenario 3).

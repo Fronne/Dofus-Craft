@@ -54,7 +54,7 @@
 
 ## 6. Écarts
 
-- **Decision**: podium : écart en kamas = coût total − coût total de la 1re, affiché « +N k » avec le
+- **Decision**: podium : écart en kamas = coût total − coût total de la 1re, affiché « +N kamas » avec le
   composant `Kamas` existant ; fiche : écart en % = (coût − coût de la 1re) ÷ coût de la 1re × 100,
   une décimale, « 0 % » pour la 1re.
 - **Rationale**: spec FR-005, FR-007.

@@ -14,7 +14,7 @@ Ce que les tests (integration, e2e) peuvent trouver par rôle et nom accessible.
 ## Bloc 2 — podium (`section`, titre `heading` « Les moins chères pour cet objectif »)
 
 - `list` de 1 à 3 `listitem` (`article`), chacun avec un `heading` de niveau 3 = nom de la
-  ressource, le rang (« 1re · la moins chère », « 2e · +N k », « 3e · +N k »), le coût total, et les
+  ressource, le rang (« 1re · la moins chère », « 2e · +N kamas », « 3e · +N kamas »), le coût total, et les
   libellés « Quantité », « Prix unitaire », « XP / unité ».
 
 ## Bloc 3 — ressource précise (`section`, titre `heading` « Viser une ressource précise »)

@@ -1215,8 +1215,61 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 
 /* specs/022-pet-xp-calculator: the Familier page. */
-.pet-levels-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4) var(--space-6); align-items: center; margin-bottom: var(--space-4); }
-.pet-levels-inputs { display: grid; gap: var(--space-3); }
+/* specs/055-refonte-xp-familier: the objective banner — fields and progress on the left, the XP to
+   give in a green box on the right. */
+.pet-objective { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--space-5) var(--space-6); margin-bottom: var(--space-4); }
+.pet-objective-main { flex: 1 1 26rem; min-width: 0; display: grid; gap: var(--space-4); align-content: start; }
+.pet-objective-fields { display: flex; flex-wrap: wrap; align-items: start; gap: var(--space-3) var(--space-4); }
+.pet-objective-fields .pet-levels { flex: 0 1 20rem; }
+.pet-objective-result {
+  flex: 0 1 18rem; min-width: 15rem; display: grid; gap: var(--space-3); align-content: space-between;
+  padding: var(--space-4) var(--space-5); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: var(--radius-md); background: linear-gradient(140deg, var(--accent-soft), transparent);
+}
+.pet-progress { display: grid; gap: var(--space-2); }
+.pet-progress-head, .pet-progress-bounds { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-1) var(--space-3); font-size: .85rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pet-progress-head b { color: var(--text); }
+.pet-progress-bounds { font-size: .78rem; color: var(--text-faint); }
+.pet-progress-track { position: relative; height: 14px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--text-faint) 22%, transparent); box-shadow: inset 0 0 0 1px var(--border); }
+.pet-progress-fill { display: block; height: 100%; max-width: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--link), var(--accent)); }
+/* The diamond of the site's menu marks where the pet stands; kept inside the track at 0 and 100 %. */
+.pet-progress-marker { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--text); transform: rotate(45deg); box-shadow: 0 0 8px color-mix(in srgb, var(--text) 50%, transparent); }
+/* The podium, the targeted food and the table: a title with its caption, then the block. */
+.pet-block-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-4); margin-bottom: var(--space-3); }
+.pet-block-head h2 { margin: 0; }
+.pet-block-head span, .pet-block-hint { margin: 0; font-size: .85rem; color: var(--text-faint); }
+.pet-podium { margin-bottom: var(--space-4); }
+.pet-podium-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.pet-podium-card { display: grid; gap: var(--space-3); height: 100%; box-sizing: border-box; padding: var(--space-4) var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel); box-shadow: var(--shadow-sm); }
+.pet-podium-card--first { border: 2px solid var(--accent); background: linear-gradient(160deg, var(--accent-soft), var(--panel) 60%); }
+.pet-podium-card-head { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.pet-podium-card-head h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; }
+.pet-podium-rank { display: block; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--link); }
+.pet-podium-card--first .pet-podium-rank { color: var(--accent-bright); }
+.pet-podium-total { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; line-height: 1.1; color: var(--kamas); font-variant-numeric: tabular-nums; }
+.pet-podium-total .kamas-amount-icon { width: 20px; height: 20px; }
+.pet-food-image { display: grid; place-items: center; flex: none; width: 3rem; height: 3rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--panel-soft); color: var(--text-muted); font-weight: 700; }
+.pet-food-image img { width: 40px; height: 40px; object-fit: contain; }
+/* Figures in a row of labelled values: Quantité, Prix unitaire, XP / unité… */
+.pet-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: var(--space-2) var(--space-4); margin: 0; font-variant-numeric: tabular-nums; }
+.pet-figures dt { font-size: .75rem; color: var(--text-faint); }
+.pet-figures dd { margin: 0; font-weight: 700; }
+.pet-figures dd small { display: block; font-size: .75rem; font-weight: 400; color: var(--text-faint); }
+.pet-target { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+.pet-target h2 { margin: 0; }
+.pet-target-suggestions { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr)); gap: var(--space-2); }
+.pet-target-suggestion { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: var(--space-1) var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--panel-soft); color: var(--text); font: inherit; font-size: .9rem; text-align: left; cursor: pointer; }
+.pet-target-suggestion:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+.pet-target-suggestion .pet-food-image { width: 2.25rem; height: 2.25rem; }
+.pet-target-suggestion .pet-food-image img { width: 28px; height: 28px; }
+.pet-target-card { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-6); padding: var(--space-4) var(--space-5); border: 1px solid color-mix(in srgb, var(--link) 35%, transparent); border-radius: var(--radius-md); background: var(--link-soft); }
+.pet-target-card-head { flex: 1 1 16rem; min-width: 0; display: flex; align-items: center; gap: var(--space-3); }
+.pet-target-card-head h3 { margin: 0; font-size: 1.15rem; }
+.pet-target-card-head > div { display: grid; gap: .1rem; font-size: .85rem; color: var(--text-muted); }
+.pet-target-figures { flex: 2 1 28rem; }
+.pet-target-figures dd { font-size: 1.1rem; }
+.pet-figure-kamas { color: var(--kamas); }
+.pet-figure-gap { color: var(--danger); }
 /* Aligned by the top, not the bottom: an error under one field (« Niveau entre 0 et 100. ») must not
    push the other one down. Both labels share a size, so the inputs stay face to face; the arrow gets a
    label-sized spacer, then sits on the input's height (40px). */
@@ -1229,12 +1282,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .pet-level-field input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .pet-level-field input[type="number"]::-webkit-inner-spin-button,
 .pet-level-field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.pet-levels-result { display: grid; gap: var(--space-3); justify-items: start; padding-left: var(--space-5); border-left: 1px solid var(--border); }
 .pet-level-field .warning { margin: 0; font-size: .78rem; }
 .pet-level-field--secondary { max-width: 16rem; font-size: .78rem; }
 .pet-level-field--secondary input { min-height: var(--control-sm); padding: .3rem .6rem; font-size: .85rem; }
 .pet-xp-needed { display: grid; gap: .1rem; margin: 0; color: var(--text-muted); font-size: .85rem; }
-.pet-xp-needed b { color: var(--accent-bright); font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.pet-xp-needed span { font-weight: 600; }
+.pet-xp-needed b { font-family: var(--font-display); font-weight: 400; color: var(--accent-bright); font-size: 2.4rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
 /* specs/022 FR-012: Almanax of 23 July switch (+50 % pet XP). */
 .pet-almanax-switch { position: relative; display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; cursor: pointer; font-size: .9rem; font-weight: 600; }
 .pet-almanax-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
@@ -1245,14 +1298,21 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .pet-almanax-switch input:focus-visible + .pet-almanax-switch-track { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
 .pet-almanax-switch small { color: var(--accent-bright); font-weight: 700; }
 @media (max-width: 720px) {
-  .pet-levels-panel { grid-template-columns: 1fr; }
-  .pet-levels-result { padding: var(--space-4) 0 0; border-left: 0; border-top: 1px solid var(--border); }
-  .pet-level-field--secondary { max-width: none; }
+  .pet-objective-result { flex-basis: 100%; min-width: 0; }
+  .pet-objective-fields .pet-levels { flex-basis: 100%; }
+  .pet-level-field--secondary { max-width: none; flex-basis: 100%; }
+  .pet-podium-total { font-size: 1.5rem; }
 }
 .profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
-.profit-row.pet-food-row .profit-row-main { cursor: default; }
+.profit-row.pet-food-row { padding-block: var(--space-3); }
+.profit-row.pet-food-row .profit-row-main { align-items: center; gap: var(--space-3); cursor: default; }
+/* specs/055 FR-009: the rank by total cost, before the resource; its column title does not sort. */
+.pet-food-rank { flex: none; width: 2.25rem; color: var(--text-faint); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pet-food-name-head { display: flex; align-items: center; gap: var(--space-3); }
+.pet-food-name-head .pet-food-rank { font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 @media (max-width: 640px) {
   .profit-row.pet-food-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pet-food-name-head { flex-basis: 100%; }
 }
 
 

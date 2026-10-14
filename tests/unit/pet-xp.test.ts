@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, type PetFood } from '../../src/domain/pet-xp';
+import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, petXpProgress, rankPetFoods, petFoodPodium, petFoodTarget, formatObjectiveShare, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
   ({ itemId, name, xpPerUnit, sourceName: name });
@@ -143,5 +143,71 @@ describe('capPetFoodQuantity', () => {
     const almanax = planPetFood(100_000, [food('a', 'Poussière', 0.5)], { a: { unitPriceKamas: 1, origin: 'carnet' } }, Number.POSITIVE_INFINITY, undefined, ALMANAX_PET_XP_MULTIPLIER);
     expect(capPetFoodQuantity(almanax.recommendations, 150_000).hiddenCount).toBe(0);
     expect(capPetFoodQuantity(almanax.recommendations, 100_000).hiddenCount).toBe(1);
+  });
+});
+
+// specs/055-refonte-xp-familier: progress, shared ranking, podium and targeted resource.
+describe('petXpProgress', () => {
+  it('gives the level and the share of the last level reached, rounded to 0.1', () => {
+    expect(petXpProgress(0)).toEqual({ level: 0, totalXp: 0, percent: 0 });
+    expect(petXpProgress(47003)).toEqual({ level: 85, totalXp: 47003, percent: 26.2 });
+    expect(petXpProgress(179592)).toEqual({ level: 100, totalXp: 179592, percent: 100 });
+  });
+});
+
+describe('ranking, podium and targeted resource', () => {
+  // 100 000 XP. Plume: 25 000 units × 3 = 75 000. Poussière: 200 000 units (above a 50 000 cap) × 1.
+  // Os: 50 000 × 5 = 250 000. Rune: 10 000 × 40 = 400 000. Écaille: no price.
+  const foods = [food('a', 'Poussière', 0.5), food('b', 'Os', 2), food('c', 'Rune', 10), food('d', 'Plume', 4), food('e', 'Écaille', 20)];
+  const prices = {
+    a: { unitPriceKamas: 1, origin: 'carnet' as const },
+    b: { unitPriceKamas: 5, origin: 'carnet' as const },
+    c: { unitPriceKamas: 40, origin: 'carnet' as const },
+    d: { unitPriceKamas: 3, origin: 'carnet' as const, date: '2026-10-01T00:00:00Z' },
+  };
+  const ranked = rankPetFoods(100_000, foods, prices, 50_000);
+
+  it('ranks the priced foods under the cap by total cost, from 1', () => {
+    expect(ranked.map((line) => [line.food.name, line.rank, line.totalKamas])).toEqual([['Plume', 1, 75_000], ['Os', 2, 250_000], ['Rune', 3, 400_000]]);
+  });
+
+  it('keeps the foods above the cap without one, and ranks with the Almanax', () => {
+    expect(rankPetFoods(100_000, foods, prices, undefined).map((line) => line.food.name)).toEqual(['Plume', 'Poussière', 'Os', 'Rune']);
+    expect(rankPetFoods(100_000, foods, prices, 50_000, ALMANAX_PET_XP_MULTIPLIER)[0].quantity).toBe(16_667);
+  });
+
+  it('ranks nothing when no XP is left to give', () => {
+    expect(rankPetFoods(0, foods, prices, 50_000)).toEqual([]);
+  });
+
+  it('puts the first 3 on the podium with their gap to the cheapest', () => {
+    expect(petFoodPodium(ranked).map((line) => [line.food.name, line.gapKamas])).toEqual([['Plume', 0], ['Os', 175_000], ['Rune', 325_000]]);
+    expect(petFoodPodium(ranked.slice(0, 2))).toHaveLength(2);
+    expect(petFoodPodium([])).toEqual([]);
+  });
+
+  it('gives the card of a ranked food, with its gap in % to the cheapest', () => {
+    const card = petFoodTarget(foods[2], 100_000, prices, ranked, 50_000);
+    expect(card).toMatchObject({ xpPerUnit: 10, quantity: 10_000, sharePercent: 0.01, price: { unitPriceKamas: 40, totalKamas: 400_000 } });
+    expect(card.standing).toEqual({ kind: 'ranked', rank: 3, gapPercent: 433.3 });
+    expect(petFoodTarget(foods[3], 100_000, prices, ranked, 50_000).standing).toEqual({ kind: 'ranked', rank: 1, gapPercent: 0 });
+  });
+
+  it('says when the food is above the cap or has no price', () => {
+    expect(petFoodTarget(foods[0], 100_000, prices, ranked, 50_000)).toMatchObject({ quantity: 200_000, price: { totalKamas: 200_000 }, standing: { kind: 'capped', maxQuantity: 50_000 } });
+    const unpriced = petFoodTarget(foods[4], 100_000, prices, ranked, 50_000);
+    expect(unpriced).toMatchObject({ quantity: 5_000, sharePercent: 0.02, standing: { kind: 'unpriced' } });
+    expect(unpriced.price).toBeUndefined();
+  });
+
+  it('applies the Almanax and never gives more than 100 % of the objective', () => {
+    expect(petFoodTarget(foods[3], 100_000, prices, ranked, 50_000, ALMANAX_PET_XP_MULTIPLIER)).toMatchObject({ xpPerUnit: 6, quantity: 16_667 });
+    expect(petFoodTarget(foods[2], 5, prices, ranked, 50_000).sharePercent).toBe(100);
+  });
+
+  it('writes the share of the objective with 2 significant digits', () => {
+    expect(formatObjectiveShare(0.01874)).toBe('0,019');
+    expect(formatObjectiveShare(26.2)).toBe('26');
+    expect(formatObjectiveShare(100)).toBe('100');
   });
 });

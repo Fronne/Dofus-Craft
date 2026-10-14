@@ -160,3 +160,89 @@ export function capPetFoodQuantity(
   const shown = lines.filter((line) => line.quantity <= maxQuantity);
   return { shown, hiddenCount: lines.length - shown.length };
 }
+
+// specs/055-refonte-xp-familier: what the redesigned page shows on top of the 022 rules — the pet's
+// progress, one ranking shared by the podium, the table and the targeted resource, and that resource's
+// card (data-model.md). Nothing here changes how a quantity or a cost is computed.
+
+export type PetXpProgress = { level: number; totalXp: number; percent: number };
+
+/** Where a pet with `totalXp` stands on the way to the last level, as a percentage rounded to 0.1. */
+export function petXpProgress(totalXp: number, curve: readonly number[] = PET_XP_CURVE): PetXpProgress {
+  return {
+    level: levelForTotalXp(totalXp, curve).level,
+    totalXp,
+    percent: Math.round((totalXp / maxTotalXp(curve)) * 1000) / 10,
+  };
+}
+
+export type RankedPetFood = PetFoodRecommendation & { rank: number };
+
+/** Every priced food for `xp` points, cheapest total first, without the ones above `maxQuantity`, numbered from 1. */
+export function rankPetFoods(
+  xp: number,
+  foods: readonly PetFood[],
+  prices: Record<string, PetFoodPrice | undefined>,
+  maxQuantity: number | undefined,
+  xpMultiplier = 1,
+): RankedPetFood[] {
+  const plan = planPetFood(xp, foods, prices, Number.POSITIVE_INFINITY, DEFAULT_PET_FOOD_SORT, xpMultiplier);
+  return capPetFoodQuantity(plan.recommendations, maxQuantity).shown.map((line, index) => ({ ...line, rank: index + 1 }));
+}
+
+export const PET_FOOD_PODIUM_SIZE = 3;
+
+export type PetFoodPodiumEntry = RankedPetFood & { gapKamas: number };
+
+/** The first foods of `ranked`, each with how much more it costs than the cheapest. */
+export function petFoodPodium(ranked: readonly RankedPetFood[]): PetFoodPodiumEntry[] {
+  return ranked.slice(0, PET_FOOD_PODIUM_SIZE).map((line) => ({ ...line, gapKamas: line.totalKamas - ranked[0].totalKamas }));
+}
+
+export type PetFoodStanding =
+  | { kind: 'ranked'; rank: number; gapPercent: number }
+  | { kind: 'capped'; maxQuantity: number }
+  | { kind: 'unpriced' };
+
+export type PetFoodTarget = {
+  food: PetFood;
+  xpPerUnit: number;
+  quantity: number;
+  /** Share of the XP to give that one unit brings, at most 100. */
+  sharePercent: number;
+  price?: { unitPriceKamas: number; date?: string; totalKamas: number };
+  standing: PetFoodStanding;
+};
+
+/** The card of one food the player aims at: its figures for `xp` points and where it stands in `ranked`. */
+export function petFoodTarget(
+  food: PetFood,
+  xp: number,
+  prices: Record<string, PetFoodPrice | undefined>,
+  ranked: readonly RankedPetFood[],
+  maxQuantity: number | undefined,
+  xpMultiplier = 1,
+): PetFoodTarget {
+  const xpPerUnit = food.xpPerUnit * xpMultiplier;
+  const quantity = quantityFor(xp, food, xpMultiplier);
+  const sharePercent = Math.min(100, (xpPerUnit / xp) * 100);
+  const unitPriceKamas = prices[food.itemId]?.unitPriceKamas ?? 0;
+  if (unitPriceKamas <= 0) return { food, xpPerUnit, quantity, sharePercent, standing: { kind: 'unpriced' } };
+  const totalKamas = quantity * unitPriceKamas;
+  const price = { unitPriceKamas, date: prices[food.itemId]?.date, totalKamas };
+  const line = ranked.find((entry) => entry.food.itemId === food.itemId);
+  const standing: PetFoodStanding = line
+    ? { kind: 'ranked', rank: line.rank, gapPercent: Math.round(((totalKamas - ranked[0].totalKamas) / ranked[0].totalKamas) * 1000) / 10 }
+    : { kind: 'capped', maxQuantity: maxQuantity ?? quantity };
+  return { food, xpPerUnit, quantity, sharePercent, price, standing };
+}
+
+const shareFormat = new Intl.NumberFormat('fr-FR', { maximumSignificantDigits: 2 });
+
+/** A rank as French writes it: « 1re », « 2e », « 10e ». */
+export const ordinal = (rank: number) => `${rank}${rank === 1 ? 're' : 'e'}`;
+
+/** The share of the objective one unit brings, with 2 significant digits (« 0,019 »), research.md §4. */
+export function formatObjectiveShare(percent: number): string {
+  return shareFormat.format(percent);
+}

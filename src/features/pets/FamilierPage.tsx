@@ -22,7 +22,10 @@ import {
   isPetXpAlmanaxDay,
   DEFAULT_PET_FOOD_SORT,
   capPetFoodQuantity,
+  petFoodPodium,
+  petXpProgress,
   planPetFood,
+  rankPetFoods,
   validatePetLevels,
   xpNeeded,
   type PetFoodRecommendation,
@@ -34,9 +37,14 @@ import { getPetLevels, setPetLevels } from '../../persistence/pet-levels-prefere
 import { getPetMaxQuantity, setPetMaxQuantity } from '../../persistence/pet-max-quantity-preference';
 import { usePetFoodPrices } from './usePetFoodPrices';
 import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
+import { PetObjectiveBanner } from './PetObjectiveBanner';
+import { PetFoodPodium } from './PetFoodPodium';
+import { PetFoodTarget } from './PetFoodTarget';
 
 // specs/022-pet-xp-calculator: the XP a pet still needs to reach a level, and the cheapest resources
-// to feed it with on the active server, in the active price mode.
+// to feed it with on the active server, in the active price mode. specs/055-refonte-xp-familier lays
+// it out in four blocks: the objective, the podium of the 3 cheapest, one food aimed at, and the table
+// of the others with their rank.
 
 const numberFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 4 });
 
@@ -97,7 +105,7 @@ function SortHeader({ sort, onSort }: { sort: PetFoodSort; onSort: (sort: PetFoo
     <div className="profit-head pet-food-row" role="group" aria-label="Trier la liste">
       {COLUMNS.map((column) => {
         const active = sort.key === column.key;
-        return (
+        const button = (
           <button
             key={column.key}
             type="button"
@@ -113,17 +121,22 @@ function SortHeader({ sort, onSort }: { sort: PetFoodSort; onSort: (sort: PetFoo
             {active && <span aria-hidden="true">{sort.direction === 'desc' ? ' ↓' : ' ↑'}</span>}
           </button>
         );
+        // specs/055 FR-009: the rank, by total cost, heads the resource column; it does not sort.
+        return column.key === 'name'
+          ? <span key={column.key} className="pet-food-name-head"><span className="pet-food-rank">Rang</span>{button}</span>
+          : button;
       })}
     </div>
   );
 }
 
-function FoodLine({ line }: { line: PetFoodRecommendation }) {
+function FoodLine({ line, rank }: { line: PetFoodRecommendation; rank?: number }) {
   const age = classifyPriceAge(line.priceDate);
   const ageClass = age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : '';
   return (
     <li className="profit-row pet-food-row">
       <div className="profit-row-main">
+        <span className="pet-food-rank">{rank}</span>
         <ResourceDisplay resource={{ id: line.food.itemId, name: line.food.name, imageUrl: line.food.imageUrl }} />
       </div>
       <div className="profit-cell">
@@ -186,10 +199,20 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
   // 2026-09-28); a new search or sort goes back to the first lines.
   const normalizedQuery = normalizeSearchText(query);
   const foods = normalizedQuery ? PET_FOODS.filter((food) => normalizeSearchText(food.name).includes(normalizedQuery)) : PET_FOODS;
-  const plan = xp !== undefined ? planPetFood(xp, foods, prices, Number.POSITIVE_INFINITY, sort, almanax ? ALMANAX_PET_XP_MULTIPLIER : 1) : undefined;
+  const xpMultiplier = almanax ? ALMANAX_PET_XP_MULTIPLIER : 1;
+  const plan = xp !== undefined ? planPetFood(xp, foods, prices, Number.POSITIVE_INFINITY, sort, xpMultiplier) : undefined;
   // FR-008b: lines needing more units than the cap are hidden, before the list is shown in slices.
   const capped = capPetFoodQuantity(plan?.recommendations ?? [], maxQuantity);
-  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(capped.shown);
+  // specs/055: one ranking by total cost, whatever the table's search and sort, gives the podium and
+  // every rank shown (research.md §1). The table lists the others.
+  const ranked = xp !== undefined ? rankPetFoods(xp, PET_FOODS, prices, maxQuantity, xpMultiplier) : [];
+  const podium = petFoodPodium(ranked);
+  const rankById = new Map(ranked.map((line) => [line.food.itemId, line.rank]));
+  const onPodium = new Set(podium.map((line) => line.food.itemId));
+  const tableLines = capped.shown.filter((line) => !onPodium.has(line.food.itemId));
+  const { visible, endRef, loadingMore, reset: resetShown } = useLoadMoreOnScroll(tableLines);
+  const [targetId, setTargetId] = useState<string>();
+  const [targetQuery, setTargetQuery] = useState('');
   const changeMaxQuantity = (raw: string) => {
     setMaxQuantityText(raw);
     const next = raw === '' ? undefined : Number(raw);
@@ -202,6 +225,29 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
   const hasAnyPrice = unpricedCount < PET_FOODS.length;
   const serverName = servers.find((server) => server.id === serverId)?.name;
   const modeLabel = priceMode === 'community' ? 'Mode communautaire' : 'Mode personnel';
+  // While no price can be shown, one message stands in for the podium and the table (022 messages).
+  const priceState = !serverId ? (
+    <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le prix des ressources." />
+  ) : status === 'loading' ? (
+    <p className="empty" role="status">Chargement des prix…</p>
+  ) : !hasAnyPrice && communityUnavailable ? (
+    // An unreachable service is not « no price »: it says so and offers to ask again.
+    <div role="alert">
+      <EmptyState icon="info" title="Prix partagés indisponibles" description="Le service des prix partagés ne répond pas pour le moment.">
+        <button type="button" className="btn btn-primary" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
+      </EmptyState>
+    </div>
+  ) : !hasAnyPrice ? (
+    <EmptyState
+      icon="coins"
+      title="Aucune recommandation sans prix"
+      description={hdvPageEnabled
+        ? 'Saisissez le prix de ces ressources dans la page HDV, onglet Animaux, pour voir les moins chères.'
+        : "Aucun prix n'est encore connu pour ces ressources sur ce serveur."}
+    >
+      {hdvPageEnabled && <Link to={ROUTES.hdv} className="btn btn-primary">Saisir des prix dans la page HDV</Link>}
+    </EmptyState>
+  ) : undefined;
 
   const renderField = (field: (typeof FIELDS)[Field]) => (
     <label key={field.key} className={`pet-level-field${field.secondary ? ' pet-level-field--secondary' : ''}`}>
@@ -231,67 +277,25 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
         </p>
       </header>
 
-      <section className="panel pet-levels-panel">
-        {/* Left: what the player types (current level → level aimed for, the linked total XP below).
-            Right: the result, with the Almanax switch that changes how it is reached. */}
-        <div className="pet-levels-inputs">
+      <PetObjectiveBanner
+        levels={(
           <div className="pet-levels">
             {renderField(FIELDS.currentLevel)}
             <span className="pet-levels-arrow" aria-hidden="true">→</span>
             {renderField(FIELDS.targetLevel)}
           </div>
-          {renderField(FIELDS.totalXp)}
-        </div>
-        <div className="pet-levels-result">
-          <p className="pet-xp-needed" role="status">
-            {xp === undefined ? (
-              <><span>XP nécessaire</span><b>—</b></>
-            ) : xp > 0 ? (
-              <><span>XP nécessaire</span><b>{numberFormat.format(xp)} XP</b></>
-            ) : (
-              'Aucune XP à donner : le niveau visé est déjà atteint.'
-            )}
-          </p>
-          <label className="pet-almanax-switch">
-            <input
-              type="checkbox"
-              role="switch"
-              checked={almanax}
-              onChange={(event) => setAlmanax(event.target.checked)}
-            />
-            <span className="pet-almanax-switch-track" aria-hidden="true" />
-            <span>
-              Almanax du 23 juillet (+50 % d'XP)
-              {isPetXpAlmanaxDay() && <small> · c'est aujourd'hui</small>}
-            </span>
-          </label>
-        </div>
-      </section>
+        )}
+        totalXpField={renderField(FIELDS.totalXp)}
+        progress={errors.totalXp ? undefined : petXpProgress(levels.totalXp)}
+        xp={xp}
+        almanax={almanax}
+        onAlmanaxChange={setAlmanax}
+      />
 
       {plan && plan.xpNeeded > 0 && (
-        <section className="panel profit-panel">
-          <h2>{sort.key === 'total' && sort.direction === 'asc' && !normalizedQuery ? 'Ressources les moins chères' : 'Ressources'}</h2>
-          {!serverId ? (
-            <EmptyState icon="coins" title="Aucun serveur choisi" description="Choisissez un serveur pour voir le prix des ressources." />
-          ) : status === 'loading' ? (
-            <p className="empty" role="status">Chargement des prix…</p>
-          ) : !hasAnyPrice && communityUnavailable ? (
-            // An unreachable service is not « no price »: it says so and offers to ask again.
-            <div role="alert">
-              <EmptyState icon="info" title="Prix partagés indisponibles" description="Le service des prix partagés ne répond pas pour le moment.">
-                <button type="button" className="btn btn-primary" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
-              </EmptyState>
-            </div>
-          ) : !hasAnyPrice ? (
-            <EmptyState
-              icon="coins"
-              title="Aucune recommandation sans prix"
-              description={hdvPageEnabled
-                ? 'Saisissez le prix de ces ressources dans la page HDV, onglet Animaux, pour voir les moins chères.'
-                : "Aucun prix n'est encore connu pour ces ressources sur ce serveur."}
-            >
-              {hdvPageEnabled && <Link to={ROUTES.hdv} className="btn btn-primary">Saisir des prix dans la page HDV</Link>}
-            </EmptyState>
+        <>
+          {priceState ? (
+            <section className="panel">{priceState}</section>
           ) : (
             <>
               {communityUnavailable && (
@@ -299,6 +303,25 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
                   Prix partagés indisponibles : les prix gardés sur cet appareil sont affichés.
                 </p>
               )}
+              {podium.length > 0 && <PetFoodPodium entries={podium} caption={`${serverName ? `Serveur ${serverName}, ` : ''}${modeLabel}`} />}
+            </>
+          )}
+
+          <PetFoodTarget
+            xp={plan.xpNeeded}
+            prices={prices}
+            ranked={ranked}
+            maxQuantity={maxQuantity}
+            xpMultiplier={xpMultiplier}
+            selectedId={targetId}
+            onSelect={setTargetId}
+            query={targetQuery}
+            onQueryChange={setTargetQuery}
+          />
+
+          {!priceState && (
+            <section className="panel profit-panel pet-table" aria-labelledby="pet-table-title">
+              <h2 id="pet-table-title">Toutes les ressources</h2>
               <div className="profit-toolbar">
                 <div className="search-input-wrap prices-search">
                   <Icon name="search" size={18} className="search-input-icon" />
@@ -309,8 +332,8 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
                       setQuery(event.target.value);
                       resetShown();
                     }}
-                    placeholder="Rechercher une ressource..."
-                    aria-label="Rechercher une ressource"
+                    placeholder="Filtrer…"
+                    aria-label="Filtrer les ressources"
                   />
                 </div>
                 <label className="pet-max-quantity">
@@ -350,6 +373,13 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
                   title={`Toutes les ressources demandent plus de ${numberFormat.format(maxQuantity ?? 0)} unités`}
                   description="Augmentez la quantité max, ou videz le champ pour toutes les voir."
                 />
+              ) : tableLines.length === 0 ? (
+                // Only podium foods are left: the table has nothing else to show (FR-009).
+                <p className="pet-block-hint">
+                  {normalizedQuery
+                    ? 'Les ressources qui correspondent sont sur le podium, plus haut.'
+                    : 'Toutes les ressources avec un prix sont sur le podium, plus haut.'}
+                </p>
               ) : (
                 <>
                   <SortHeader sort={sort} onSort={(next) => {
@@ -357,18 +387,18 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
                     resetShown();
                   }} />
                   <ul className="profit-list">
-                    {visible.map((line) => <FoodLine key={line.food.itemId} line={line} />)}
+                    {visible.map((line) => <FoodLine key={line.food.itemId} line={line} rank={rankById.get(line.food.itemId)} />)}
                   </ul>
-                  {visible.length < capped.shown.length && (
+                  {visible.length < tableLines.length && (
                     <div ref={endRef} className="profit-list-end" role="status">
                       {loadingMore && 'Chargement…'}
                     </div>
                   )}
                 </>
               )}
-            </>
+            </section>
           )}
-        </section>
+        </>
       )}
       <BackToTopButton />
     </>
