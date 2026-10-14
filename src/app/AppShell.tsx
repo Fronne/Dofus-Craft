@@ -16,7 +16,7 @@ import { HdvPage } from '../features/hdv/HdvPage';
 import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
-import { useForgemagiePageEnabled } from './useForgemagiePageEnabled';
+import { useSiteSettings } from './useSiteSettings';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
@@ -73,6 +73,20 @@ function ForgemagieUnavailablePage() {
   );
 }
 
+// specs/053-hdv-page-toggle (FR-004): what the HDV address shows while the page is off.
+function HdvUnavailablePage() {
+  return (
+    <>
+      <header className="page-header">
+        <h1>HDV</h1>
+      </header>
+      <EmptyState icon="store" title="HDV est momentanément indisponible" description="La page reviendra bientôt. Vos prix sont conservés.">
+        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
+      </EmptyState>
+    </>
+  );
+}
+
 export function AppShell() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const stored = window.localStorage.getItem('craftcheck-theme');
@@ -120,9 +134,11 @@ export function AppShell() {
     void recordVisit();
   }, []);
   const { serverId } = useActiveServer();
-  // specs/050-forgemagie-page-toggle: the owner turns the Forgemagie page on or off; off, its link is
-  // gone and its address says so (FR-003, FR-004).
-  const { enabled: forgemagieEnabled, reading: readingForgemagie } = useForgemagiePageEnabled();
+  // specs/050-forgemagie-page-toggle, specs/053-hdv-page-toggle: the owner turns the Forgemagie and
+  // HDV pages on or off; off, a page's link is gone and its address says so (FR-003, FR-004).
+  const { settings: siteSettings, reading: readingSiteSettings } = useSiteSettings();
+  const forgemagieEnabled = siteSettings.forgemagiePage;
+  const hdvEnabled = siteSettings.hdvPage;
   // specs/021-background-data-loading (FR-006, FR-009): the Prix list is prepared in the background
   // for the active server and price mode, so it's already there when the player opens the page.
   useEffect(() => preloadCraftProfits(serverId, priceMode), [serverId, priceMode]);
@@ -166,7 +182,7 @@ export function AppShell() {
       cancelAnimationFrame(ready);
       observer?.disconnect();
     };
-  }, [pathname, forgemagieEnabled]);
+  }, [pathname, forgemagieEnabled, hdvEnabled]);
 
   return (
     <div className="app-shell">
@@ -179,7 +195,7 @@ export function AppShell() {
           </span>
         </Link>
         <ul className="app-nav-list" ref={navListRef}>
-          {NAV_ITEMS.filter((item) => forgemagieEnabled || item.to !== ROUTES.forgemagie).map((item) => (
+          {NAV_ITEMS.filter((item) => (forgemagieEnabled || item.to !== ROUTES.forgemagie) && (hdvEnabled || item.to !== ROUTES.hdv)).map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -234,13 +250,20 @@ export function AppShell() {
             <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
             {/* Former address of the Rentabilité page (named « Prix » until 2026-09-28). */}
             <Route path={ROUTES.legacyPrices} element={<Navigate to={ROUTES.prices} replace />} />
-            <Route path={ROUTES.hdv} element={<HdvPage priceMode={priceMode} />} />
-            <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} />} />
+            <Route
+              path={ROUTES.hdv}
+              element={hdvEnabled
+                ? <HdvPage priceMode={priceMode} />
+                : readingSiteSettings
+                  ? <p className="empty" role="status">Chargement…</p>
+                  : <HdvUnavailablePage />}
+            />
+            <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />} />
             <Route
               path={ROUTES.forgemagie}
               element={forgemagieEnabled
                 ? <ForgemagiePage priceMode={priceMode} />
-                : readingForgemagie
+                : readingSiteSettings
                   ? <p className="empty" role="status">Chargement…</p>
                   : <ForgemagieUnavailablePage />}
             />

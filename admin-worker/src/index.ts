@@ -4,7 +4,7 @@ import { createCounter, deleteCounter, listCounters, updateCounter, type Counter
 import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
 import { validateInfoMessageInput } from '../../src/domain/info-message';
 import { getSettings, saveSettings, type SettingsDb } from './settings';
-import { validateSiteSettingsInput } from '../../src/domain/site-settings';
+import { validateSiteSettingsChange } from '../../src/domain/site-settings';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
@@ -55,7 +55,7 @@ export async function handleApi(request: Request, env: Env, verify: TokenVerifie
   if (pathname === '/api/settings') {
     if (request.method === 'GET') return json(await getSettings(env.DB));
     if (request.method === 'PUT') {
-      const validation = validateSiteSettingsInput(await readBody(request));
+      const validation = validateSiteSettingsChange(await readBody(request));
       if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
       return json(await saveSettings(env.DB, validation.value));
     }

@@ -213,6 +213,18 @@ describe('Familier page (specs/022)', () => {
       type('XP totale du familier', '1703');
       type('Niveau visé', '60');
       expect(await screen.findByText('Aucune recommandation sans prix')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Saisir des prix dans la page HDV' })).toHaveAttribute('href', '/hdv');
+    });
+
+    // specs/053-hdv-page-toggle: no invitation to a page the owner has turned off.
+    it('does not send to the HDV page while it is disabled', async () => {
+      window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: false, hdvPage: false }));
+      await openFamilier('personal');
+      type('XP totale du familier', '1703');
+      type('Niveau visé', '60');
+      expect(await screen.findByText('Aucune recommandation sans prix')).toBeInTheDocument();
+      expect(screen.getByText("Aucun prix n'est encore connu pour ces ressources sur ce serveur.")).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Saisir des prix dans la page HDV' })).not.toBeInTheDocument();
     });
   });
   // specs/022 FR-007 (revised 2026-09-28): every priced resource, 25 lines at a time as the end of

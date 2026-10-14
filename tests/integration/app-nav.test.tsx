@@ -41,7 +41,7 @@ describe('navigation principale (specs/051)', () => {
   afterEach(cleanup);
 
   it('lists the pages, then the active server, Paramètres and the theme toggle', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: true });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: true, hdvPage: true });
     const nav = open('/');
     await within(nav).findByRole('link', { name: 'Forgemagie' });
     expect(nav).toHaveTextContent(/^DofusCraft/);
@@ -53,7 +53,7 @@ describe('navigation principale (specs/051)', () => {
   });
 
   it('marks the page being shown, and only that one', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
     const nav = open('/rentabilite');
     expect(await screen.findByText('Page Rentabilité')).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: 'Rentabilité' })).toHaveAttribute('aria-current', 'page');
@@ -61,14 +61,21 @@ describe('navigation principale (specs/051)', () => {
   });
 
   it('leaves Forgemagie out while the page is disabled', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
     const nav = open('/');
     await waitFor(() => expect(getSiteSettings).toHaveBeenCalled());
     expect(entries(nav)).not.toContain('Forgemagie');
   });
 
+  it('leaves HDV out while the page is disabled (specs/053)', async () => {
+    getSiteSettings.mockResolvedValue({ forgemagiePage: true, hdvPage: false });
+    const nav = open('/');
+    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    expect(entries(nav)).not.toContain('HDV');
+  });
+
   it('keeps « Aller au contenu » as the first thing reached with the keyboard', () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
     open('/');
     const first = document.querySelector('a, button');
     expect(first).toHaveTextContent('Aller au contenu');

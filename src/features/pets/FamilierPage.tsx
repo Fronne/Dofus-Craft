@@ -149,7 +149,9 @@ function FoodLine({ line }: { line: PetFoodRecommendation }) {
   );
 }
 
-export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
+// specs/053-hdv-page-toggle: `hdvPageEnabled` false while the owner has the HDV page off, so no
+// invitation leads to it.
+export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: PriceMode; hdvPageEnabled?: boolean }) {
   const { serverId, servers } = useActiveServer();
   const [text, setText] = useState(() => toText(getPetLevels()));
   const [sort, setSort] = useState<PetFoodSort>(DEFAULT_PET_FOOD_SORT);
@@ -284,9 +286,11 @@ export function FamilierPage({ priceMode }: { priceMode: PriceMode }) {
             <EmptyState
               icon="coins"
               title="Aucune recommandation sans prix"
-              description="Saisissez le prix de ces ressources dans la page HDV, onglet Animaux, pour voir les moins chères."
+              description={hdvPageEnabled
+                ? 'Saisissez le prix de ces ressources dans la page HDV, onglet Animaux, pour voir les moins chères.'
+                : "Aucun prix n'est encore connu pour ces ressources sur ce serveur."}
             >
-              <Link to={ROUTES.hdv} className="btn btn-primary">Saisir des prix dans la page HDV</Link>
+              {hdvPageEnabled && <Link to={ROUTES.hdv} className="btn btn-primary">Saisir des prix dans la page HDV</Link>}
             </EmptyState>
           ) : (
             <>

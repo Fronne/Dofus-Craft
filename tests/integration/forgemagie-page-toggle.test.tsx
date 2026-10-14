@@ -36,7 +36,7 @@ describe('page Forgemagie activée ou désactivée (specs/050)', () => {
   afterEach(cleanup);
 
   it('hides the link and says the page is unavailable while it is disabled (US1)', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
     open('/forgemagie');
     await waitFor(() => expect(getSiteSettings).toHaveBeenCalled());
     expect(forgemagieLink()).not.toBeInTheDocument();
@@ -56,15 +56,15 @@ describe('page Forgemagie activée ou désactivée (specs/050)', () => {
   });
 
   it('brings the link and the page back once enabled, and remembers it (US2)', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: true });
+    getSiteSettings.mockResolvedValue({ forgemagiePage: true, hdvPage: true });
     open('/forgemagie');
     expect(await screen.findByText('Page Forgemagie')).toBeInTheDocument();
     expect(forgemagieLink()).toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem('craftcheck-site-settings') as string)).toEqual({ forgemagiePage: true });
+    expect(JSON.parse(window.localStorage.getItem('craftcheck-site-settings') as string)).toEqual({ forgemagiePage: true, hdvPage: true });
   });
 
   it('keeps the last known state when the setting cannot be read (US3)', async () => {
-    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: true }));
+    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: true, hdvPage: true }));
     getSiteSettings.mockResolvedValue(undefined);
     open('/forgemagie');
     await waitFor(() => expect(getSiteSettings).toHaveBeenCalled());
@@ -81,8 +81,8 @@ describe('page Forgemagie activée ou désactivée (specs/050)', () => {
   });
 
   it('hides a page the device knew as enabled once the owner disabled it', async () => {
-    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: true }));
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false });
+    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: true, hdvPage: true }));
+    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
     open('/');
     await waitFor(() => expect(forgemagieLink()).not.toBeInTheDocument());
   });

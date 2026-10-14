@@ -32,7 +32,14 @@ function fakeDb(initial: PlayerCounterRow[]) {
       throw new Error(`Unexpected statement: ${sql}`);
     },
   });
-  return { rows, db: { prepare: (sql: string) => statement(sql) } };
+  return {
+    rows,
+    db: {
+      prepare: (sql: string) => statement(sql),
+      // Only the site settings write in batches (specs/053), and these tests don't reach them.
+      batch: async (statements: { run(): Promise<unknown> }[]) => Promise.all(statements.map((each) => each.run())),
+    },
+  };
 }
 
 const nicomoux: PlayerCounterRow = {

@@ -3,6 +3,12 @@ import type { SiteSettings } from '../src/domain/site-settings';
 import { adminApi } from './admin-api';
 import { failureMessage } from './messages';
 
+// The pages the owner can turn on or off: specs/050 (Forgemagie), specs/053 (HDV).
+const PAGES: { field: keyof SiteSettings; label: string }[] = [
+  { field: 'forgemagiePage', label: 'Forgemagie' },
+  { field: 'hdvPage', label: 'HDV' },
+];
+
 // specs/050-forgemagie-page-toggle (contracts/site-settings-api.md « Interface »): turn a page of the
 // site on or off. The state shown is always the one the server answered, never an assumed one (FR-008).
 export function SiteSettingsEditor() {
@@ -23,13 +29,14 @@ export function SiteSettingsEditor() {
     };
   }, [attempt]);
 
-  async function toggle(current: SiteSettings) {
+  // specs/053-hdv-page-toggle (FR-010): only the page clicked is sent.
+  async function toggle(field: keyof SiteSettings, label: string, current: SiteSettings) {
     setBusy(true);
-    const result = await adminApi.saveSettings({ forgemagiePage: !current.forgemagiePage });
+    const result = await adminApi.saveSettings({ [field]: !current[field] });
     setBusy(false);
     if (result.status === 'ok') {
       setSettings(result.value);
-      setFeedback({ text: result.value.forgemagiePage ? 'Page Forgemagie activée.' : 'Page Forgemagie désactivée.', error: false });
+      setFeedback({ text: `Page ${label} ${result.value[field] ? 'activée' : 'désactivée'}.`, error: false });
     } else {
       setFeedback({ text: failureMessage(result), error: true });
     }
@@ -56,16 +63,22 @@ export function SiteSettingsEditor() {
           </button>
         </div>
       )}
-      {settings && (
-        <div className="admin-page-toggle">
+      {settings && PAGES.map(({ field, label }) => (
+        <div key={field} className="admin-page-toggle">
           <p>
-            Page Forgemagie : <strong>{settings.forgemagiePage ? 'Activée' : 'Désactivée'}</strong>
+            Page {label} : <strong>{settings[field] ? 'Activée' : 'Désactivée'}</strong>
           </p>
-          <button type="button" className="btn btn-secondary btn-small" disabled={busy} onClick={() => void toggle(settings)}>
-            {settings.forgemagiePage ? 'Désactiver' : 'Activer'}
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            aria-label={`${settings[field] ? 'Désactiver' : 'Activer'} la page ${label}`}
+            disabled={busy}
+            onClick={() => void toggle(field, label, settings)}
+          >
+            {settings[field] ? 'Désactiver' : 'Activer'}
           </button>
         </div>
-      )}
+      ))}
       {feedback && (
         <p className={`admin-message${feedback.error ? ' admin-message--error' : ''}`} role={feedback.error ? 'alert' : 'status'}>{feedback.text}</p>
       )}

@@ -51,7 +51,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
-    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false } });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -228,28 +228,42 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     });
   });
 
-  describe('pages du site (specs/050)', () => {
+  describe('pages du site (specs/050, specs/053)', () => {
     const pages = async () => (await screen.findByRole('heading', { name: 'Pages du site' })).closest('section') as HTMLElement;
+    const row = (section: HTMLElement, label: string) => within(section).getByText(label, { exact: false, selector: 'p' }).parentElement as HTMLElement;
 
     it('shows the Forgemagie page as disabled, and enables it in one click', async () => {
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
       render(<AdminPage />);
       const section = await pages();
-      expect(await within(section).findByText('Désactivée')).toBeInTheDocument();
-      fireEvent.click(within(section).getByRole('button', { name: 'Activer' }));
-      expect(await within(section).findByText('Activée')).toBeInTheDocument();
+      await within(section).findByText('Désactivée');
+      fireEvent.click(within(section).getByRole('button', { name: 'Activer la page Forgemagie' }));
+      expect(await within(section).findByText('Page Forgemagie activée.')).toBeInTheDocument();
       expect(api.saveSettings).toHaveBeenCalledWith({ forgemagiePage: true });
-      expect(within(section).getByText('Page Forgemagie activée.')).toBeInTheDocument();
-      expect(within(section).getByRole('button', { name: 'Désactiver' })).toBeInTheDocument();
+      expect(within(row(section, 'Page Forgemagie :')).getByText('Activée')).toBeInTheDocument();
+      expect(within(section).getByRole('button', { name: 'Désactiver la page Forgemagie' })).toBeInTheDocument();
+    });
+
+    it('shows the HDV page as enabled, and disables it alone in one click (specs/053, FR-010)', async () => {
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: false } });
+      render(<AdminPage />);
+      const section = await pages();
+      await within(section).findByText('Désactivée');
+      expect(within(row(section, 'Page HDV :')).getByText('Activée')).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: 'Désactiver la page HDV' }));
+      expect(await within(section).findByText('Page HDV désactivée.')).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ hdvPage: false });
+      expect(within(row(section, 'Page HDV :')).getByText('Désactivée')).toBeInTheDocument();
+      expect(within(section).getByRole('button', { name: 'Activer la page HDV' })).toBeInTheDocument();
     });
 
     it('disables an enabled page', async () => {
-      api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true } });
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false } });
+      api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
       render(<AdminPage />);
       const section = await pages();
-      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver' }));
-      expect(await within(section).findByText('Désactivée')).toBeInTheDocument();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page Forgemagie' }));
+      expect(await within(section).findByText('Page Forgemagie désactivée.')).toBeInTheDocument();
       expect(api.saveSettings).toHaveBeenCalledWith({ forgemagiePage: false });
     });
 
@@ -257,9 +271,9 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       api.saveSettings.mockResolvedValue({ status: 'unavailable' });
       render(<AdminPage />);
       const section = await pages();
-      fireEvent.click(await within(section).findByRole('button', { name: 'Activer' }));
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page HDV' }));
       expect(await within(section).findByRole('alert')).toHaveTextContent('Enregistrement impossible pour le moment.');
-      expect(within(section).getByText('Désactivée')).toBeInTheDocument();
+      expect(within(row(section, 'Page HDV :')).getByText('Activée')).toBeInTheDocument();
     });
 
     it('offers to retry when the state could not be read, without a button that would guess it', async () => {
@@ -267,7 +281,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       render(<AdminPage />);
       const section = await pages();
       expect(await within(section).findByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
-      expect(within(section).queryByRole('button', { name: 'Activer' })).not.toBeInTheDocument();
+      expect(within(section).queryByRole('button', { name: /^(Activer|Désactiver)/ })).not.toBeInTheDocument();
     });
   });
 });
