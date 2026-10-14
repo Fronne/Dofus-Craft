@@ -1221,6 +1221,9 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .pet-objective-main { flex: 1 1 26rem; min-width: 0; display: grid; gap: var(--space-4); align-content: start; }
 .pet-objective-fields { display: flex; flex-wrap: wrap; align-items: start; gap: var(--space-3) var(--space-4); }
 .pet-objective-fields .pet-levels { flex: 0 1 20rem; }
+/* Next to the levels, the total XP field takes their size so the three line up. */
+.pet-objective-fields .pet-level-field--secondary { flex: 0 1 10rem; font-size: .85rem; }
+.pet-objective-fields .pet-level-field--secondary input { min-height: var(--control-md); padding: .5rem .85rem; font-size: inherit; }
 .pet-objective-result {
   flex: 0 1 18rem; min-width: 15rem; display: grid; gap: var(--space-3); align-content: space-between;
   padding: var(--space-4) var(--space-5); border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
@@ -1300,7 +1303,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 @media (max-width: 720px) {
   .pet-objective-result { flex-basis: 100%; min-width: 0; }
   .pet-objective-fields .pet-levels { flex-basis: 100%; }
-  .pet-level-field--secondary { max-width: none; flex-basis: 100%; }
+  .pet-objective-fields .pet-level-field--secondary { max-width: none; flex-basis: 100%; }
   .pet-podium-total { font-size: 1.5rem; }
 }
 .profit-head.pet-food-row, .profit-row.pet-food-row { grid-template-columns: minmax(0, 1fr) 6.5rem 8rem 7rem 9.5rem; }
