@@ -1,7 +1,7 @@
 import petXpData from '../data/pet-xp-data.json';
 
-// specs/022-pet-xp-calculator: pet XP rules. The per-resource XP (Dafous, via the player's EXCEL
-// FAMILIER workbook) and the level curve (game client) are frozen in src/data/pet-xp-data.json
+// specs/022-pet-xp-calculator: pet XP rules. The per-resource XP (Tenmalexis' XP Familier list,
+// https://tenmalexis.github.io/xp-familier/) and the level curve (game client) are frozen in src/data/pet-xp-data.json
 // (research.md §1-§3); everything here is pure so it can be tested on its own (constitution, principe II).
 
 export type PetFood = {

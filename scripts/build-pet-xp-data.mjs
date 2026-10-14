@@ -1,8 +1,10 @@
 /* global URL, URLSearchParams, fetch, setTimeout, console */
 // specs/022-pet-xp-calculator (research.md §1-§3, contracts/pet-xp-data.md): builds
 // src/data/pet-xp-data.json from the two committed source files of scripts/data/:
-// - pet-xp-resources.csv: the « XP COMPLET » tab of the player's EXCEL FAMILIER workbook (data from
-//   https://dafous.app/pet-xp), one line per resource with the XP one unit gives;
+// - pet-xp-resources.csv: the resource list (`ALL`) of https://tenmalexis.github.io/xp-familier/,
+//   one line per resource with the XP one unit gives. It replaced the EXCEL FAMILIER workbook (Dafous
+//   data) on 2026-10-14: same values, but without the dungeon keys, whose XP was wrong (e.g. « Clef du
+//   Temple du Grand Ougah » 705.765 there, 167 in game);
 // - pet-xp-curve.json: the cumulative XP per level (0 to 100) from the game client.
 // Each resource is matched to its DofusDB item by exact name (case-insensitive, oe/œ tolerant).
 // Anything not matched with certainty is listed in `unmatched`, never guessed. Run by hand, review
@@ -124,8 +126,8 @@ foods.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
 unmatched.sort((a, b) => a.sourceName.localeCompare(b.sourceName, 'fr'));
 
 const data = {
-  source: 'Dafous — Calculateur Pet XP',
-  sourceUrl: 'https://dafous.app/pet-xp',
+  source: 'Tenmalexis — XP Familier',
+  sourceUrl: 'https://tenmalexis.github.io/xp-familier/',
   curveSource: curve.source,
   retrievedAt: new Date().toISOString().slice(0, 10),
   cumulativeXpByLevel,
