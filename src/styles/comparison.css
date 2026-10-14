@@ -20,11 +20,11 @@
 }
 .price-history-trigger:hover,
 .price-history-trigger[aria-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
-/* After a resource's « Dernière mise à jour » date: smaller, so the line keeps its height. */
-.price-line small .price-history-trigger { width: 1.375rem; height: 1.375rem; margin-left: .4rem; vertical-align: middle; }
+/* Right after a resource's name: smaller, so the line keeps its height. */
+.price-line .resource-display .price-history-trigger { width: 1.375rem; height: 1.375rem; margin-left: .4rem; vertical-align: middle; }
 /* Under a finger it keeps the size of the other touch targets. */
 @media (pointer: coarse), (max-width: 960px) {
-  .price-line small .price-history-trigger { width: 2.5rem; height: 2.5rem; }
+  .price-line .resource-display .price-history-trigger { width: 2.5rem; height: 2.5rem; }
 }
 
 /* Fixed to the viewport: PriceHistoryButton sets top/left from the trigger's position. */

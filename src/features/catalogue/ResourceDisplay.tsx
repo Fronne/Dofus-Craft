@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { Resource } from '../../domain/types';
 import { Icon } from '../../components/Icon';
 
@@ -8,11 +8,14 @@ export function ResourceDisplay({
   resource,
   quantity,
   copyable,
+  after,
 }: {
   resource: Resource;
   quantity?: number;
   // Clicking the name copies it to the clipboard, e.g. to paste it into the in-game HDV search.
   copyable?: boolean;
+  // Shown right after the name, on its line (e.g. the price-history button of a price line).
+  after?: ReactNode;
 }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -47,6 +50,7 @@ export function ResourceDisplay({
           </button>
         ) : resource.name}
         {quantity !== undefined && ` × ${quantity}`}
+        {after}
       </span>
     </span>
   );

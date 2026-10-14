@@ -45,7 +45,7 @@ export function ResourcePriceInput({
   // specs/015: the line's subtotal once its retained cost is known (quantity × retained unit cost),
   // replacing the one computed from the typed price; `null` hides it (retained cost missing).
   subtotalKamas?: number | null;
-  // specs/017: the price-history button, next to the quantity. Only passed in Mode communautaire.
+  // specs/017: the price-history button, right after the name. Only passed in Mode communautaire.
   history?: ReactNode;
   // specs/023: shown instead of « × quantity » where a quantity means nothing (HDV page: the item type).
   caption?: ReactNode;
@@ -72,7 +72,8 @@ export function ResourcePriceInput({
   return (
     <label className={`price-line${priceAgeClass}`} htmlFor={inputId}>
       <span className="price-resource">
-        <ResourceDisplay resource={resource} copyable />
+        {/* The price-history button sits right after the name, on every line, priced or not. */}
+        <ResourceDisplay resource={resource} copyable after={history} />
       </span>
       <span className="price-resource-quantity">
         {caption ?? <>× {quantity}</>}
@@ -82,12 +83,8 @@ export function ResourcePriceInput({
         <small>
           Dernière mise à jour : {formatRelativeTime(updatedAt)}
           {priceNote && <span className="price-note"> · {priceNote}</span>}
-          {/* The price-history button follows the date it gives the story of. */}
-          {history}
         </small>
       )}
-      {/* The price field; the price-history button comes right after it only while the price has no
-          date to sit next to. */}
       <span className="price-input-cell">
         <span className="kamas-input-wrap">
           <input
@@ -106,7 +103,6 @@ export function ResourcePriceInput({
           />
           {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
         </span>
-        {!updatedAt && history}
       </span>
       {subtotal !== undefined
         ? <b className="price-resource-formatted">{formatKamas(subtotal)}</b>
