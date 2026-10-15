@@ -6,11 +6,13 @@ import { failureMessage } from './messages';
 import { NewCounterForm } from './NewCounterForm';
 import { MessageEditor } from './MessageEditor';
 import { SiteSettingsEditor } from './SiteSettingsEditor';
+import { SnifferKeysEditor } from './SnifferKeysEditor';
+import { SnifferMappingsEditor } from './SnifferMappingsEditor';
 
 type Load = { state: 'loading' } | { state: 'ready'; counters: PlayerCounter[] } | { state: 'error'; message: string };
 
 // specs/014-admin-counters (contracts/admin-ui.md): the administration page, organised in sections
-// so other site settings can be added later (FR-015): the site's pages (specs/050), the information banner (specs/020), then "Compteurs".
+// so other site settings can be added later (FR-015): the site's pages (specs/050), the information banner (specs/020), "Compteurs", then the friends' HDV price tool (specs/057).
 export function AdminPage() {
   const [email, setEmail] = useState('');
   const [load, setLoad] = useState<Load>({ state: 'loading' });
@@ -86,6 +88,10 @@ export function AdminPage() {
         )}
         <NewCounterForm onCreated={changed} />
       </section>
+
+      <SnifferKeysEditor />
+
+      <SnifferMappingsEditor />
     </main>
   );
 }

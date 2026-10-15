@@ -81,3 +81,21 @@
 .admin-message-tones legend { margin-bottom: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
 .admin-message-preview { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
 .admin-message-preview .info-banner { margin: 0; }
+
+/* specs/057-sniffer-admin: the friends' HDV price tool — keys and mappings. */
+.admin-sniffer-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.admin-sniffer-form label { display: grid; flex: 1 1 220px; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.admin-sniffer-form input { width: 100%; min-width: 0; }
+.admin-sniffer-secret { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--accent-bright); border-radius: var(--radius-md); background: var(--inner-bg); }
+.admin-sniffer-secret p { margin: 0; }
+/* The key is long and has no spaces: it wraps anywhere rather than widening the page. */
+.admin-sniffer-secret code { overflow-wrap: anywhere; font-size: .95rem; user-select: all; }
+.admin-sniffer-warning { color: var(--danger); font-weight: 700; font-size: .88rem; }
+.admin-sniffer-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.admin-sniffer-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--inner-bg); }
+.admin-sniffer-row > div { flex: 1 1 240px; min-width: 0; }
+.admin-sniffer-row p { margin: 0; }
+.admin-sniffer-row--off { opacity: .65; }
+.admin-sniffer-build { display: grid; gap: var(--space-2); }
+.admin-sniffer-build h3 { margin: 0; font-size: 1rem; }
+.admin-sniffer-active { color: var(--success); font-size: .85rem; }

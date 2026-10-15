@@ -4,12 +4,14 @@ import { createCounter, deleteCounter, listCounters, updateCounter, type Counter
 import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
 import { validateInfoMessageInput } from '../../src/domain/info-message';
 import { getSettings, saveSettings, type SettingsDb } from './settings';
+import { createKey, listKeys, revokeKey, validateKeyLabel, type SnifferKeysDb } from './sniffer-keys';
+import { activateMapping, listMappings, uploadMapping, validateMappingUpload, type SnifferMappingsDb } from './sniffer-mappings';
 import { validateSiteSettingsChange } from '../../src/domain/site-settings';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
 export interface Env extends AccessEnv {
-  DB: CountersDb & MessageDb & SettingsDb;
+  DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -59,6 +61,36 @@ export async function handleApi(request: Request, env: Env, verify: TokenVerifie
       if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
       return json(await saveSettings(env.DB, validation.value));
     }
+  }
+
+  // specs/057-sniffer-admin (contracts/admin-sniffer-api.md): the friends' HDV price tool — their keys
+  // and the decoding mapping served per client build.
+  if (pathname === '/api/sniffer/keys') {
+    if (request.method === 'GET') return json(await listKeys(env.DB));
+    if (request.method === 'POST') {
+      const validation = validateKeyLabel(await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
+      // The key itself is in this answer only: never stored, never readable again.
+      return json(await createKey(env.DB, validation.value), 201);
+    }
+  }
+  const revokedKeyId = pathname.match(/^\/api\/sniffer\/keys\/([^/]+)\/revoke$/)?.[1];
+  if (request.method === 'POST' && revokedKeyId) {
+    const revoked = await revokeKey(env.DB, decodeURIComponent(revokedKeyId));
+    return revoked ? json(revoked) : json({ error: 'Clé introuvable.' }, 404);
+  }
+  if (pathname === '/api/sniffer/mappings') {
+    if (request.method === 'GET') return json(await listMappings(env.DB));
+    if (request.method === 'POST') {
+      const validation = validateMappingUpload(await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
+      return json(await uploadMapping(env.DB, validation.value), 201);
+    }
+  }
+  const activatedMappingId = pathname.match(/^\/api\/sniffer\/mappings\/(\d+)\/activate$/)?.[1];
+  if (request.method === 'POST' && activatedMappingId) {
+    const activated = await activateMapping(env.DB, Number(activatedMappingId));
+    return activated ? json(activated) : json({ error: 'Mapping introuvable.' }, 404);
   }
 
   if (request.method === 'GET' && pathname === '/api/counters') return json(await listCounters(env.DB));
