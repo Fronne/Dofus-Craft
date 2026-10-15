@@ -13,6 +13,12 @@ const api = vi.hoisted(() => ({
   deleteMessage: vi.fn(),
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
+  listSnifferKeys: vi.fn(),
+  createSnifferKey: vi.fn(),
+  revokeSnifferKey: vi.fn(),
+  listSnifferMappings: vi.fn(),
+  uploadSnifferMapping: vi.fn(),
+  activateSnifferMapping: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -52,6 +58,8 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
     api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+    api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
+    api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -282,6 +290,71 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       const section = await pages();
       expect(await within(section).findByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
       expect(within(section).queryByRole('button', { name: /^(Activer|Désactiver)/ })).not.toBeInTheDocument();
+    });
+  });
+
+  // specs/057-sniffer-admin (contracts/admin-sniffer-api.md « Interface »).
+  describe('outil des amis : clés et mapping (specs/057)', () => {
+    const alice = { id: 'key-a', label: 'Alice', createdAt: '2026-10-15T08:00:00.000Z', revokedAt: null, lastSeenAt: null, rowsToday: 0 };
+    const keys = async () => (await screen.findByRole('heading', { name: 'Clés sniffer' })).closest('section') as HTMLElement;
+    const mappings = async () => (await screen.findByRole('heading', { name: 'Mapping' })).closest('section') as HTMLElement;
+    const mapping = (id: number, active: boolean) => ({ id, build: '3.7.10.10', uploadedAt: '2026-10-15T08:00:00.000Z', active, keymapBytes: 991, schemaBytes: 5766 });
+
+    it('shows a new key once, until it is dismissed', async () => {
+      api.createSnifferKey.mockResolvedValue({ status: 'ok', value: { key: alice, secret: 'dcp_secret' } });
+      api.listSnifferKeys.mockResolvedValueOnce({ status: 'ok', value: [] }).mockResolvedValue({ status: 'ok', value: [alice] });
+      render(<AdminPage />);
+      const section = await keys();
+      fireEvent.change(within(section).getByLabelText("Nom de l'ami"), { target: { value: 'Alice' } });
+      fireEvent.click(within(section).getByRole('button', { name: 'Créer une clé' }));
+      expect(await within(section).findByText('dcp_secret')).toBeInTheDocument();
+      expect(api.createSnifferKey).toHaveBeenCalledWith('Alice');
+      expect(within(section).getByText('Cette clé ne sera plus affichée : transmettez-la maintenant.')).toBeInTheDocument();
+      expect(await within(section).findByText(/dernier envoi : jamais/)).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: "J'ai copié la clé" }));
+      expect(within(section).queryByText('dcp_secret')).not.toBeInTheDocument();
+    });
+
+    it('revokes a key only after confirmation (FR-006)', async () => {
+      api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [alice] });
+      api.revokeSnifferKey.mockResolvedValue({ status: 'ok', value: { ...alice, revokedAt: '2026-10-15T09:00:00.000Z' } });
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+      render(<AdminPage />);
+      const section = await keys();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Révoquer' }));
+      expect(confirm).toHaveBeenCalledWith('Révoquer la clé de Alice ? Son outil ne pourra plus envoyer de prix.');
+      expect(api.revokeSnifferKey).not.toHaveBeenCalled();
+      fireEvent.click(within(section).getByRole('button', { name: 'Révoquer' }));
+      expect(await within(section).findByText('Clé de Alice révoquée.')).toBeInTheDocument();
+      expect(api.revokeSnifferKey).toHaveBeenCalledWith('key-a');
+    });
+
+    it("sends the files' text and shows the server's refusal", async () => {
+      api.uploadSnifferMapping.mockResolvedValue({ status: 'invalid', field: 'keymap', error: "keymap.json n'a pas d'entrée price_list." });
+      render(<AdminPage />);
+      const section = await mappings();
+      fireEvent.change(within(section).getByLabelText('Build du client'), { target: { value: '3.7.10.10' } });
+      // jsdom's File has no text(); browsers do.
+      const file = (content: string, name: string) => Object.assign(new File([content], name), { text: async () => content });
+      fireEvent.change(within(section).getByLabelText('keymap.json'), { target: { files: [file('{"a":1}', 'keymap.json')] } });
+      fireEvent.change(within(section).getByLabelText('schema.json'), { target: { files: [file('{}', 'schema.json')] } });
+      // Submitted directly: jsdom's `required` check reads its own file list, not the one set above.
+      fireEvent.submit(within(section).getByRole('button', { name: 'Publier' }).closest('form')!);
+      expect(await within(section).findByRole('alert')).toHaveTextContent("keymap.json n'a pas d'entrée price_list.");
+      expect(api.uploadSnifferMapping).toHaveBeenCalledWith({ build: '3.7.10.10', keymap: '{"a":1}', schema: '{}' });
+    });
+
+    it('goes back to an older mapping after confirmation (US4)', async () => {
+      api.listSnifferMappings.mockResolvedValueOnce({ status: 'ok', value: [mapping(2, true), mapping(1, false)] })
+        .mockResolvedValue({ status: 'ok', value: [mapping(2, false), mapping(1, true)] });
+      api.activateSnifferMapping.mockResolvedValue({ status: 'ok', value: mapping(1, true) });
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      render(<AdminPage />);
+      const section = await mappings();
+      expect(await within(section).findByText('Build 3.7.10.10')).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: 'Réactiver' }));
+      expect(await within(section).findByText('Mapping n° 1 réactivé pour 3.7.10.10.')).toBeInTheDocument();
+      expect(api.activateSnifferMapping).toHaveBeenCalledWith(1);
     });
   });
 });
