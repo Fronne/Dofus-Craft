@@ -23,6 +23,10 @@ describe('community price API service (Cloudflare Worker client)', () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...base, latestOrigin: 'bot' }), { status: 200 })));
       await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'found', price: { ...base, latestOrigin: 'bot' } });
 
+      // specs/056-sniffer-batch-prices: a price a friend's HDV sniffer sent keeps its origin.
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...base, latestOrigin: 'sniffer' }), { status: 200 })));
+      await expect(getCommunityPrice('r1', 's1')).resolves.toEqual({ status: 'found', price: { ...base, latestOrigin: 'sniffer' } });
+
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...base, latestOrigin: 'robot' }), { status: 200 })));
       const lookup = await getCommunityPrice('r1', 's1');
       expect(lookup.status).toBe('found');
