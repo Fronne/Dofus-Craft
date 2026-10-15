@@ -91,7 +91,7 @@ export function SnifferMappingsEditor() {
       <form key={formKey} className="admin-sniffer-form" onSubmit={(event) => void publish(event)}>
         <label>
           Build du client
-          <input value={build} placeholder="3.7.10.10" inputMode="decimal" onChange={(event) => setBuild(event.target.value)} required />
+          <input value={build} placeholder="3.7.10.10" onChange={(event) => setBuild(event.target.value)} required />
         </label>
         <label>
           keymap.json

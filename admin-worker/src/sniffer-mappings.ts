@@ -58,7 +58,8 @@ function missingDefinition(schema: Record<string, unknown>): string | undefined 
     for (const field of fields) {
       const of = isObject(field) ? field.of : undefined;
       if (typeof of !== 'string' || seen.has(of)) continue;
-      if (of.startsWith('_') || !isObject(schema[of])) return of;
+      // Own definitions only: `of: "__proto__"` must not resolve to Object.prototype.
+      if (of.startsWith('_') || !Object.hasOwn(schema, of) || !isObject(schema[of])) return of;
       seen.add(of);
       queue.push(of);
     }

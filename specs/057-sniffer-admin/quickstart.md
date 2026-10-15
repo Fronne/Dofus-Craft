@@ -14,6 +14,8 @@ déposé est celui de `snifferConfigResponse`).
 
 Voir research.md R9 : rien dans le dépôt ne contourne Access.
 
+Deux `wrangler dev` ne peuvent pas ouvrir la même D1 locale en même temps (`SQLITE_BUSY`) : lancer l'admin de test et l'API **à tour de rôle** sur le même `--persist-to`. Prendre un dossier sans espaces (sinon `d1 execute --local` répond « internal error »). L'entrée de test doit ajouter un en-tête `Cf-Access-Jwt-Assertion` factice avant `handleApi` : `verifyOwner` refuse une requête sans en-tête avant d'appeler le vérificateur. Après coup, arrêter les processus `workerd` restants avant de supprimer le dossier.
+
 1. Une base locale partagée (`--persist-to <dossier>`), au schéma de `worker/schema.sql` ou avec
    les migrations 0018 et 0019 appliquées par `wrangler d1 execute … --local --persist-to <dossier>`.
 2. `npm run admin:build`, puis un `wrangler dev` de test (config et entrée hors du dépôt) qui appelle

@@ -89,6 +89,9 @@ describe('validateMappingUpload (specs/057, FR-008)', () => {
     [{ schema: '{"price_list": {"fields": [{"of": "price_offer"}]}}' }, 'schema.json : la définition « price_offer » citée par price_list est absente.', 'schema'],
     [{ schema: '{"price_list": {"fields": [{"of": "a"}]}, "a": {"fields": [{"of": "b"}]}}' }, 'schema.json : la définition « b » citée par price_list est absente.', 'schema'],
     [{ schema: '{"price_list": {"fields": [{"of": "_note"}]}, "_note": {"fields": []}}' }, 'schema.json : la définition « _note » citée par price_list est absente.', 'schema'],
+    [{ schema: '{"price_list": {"fields": [{"of": "constructor"}, {"of": "hasOwnProperty"}]}}' }, 'schema.json : la définition « constructor » citée par price_list est absente.', 'schema'],
+    [{ schema: '{"price_list": {"fields": [{"of": "valueOf"}]}}' }, 'schema.json : la définition « valueOf » citée par price_list est absente.', 'schema'],
+    [{ schema: '{"price_list": {"fields": [{"of": "__proto__"}]}}' }, 'schema.json : la définition « __proto__ » citée par price_list est absente.', 'schema'],
   ])('refuses %j', (fields, error, field) => {
     expect(refusal(fields)).toEqual({ ok: false, error, field });
   });
