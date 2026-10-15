@@ -58,10 +58,11 @@ export function summarizeByItem(lines: PurchaseLine[]): ItemSummary[] {
 }
 
 // specs/046-hdv-huzounet-load: 'external' is a price the API read on Huzounet, not one shared by the group.
-export type PriceOrigin = 'manual' | 'capture' | 'bot' | 'external';
+// specs/056-sniffer-batch-prices: 'sniffer' is a price a friend's HDV sniffer sent in a batch.
+export type PriceOrigin = 'manual' | 'capture' | 'bot' | 'external' | 'sniffer';
 
 export function isPriceOrigin(value: unknown): value is PriceOrigin {
-  return value === 'manual' || value === 'capture' || value === 'bot' || value === 'external';
+  return value === 'manual' || value === 'capture' || value === 'bot' || value === 'external' || value === 'sniffer';
 }
 
 // --- Forgemagie API shapes (contracts/fm-site-api.md) ---
