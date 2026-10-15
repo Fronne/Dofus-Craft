@@ -6,8 +6,8 @@
 // captured ladders after a few weeks of uploads.
 // A lot whose unit price is more than this factor away (above or below) from the other lots is aberrant.
 export const LADDER_OUTLIER_FACTOR = 3;
-// The biggest lot is kept unless its unit price is more than this much above the cheapest lot kept.
-export const BIGGER_LOT_MAX_PREMIUM = 0.2;
+// The biggest lot is kept unless its unit price is more than this much above the median of the lots kept.
+export const BIGGER_LOT_MAX_PREMIUM = 0.1;
 
 export const LOT_SIZES = [1, 10, 100, 1000] as const;
 export type LotSize = (typeof LOT_SIZES)[number];
@@ -28,13 +28,18 @@ function isAberrant(unit: number, reference: number): boolean {
   return unit > reference * LADDER_OUTLIER_FACTOR || unit < reference / LADDER_OUTLIER_FACTOR;
 }
 
-// Step 5: the biggest lot, unless its unit price is more than BIGGER_LOT_MAX_PREMIUM above the cheapest
-// lot kept — then the next smaller lot, tested again. The cheapest lot always passes, so a lot is found.
-// The aim: a price at which the quantity can really be bought.
+// Step 5: the biggest lot, unless its unit price is more than BIGGER_LOT_MAX_PREMIUM above the median of
+// the lots kept — then the next smaller lot, tested again. The cheapest lot sits at or under the median,
+// so a lot is always found. The aim: a price at which the quantity can really be bought.
+// The reference is the median, not the cheapest lot: measured against the cheapest, one cheap unit
+// dragged the price down from lots that all agree — {1: 100, 10: 2 680, 100: 26 989, 1000: 269 900}
+// kept 100 a unit, x1 being within the factor 3 of the others and so not set aside. Against the median,
+// a lone cheaper lot loses to the bigger lots of the consensus, a bigger lot dearer than the consensus
+// is passed over, and a bigger lot cheaper than it is always taken.
 function biggestFairLot(lots: Lot[]): Lot {
-  const cheapest = Math.min(...lots.map((lot) => lot.unit));
+  const reference = median(lots.map((lot) => lot.unit));
   const bySizeDescending = [...lots].sort((a, b) => b.size - a.size);
-  return bySizeDescending.find((lot) => lot.unit <= cheapest * (1 + BIGGER_LOT_MAX_PREMIUM)) ?? bySizeDescending[0];
+  return bySizeDescending.find((lot) => lot.unit <= reference * (1 + BIGGER_LOT_MAX_PREMIUM)) ?? bySizeDescending[0];
 }
 
 // Undefined only when no lot is on sale; otherwise a price is always kept (step 6).

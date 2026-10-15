@@ -58,7 +58,7 @@ ressources connues, un équipement) ; vérifier la réponse `accepted: 2` et un 
 
 À partir du ladder, l'API retient un seul prix unitaire, selon la « Règle du prix unitaire » : on
 écarte un lot aberrant par rapport aux autres lots du même ladder, puis on prend le plus gros lot
-dont le prix unitaire reste proche du moins cher. Un prix est toujours retenu.
+dont le prix unitaire ne dépasse pas la médiane des lots restants. Un prix est toujours retenu.
 
 **Pourquoi P1** : un prix unitaire faux pollue la médiane affichée à tous les joueurs.
 
@@ -77,8 +77,12 @@ dont le prix unitaire reste proche du moins cher. Un prix est toujours retenu.
 5. **Étant donné** que tous les lots ont doublé ensemble par rapport à la médiane communautaire,
    **alors** le nouveau prix est retenu (vrai mouvement de prix), la médiane communautaire n'étant
    pas consultée avec trois lots ou plus.
-6. **Étant donné** que le plus gros lot restant a un prix unitaire plus de 20 % au-dessus du moins
-   cher restant, **alors** on descend au lot plus petit suivant et on reteste.
+6. **Étant donné** que le plus gros lot restant a un prix unitaire plus de 10 % au-dessus de la
+   médiane des lots restants, **alors** on descend au lot plus petit suivant et on reteste.
+7. **Étant donné** un lot isolé moins cher que les autres qui s'accordent (ladder observé
+   100 / 2 680 / 26 989 / 269 900), **alors** le plus gros lot du consensus est retenu (269,9 au lot
+   de 1000, pas 100). Un gros lot moins cher que la médiane est toujours retenu ; un gros lot plus
+   cher qu'elle ne l'est pas (200 / 200 / 200 / 400 par unité : le lot de 100).
 
 ---
 
@@ -161,7 +165,7 @@ plafond journalier de la clé (429).
 - **FR-009** : Seules les ressources connues du site (ingrédients des recettes, nourritures de
   familier, runes et autres ressources dont le site affiche le prix) DOIVENT être acceptées.
 - **FR-010** : Le prix unitaire DOIT suivre exactement la « Règle du prix unitaire » ; le facteur 3
-  et le seuil de 20 % sont des constantes nommées, documentées comme à recalibrer.
+  et le seuil de 10 % sont des constantes nommées, documentées comme à recalibrer.
 - **FR-011** : La médiane connue avant l'envoi et l'écart à celle-ci DOIVENT être calculés et
   stockés comme pour une saisie manuelle ; un écart ne DOIT jamais faire refuser un prix.
 - **FR-012** : Chaque clé DOIT être plafonnée à 5000 contributions enregistrées par jour (UTC).
