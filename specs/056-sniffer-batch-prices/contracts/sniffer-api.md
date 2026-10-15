@@ -11,7 +11,7 @@ absente → `401 {"error":"unauthorized"}` (avant tout autre contrôle).
 ```json
 200 {
   "minVersion": "0.1.0",
-  "downloadUrl": "https://github.com/Miou-zora/SniffSniffSquared/releases/latest",
+  "downloadUrl": "https://github.com/berthiercyril/dofus-craft-prices/releases/latest",
   "servers": ["brial", "dakal", "draconiros", "hell-mina", "imagiro", "kourial", "mikhal",
               "ombre", "orukam", "rafal", "salar", "tal-kasha", "tylezia"],
   "mapping": { "id": 7, "build": "3.7.10.10", "keymap": {}, "schema": {} }
