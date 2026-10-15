@@ -50,15 +50,60 @@ describe('worker/migrations', () => {
   it('lead to the same Forgemagie and external-price tables as schema.sql', () => {
     const fresh = freshDatabase();
     const migrated = new DatabaseSync(':memory:');
-    // The one older table these migrations touch (0007 adds its `origin` column).
-    migrated.exec('CREATE TABLE community_price_contributions (id TEXT PRIMARY KEY)');
+    // The one older table these migrations touch (0007 adds its `origin` column, 0019 rebuilds it), as it
+    // was before 0007.
+    migrated.exec(`CREATE TABLE community_price_contributions (id TEXT PRIMARY KEY, resource_id TEXT NOT NULL,
+      server_id TEXT NOT NULL, amount_kamas INTEGER NOT NULL, device_id TEXT NOT NULL DEFAULT '',
+      median_at_submission_kamas INTEGER, deviation_percent REAL, kind TEXT NOT NULL DEFAULT 'resource',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')))`);
+    migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
     const directory = resolve(process.cwd(), 'worker/migrations');
     for (const file of readdirSync(directory).filter((name) => name >= '0007').sort()) {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
     }
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name === 'site_settings');
+    // specs/056-sniffer-batch-prices: so do the sniffer tables (0018).
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
+    // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
+    expect(columns(migrated, 'community_price_contributions')).toEqual(columns(fresh, 'community_price_contributions'));
+    expect(migrated.prepare('SELECT id, origin FROM community_price_contributions').all()).toEqual([{ id: 'kept', origin: 'manual' }]);
+    migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('s', '1', 'mikhal', 10, 'sniffer')");
+    expect(() => migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('x', '1', 'mikhal', 10, 'robot')")).toThrow();
+  });
+
+  it('can run the origin rebuild (0019) again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('a', '1', 'mikhal', 10, 'sniffer')");
+    const rebuild = readFileSync(resolve(process.cwd(), 'worker/migrations/0019_add_sniffer_origin.sql'), 'utf8');
+    db.exec(rebuild);
+    db.exec(rebuild);
+    expect(db.prepare('SELECT id, origin FROM community_price_contributions').all()).toEqual([{ id: 'a', origin: 'sniffer' }]);
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'community_price_contributions' AND name NOT LIKE 'sqlite_%'").all())
+      .toEqual([{ name: 'idx_community_price_contributions_lookup' }]);
+  });
+
+  it('never throws away the copy of a stopped 0019 run', () => {
+    const rebuild = readFileSync(resolve(process.cwd(), 'worker/migrations/0019_add_sniffer_origin.sql'), 'utf8');
+    const statements = rebuild.split(';').map((statement) => statement.trim()).filter((statement) => /^(CREATE|INSERT|DROP|ALTER)/m.test(statement));
+    const insert = (db: InstanceType<typeof DatabaseSync>, id: string) =>
+      db.exec(`INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('${id}', '1', 'mikhal', 10)`);
+
+    // Stopped after a partial copy: the run again completes it.
+    const partial = freshDatabase();
+    insert(partial, 'a');
+    insert(partial, 'b');
+    partial.exec(`${statements[0]}; INSERT INTO community_price_contributions_new (id, resource_id, server_id, amount_kamas) VALUES ('a', '1', 'mikhal', 10)`);
+    partial.exec(rebuild);
+    expect(partial.prepare('SELECT id FROM community_price_contributions ORDER BY id').all()).toEqual([{ id: 'a' }, { id: 'b' }]);
+
+    // Stopped after the DROP: the run again fails without touching the copy, the last two statements finish.
+    const dropped = freshDatabase();
+    insert(dropped, 'a');
+    for (const statement of statements.slice(0, 3)) dropped.exec(statement);
+    expect(() => dropped.exec(rebuild)).toThrow();
+    for (const statement of statements.slice(-2)) dropped.exec(statement);
+    expect(dropped.prepare('SELECT id FROM community_price_contributions').all()).toEqual([{ id: 'a' }]);
   });
 });

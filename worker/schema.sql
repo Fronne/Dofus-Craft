@@ -31,8 +31,9 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- specs/016-shared-item-prices: 'item' for an item's shared HDV price, 'resource' otherwise.
   kind TEXT NOT NULL DEFAULT 'resource' CHECK (kind IN ('resource', 'item')),
   -- specs/025-rune-purchase-import: who or what recorded the price (FR-011) — a manual entry, a
-  -- capture imported on the site, or a purchase sent by the Discord bot.
-  origin TEXT NOT NULL DEFAULT 'manual' CHECK (origin IN ('manual', 'capture', 'bot')),
+  -- capture imported on the site, or a purchase sent by the Discord bot. specs/056: or a price sent by
+  -- the friends' HDV tool ('sniffer', see migrations/0019_add_sniffer_origin.sql).
+  origin TEXT NOT NULL DEFAULT 'manual' CHECK (origin IN ('manual', 'capture', 'bot', 'sniffer')),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
@@ -274,4 +275,38 @@ CREATE TABLE IF NOT EXISTS external_price_sync (
   last_error TEXT,
   last_error_at TEXT,
   PRIMARY KEY (source, server_id)
+);
+
+-- specs/056-sniffer-batch-prices (migrations/0018_add_sniffer_tables.sql): the friends' price tool.
+
+-- One key per friend. Only the key's SHA-256 (lowercase hex) is stored, never the key itself. `id`
+-- becomes the device_id of every contribution sent with the key. A revoked key is refused (401).
+CREATE TABLE IF NOT EXISTS sniffer_keys (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  revoked_at TEXT,
+  last_seen_at TEXT
+);
+
+-- keymap.json + schema.json for one game client build, kept as history so an older one can be made
+-- active again. At most one active mapping per build.
+CREATE TABLE IF NOT EXISTS sniffer_mappings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  build TEXT NOT NULL,
+  keymap_json TEXT NOT NULL,
+  schema_json TEXT NOT NULL,
+  uploaded_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  active INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0, 1))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sniffer_mappings_active_build
+  ON sniffer_mappings (build) WHERE active = 1;
+
+-- Prices written by a key on a UTC day (YYYY-MM-DD), for the daily cap of POST /community-price/batch.
+CREATE TABLE IF NOT EXISTS sniffer_daily_usage (
+  key_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  rows_written INTEGER NOT NULL DEFAULT 0 CHECK (rows_written >= 0),
+  PRIMARY KEY (key_id, day)
 );

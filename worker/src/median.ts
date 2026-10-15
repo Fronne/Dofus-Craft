@@ -35,7 +35,8 @@ export function computeCommunityMedian(amounts: number[]): { medianAmountKamas: 
 }
 
 // specs/025-rune-purchase-import: who or what recorded a price. Rows read without it count as manual.
-export type PriceOrigin = 'manual' | 'capture' | 'bot';
+// specs/056: 'sniffer' for a price sent by the friends' HDV tool (POST /community-price/batch).
+export type PriceOrigin = 'manual' | 'capture' | 'bot' | 'sniffer';
 
 export type ContributionRow = { amountKamas: number; createdAt: string; deviceId: string; origin?: PriceOrigin };
 

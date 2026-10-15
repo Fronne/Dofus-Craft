@@ -40,6 +40,10 @@ namespace_id = "1001"
 # "1" turns the reading of Huzounet's prices on (scheduled runs and POST /external-prices/refresh).
 HUZOUNET_SYNC = "1"
 SITE_URL = "https://dofus-craft.handy-apps.workers.dev"
+# specs/056-sniffer-batch-prices (contracts/sniffer-api.md): the friends' price tool refuses to send
+# when older than SNIFFER_MIN_VERSION (426 on POST /community-price/batch) and shows this download link.
+SNIFFER_MIN_VERSION = "0.1.0"
+SNIFFER_DOWNLOAD_URL = "https://github.com/Miou-zora/SniffSniffSquared/releases/latest"
 
 # Forgemagie secrets, not declared here — set each one with:
 #   wrangler secret put <NAME> --config worker/wrangler.toml

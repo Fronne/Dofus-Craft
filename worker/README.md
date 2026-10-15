@@ -80,6 +80,25 @@ player. The hour of a tab is kept in `external_price_sync` (`source = 'huzounet-
 The second cron of `wrangler.toml` drives the scheduled read. **Check it against the Worker's
 triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
 
+## Friends' HDV price tool (specs/056-sniffer-batch-prices)
+
+`GET /sniffer/config` and `POST /community-price/batch` serve the friends' price tool
+(SniffSniffSquared). Contract: `../specs/056-sniffer-batch-prices/contracts/sniffer-api.md`.
+
+- Each friend has a key in `sniffer_keys`, stored as its SHA-256 only; the public
+  `COMMUNITY_API_KEY` is never accepted there. Keys and decoding mappings (`sniffer_mappings`, one
+  active per game build) are created from the admin (phase 3); until then, by hand in SQL.
+- Every price is recorded with `origin = 'sniffer'` and the key's id as `device_id`, at most
+  `DAILY_ROW_LIMIT` (5000) a key and UTC day (`sniffer_daily_usage`).
+- The minimum tool version and its download link are `SNIFFER_MIN_VERSION` /
+  `SNIFFER_DOWNLOAD_URL` in `wrangler.toml` [vars].
+- Migrations: `npm run worker:db:migrate-sniffer-tables` (0018), then
+  `npm run worker:db:migrate-sniffer-origin` (0019). 0019 rebuilds `community_price_contributions`
+  and so writes every existing row once: count them first against the free plan's daily write quota.
+  Export a backup first (`wrangler d1 export --remote`) and apply it outside the Huzounet runs
+  (02:00-05:00 UTC): a contribution written during the rebuild could be lost. A stopped run is
+  resumed as explained at the top of the migration.
+
 ## Same code as production
 
 The source of the Worker deployed on 2026-10-02 was lost and written back from the deployed code
@@ -98,6 +117,10 @@ specs/046, the HDV page's hourly limit (`src/huzounet.ts`, `src/index.ts`).
   via `tests/unit/huzounet-*.test.ts` and `tests/unit/external-price.test.ts`.
 - `src/price-history.ts` — every shared price of the last 24 hours, 7 days and 30 days, outliers dropped
   per window, no device id (specs/018), unit-tested via `tests/unit/price-history-aggregation.test.ts`.
+- `src/sniffer.ts`, `src/unit-price.ts` — the friends' price tool (specs/056): routes, and the unit
+  price kept from an HDV ladder; `src/servers.ts` (the 13 servers) and `src/resource-catalogue.ts`
+  (the resources whose price the site shows) are shared with `src/huzounet.ts`. Tested via
+  `tests/unit/sniffer-*.test.ts`.
 - `src/median.ts` — pure statistics (median + outlier exclusion), unit-tested from the repo root
   via `tests/unit/community-price-median.test.ts`.
 - `src/fm/` — the Forgemagie routes (specs/025): `router.ts` (every `/fm/*` path, routed before the

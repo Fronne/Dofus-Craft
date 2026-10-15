@@ -1,7 +1,7 @@
 import { HUZOUNET_SOURCE, type ExternalDb, type ExternalStatement } from './external-price';
 import equipmentItems from './equipment-items.json';
-import priceableItems from './fm/priceable-items.json';
-import pricedExtras from './priced-extras.json';
+import { RESOURCE_IDS } from './resource-catalogue';
+import { HUZOUNET_SERVER_IDS as SERVER_IDS } from './servers';
 
 // specs/045-restore-production-worker: reading the HDV prices Huzounet publishes (huzounet.fr), with its
 // author's permission and inside the limits agreed with him: 50 items a request, one request a second,
@@ -15,28 +15,8 @@ const DEFAULT_MAX_REQUESTS = 12;
 const DISCOVERY_DAY = 1;
 const MAX_KAMAS = 2_000_000_000;
 
-// The site's server identifiers and Huzounet's.
-const SERVER_IDS: Record<string, number> = {
-  brial: 351,
-  dakal: 353,
-  draconiros: 295,
-  'hell-mina': 294,
-  imagiro: 291,
-  kourial: 355,
-  mikhal: 354,
-  ombre: 50,
-  orukam: 292,
-  rafal: 350,
-  salar: 352,
-  'tal-kasha': 290,
-  tylezia: 293,
-};
 const READ_SERVERS = ['mikhal'];
 
-const RESOURCE_IDS = [...new Set([
-  ...Object.values(priceableItems.items as Record<string, string | null>).filter((id): id is string => id !== null),
-  ...pricedExtras.ids,
-])];
 const EQUIPMENT_IDS: string[] = equipmentItems.ids;
 
 type Fetcher = (url: string, init: { headers: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;

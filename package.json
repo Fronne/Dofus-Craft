@@ -32,6 +32,8 @@
     "worker:db:migrate-channel-commands": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0015_add_channel_commands.sql --remote",
     "worker:db:migrate-site-settings": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0016_add_site_settings.sql --remote",
     "worker:db:migrate-hdv-page-setting": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0017_add_hdv_page_setting.sql --remote",
+    "worker:db:migrate-sniffer-tables": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0018_add_sniffer_tables.sql --remote",
+    "worker:db:migrate-sniffer-origin": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0019_add_sniffer_origin.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",
     "admin:deploy": "wrangler deploy --config admin-worker/wrangler.toml"

@@ -130,15 +130,29 @@ export async function communityPricesResponse(db: ContributionDb, url: URL): Pro
 // is compared against (the community median for a resource, the latest shared price for an item) and
 // the resulting deviation are resolved here, never trusted from the client, before the insert.
 export async function insertContribution(db: ContributionDb, contribution: Contribution): Promise<string> {
-  const { resourceId, serverId, amountKamas, deviceId, kind, origin } = contribution;
+  const { resourceId, serverId, kind } = contribution;
   const reference = kind === 'item'
     ? await readLatestContribution(db, resourceId, serverId).then((latest) =>
       (latest ? { medianAmountKamas: latest.amountKamas } : undefined))
     : await fetchCurrentMedian(db, resourceId, serverId);
+  const { id, statement } = contributionInsert(db, contribution, reference);
+  await statement.run();
+  return id;
+}
+
+// The insert itself, given the reference already resolved by the caller. specs/056: shared with
+// POST /community-price/batch, which reads the medians of a whole batch at once (fetchCurrentMedians)
+// and runs every insert in one db.batch.
+export function contributionInsert<S>(
+  db: { prepare(sql: string): { bind(...values: unknown[]): S } },
+  contribution: Contribution,
+  reference: { medianAmountKamas: number } | undefined,
+): { id: string; statement: S } {
+  const { resourceId, serverId, amountKamas, deviceId, kind, origin } = contribution;
   const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, reference);
   const id = crypto.randomUUID();
-  await db.prepare(
+  const statement = db.prepare(
     `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin).run();
-  return id;
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin);
+  return { id, statement };
 }

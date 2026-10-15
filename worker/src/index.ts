@@ -10,6 +10,7 @@ import { siteSettingsResponse } from './site-settings';
 import { cachedRead, clearReadCache } from './read-cache';
 import { CORS_HEADERS } from './cors';
 import { handleFm } from './fm/router';
+import { handleSniffer } from './sniffer';
 
 export interface Env {
   DB: D1Database;
@@ -24,6 +25,9 @@ export interface Env {
   SITE_URL?: string;
   // specs/045-restore-production-worker: "1" turns the reading of Huzounet's prices on (wrangler.toml).
   HUZOUNET_SYNC?: string;
+  // specs/056-sniffer-batch-prices: what GET /sniffer/config tells the friends' tool (wrangler.toml).
+  SNIFFER_MIN_VERSION?: string;
+  SNIFFER_DOWNLOAD_URL?: string;
 }
 
 // The weekly retention's cron (wrangler.toml); any other trigger is the reading of Huzounet's prices.
@@ -178,6 +182,15 @@ export default {
     // specs/025-rune-purchase-import: the Forgemagie routes authenticate on their own (the bot's key or
     // the site's session token), so they are routed before the shared app key check below.
     if (url.pathname.startsWith('/fm/')) return handleFm(request, url, env);
+
+    // specs/056-sniffer-batch-prices: the friends' HDV price tool authenticates with its own key
+    // (sniffer_keys), so its routes are also routed before the shared app key check below.
+    const sniffer = await handleSniffer(request, url, env);
+    if (sniffer) {
+      // specs/021 (FR-013): this isolate's cached reads no longer reflect the database.
+      if (sniffer.wrote) clearReadCache();
+      return json(sniffer.body, sniffer.status, { 'Cache-Control': 'no-store' });
+    }
 
     // Writes (contribute) require the shared app key, a light deterrent against requests from
     // outside this app — never a player identity (FR-010 still holds: the key is the same for
