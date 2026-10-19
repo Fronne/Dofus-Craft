@@ -162,7 +162,7 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
     else kept.push(observation);
   });
 
-  // specs/058: each ladder also writes the price of every lot on sale. The daily cap counts resources
+  // specs/059: each ladder also writes the price of every lot on sale. The daily cap counts resources
   // (5000 a day), not these extra rows.
   const lotWrites = kept.map(({ itemId, ladder }) => lotPriceStatements(env.DB, serverId, itemId, ladder, keyId, now));
   const day = now.toISOString().slice(0, 10);

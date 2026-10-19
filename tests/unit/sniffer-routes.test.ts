@@ -61,7 +61,7 @@ describe('POST /community-price/batch (specs/056, US1)', () => {
       { resource_id: RESOURCE, server_id: 'mikhal', amount_kamas: 22_900, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
       { resource_id: OTHER_RESOURCE, server_id: 'mikhal', amount_kamas: 500, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
     ]);
-    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 2 }]); // resources only: the lot prices don't count (specs/058)
+    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 2 }]); // resources only: the lot prices don't count (specs/059)
     const key = test.sqlite.prepare('SELECT last_seen_at FROM sniffer_keys WHERE id = ?').get(KEY_ID) as { last_seen_at: string | null };
     expect(key.last_seen_at).not.toBeNull();
   });
