@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { useActiveServer } from '../../app/ServerContext';
+import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { Icon } from '../../components/Icon';
 import { getItemEffectRanges } from '../../data/catalogue-repository';
 import {
@@ -33,7 +34,7 @@ const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 const date = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 type PickedItem = { id: string; name: string; level?: number; imageUrl?: string };
-type Range = { effectId: number; from: number; to: number };
+type Range = { effectId: number; from: number; to: number; icon?: string };
 
 const parse = (text: string): number => (text.trim() === '' ? NaN : Number(text.replace(/\s/g, '').replace(',', '.')));
 
@@ -69,7 +70,7 @@ function mergeRanges(ranges: Range[]): Range[] {
   const merged = new Map<number, Range>();
   for (const range of ranges) {
     const known = merged.get(range.effectId);
-    merged.set(range.effectId, known ? { effectId: range.effectId, from: known.from + range.from, to: known.to + range.to } : range);
+    merged.set(range.effectId, known ? { effectId: range.effectId, from: known.from + range.from, to: known.to + range.to, icon: known.icon ?? range.icon } : range);
   }
   return [...merged.values()];
 }
@@ -371,6 +372,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <tr role="row" key={line.index} className={isBest ? 'brisage-best' : undefined}>
                             <th scope="row" role="rowheader" data-label="Ligne">
                               <span className="brisage-line-name">
+                                {line.range.icon && <CharacteristicIcon asset={line.range.icon} size={26} />}
                                 {label} <span className="fm-note">{rangeText(line.range)}</span>
                                 {isBest && <span className="brisage-badge">Meilleur focus</span>}
                               </span>

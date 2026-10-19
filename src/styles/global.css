@@ -2492,3 +2492,9 @@ select:focus {
   .brisage-table tfoot th { grid-column: 1 / -1; padding: 0; }
   .brisage-table tfoot td:empty { display: none; }
 }
+
+/* Brisage fields: no halo around the focused field, no up/down arrows on the numbers. */
+.brisage-block input:focus, .brisage-block input:focus-visible { box-shadow: none; border-color: var(--border-strong); outline: none; }
+.brisage-block input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+.brisage-block input[type='number']::-webkit-inner-spin-button, .brisage-block input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.brisage-table .resource-display img { background: transparent; }
