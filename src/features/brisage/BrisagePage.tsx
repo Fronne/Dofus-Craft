@@ -191,7 +191,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   // A focus is only worth showing when it pays more than breaking normally (FR-013).
   const focusWins = best?.kind === 'focus' && best.gainKamas! >= 0;
   const missingNames = ok ? [...new Set(ok.options.flatMap((o) => o.missingRuneIds))].map((id) => RUNES.find((r) => r.id === id)?.name ?? id) : [];
-  const unconfirmed = breakable.map((range) => brisageStat(range.effectId)).filter((stat) => stat && !stat.confirmed).map((stat) => stat!.label);
   const gains = ok && normal?.gainKamas !== undefined && ok.thresholdCoefficient !== undefined
     ? strip(coefficient, ok.thresholdCoefficient).map((point) => ({
       ...point,
@@ -352,7 +351,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               <section className="panel brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
                   <h2 id="brisage-lines-title">Lignes de l'objet</h2>
-                  <span className="fm-note">Le jet moyen est proposé : tapez un jet pour le remplacer</span>
                 </div>
                 <div className="brisage-table-wrap">
                   <table className="brisage-table" role="table">
@@ -438,7 +436,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                 {ignoredCount > 0 && (
                   <p className="fm-note">{ignoredCount} ligne(s) sans poids ni rune connus ne sont pas comptées.</p>
                 )}
-                {unconfirmed.length > 0 && <p className="fm-note">Poids à confirmer par un relevé : {[...new Set(unconfirmed)].join(', ')}.</p>}
               </section>
 
               {gains.length > 0 && (
@@ -465,14 +462,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
           )}
         </section>
       )}
-
-      <div className="panel brisage-estimate" role="note">
-        <Icon name="info" size={18} />
-        <p>
-          <b>Tout est une estimation.</b> Le coefficient descend selon une formule mesurée sur des objets de niveau 40 ; le
-          calcul du focus est une <b>hypothèse non officielle</b>, à confirmer en jeu. Prix des runes : {priceMode === 'community' ? 'prix partagés' : 'vos prix enregistrés'}.
-        </p>
-      </div>
     </>
   );
 }

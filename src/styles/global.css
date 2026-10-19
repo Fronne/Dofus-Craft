@@ -2424,8 +2424,6 @@ select:focus {
 }
 
 /* specs/060-page-brisage */
-.brisage-estimate { display: flex; gap: var(--space-3); align-items: flex-start; margin-bottom: var(--space-4); }
-.brisage-estimate p { margin: 0; font-size: .9rem; color: var(--text-muted); }
 .brisage-block { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
 .brisage-block h2, .brisage-block h3, .brisage-results h2, .brisage-results h3 { margin: 0; }
 .brisage-results { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }

@@ -104,7 +104,7 @@ gain par objet de cette option. Le détail des autres options n'est pas mis en a
   rentable, coefficient minimal de rentabilité, meilleure option de focus (ou absence de focus).
 - **FR-008** Les prix de runes viennent de la base ; plus de poids, rendements ni saisie de prix de rune
   sur la page principale (réglages avancés de la spec 060 retirés de l'interface).
-- **FR-009** Le bandeau d'estimation non officielle (H1–H4) reste visible mais court.
+- **FR-009** *(retiré à la demande du porteur, 2026-10-20)* La page n'affiche plus de bandeau d'estimation, ni la note sur les poids à confirmer, ni le texte d'aide sur le jet moyen.
 - **FR-010** Aucune valeur fabriquée : donnée manquante → message explicite (Constitution I).
 - **FR-011** *(planche « Page Brisage — proposition (tableau) » du canevas de design, validée le
   2026-10-19)* Disposition : objet (image, nom, niveau, coût, coefficient) → **verdict** → **tableau des

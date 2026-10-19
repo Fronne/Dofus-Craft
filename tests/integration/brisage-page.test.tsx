@@ -74,12 +74,6 @@ describe('Brisage page (specs/061)', () => {
     document.body.innerHTML = '';
   });
 
-  it('says on the page that everything is an estimate and the focus an unofficial hypothesis', async () => {
-    await openBrisage();
-    expect(screen.getByRole('note')).toHaveTextContent('Tout est une estimation');
-    expect(screen.getByRole('note')).toHaveTextContent('hypothèse non officielle');
-  });
-
   it('reads the cost from the price noted on Recherche and offers no level field', async () => {
     await pinnedItemPrices.save('mikhal', '777', 12345);
     await openBrisage();
