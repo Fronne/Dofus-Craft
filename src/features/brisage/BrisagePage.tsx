@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { useActiveServer } from '../../app/ServerContext';
 import { Icon } from '../../components/Icon';
@@ -16,6 +16,7 @@ import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import type { Item } from '../../domain/types';
 import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
+import { getBrisageSession, setBrisageSession, type BrisageSession } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { MIN_QUERY_LENGTH, useEquipmentSearch } from '../forgemagie/useEquipmentSearch';
 import { Kamas } from '../prices/PricesPage';
@@ -86,17 +87,18 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [manualCost, setManualCost] = useState('');
   const pickToken = useRef(0);
 
-  const pick = (found: Item) => {
+  /** Opens an item; `restore` brings back what was typed on it before a reload. */
+  const openItem = (picked: PickedItem, restore?: Pick<BrisageSession, 'rolls' | 'coefficientText' | 'manualCost'>) => {
     const token = ++pickToken.current;
-    setItem({ id: found.id, name: found.name, level: found.level, imageUrl: found.imageUrl });
+    setItem(picked);
     setQuery('');
     setRanges([]);
-    setRolls({});
-    setCoefficientText('');
-    setManualCost('');
-    setStored(serverId ? getStoredCoefficient(serverId, found.id) : undefined);
+    setRolls(restore?.rolls ?? {});
+    setCoefficientText(restore?.coefficientText ?? '');
+    setManualCost(restore?.manualCost ?? '');
+    setStored(serverId ? getStoredCoefficient(serverId, picked.id) : undefined);
     setLoadState('loading');
-    getItemEffectRanges(found.id)
+    getItemEffectRanges(picked.id)
       .then((result) => {
         if (pickToken.current !== token) return;
         setRanges(result);
@@ -106,6 +108,22 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         if (pickToken.current === token) setLoadState('failed');
       });
   };
+
+  const pick = (found: Item) => openItem({ id: found.id, name: found.name, level: found.level, imageUrl: found.imageUrl });
+
+  // A reload brings back the item and what was typed on it; nothing is saved before this has run.
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    if (!serverId || restored) return;
+    const session = getBrisageSession();
+    if (session && session.serverId === serverId) openItem(session.item, session);
+    setRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverId, restored]);
+  useEffect(() => {
+    if (!restored || !serverId) return;
+    setBrisageSession(item ? { serverId, item, rolls, coefficientText, manualCost } : undefined);
+  }, [restored, serverId, item, rolls, coefficientText, manualCost]);
 
   const rememberCoefficient = () => {
     const value = parse(coefficientText);

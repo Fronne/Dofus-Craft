@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
@@ -154,6 +154,24 @@ describe('Brisage page (specs/061)', () => {
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('150 %');
     expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
     expect(screen.getByText(/à 150 % · actuel/)).toBeInTheDocument();
+  });
+
+  it('brings back the item, the typed coefficient and the typed rolls after a reload', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '60' } });
+    await screen.findByLabelText('Jet de Vitalité');
+    type('Jet de Vitalité', '44');
+    cleanup();
+    // The server is remembered: the page opens straight on Brisage.
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Brisage' });
+    expect(await screen.findByText(/Cape du Chef Bwork/)).toBeInTheDocument();
+    expect(await screen.findByLabelText('Jet de Vitalité')).toHaveValue(44);
+    expect((screen.getByLabelText(/Coefficient/) as HTMLInputElement).value).toBe('60');
+    expect(screen.getByText('modifié')).toBeInTheDocument();
   });
 
   it('shows a stat that appears twice on the item as one line', async () => {
