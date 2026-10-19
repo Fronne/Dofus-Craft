@@ -19,7 +19,7 @@ export type PetLevelsInput = { totalXp: number; targetLevel: number };
 
 /**
  * `unitPriceKamas` is the price of the lot of 1 (the carnet's, or the latest shared one); `lots` are the
- * unit prices seen per lot size on the HDV (specs/058-prix-par-lot), community mode only.
+ * unit prices seen per lot size on the HDV (specs/059-prix-par-lot), community mode only.
  */
 export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest'; lots?: LotUnitPrices };
 
@@ -27,7 +27,7 @@ const hasAnyPrice = (price: PetFoodPrice | undefined): price is PetFoodPrice =>
   !!price && (price.unitPriceKamas > 0 || Object.values(price.lots ?? {}).some((lot) => (lot?.unitPriceKamas ?? 0) > 0));
 
 /**
- * The price of the lot that buys `quantity` units (specs/058-prix-par-lot): the biggest lot not above the
+ * The price of the lot that buys `quantity` units (specs/059-prix-par-lot): the biggest lot not above the
  * quantity that has a price, down to the lot of 1, which falls back to `unitPriceKamas`.
  */
 export function priceForQuantity(price: PetFoodPrice, quantity: number): PickedLotPrice | undefined {
@@ -40,7 +40,7 @@ export type PetFoodRecommendation = {
   /** XP one unit actually gives, bonus included (FR-012). */
   xpPerUnit: number;
   unitPriceKamas: number;
-  /** The HDV lot size whose price this is (specs/058-prix-par-lot). */
+  /** The HDV lot size whose price this is (specs/059-prix-par-lot). */
   lotSize: LotSize;
   priceDate?: string;
   priceOrigin: PetFoodPrice['origin'];

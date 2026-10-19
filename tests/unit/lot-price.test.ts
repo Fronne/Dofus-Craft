@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pickLotPrice, type LotUnitPrices } from '../../src/domain/lot-price';
 
-// specs/058-prix-par-lot: the biggest lot not above the quantity that has a price, else a smaller one.
+// specs/059-prix-par-lot: the biggest lot not above the quantity that has a price, else a smaller one.
 const all: LotUnitPrices = { 1: { unitPriceKamas: 100 }, 10: { unitPriceKamas: 90 }, 100: { unitPriceKamas: 80 }, 1000: { unitPriceKamas: 70 } };
 
 describe('pickLotPrice', () => {

@@ -1,4 +1,4 @@
-// specs/058-prix-par-lot: which HDV lot size prices a quantity. The HDV sells by lots of 1, 10, 100 or
+// specs/059-prix-par-lot: which HDV lot size prices a quantity. The HDV sells by lots of 1, 10, 100 or
 // 1000, and a lot is cheaper per unit than the singles: a quantity of 250 is bought as lots of 100.
 
 export const LOT_SIZES = [1, 10, 100, 1000] as const;

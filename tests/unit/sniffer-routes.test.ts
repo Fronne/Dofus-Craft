@@ -240,7 +240,7 @@ describe('guards (specs/056, US4)', () => {
   });
 });
 
-describe('lot prices of a batch (specs/058-prix-par-lot, H1)', () => {
+describe('lot prices of a batch (specs/059-prix-par-lot, H1)', () => {
   const lots = (resource = RESOURCE) => test.sqlite.prepare(
     'SELECT lot_size, lot_price_kamas, device_id FROM community_price_lots WHERE resource_id = ? AND server_id = ? ORDER BY lot_size',
   ).all(resource, 'mikhal');

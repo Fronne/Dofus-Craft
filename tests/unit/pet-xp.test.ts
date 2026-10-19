@@ -52,7 +52,7 @@ describe('planPetFood', () => {
     expect(plan.recommendations[0]).toMatchObject({ quantity: 4000, totalKamas: 40000 });
   });
 
-  // specs/058-prix-par-lot: the quantity is priced with the lot the rule picks, not always the singles.
+  // specs/059-prix-par-lot: the quantity is priced with the lot the rule picks, not always the singles.
   describe('lot prices', () => {
     const lots: LotUnitPrices = { 1: { unitPriceKamas: 100 }, 10: { unitPriceKamas: 90 }, 100: { unitPriceKamas: 80 }, 1000: { unitPriceKamas: 70 } };
     const withLots = (extra: LotUnitPrices = lots) => ({ '1': { unitPriceKamas: 100, origin: 'community-latest' as const, lots: extra } });

@@ -149,7 +149,7 @@ export default {
       return cachedJson(url, () => communityPricesResponse(env.DB, url));
     }
 
-    // specs/058-prix-par-lot: the last price seen for each lot size (1, 10, 100, 1000), for the pet XP page.
+    // specs/059-prix-par-lot: the last price seen for each lot size (1, 10, 100, 1000), for the pet XP page.
     if (request.method === 'GET' && url.pathname === '/community-lot-prices') {
       return cachedJson(url, () => lotPricesResponse(env.DB, url));
     }

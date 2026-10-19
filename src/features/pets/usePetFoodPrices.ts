@@ -36,7 +36,7 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
     prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, date: choice.price.updatedAt, origin: 'community-latest' };
     await repository.save(serverId, shared.resourceId, shared.latestAmountKamas, shared.latestContributionAt).catch(() => undefined);
   }));
-  // specs/058-prix-par-lot: the price of each lot size seen on the HDV, to price a quantity with the right lot.
+  // specs/059-prix-par-lot: the price of each lot size seen on the HDV, to price a quantity with the right lot.
   // Without them (service unreachable) the unit prices above stand, as before.
   for (const [itemId, itemLots] of Object.entries(lots ?? {})) {
     const current = prices[itemId];

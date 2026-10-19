@@ -62,7 +62,7 @@ describe('worker/migrations', () => {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
     }
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
-    // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/058-prix-par-lot: and the lot prices (0020).
+    // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);

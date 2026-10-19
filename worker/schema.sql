@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS sniffer_daily_usage (
   PRIMARY KEY (key_id, day)
 );
 
--- specs/058-prix-par-lot (migrations/0020_add_lot_prices.sql): the last price seen for each HDV lot
+-- specs/059-prix-par-lot (migrations/0020_add_lot_prices.sql): the last price seen for each HDV lot
 -- size of a resource, sent by the friends' tool. The contributions above stay the lot 1 price.
 CREATE TABLE IF NOT EXISTS community_price_lots (
   resource_id TEXT NOT NULL,

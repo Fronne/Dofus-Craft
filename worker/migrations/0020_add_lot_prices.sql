@@ -1,4 +1,4 @@
--- specs/058-prix-par-lot: the last price seen for each HDV lot size (1, 10, 100, 1000) of a resource.
+-- specs/059-prix-par-lot: the last price seen for each HDV lot size (1, 10, 100, 1000) of a resource.
 -- A new table only: no existing row is read or rewritten, so there is no write cost on the free plan.
 -- The contributions already stored stay the lot 1 price (read as a fallback, never copied here).
 -- Apply with: npm run worker:db:migrate-lot-prices

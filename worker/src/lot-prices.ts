@@ -1,7 +1,7 @@
 import { MAX_BATCH_RESOURCE_IDS } from './contribution';
 import { LOT_SIZES, type Ladder, type LotSize } from './unit-price';
 
-// specs/058-prix-par-lot: the last price seen for each HDV lot size of a resource (table
+// specs/059-prix-par-lot: the last price seen for each HDV lot size of a resource (table
 // community_price_lots), written by the friends' tool (sniffer.ts) and read by GET /community-lot-prices.
 // The unit price kept for the rest of the site (unit-price.ts) is unaffected.
 

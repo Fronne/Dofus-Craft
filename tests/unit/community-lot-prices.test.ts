@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { lotPricesResponse } from '../../worker/src/lot-prices';
 import { createTestD1 } from '../support/sqlite-d1';
 
-// specs/058-prix-par-lot, contracts/community-lot-prices.md.
+// specs/059-prix-par-lot, contracts/community-lot-prices.md.
 const url = (query: string) => new URL(`https://api.test/community-lot-prices?${query}`);
 
 function seed() {

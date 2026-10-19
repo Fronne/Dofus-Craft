@@ -223,7 +223,7 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
   return { status: 'found', prices: results.flatMap((prices) => prices ?? []) };
 }
 
-// specs/058-prix-par-lot (contracts/community-lot-prices.md): the unit price seen for each lot size of
+// specs/059-prix-par-lot (contracts/community-lot-prices.md): the unit price seen for each lot size of
 // resources, from the price of the whole lot. Undefined when the API can't be reached or answers
 // something unreadable — the caller then keeps the prices it has, it never invents any.
 export async function getCommunityLotPrices(resourceIds: string[], serverId: string): Promise<Record<string, LotUnitPrices> | undefined> {
