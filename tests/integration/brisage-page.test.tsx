@@ -240,8 +240,14 @@ describe('Brisage page (specs/061)', () => {
     await pickCape();
     fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
     await screen.findByLabelText('Jet de Vitalité');
-    // Vitalité 40–44 and Dommages 1–9 are free; Chance (38) is fixed: no field, no switch effect.
-    expect(screen.queryByLabelText('Jet de Chance')).not.toBeInTheDocument();
+    // Vitalité 40–44 and Dommages 1–9 are free; Chance (38) is fixed: a field, but the switch skips it.
+    expect(field('Jet de Chance').placeholder).toBe('38');
+    type('Jet de Chance', '45');
+    expect(screen.getByText('modifié')).toBeInTheDocument();
+    type('Jet de Chance', '');
+    type('Jet de Vitalité', '60');
+    expect(screen.getByText('modifié')).toBeInTheDocument();
+    type('Jet de Vitalité', '');
     expect(screen.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Min' }));
     expect(field('Jet de Vitalité').value).toBe('40');
