@@ -2431,38 +2431,22 @@ select:focus {
 .brisage-results { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
 .brisage-block-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); }
 .brisage-item { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4) var(--space-8, 2.25rem); }
-.brisage-item-card { flex: 1 1 20rem; min-width: 0; display: flex; align-items: center; gap: var(--space-4); }
-.brisage-item-image { display: grid; place-items: center; width: 64px; height: 64px; flex: 0 0 64px; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--link) 22%, transparent), rgba(3, 14, 17, .55) 72%); overflow: hidden; }
-.brisage-item-image img { width: 48px; height: 48px; object-fit: contain; }
-.brisage-item-name { margin: 0; font-family: inherit; font-size: 1.25rem; font-weight: 600; line-height: 1.3; text-transform: none; }
-.brisage-change { padding: 0; border: 0; background: none; color: var(--link); font: inherit; font-size: .9rem; font-weight: 500; cursor: pointer; text-align: left; }
-.brisage-change:hover { text-decoration: underline; }
 .brisage-coef { display: flex; align-items: center; gap: var(--space-2); }
 .brisage-coef input { width: 7rem; height: 52px; font-size: 1.25rem; font-weight: 600; }
 .brisage-coef span { font-size: 1.25rem; font-weight: 600; color: var(--text-muted); }
-.brisage-item-id { flex: 1 1 16rem; display: grid; gap: var(--space-1); font-weight: 600; }
 .brisage-field { display: grid; gap: var(--space-1); align-content: start; }
 .brisage-field-label { font-size: .9rem; font-weight: 600; color: var(--text-muted); }
 .brisage-field input { width: 9rem; text-align: right; }
 .brisage-cost { display: flex; align-items: center; height: 52px; font-family: var(--font-display); font-size: 1.6rem; color: var(--kamas); font-variant-numeric: tabular-nums; }
 .brisage-cost .kamas-amount-icon { width: 22px; height: 22px; }
 .brisage-field input { height: 52px; }
-.brisage-verdict { height: auto; display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--space-4) var(--space-8, 2.5rem); padding: var(--space-5) var(--space-6); }
-.brisage-verdict-main { flex: 1 1 22rem; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--space-2); }
-.brisage-verdict-main p { margin: 0; }
-.brisage-verdict--good { border: 2px solid var(--accent); background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 28%, transparent) 0%, var(--panel) 65%); box-shadow: 0 16px 40px -22px var(--accent); }
-.brisage-verdict > p { margin: 0; }
+.brisage-verdict .verdict-text { display: grid; gap: .1rem; }
+.verdict--bad .verdict-icon { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.verdict--bad p.verdict-title { color: var(--danger); }
 .brisage-verdict-label { font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-bright); }
-.brisage-verdict-title { font-family: var(--font-display); font-size: 2.1rem; line-height: 1.15; color: var(--accent-bright); }
-.brisage-verdict--bad { border-color: var(--danger); background: var(--panel); }
-.brisage-verdict--bad .brisage-verdict-title, .brisage-verdict--bad .brisage-verdict-label { color: var(--danger); }
-.brisage-verdict--neutral { border: 1px solid var(--border); background: var(--panel); }
-.brisage-verdict--neutral .brisage-verdict-title, .brisage-verdict--neutral .brisage-verdict-label { color: var(--text); }
-.brisage-verdict-gain .kamas-amount { font-weight: 700; }
-.brisage-facts { flex: 0 1 26rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); margin: 0; align-content: center; }
+.brisage-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); margin: var(--space-4) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .brisage-facts dt { font-size: .85rem; color: var(--text-muted); }
 .brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; }
-.brisage-picked { margin: 0; }
 .brisage-table-wrap { overflow-x: auto; }
 .brisage-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .brisage-table th, .brisage-table td { padding: .8rem .75rem; text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -2493,7 +2477,6 @@ select:focus {
 .brisage-gain-value.is-loss { color: var(--danger); }
 @media (max-width: 640px) {
   .brisage-item { gap: var(--space-4); }
-  .brisage-verdict-title { font-size: 1.4rem; }
   /* A card per line: each cell carries its own label. */
   .brisage-table thead, .brisage-table caption { display: none; }
   .brisage-table, .brisage-table tbody, .brisage-table tr, .brisage-table th, .brisage-table td { display: block; }

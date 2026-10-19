@@ -229,18 +229,23 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         )}
 
         {item && (
-          <div className="brisage-item">
-            <div className="brisage-item-card">
-              <span className="brisage-item-image" aria-hidden="true">
-                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <Icon name="search" size={22} />}
-              </span>
-              <div className="brisage-item-id">
-                <h3 className="brisage-item-name">{item.name}</h3>
-                {item.level !== undefined && <span className="fm-note">Niveau {item.level}</span>}
-                <button type="button" className="brisage-change" onClick={changeItem}>Changer d'objet</button>
-              </div>
+          <div className="item-head">
+            {item.imageUrl ? (
+              <img src={item.imageUrl} alt={item.name} />
+            ) : (
+              <div className="image-fallback" role="img" aria-label={`Visuel indisponible pour ${item.name}`}><Icon name="search" size={22} /></div>
+            )}
+            <div className="item-head-text">
+              <h3>{item.name}</h3>
+              {item.level !== undefined && <div className="item-head-tags"><p>Niveau : {item.level}</p></div>}
             </div>
-
+            <div className="item-head-actions">
+              <button type="button" className="pin-item-button item-history-button" onClick={changeItem}>Changer d'objet</button>
+            </div>
+          </div>
+        )}
+        {item && (
+          <div className="brisage-item">
             <div className="brisage-field">
               <span className="brisage-field-label">Coût de l'objet</span>
               {itemCost.status === 'ready' && itemCost.costKamas !== undefined && (
@@ -304,27 +309,34 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                 </p>
               )}
 
-              <div className={`pet-podium-card brisage-verdict brisage-verdict--${verdict.tone}`} aria-live="polite">
-                <div className="brisage-verdict-main">
-                  <span className="brisage-verdict-label">Verdict</span>
-                  <p className="brisage-verdict-title">{verdict.title}</p>
-                  {best && (
-                    <p className="brisage-verdict-gain">
-                      <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
-                      {focusWins && normal?.gainKamas !== undefined && (
-                        <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
-                      )}
-                    </p>
-                  )}
-                  {verdict.hint && <p className="fm-note">{verdict.hint}</p>}
+              <section className="panel market-price-panel item-verdict-panel" aria-live="polite">
+                <div className="market-price-summary">
+                  <div className={`verdict brisage-verdict verdict--${verdict.tone === 'good' ? 'craft' : verdict.tone === 'bad' ? 'bad' : 'insufficient-data'}`}>
+                    <div className="verdict-head">
+                      <span className="verdict-icon" aria-hidden="true"><Icon name={verdict.tone === 'good' ? 'check' : 'info'} size={22} /></span>
+                      <div className="verdict-text">
+                        <span className="brisage-verdict-label">Verdict</span>
+                        <p className="verdict-title">{verdict.title}</p>
+                        {best && (
+                          <p className="verdict-subtitle">
+                            <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
+                            {focusWins && normal?.gainKamas !== undefined && (
+                              <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
+                            )}
+                          </p>
+                        )}
+                        {verdict.hint && <p className="verdict-subtitle">{verdict.hint}</p>}
+                      </div>
+                    </div>
+                    {analysis.thresholdCoefficient !== undefined && (
+                      <dl className="brisage-facts">
+                        <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(analysis.thresholdCoefficient)} %</dd></div>
+                        <div><dt>Brisages possibles avant ce seuil</dt><dd>{analysis.itemsCount}</dd></div>
+                      </dl>
+                    )}
+                  </div>
                 </div>
-                {analysis.thresholdCoefficient !== undefined && (
-                  <dl className="brisage-facts">
-                    <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(analysis.thresholdCoefficient)} %</dd></div>
-                    <div><dt>Brisages possibles avant ce seuil</dt><dd>{analysis.itemsCount}</dd></div>
-                  </dl>
-                )}
-              </div>
+              </section>
 
               <section className="panel brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
