@@ -20,12 +20,16 @@ export function lotPriceStatements<S>(
 ): { statements: S[]; rows: number } {
   const onSale = LOT_SIZES.filter((size) => (ladder[size] ?? 0) > 0);
   const gone = LOT_SIZES.filter((size) => !onSale.includes(size));
-  const statements = onSale.map((size) => db.prepare(
-    `INSERT INTO community_price_lots (resource_id, server_id, lot_size, lot_price_kamas, observed_at, device_id)
-     VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT (resource_id, server_id, lot_size) DO UPDATE SET
-       lot_price_kamas = excluded.lot_price_kamas, observed_at = excluded.observed_at, device_id = excluded.device_id`,
-  ).bind(itemId, serverId, size, ladder[size], now.toISOString(), deviceId));
+  // One multi-row upsert per observation, not one per lot: a batch of 200 observations stays near 600 statements.
+  const statements: S[] = [];
+  if (onSale.length > 0) {
+    statements.push(db.prepare(
+      `INSERT INTO community_price_lots (resource_id, server_id, lot_size, lot_price_kamas, observed_at, device_id)
+       VALUES ${onSale.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')}
+       ON CONFLICT (resource_id, server_id, lot_size) DO UPDATE SET
+         lot_price_kamas = excluded.lot_price_kamas, observed_at = excluded.observed_at, device_id = excluded.device_id`,
+    ).bind(...onSale.flatMap((size) => [itemId, serverId, size, ladder[size], now.toISOString(), deviceId])));
+  }
   if (gone.length > 0) {
     statements.push(db.prepare(
       `DELETE FROM community_price_lots WHERE resource_id = ? AND server_id = ? AND lot_size IN (${gone.map(() => '?').join(', ')})`,

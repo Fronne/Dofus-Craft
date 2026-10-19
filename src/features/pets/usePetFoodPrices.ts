@@ -39,7 +39,11 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
   // specs/058-prix-par-lot: the price of each lot size seen on the HDV, to price a quantity with the right lot.
   // Without them (service unreachable) the unit prices above stand, as before.
   for (const [itemId, itemLots] of Object.entries(lots ?? {})) {
-    if (prices[itemId]) prices[itemId] = { ...prices[itemId], lots: itemLots };
+    const current = prices[itemId];
+    if (!current) continue;
+    // A carnet price more recent than the latest shared one (specs/024) stays the lot of 1: the shared lot of 1 is older.
+    const { 1: _single, ...bigger } = itemLots;
+    prices[itemId] = { ...current, lots: current.origin === 'carnet' ? bigger : itemLots };
   }
   return { prices, communityUnavailable: false };
 }
