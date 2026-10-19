@@ -3,6 +3,7 @@ import { isPriceOrigin } from '../domain/forgemagie';
 import type { RefreshOutcome } from '../domain/huzounet-load';
 import type { RecipeRefreshOutcome } from '../domain/recipe-refresh';
 import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
+import { LOT_SIZES, type LotUnitPrices } from '../domain/lot-price';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
 
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
@@ -220,6 +221,40 @@ export async function getCommunityPrices(resourceIds: string[], serverId: string
   }));
   if (results.some((prices) => prices === undefined)) return { status: 'unavailable' };
   return { status: 'found', prices: results.flatMap((prices) => prices ?? []) };
+}
+
+// specs/058-prix-par-lot (contracts/community-lot-prices.md): the unit price seen for each lot size of
+// resources, from the price of the whole lot. Undefined when the API can't be reached or answers
+// something unreadable — the caller then keeps the prices it has, it never invents any.
+export async function getCommunityLotPrices(resourceIds: string[], serverId: string): Promise<Record<string, LotUnitPrices> | undefined> {
+  const ids = [...new Set(resourceIds)];
+  const batches: string[][] = [];
+  for (let start = 0; start < ids.length; start += COMMUNITY_PRICES_BATCH) batches.push(ids.slice(start, start + COMMUNITY_PRICES_BATCH));
+  const lots: Record<string, LotUnitPrices> = {};
+  try {
+    const answers = await Promise.all(batches.map(async (batch) => {
+      const params = readParams({ serverId, resourceIds: batch.join(',') });
+      const response = await fetch(`${API_URL}/community-lot-prices?${params.toString()}`, readInit());
+      return response.ok ? (await response.json()) as unknown : undefined;
+    }));
+    for (const payload of answers) {
+      if (!isRecord(payload) || !Array.isArray(payload.prices)) return undefined;
+      for (const row of payload.prices) {
+        if (!isRecord(row) || typeof row.resourceId !== 'string' || !isRecord(row.lots)) return undefined;
+        const unitPrices: LotUnitPrices = {};
+        for (const size of LOT_SIZES) {
+          const lot = row.lots[String(size)];
+          if (isRecord(lot) && typeof lot.lotPriceKamas === 'number' && lot.lotPriceKamas > 0 && typeof lot.observedAt === 'string') {
+            unitPrices[size] = { unitPriceKamas: lot.lotPriceKamas / size, date: lot.observedAt };
+          }
+        }
+        lots[row.resourceId] = unitPrices;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+  return lots;
 }
 
 // specs/046-hdv-huzounet-load (contracts/external-prices-refresh.md): asks the API to read again, on

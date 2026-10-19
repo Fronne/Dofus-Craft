@@ -101,7 +101,7 @@ export function PetFoodTarget({ xp, prices, ranked, maxQuantity, xpMultiplier, s
             <div><dt>Quantité</dt><dd>{numberFormat.format(card.quantity)}</dd></div>
             {card.price ? (
               <>
-                <div><dt>Prix unitaire</dt><dd><Kamas value={card.price.unitPriceKamas} /></dd></div>
+                <div><dt>Prix unitaire</dt><dd><Kamas value={card.price.unitPriceKamas} />{card.price.lotSize > 1 && <small> lot ×{card.price.lotSize}</small>}</dd></div>
                 <div><dt>Coût total</dt><dd className="pet-figure-kamas"><Kamas value={card.price.totalKamas} /></dd></div>
                 {card.standing.kind === 'ranked' && (
                   <div>

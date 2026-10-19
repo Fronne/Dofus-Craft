@@ -46,7 +46,7 @@ export function PetFoodPodium({ entries, caption }: { entries: PetFoodPodiumEntr
               <b className="pet-podium-total"><Kamas value={entry.totalKamas} /></b>
               <dl className="pet-figures">
                 <div><dt>Quantité</dt><dd>{numberFormat.format(entry.quantity)}</dd></div>
-                <div><dt>Prix unitaire</dt><dd><Kamas value={entry.unitPriceKamas} /></dd></div>
+                <div><dt>Prix unitaire</dt><dd><Kamas value={entry.unitPriceKamas} />{entry.lotSize > 1 && <small> lot ×{entry.lotSize}</small>}</dd></div>
                 <div><dt>XP / unité</dt><dd>{numberFormat.format(entry.xpPerUnit)}</dd></div>
               </dl>
               <PriceAge date={entry.priceDate} />

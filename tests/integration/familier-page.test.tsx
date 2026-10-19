@@ -11,6 +11,7 @@ const getCommunityPrices = vi.fn<(ids: string[], serverId: string) => Promise<Co
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
   getCommunityPrices: (ids: string[], serverId: string) => getCommunityPrices(ids, serverId),
+  getCommunityLotPrices: vi.fn().mockResolvedValue({}),
   getSharedItemPrices: vi.fn().mockResolvedValue({ status: 'found', items: [] }),
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),

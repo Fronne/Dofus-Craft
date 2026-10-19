@@ -3,7 +3,7 @@ import { pickCommunityPrice } from '../../domain/community-price-choice';
 import { PET_FOODS, type PetFoodPrice } from '../../domain/pet-xp';
 import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
-import { getCommunityPrices } from '../../services/community-price-api';
+import { getCommunityLotPrices, getCommunityPrices } from '../../services/community-price-api';
 
 // specs/022-pet-xp-calculator (research.md §4), amended by specs/024-latest-community-price: the
 // prices of every pet food, from the carnet of the active mode — like the other pages. In Mode
@@ -28,7 +28,7 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
     prices[itemId] = { unitPriceKamas: price.unitPriceKamas, date: price.updatedAt, origin: 'carnet' };
   }
   if (priceMode !== 'community') return { prices, communityUnavailable: false };
-  const lookup = await getCommunityPrices(ids, serverId);
+  const [lookup, lots] = await Promise.all([getCommunityPrices(ids, serverId), getCommunityLotPrices(ids, serverId)]);
   if (lookup.status === 'unavailable') return { prices, communityUnavailable: true };
   await Promise.all(lookup.prices.map(async (shared) => {
     const choice = pickCommunityPrice(carnet[shared.resourceId], { amountKamas: shared.latestAmountKamas, contributedAt: shared.latestContributionAt });
@@ -36,6 +36,11 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
     prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, date: choice.price.updatedAt, origin: 'community-latest' };
     await repository.save(serverId, shared.resourceId, shared.latestAmountKamas, shared.latestContributionAt).catch(() => undefined);
   }));
+  // specs/058-prix-par-lot: the price of each lot size seen on the HDV, to price a quantity with the right lot.
+  // Without them (service unreachable) the unit prices above stand, as before.
+  for (const [itemId, itemLots] of Object.entries(lots ?? {})) {
+    if (prices[itemId]) prices[itemId] = { ...prices[itemId], lots: itemLots };
+  }
   return { prices, communityUnavailable: false };
 }
 

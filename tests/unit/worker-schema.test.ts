@@ -62,8 +62,8 @@ describe('worker/migrations', () => {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
     }
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
-    // specs/056-sniffer-batch-prices: so do the sniffer tables (0018).
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings');
+    // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/058-prix-par-lot: and the lot prices (0020).
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
@@ -71,6 +71,16 @@ describe('worker/migrations', () => {
     expect(migrated.prepare('SELECT id, origin FROM community_price_contributions').all()).toEqual([{ id: 'kept', origin: 'manual' }]);
     migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('s', '1', 'mikhal', 10, 'sniffer')");
     expect(() => migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('x', '1', 'mikhal', 10, 'robot')")).toThrow();
+  });
+
+  it('adds the lot prices table (0020) without touching a contribution, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0020_add_lot_prices.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
+    expect(() => db.exec("INSERT INTO community_price_lots (resource_id, server_id, lot_size, lot_price_kamas, observed_at) VALUES ('1', 'mikhal', 50, 10, 'x')")).toThrow();
   });
 
   it('can run the origin rebuild (0019) again', () => {

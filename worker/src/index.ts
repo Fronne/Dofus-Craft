@@ -3,6 +3,7 @@ import { purgeStaleExternalPrices, refreshHuzounetPrices, syncHuzounetPrices } f
 import { readPlayerCounters } from './player-counters';
 import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
+import { lotPricesResponse } from './lot-prices';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
@@ -146,6 +147,11 @@ export default {
     // specs/021-background-data-loading: several resources' medians in one request.
     if (request.method === 'GET' && url.pathname === '/community-prices') {
       return cachedJson(url, () => communityPricesResponse(env.DB, url));
+    }
+
+    // specs/058-prix-par-lot: the last price seen for each lot size (1, 10, 100, 1000), for the pet XP page.
+    if (request.method === 'GET' && url.pathname === '/community-lot-prices') {
+      return cachedJson(url, () => lotPricesResponse(env.DB, url));
     }
 
     // specs/016-shared-item-prices: an item's shared HDV price — its latest contribution, no median.

@@ -146,6 +146,7 @@ function FoodLine({ line, rank }: { line: PetFoodRecommendation; rank?: number }
       <div className="profit-cell">
         <span className="profit-cell-label">Prix unitaire</span>
         <b><Kamas value={line.unitPriceKamas} /></b>
+        {line.lotSize > 1 && <small>prix du lot ×{line.lotSize}</small>}
         <small className={`market-date${ageClass}`}>
           {line.priceDate ? formatRelativeTime(line.priceDate) : 'date inconnue'}
         </small>

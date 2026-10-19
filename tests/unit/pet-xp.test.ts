@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { LotUnitPrices } from '../../src/domain/lot-price';
 import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, petXpProgress, rankPetFoods, petFoodPodium, petFoodTarget, formatObjectiveShare, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
@@ -49,6 +50,42 @@ describe('planPetFood', () => {
   it('computes quantity and total cost for the XP needed', () => {
     const plan = planPetFood(1000, [food('1', 'Rune', 0.25)], { 1: { unitPriceKamas: 10, origin: 'carnet' } });
     expect(plan.recommendations[0]).toMatchObject({ quantity: 4000, totalKamas: 40000 });
+  });
+
+  // specs/058-prix-par-lot: the quantity is priced with the lot the rule picks, not always the singles.
+  describe('lot prices', () => {
+    const lots: LotUnitPrices = { 1: { unitPriceKamas: 100 }, 10: { unitPriceKamas: 90 }, 100: { unitPriceKamas: 80 }, 1000: { unitPriceKamas: 70 } };
+    const withLots = (extra: LotUnitPrices = lots) => ({ '1': { unitPriceKamas: 100, origin: 'community-latest' as const, lots: extra } });
+
+    it('prices 250 units at the lot of 100, and 5 units at the lot of 1', () => {
+      const big = planPetFood(250, [food('1', 'Rune', 1)], withLots()).recommendations[0];
+      expect(big).toMatchObject({ quantity: 250, lotSize: 100, unitPriceKamas: 80, totalKamas: 20000 });
+      const small = planPetFood(5, [food('1', 'Rune', 1)], withLots()).recommendations[0];
+      expect(small).toMatchObject({ quantity: 5, lotSize: 1, unitPriceKamas: 100, totalKamas: 500 });
+    });
+
+    it('goes down to the next lot with a price, and never up', () => {
+      const noHundred = { 1: lots[1], 10: lots[10], 1000: lots[1000] };
+      expect(planPetFood(250, [food('1', 'Rune', 1)], withLots(noHundred)).recommendations[0]).toMatchObject({ lotSize: 10, unitPriceKamas: 90 });
+      expect(planPetFood(999, [food('1', 'Rune', 1)], withLots(noHundred)).recommendations[0]).toMatchObject({ lotSize: 10 });
+    });
+
+    it('takes the existing unit price as the lot of 1 and keeps the old behaviour without lot prices', () => {
+      const plan = planPetFood(250, [food('1', 'Rune', 1)], { '1': { unitPriceKamas: 100, origin: 'carnet' } });
+      expect(plan.recommendations[0]).toMatchObject({ lotSize: 1, unitPriceKamas: 100, totalKamas: 25000 });
+      const onlyBig = withLots({ 100: lots[100] });
+      expect(planPetFood(50, [food('1', 'Rune', 1)], onlyBig).recommendations[0]).toMatchObject({ lotSize: 1, unitPriceKamas: 100 });
+    });
+
+    it('rounds the total when a lot price is not a multiple of its size', () => {
+      const plan = planPetFood(1000, [food('1', 'Rune', 1)], withLots({ 1000: { unitPriceKamas: 2.7 } }));
+      expect(plan.recommendations[0]).toMatchObject({ lotSize: 1000, totalKamas: 2700 });
+    });
+
+    it('prices the targeted food the same way', () => {
+      const card = petFoodTarget(food('1', 'Rune', 1), 250, withLots(), [], undefined);
+      expect(card.price).toMatchObject({ lotSize: 100, unitPriceKamas: 80, totalKamas: 20000 });
+    });
   });
 
   it('rounds the quantity up, without floating-point noise', () => {

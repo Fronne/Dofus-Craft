@@ -1,4 +1,5 @@
 import petXpData from '../data/pet-xp-data.json';
+import { pickLotPrice, type LotSize, type LotUnitPrices, type PickedLotPrice } from './lot-price';
 
 // specs/022-pet-xp-calculator: pet XP rules. The per-resource XP (Tenmalexis' XP Familier list,
 // https://tenmalexis.github.io/xp-familier/) and the level curve (game client) are frozen in src/data/pet-xp-data.json
@@ -16,13 +17,31 @@ export type PetFood = {
 /** What the player types (FR-002, revised 2026-09-28): the pet's total XP and the level aimed for. */
 export type PetLevelsInput = { totalXp: number; targetLevel: number };
 
-export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest' };
+/**
+ * `unitPriceKamas` is the price of the lot of 1 (the carnet's, or the latest shared one); `lots` are the
+ * unit prices seen per lot size on the HDV (specs/058-prix-par-lot), community mode only.
+ */
+export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest'; lots?: LotUnitPrices };
+
+const hasAnyPrice = (price: PetFoodPrice | undefined): price is PetFoodPrice =>
+  !!price && (price.unitPriceKamas > 0 || Object.values(price.lots ?? {}).some((lot) => (lot?.unitPriceKamas ?? 0) > 0));
+
+/**
+ * The price of the lot that buys `quantity` units (specs/058-prix-par-lot): the biggest lot not above the
+ * quantity that has a price, down to the lot of 1, which falls back to `unitPriceKamas`.
+ */
+export function priceForQuantity(price: PetFoodPrice, quantity: number): PickedLotPrice | undefined {
+  const single = price.unitPriceKamas > 0 ? { unitPriceKamas: price.unitPriceKamas, date: price.date } : undefined;
+  return pickLotPrice(quantity, { ...(single && { 1: single }), ...price.lots });
+}
 
 export type PetFoodRecommendation = {
   food: PetFood;
   /** XP one unit actually gives, bonus included (FR-012). */
   xpPerUnit: number;
   unitPriceKamas: number;
+  /** The HDV lot size whose price this is (specs/058-prix-par-lot). */
+  lotSize: LotSize;
   priceDate?: string;
   priceOrigin: PetFoodPrice['origin'];
   quantity: number;
@@ -125,22 +144,25 @@ export function planPetFood(
   /** 1.5 with the Almanax of 23 July (FR-012), 1 otherwise. */
   xpMultiplier = 1,
 ): PetFoodPlan {
-  const priced = foods.filter((food) => (prices[food.itemId]?.unitPriceKamas ?? 0) > 0);
+  const priced = foods.filter((food) => hasAnyPrice(prices[food.itemId]));
   const unpricedCount = foods.length - priced.length;
   if (xp <= 0) return { xpNeeded: 0, recommendations: [], unpricedCount };
   const recommendations = priced
-    .map((food): PetFoodRecommendation => {
+    .flatMap((food): PetFoodRecommendation[] => {
       const price = prices[food.itemId]!;
       const quantity = quantityFor(xp, food, xpMultiplier);
-      return {
+      const lot = priceForQuantity(price, quantity);
+      if (!lot) return [];
+      return [{
         food,
         xpPerUnit: food.xpPerUnit * xpMultiplier,
-        unitPriceKamas: price.unitPriceKamas,
-        priceDate: price.date,
+        unitPriceKamas: lot.unitPriceKamas,
+        lotSize: lot.lotSize,
+        priceDate: lot.date,
         priceOrigin: price.origin,
         quantity,
-        totalKamas: quantity * price.unitPriceKamas,
-      };
+        totalKamas: Math.round(quantity * lot.unitPriceKamas),
+      }];
     })
     .sort((a, b) => compareLines(a, b, sort))
     .slice(0, limit);
@@ -210,7 +232,7 @@ export type PetFoodTarget = {
   quantity: number;
   /** Share of the XP to give that one unit brings, at most 100. */
   sharePercent: number;
-  price?: { unitPriceKamas: number; date?: string; totalKamas: number };
+  price?: { unitPriceKamas: number; lotSize: LotSize; date?: string; totalKamas: number };
   standing: PetFoodStanding;
 };
 
@@ -226,10 +248,11 @@ export function petFoodTarget(
   const xpPerUnit = food.xpPerUnit * xpMultiplier;
   const quantity = quantityFor(xp, food, xpMultiplier);
   const sharePercent = Math.min(100, (xpPerUnit / xp) * 100);
-  const unitPriceKamas = prices[food.itemId]?.unitPriceKamas ?? 0;
-  if (unitPriceKamas <= 0) return { food, xpPerUnit, quantity, sharePercent, standing: { kind: 'unpriced' } };
-  const totalKamas = quantity * unitPriceKamas;
-  const price = { unitPriceKamas, date: prices[food.itemId]?.date, totalKamas };
+  const foodPrice = prices[food.itemId];
+  const lot = foodPrice ? priceForQuantity(foodPrice, quantity) : undefined;
+  if (!lot) return { food, xpPerUnit, quantity, sharePercent, standing: { kind: 'unpriced' } };
+  const totalKamas = Math.round(quantity * lot.unitPriceKamas);
+  const price = { unitPriceKamas: lot.unitPriceKamas, lotSize: lot.lotSize, date: lot.date, totalKamas };
   const line = ranked.find((entry) => entry.food.itemId === food.itemId);
   const standing: PetFoodStanding = line
     ? { kind: 'ranked', rank: line.rank, gapPercent: Math.round(((totalKamas - ranked[0].totalKamas) / ranked[0].totalKamas) * 1000) / 10 }

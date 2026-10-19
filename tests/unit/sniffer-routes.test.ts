@@ -61,7 +61,7 @@ describe('POST /community-price/batch (specs/056, US1)', () => {
       { resource_id: RESOURCE, server_id: 'mikhal', amount_kamas: 22_900, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
       { resource_id: OTHER_RESOURCE, server_id: 'mikhal', amount_kamas: 500, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
     ]);
-    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 2 }]);
+    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 6 }]); // 2 contributions + 4 lot prices (3 + 1), specs/058
     const key = test.sqlite.prepare('SELECT last_seen_at FROM sniffer_keys WHERE id = ?').get(KEY_ID) as { last_seen_at: string | null };
     expect(key.last_seen_at).not.toBeNull();
   });
@@ -225,17 +225,49 @@ describe('guards (specs/056, US4)', () => {
 
   it('refuses a whole batch that would cross the daily cap (429), and accepts one that reaches it', async () => {
     const day = new Date().toISOString().slice(0, 10);
-    test.sqlite.prepare('INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)').run(KEY_ID, day, DAILY_ROW_LIMIT - 1);
+    test.sqlite.prepare('INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)').run(KEY_ID, day, DAILY_ROW_LIMIT - 4);
 
     const over = await call('POST', '/community-price/batch', batch([observation(RESOURCE), observation(OTHER_RESOURCE)]));
     expect(over.status).toBe(429);
-    await expect(over.json()).resolves.toEqual({ error: 'daily_limit', limit: DAILY_ROW_LIMIT, used: DAILY_ROW_LIMIT - 1 });
+    await expect(over.json()).resolves.toEqual({ error: 'daily_limit', limit: DAILY_ROW_LIMIT, used: DAILY_ROW_LIMIT - 4 });
     expect(contributions()).toEqual([]);
 
-    // Refused observations don't count against the cap.
+    // Refused observations don't count against the cap; the lot prices of an accepted one do (1 + 3 here).
     const last = await call('POST', '/community-price/batch', batch([observation(RESOURCE), observation(EQUIPMENT)]));
     await expect(last.json()).resolves.toEqual({ accepted: 1, rejected: [{ index: 1, reason: 'not_an_ingredient' }] });
     expect(usage()).toEqual([{ key_id: KEY_ID, day, rows_written: DAILY_ROW_LIMIT }]);
     expect((await call('POST', '/community-price/batch', batch([observation(RESOURCE)]))).status).toBe(429);
+  });
+});
+
+describe('lot prices of a batch (specs/058-prix-par-lot, H1)', () => {
+  const lots = (resource = RESOURCE) => test.sqlite.prepare(
+    'SELECT lot_size, lot_price_kamas, device_id FROM community_price_lots WHERE resource_id = ? AND server_id = ? ORDER BY lot_size',
+  ).all(resource, 'mikhal');
+
+  it('keeps the price of each lot on sale, as sent, and leaves the single unit price untouched', async () => {
+    await call('POST', '/community-price/batch', batch([observation(RESOURCE, { 1: 100, 10: 900, 100: 8_000, 1000: 0 })]));
+    expect(lots()).toEqual([
+      { lot_size: 1, lot_price_kamas: 100, device_id: KEY_ID },
+      { lot_size: 10, lot_price_kamas: 900, device_id: KEY_ID },
+      { lot_size: 100, lot_price_kamas: 8_000, device_id: KEY_ID },
+    ]);
+    expect(contributions()).toHaveLength(1);
+  });
+
+  it('replaces a lot price on a new observation and removes the lots no longer on sale', async () => {
+    await call('POST', '/community-price/batch', batch([observation(RESOURCE, { 1: 100, 10: 900, 100: 8_000 })]));
+    await call('POST', '/community-price/batch', batch([observation(RESOURCE, { 1: 120, 100: 7_500 })]));
+    expect(lots()).toEqual([
+      { lot_size: 1, lot_price_kamas: 120, device_id: KEY_ID },
+      { lot_size: 100, lot_price_kamas: 7_500, device_id: KEY_ID },
+    ]);
+  });
+
+  it('writes nothing for a refused observation, and keeps servers apart', async () => {
+    await call('POST', '/community-price/batch', batch([observation(EQUIPMENT, { 1: 5 }), observation(RESOURCE, { 1: 100 })]));
+    await call('POST', '/community-price/batch', batch([observation(RESOURCE, { 1: 999 })], { serverId: 'dakal' }));
+    expect(lots(EQUIPMENT)).toEqual([]);
+    expect(lots()).toEqual([{ lot_size: 1, lot_price_kamas: 100, device_id: KEY_ID }]);
   });
 });
