@@ -41,7 +41,7 @@ Le coût est `N × prix unitaire du lot` (prix du lot ÷ taille ; pas d'arrondi 
 - **FR-005** Page XP familier, mode communautaire : coût d'une ligne = `quantité × prix unitaire du lot
   choisi` ; mode personnel : inchangé (carnet = lot 1). Si le Worker est injoignable, comportement
   actuel (pas d'invention de valeur).
-- **FR-006** Le plafond journalier compte toutes les lignes écrites (contribution + prix de lot).
+- **FR-006** Le plafond journalier (5000 par clé) compte les ressources envoyées, pas les lignes de prix de lot (décision du propriétaire, 2026-10-19).
 - **FR-007** Rien n'est appliqué en remote ni déployé sans accord explicite du propriétaire.
 
 ## Hors périmètre

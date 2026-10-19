@@ -23,8 +23,8 @@ device_id TEXT)`, clé primaire `(resource_id, server_id, lot_size)` : dernier p
 - `worker/src/lot-prices.ts` : `lotPriceStatements(db, serverId, itemId, ladder, keyId, now)` (upsert
   des lots en vente + `DELETE` des lots absents) ; `lotPricesResponse(db, url)` pour
   `GET /community-lot-prices?serverId&resourceIds` (`contracts/community-lot-prices.md`).
-- `sniffer.ts` : ajoute ces instructions au `db.batch` existant ; `rows_written` = contributions +
-  prix de lot écrits ; `DAILY_ROW_LIMIT` comparé au total (FR-006).
+- `sniffer.ts` : ajoute ces instructions au `db.batch` existant ; `rows_written` et le plafond
+  comptent les ressources seulement (FR-006).
 - `index.ts` : route GET publique, mise en cache comme `/community-prices`.
 
 ## Domaine (front, pur)

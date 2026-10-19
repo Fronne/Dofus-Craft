@@ -162,9 +162,9 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
     else kept.push(observation);
   });
 
-  // specs/058: each ladder also writes the price of every lot on sale, counted in the daily cap.
+  // specs/058: each ladder also writes the price of every lot on sale. The daily cap counts resources
+  // (5000 a day), not these extra rows.
   const lotWrites = kept.map(({ itemId, ladder }) => lotPriceStatements(env.DB, serverId, itemId, ladder, keyId, now));
-  const rowsToWrite = kept.length + lotWrites.reduce((sum, write) => sum + write.rows, 0);
   const day = now.toISOString().slice(0, 10);
   const usage = await env.DB.prepare(`SELECT rows_written FROM sniffer_daily_usage WHERE key_id = ? AND day = ?`)
     .bind(keyId, day).first<{ rows_written: number }>();
@@ -172,7 +172,7 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
   // A batch that would cross the cap is refused whole: never a partial write (spec, edge cases). Read
   // then written without a lock: two concurrent batches of one key may each pass, so the cap can be
   // crossed by at most one batch per concurrent request — the count itself stays exact.
-  if (used + rowsToWrite > DAILY_ROW_LIMIT) {
+  if (used + kept.length > DAILY_ROW_LIMIT) {
     return { status: 429, body: { error: 'daily_limit', limit: DAILY_ROW_LIMIT, used } };
   }
   if (kept.length === 0) return { status: 200, body: { accepted: 0, rejected } };
@@ -198,7 +198,7 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
   statements.push(env.DB.prepare(
     `INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)
      ON CONFLICT (key_id, day) DO UPDATE SET rows_written = rows_written + excluded.rows_written`,
-  ).bind(keyId, day, rowsToWrite));
+  ).bind(keyId, day, kept.length));
   // All or nothing: the prices, the lot prices and the day's count are written together.
   await env.DB.batch(statements);
   return { status: 200, body: { accepted: kept.length, rejected }, wrote: true };

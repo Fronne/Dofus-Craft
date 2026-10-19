@@ -61,7 +61,7 @@ describe('POST /community-price/batch (specs/056, US1)', () => {
       { resource_id: RESOURCE, server_id: 'mikhal', amount_kamas: 22_900, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
       { resource_id: OTHER_RESOURCE, server_id: 'mikhal', amount_kamas: 500, device_id: KEY_ID, kind: 'resource', origin: 'sniffer', median_at_submission_kamas: null, deviation_percent: null },
     ]);
-    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 6 }]); // 2 contributions + 4 lot prices (3 + 1), specs/058
+    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 2 }]); // resources only: the lot prices don't count (specs/058)
     const key = test.sqlite.prepare('SELECT last_seen_at FROM sniffer_keys WHERE id = ?').get(KEY_ID) as { last_seen_at: string | null };
     expect(key.last_seen_at).not.toBeNull();
   });
@@ -225,14 +225,14 @@ describe('guards (specs/056, US4)', () => {
 
   it('refuses a whole batch that would cross the daily cap (429), and accepts one that reaches it', async () => {
     const day = new Date().toISOString().slice(0, 10);
-    test.sqlite.prepare('INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)').run(KEY_ID, day, DAILY_ROW_LIMIT - 4);
+    test.sqlite.prepare('INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)').run(KEY_ID, day, DAILY_ROW_LIMIT - 1);
 
     const over = await call('POST', '/community-price/batch', batch([observation(RESOURCE), observation(OTHER_RESOURCE)]));
     expect(over.status).toBe(429);
-    await expect(over.json()).resolves.toEqual({ error: 'daily_limit', limit: DAILY_ROW_LIMIT, used: DAILY_ROW_LIMIT - 4 });
+    await expect(over.json()).resolves.toEqual({ error: 'daily_limit', limit: DAILY_ROW_LIMIT, used: DAILY_ROW_LIMIT - 1 });
     expect(contributions()).toEqual([]);
 
-    // Refused observations don't count against the cap; the lot prices of an accepted one do (1 + 3 here).
+    // Refused observations don't count against the cap.
     const last = await call('POST', '/community-price/batch', batch([observation(RESOURCE), observation(EQUIPMENT)]));
     await expect(last.json()).resolves.toEqual({ accepted: 1, rejected: [{ index: 1, reason: 'not_an_ingredient' }] });
     expect(usage()).toEqual([{ key_id: KEY_ID, day, rows_written: DAILY_ROW_LIMIT }]);
