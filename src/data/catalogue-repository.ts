@@ -318,9 +318,9 @@ export async function getItemEffectLines(id: string): Promise<{ effectId: number
 
 // specs/061-simplification-page-brisage (FR-006): the same lines with their roll range, so the page can
 // start from the average roll. DofusDB writes a fixed effect as `to: 0`: that is a range of one value.
-export async function getItemEffectRanges(id: string): Promise<{ effectId: number; from: number; to: number; icon?: string }[]> {
+export async function getItemEffectRanges(id: string): Promise<{ effectId: number; from: number; to: number }[]> {
   const item = await cached(`item:${id}`, () => getDofusDbItem(id));
-  const ranges: { effectId: number; from: number; to: number; icon?: string }[] = [];
+  const ranges: { effectId: number; from: number; to: number }[] = [];
   for (const effect of item.effects ?? []) {
     if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
     if (effect.category === 2) continue;
@@ -328,17 +328,6 @@ export async function getItemEffectRanges(id: string): Promise<{ effectId: numbe
     ranges.push(effect.to === 0
       ? { effectId: effect.effectId, from: effect.from, to: effect.from }
       : { effectId: effect.effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
-  }
-  // The stat icons are a nicety: without the effect metadata the lines just show no icon.
-  try {
-    const metadata = await getDofusDbEffects([...new Set(ranges.map((range) => range.effectId))]);
-    const byId = new Map(metadata.map((effect) => [effect.id, effect]));
-    for (const range of ranges) {
-      const meta = byId.get(range.effectId);
-      range.icon = characteristicIcon(meta?.characteristic, meta?.elementId, undefined);
-    }
-  } catch {
-    // no icons
   }
   return ranges;
 }
