@@ -8,5 +8,6 @@ export const ROUTES = {
   pets: '/familier',
   hdv: '/hdv',
   forgemagie: '/forgemagie',
+  brisage: '/brisage',
   settings: '/parametres',
 } as const;
