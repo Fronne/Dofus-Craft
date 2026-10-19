@@ -14,6 +14,7 @@ import { PricesPage } from '../features/prices/PricesPage';
 import { FamilierPage } from '../features/pets/FamilierPage';
 import { HdvPage } from '../features/hdv/HdvPage';
 import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
+import { BrisagePage } from '../features/brisage/BrisagePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import { useSiteSettings } from './useSiteSettings';
@@ -43,6 +44,7 @@ const PAGE_TITLES: Record<string, string> = {
   [ROUTES.hdv]: `Prix de l'HDV — ${SITE_NAME}`,
   [ROUTES.pets]: `XP Familier — ${SITE_NAME}`,
   [ROUTES.forgemagie]: `Forgemagie — ${SITE_NAME}`,
+  [ROUTES.brisage]: `Brisage — ${SITE_NAME}`,
   [ROUTES.settings]: `Paramètres — ${SITE_NAME}`,
 };
 
@@ -258,6 +260,8 @@ export function AppShell() {
                   ? <p className="empty" role="status">Chargement…</p>
                   : <HdvUnavailablePage />}
             />
+            {/* specs/060-page-brisage (FR-001): reachable by its address only, no menu entry for now. */}
+            <Route path={ROUTES.brisage} element={<BrisagePage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />} />
             <Route
               path={ROUTES.forgemagie}

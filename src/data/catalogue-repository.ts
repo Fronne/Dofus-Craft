@@ -295,3 +295,18 @@ export async function getCategories(): Promise<Category[]> {
   const types = await cached('item-types', () => getDofusDbItemTypes());
   return mapDofusDbCategories(types);
 }
+
+// specs/060-page-brisage (FR-002, FR-008): the numeric lines of an item, for the breaking estimate.
+// Weapon effects and negative or empty lines can't be broken into runes and are left out; a line
+// that rolls between two values keeps its maximum.
+export async function getItemEffectLines(id: string): Promise<{ effectId: number; value: number }[]> {
+  const item = await cached(`item:${id}`, () => getDofusDbItem(id));
+  const lines: { effectId: number; value: number }[] = [];
+  for (const effect of item.effects ?? []) {
+    if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
+    if (effect.category === 2) continue;
+    const value = Math.max(effect.from, effect.to);
+    if (value > 0 && effect.from >= 0 && effect.to >= 0) lines.push({ effectId: effect.effectId, value });
+  }
+  return lines;
+}
