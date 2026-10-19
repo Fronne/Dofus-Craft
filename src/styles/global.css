@@ -46,7 +46,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) .75rem;
   flex: 0 0 auto;
   width: calc(100% - 2 * var(--space-6));
   max-width: calc(var(--app-width) - 2 * var(--space-6));
@@ -91,12 +91,12 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: .3rem;
   min-height: 44px;
-  padding: 0 .75rem;
+  padding: 0 .5rem;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: .94rem;
+  font-size: .9rem;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -130,6 +130,9 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 
 .app-shell-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 
+/* With Brisage and Forgemagie both in, the bar is full: the "Serveur actif" caption gives way to the
+   server's name on the wide layout (the phone layout keeps its own rules). */
+@media (min-width: 961px) { .app-nav .server-switcher-label { display: none; } }
 .app-nav-footer { display: flex; align-items: center; gap: var(--space-1); flex: 0 0 auto; margin-left: auto; }
 .app-nav-footer .icon-button { border-color: transparent; background: none; }
 .app-nav-footer .icon-button:hover { background: var(--button-bg); }
