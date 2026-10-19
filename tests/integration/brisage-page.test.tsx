@@ -232,11 +232,34 @@ describe('Brisage page (specs/061)', () => {
     await screen.findByLabelText('Jet de Vitalité');
     expect(field('Jet de Vitalité').placeholder).toBe('42');
     expect(field('Jet de Dommages').placeholder).toBe('5');
-    expect(screen.getAllByText('moyen')).toHaveLength(3);
+    expect(screen.getAllByText('moyen')).toHaveLength(2);
     type('Jet de Vitalité', '44');
     expect(screen.getByText('modifié')).toBeInTheDocument();
     type('Jet de Vitalité', '');
     expect(screen.queryByText('modifié')).not.toBeInTheDocument();
+  });
+
+  it('sets every free line to its minimum or maximum with the Jet column switch, and shows both bounds', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    await screen.findByLabelText('Jet de Vitalité');
+    // Vitalité 40–44 and Dommages 1–9 are free; Chance (38) is fixed: no field, no switch effect.
+    expect(screen.queryByLabelText('Jet de Chance')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Min' }));
+    expect(field('Jet de Vitalité').value).toBe('40');
+    expect(field('Jet de Dommages').value).toBe('1');
+    expect(screen.getByRole('button', { name: 'Min' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect(field('Jet de Vitalité').value).toBe('44');
+    expect(field('Jet de Dommages').value).toBe('9');
+    fireEvent.click(screen.getByRole('button', { name: 'Moyen' }));
+    expect(field('Jet de Vitalité').value).toBe('');
+    type('Jet de Vitalité', '41');
+    expect(screen.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('names the runes without a price instead of inventing one', async () => {
