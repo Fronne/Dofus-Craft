@@ -310,3 +310,19 @@ export async function getItemEffectLines(id: string): Promise<{ effectId: number
   }
   return lines;
 }
+
+// specs/061-simplification-page-brisage (FR-006): the same lines with their roll range, so the page can
+// start from the average roll. DofusDB writes a fixed effect as `to: 0`: that is a range of one value.
+export async function getItemEffectRanges(id: string): Promise<{ effectId: number; from: number; to: number }[]> {
+  const item = await cached(`item:${id}`, () => getDofusDbItem(id));
+  const ranges: { effectId: number; from: number; to: number }[] = [];
+  for (const effect of item.effects ?? []) {
+    if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
+    if (effect.category === 2) continue;
+    if (!(Math.max(effect.from, effect.to) > 0 && effect.from >= 0 && effect.to >= 0)) continue;
+    ranges.push(effect.to === 0
+      ? { effectId: effect.effectId, from: effect.from, to: effect.from }
+      : { effectId: effect.effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
+  }
+  return ranges;
+}

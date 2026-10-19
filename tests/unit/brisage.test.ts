@@ -4,6 +4,7 @@ import type { RuneItem, RuneItemsData } from '../../src/domain/forgemagie';
 import {
   BRISAGE_STATS,
   analyzeBrisage,
+  averageRoll,
   coefficientDescent,
   defaultBrisageSettings,
   lineWeight,
@@ -225,5 +226,15 @@ describe('mergeBrisageSettings', () => {
     expect(merged.runeSize).toBe('ra');
     expect(merged.stats[125]).toEqual({ weight: 0.5, runePoints: 5 });
     expect(merged.stats[99999]).toBeUndefined();
+  });
+});
+
+// specs/061-simplification-page-brisage (FR-006): the default roll is the middle of the range, rounded down.
+describe('averageRoll', () => {
+  it('takes the middle of the range rounded down', () => {
+    expect(averageRoll(1, 50)).toBe(25);
+    expect(averageRoll(5, 10)).toBe(7);
+    expect(averageRoll(8, 8)).toBe(8);
+    expect(averageRoll(10, 5)).toBe(7);
   });
 });

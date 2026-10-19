@@ -4,40 +4,40 @@
 
 ## Phase 1 — Fondations (bloquant pour toutes les histoires)
 
-- [ ] T001 [P] Ajouter `averageRoll(from, to)` (`Math.floor((from + to) / 2)`, `from === to` → la valeur) dans `src/domain/brisage.ts`, avec test dans `tests/unit/brisage.test.ts` (1–50 → 25, 5–10 → 7, 8–8 → 8).
-- [ ] T002 [P] Ajouter `getItemEffectRanges(id)` dans `src/data/catalogue-repository.ts` : même filtrage que `getItemEffectLines` (effectId numérique, `category !== 2`, `from >= 0`, `to >= 0`, max > 0), retourne `{ effectId, from, to }[]` avec `from <= to` ; test dans `tests/unit/catalogue-item-effect-lines.test.ts`.
-- [ ] T003 [P] Créer `src/persistence/brisage-coefficients.ts` : `getStoredCoefficient(serverId, itemId)` → `{ coefficient, savedAt } | undefined` et `saveCoefficient(serverId, itemId, coefficient)` ; clé `craftcheck-brisage-coefficients`, JSON `{ "<serverId>:<itemId>": { coefficient, savedAt } }`, `coefficient` > 0 et ≤ 100 (sinon entrée ignorée), `savedAt` ISO 8601, `try/catch` sur tout accès `localStorage`. Test dans `tests/unit/brisage-coefficients.test.ts` (aller-retour, stockage corrompu, valeur hors bornes).
-- [ ] T004 [P] Créer `src/features/brisage/useItemCost.ts` : hook lisant `pinnedItemPrices.get(serverId, itemId)` (`src/persistence/indexeddb-pinned-item-price-repository.ts`) → `{ status: 'loading' | 'ready', costKamas?: number }`.
+- [x] T001 [P] Ajouter `averageRoll(from, to)` (`Math.floor((from + to) / 2)`, `from === to` → la valeur) dans `src/domain/brisage.ts`, avec test dans `tests/unit/brisage.test.ts` (1–50 → 25, 5–10 → 7, 8–8 → 8).
+- [x] T002 [P] Ajouter `getItemEffectRanges(id)` dans `src/data/catalogue-repository.ts` : même filtrage que `getItemEffectLines` (effectId numérique, `category !== 2`, `from >= 0`, `to >= 0`, max > 0), retourne `{ effectId, from, to }[]` avec `from <= to` ; test dans `tests/unit/catalogue-item-effect-lines.test.ts`.
+- [x] T003 [P] Créer `src/persistence/brisage-coefficients.ts` : `getStoredCoefficient(serverId, itemId)` → `{ coefficient, savedAt } | undefined` et `saveCoefficient(serverId, itemId, coefficient)` ; clé `craftcheck-brisage-coefficients`, JSON `{ "<serverId>:<itemId>": { coefficient, savedAt } }`, `coefficient` > 0 et ≤ 100 (sinon entrée ignorée), `savedAt` ISO 8601, `try/catch` sur tout accès `localStorage`. Test dans `tests/unit/brisage-coefficients.test.ts` (aller-retour, stockage corrompu, valeur hors bornes).
+- [x] T004 [P] Créer `src/features/brisage/useItemCost.ts` : hook lisant `pinnedItemPrices.get(serverId, itemId)` (`src/persistence/indexeddb-pinned-item-price-repository.ts`) → `{ status: 'loading' | 'ready', costKamas?: number }`.
 
 ## Phase 2 — US1 : objet, coût, verdict (P1)
 
 **Test indépendant** : sélectionner un objet épinglé, saisir un coefficient, lire le verdict.
 
-- [ ] T005 [US1] Réécrire `src/features/brisage/BrisagePage.tsx` : recherche (`useEquipmentSearch`), sélection d'un objet, niveau lu de l'objet (aucun champ de niveau), coût via `useItemCost` (champ de saisie seulement si absent), réglages = `defaultBrisageSettings()`, prix de runes via `useRunePrices` sans saisie ; appel à `analyzeBrisage`.
-- [ ] T006 [US1] Bloc **Résultat** dans `BrisagePage.tsx` : 4 tuiles `StatTile` — verdict (« Rentable » si le gain de la meilleure option ≥ 0, sinon « Pas rentable »), nombre de brisages avant seuil (0 si sous le seuil), coefficient minimal de rentabilité, meilleure option de focus ; runes sans prix listées par nom (« prix manquant »), jamais de valeur inventée.
-- [ ] T007 [US1] Bandeau d'estimation raccourci (H1–H4, formule niveau 40, focus non officiel) dans `BrisagePage.tsx`.
+- [x] T005 [US1] Réécrire `src/features/brisage/BrisagePage.tsx` : recherche (`useEquipmentSearch`), sélection d'un objet, niveau lu de l'objet (aucun champ de niveau), coût via `useItemCost` (champ de saisie seulement si absent), réglages = `defaultBrisageSettings()`, prix de runes via `useRunePrices` sans saisie ; appel à `analyzeBrisage`.
+- [x] T006 [US1] Bloc **Résultat** dans `BrisagePage.tsx` : 4 tuiles `StatTile` — verdict (« Rentable » si le gain de la meilleure option ≥ 0, sinon « Pas rentable »), nombre de brisages avant seuil (0 si sous le seuil), coefficient minimal de rentabilité, meilleure option de focus ; runes sans prix listées par nom (« prix manquant »), jamais de valeur inventée.
+- [x] T007 [US1] Bandeau d'estimation raccourci (H1–H4, formule niveau 40, focus non officiel) dans `BrisagePage.tsx`.
 
 ## Phase 3 — US2 : coefficient mémorisé (P1)
 
 **Test indépendant** : saisir un coefficient, recharger, resélectionner l'objet → valeur et date réaffichées.
 
-- [ ] T008 [US2] Dans `BrisagePage.tsx` : à la sélection, lire `getStoredCoefficient` ; si présent afficher « Dernier coefficient : X % (jj/mm) » et l'utiliser ; sinon afficher le champ « Coefficient relevé en jeu après un brisage », vide, sans résultat tant qu'il est vide ; toute saisie valide appelle `saveCoefficient` (date du jour).
+- [x] T008 [US2] Dans `BrisagePage.tsx` : à la sélection, lire `getStoredCoefficient` ; si présent afficher « Dernier coefficient : X % (jj/mm) » et l'utiliser ; sinon afficher le champ « Coefficient relevé en jeu après un brisage », vide, sans résultat tant qu'il est vide ; toute saisie valide appelle `saveCoefficient` (date du jour).
 
 ## Phase 4 — US3 : jet moyen modifiable (P2)
 
 **Test indépendant** : jets moyens affichés, en modifier un, le résultat change.
 
-- [ ] T009 [US3] Dans `BrisagePage.tsx` : lignes issues de `getItemEffectRanges`, chaque ligne affiche son jet moyen (`averageRoll`) en placeholder d'un champ modifiable (`override`), étiquette « moyen » / « modifié », champ vidé = retour au jet moyen ; les lignes alimentent `analyzeBrisage`.
+- [x] T009 [US3] Dans `BrisagePage.tsx` : lignes issues de `getItemEffectRanges`, chaque ligne affiche son jet moyen (`averageRoll`) en placeholder d'un champ modifiable (`override`), étiquette « moyen » / « modifié », champ vidé = retour au jet moyen ; les lignes alimentent `analyzeBrisage`.
 
 ## Phase 5 — US4 : meilleure rune à focus (P2)
 
-- [ ] T010 [US4] Dans `BrisagePage.tsx` : phrase « Pas de focus » ou « Focus sur la rune X » avec le gain par objet, option sans prix écartée et signalée « prix manquant », mention « estimation non officielle ».
+- [x] T010 [US4] Dans `BrisagePage.tsx` : phrase « Pas de focus » ou « Focus sur la rune X » avec le gain par objet, option sans prix écartée et signalée « prix manquant », mention « estimation non officielle ».
 
 ## Phase 6 — Nettoyage et vérifications
 
-- [ ] T011 Supprimer `src/persistence/brisage-settings.ts` et `tests/unit/brisage-settings-persistence.test.ts` (réglages retirés de l'interface) ; retirer de `src/styles/global.css` les styles `.brisage-*` devenus inutilisés ; adapter la note de `specs/060-page-brisage/spec.md` (FR-002, FR-007 et US3 remplacés par la spec 061).
-- [ ] T012 Réécrire `tests/integration/brisage-page.test.tsx` : choix d'objet avec prix épinglé, aucun champ de niveau, coefficient demandé puis mémorisé avec sa date, jet moyen modifiable, 4 infos du résultat, runes sans prix signalées.
-- [ ] T013 Lancer `npm run test`, `npm run lint`, `npm run build` et le parcours de `quickstart.md`.
+- [x] T011 Supprimer `src/persistence/brisage-settings.ts` et `tests/unit/brisage-settings-persistence.test.ts` (réglages retirés de l'interface) ; retirer de `src/styles/global.css` les styles `.brisage-*` devenus inutilisés ; adapter la note de `specs/060-page-brisage/spec.md` (FR-002, FR-007 et US3 remplacés par la spec 061).
+- [x] T012 Réécrire `tests/integration/brisage-page.test.tsx` : choix d'objet avec prix épinglé, aucun champ de niveau, coefficient demandé puis mémorisé avec sa date, jet moyen modifiable, 4 infos du résultat, runes sans prix signalées.
+- [x] T013 Lancer `npm run test`, `npm run lint`, `npm run build` et le parcours de `quickstart.md`.
 
 ## Dépendances
 

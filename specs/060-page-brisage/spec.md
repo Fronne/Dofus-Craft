@@ -6,6 +6,11 @@
 **Input**: « Une page dédiée Brisage : dire si briser un item est rentable, s'il faut faire un focus,
 et sur quelle rune. » Fonctionnalité validée par le porteur du projet.
 
+> **Révision (spec 061)** : l'interface décrite ici (saisie manuelle, coût et coefficient saisis, prix de
+> runes saisis, réglages éditables, courbe de descente) est remplacée par
+> [061-simplification-page-brisage](../061-simplification-page-brisage/spec.md). Restent valables les
+> formules et hypothèses H1–H4 ; FR-002, FR-004 (saisie), FR-005 (courbe), FR-007 et l'US 3 ne le sont plus.
+
 ## Contexte
 
 Briser un objet donne des runes selon ses lignes de stats et un **coefficient** propre à l'objet

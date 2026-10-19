@@ -2429,21 +2429,8 @@ select:focus {
 .brisage-block { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
 .brisage-block h2, .brisage-block h3, .brisage-results h2, .brisage-results h3 { margin: 0; }
 .brisage-results { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
-.brisage-fields { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
-.brisage-fields .pet-level-field { flex: 0 1 12rem; }
-.brisage-lines, .brisage-prices { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.brisage-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .brisage-lines li { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.brisage-line-label { flex: 1 1 12rem; }
 .brisage-lines input { width: 7rem; }
-.brisage-prices { grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
-.brisage-prices label { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
 .brisage-picked { margin: 0; }
-.brisage-table-wrap { overflow-x: auto; }
-.brisage-descent { max-height: 22rem; overflow-y: auto; }
-.brisage-table { width: 100%; border-collapse: collapse; font-size: .9rem; font-variant-numeric: tabular-nums; }
-.brisage-table th, .brisage-table td { padding: .4rem .6rem; text-align: left; border-bottom: 1px solid var(--border); }
-.brisage-table input { width: 6rem; }
-.brisage-best { background: var(--accent-soft); font-weight: 700; }
-.brisage-curve { width: 100%; max-width: 30rem; height: auto; }
-.brisage-curve-line { stroke: var(--accent); stroke-width: 2; }
-.brisage-curve-threshold { stroke: var(--danger); stroke-width: 1; stroke-dasharray: 4 3; }
-.brisage-settings summary { cursor: pointer; font-weight: 700; }

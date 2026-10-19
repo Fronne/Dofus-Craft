@@ -3,32 +3,34 @@ import runeItems from '../../data/rune-items.json';
 import { useActiveServer } from '../../app/ServerContext';
 import { Icon } from '../../components/Icon';
 import { StatTile } from '../../components/StatTile';
-import { getItemEffectLines } from '../../data/catalogue-repository';
+import { getItemEffectRanges } from '../../data/catalogue-repository';
 import {
-  BRISAGE_STATS,
   analyzeBrisage,
+  averageRoll,
   brisageStat,
+  defaultBrisageSettings,
   runeForStat,
   type BrisageOption,
-  type BrisageSettings,
-  type RuneSize,
 } from '../../domain/brisage';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import type { Item } from '../../domain/types';
-import { getBrisageSettings, resetBrisageSettings, setBrisageSettings } from '../../persistence/brisage-settings';
-import { Kamas } from '../prices/PricesPage';
+import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
 import { MIN_QUERY_LENGTH, useEquipmentSearch } from '../forgemagie/useEquipmentSearch';
+import { useItemCost } from './useItemCost';
 import { useRunePrices } from './useRunePrices';
 
-// specs/060-page-brisage: is breaking an item profitable, and is a focus worth it? Everything shown is
-// an ESTIMATE from unofficial formulas (spec.md H1–H4) — the page says so and lets the weights be set.
+// specs/061-simplification-page-brisage: pick an item, read the verdict. The cost comes from the price
+// already noted on Recherche, the coefficient is remembered per item, each line starts at its average
+// roll. Everything shown is an ESTIMATE from unofficial formulas (specs/060-page-brisage H1–H4).
 
 const RUNES = (runeItems as RuneItemsData).runes;
+const SETTINGS = defaultBrisageSettings();
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
-const SIZES: { value: RuneSize; label: string }[] = [{ value: 'ba', label: 'Ba (simple)' }, { value: 'pa', label: 'Pa' }, { value: 'ra', label: 'Ra' }];
+const date = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-type LineDraft = { key: number; effectId: number; value: string };
+type PickedItem = { id: string; name: string; level?: number };
+type Range = { effectId: number; from: number; to: number };
 
 const parse = (text: string): number => (text.trim() === '' ? NaN : Number(text.replace(/\s/g, '').replace(',', '.')));
 
@@ -36,52 +38,36 @@ function optionLabel(option: BrisageOption): string {
   return option.kind === 'normal' ? 'Pas de focus' : `Focus ${(option.focusRuneName ?? '').replace('Rune ', '')}`.trim();
 }
 
-function CoefficientCurve({ steps, threshold }: { steps: { index: number; coefficient: number }[]; threshold: number }) {
-  const width = 360;
-  const height = 120;
-  if (steps.length < 2) return null;
-  const max = steps[0].coefficient;
-  const x = (index: number) => ((index - 1) / (steps.length - 1)) * (width - 20) + 10;
-  const y = (coefficient: number) => height - 10 - (coefficient / max) * (height - 20);
-  const points = steps.map((step) => `${x(step.index)},${y(step.coefficient)}`).join(' ');
-  return (
-    <svg className="brisage-curve" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Coefficient de ${steps[0].coefficient} % à ${steps[steps.length - 1].coefficient} % sur ${steps.length} objets`}>
-      <line x1="10" x2={width - 10} y1={y(threshold)} y2={y(threshold)} className="brisage-curve-threshold" />
-      <polyline points={points} className="brisage-curve-line" fill="none" />
-    </svg>
-  );
-}
+const statLabel = (effectId: number) => brisageStat(effectId)?.label ?? `Effet ${effectId}`;
+const rangeText = (range: Range) => (range.from === range.to ? `${range.from}` : `${range.from} à ${range.to}`);
 
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
-  const [settings, setSettings] = useState<BrisageSettings>(() => getBrisageSettings());
   const [query, setQuery] = useState('');
   const search = useEquipmentSearch(query);
-  const [itemName, setItemName] = useState('');
-  const [level, setLevel] = useState('100');
-  const [coefficient, setCoefficient] = useState('50');
-  const [cost, setCost] = useState('');
-  const [lines, setLines] = useState<LineDraft[]>([]);
+  const [item, setItem] = useState<PickedItem>();
+  const [ranges, setRanges] = useState<Range[]>([]);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
-  const [manualPrices, setManualPrices] = useState<Record<string, string>>({});
-  const nextKey = useRef(1);
+  const [rolls, setRolls] = useState<Record<number, string>>({});
+  const [stored, setStored] = useState<StoredCoefficient>();
+  const [coefficientText, setCoefficientText] = useState('');
+  const [manualCost, setManualCost] = useState('');
   const pickToken = useRef(0);
 
-  const update = (next: BrisageSettings) => {
-    setSettings(next);
-    setBrisageSettings(next);
-  };
-
-  const pick = (item: Item) => {
+  const pick = (found: Item) => {
     const token = ++pickToken.current;
-    setItemName(item.name);
+    setItem({ id: found.id, name: found.name, level: found.level });
     setQuery('');
-    if (item.level) setLevel(String(item.level));
+    setRanges([]);
+    setRolls({});
+    setCoefficientText('');
+    setManualCost('');
+    setStored(serverId ? getStoredCoefficient(serverId, found.id) : undefined);
     setLoadState('loading');
-    getItemEffectLines(item.id)
-      .then((found) => {
+    getItemEffectRanges(found.id)
+      .then((result) => {
         if (pickToken.current !== token) return;
-        setLines(found.map((line) => ({ key: nextKey.current++, effectId: line.effectId, value: String(line.value) })));
+        setRanges(result);
         setLoadState('idle');
       })
       .catch(() => {
@@ -89,57 +75,70 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       });
   };
 
-  const parsedLines = lines.map((line) => ({ effectId: line.effectId, value: parse(line.value) }));
-  // The simple-rune ids of the lines: the prices to read.
+  const rememberCoefficient = () => {
+    const value = parse(coefficientText);
+    if (!serverId || !item || !(value > 0 && value <= 100)) return;
+    setStored(saveCoefficient(serverId, item.id, value));
+    setCoefficientText('');
+  };
+
+  const itemCost = useItemCost(serverId, item?.id, priceMode);
+  const typedCoefficient = parse(coefficientText);
+  const coefficient = typedCoefficient > 0 ? typedCoefficient : stored?.coefficient ?? NaN;
+  const cost = itemCost.costKamas ?? parse(manualCost);
+
+  // Only the lines that break into a known rune are shown; the others are just counted.
+  const breakable = ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize));
+  const lines = breakable.map((range, index) => {
+    const average = averageRoll(range.from, range.to);
+    const typed = parse(rolls[index] ?? '');
+    const modified = typed >= 0 && typed !== average;
+    return { index, range, average, value: typed >= 0 ? typed : average, modified };
+  });
   const runeIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const line of lines) {
-      const found = runeForStat(RUNES, line.effectId, settings.runeSize);
+    for (const range of ranges) {
+      const found = runeForStat(RUNES, range.effectId, SETTINGS.runeSize);
       if (found) ids.add(found.rune.id);
     }
     return [...ids].sort();
-  }, [lines, settings.runeSize]);
+  }, [ranges]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
-  const prices: Record<string, number | undefined> = { ...fetched.prices };
-  for (const [id, text] of Object.entries(manualPrices)) {
-    const value = parse(text);
-    if (value > 0) prices[id] = value;
-  }
 
-  const levelNumber = parse(level);
-  const analysis = analyzeBrisage(
-    { level: levelNumber, lines: parsedLines, coefficient: parse(coefficient), itemCostKamas: parse(cost) },
-    RUNES,
-    prices,
-    settings,
-  );
-  const best = analysis.status === 'ok' ? analysis.best : undefined;
-  const missingIds = analysis.status === 'ok' ? [...new Set(analysis.options.flatMap((o) => o.missingRuneIds))] : [];
-  const unconfirmed = lines.map((line) => brisageStat(line.effectId)).filter((stat) => stat && !stat.confirmed).map((stat) => stat!.label);
+  const analysis = item && ranges.length > 0 && itemCost.status === 'ready'
+    ? analyzeBrisage(
+      { level: item.level ?? NaN, lines: lines.map((line) => ({ effectId: line.range.effectId, value: line.value })), coefficient, itemCostKamas: cost },
+      RUNES,
+      fetched.prices,
+      SETTINGS,
+    )
+    : undefined;
+  const best = analysis?.status === 'ok' ? analysis.best : undefined;
+  const missingNames = analysis?.status === 'ok'
+    ? [...new Set(analysis.options.flatMap((o) => o.missingRuneIds))].map((id) => RUNES.find((r) => r.id === id)?.name ?? id)
+    : [];
+  const unconfirmed = breakable.map((range) => brisageStat(range.effectId)).filter((stat) => stat && !stat.confirmed).map((stat) => stat!.label);
 
   return (
     <>
       <header className="page-header">
         <h1>Brisage</h1>
-        <p>Briser un objet est-il rentable ? Faut-il un focus, et sur quelle rune ?</p>
+        <p>Briser cet objet est-il rentable ? Sur quelle rune faire un focus ?</p>
       </header>
 
       <div className="panel brisage-estimate" role="note">
         <Icon name="info" size={18} />
         <p>
-          <b>Tout est une estimation.</b> La descente du coefficient suit une formule empirique mesurée sur des objets de
-          niveau 40 (écart ≤ 2 %) : le niveau de l'objet change la vitesse réelle. Le nombre de runes vient d'une formule
-          testée sur deux relevés de niveau 100. Le calcul du focus (ligne ciblée à {number.format(settings.focusTargetShare * 100)} %, autres
-          lignes à {number.format(settings.focusOtherShare * 100)} %) est une <b>hypothèse non officielle</b> à confirmer par des relevés en jeu.
-          Les poids sont des réglages que vous pouvez modifier plus bas.
+          <b>Tout est une estimation.</b> Le coefficient descend selon une formule mesurée sur des objets de niveau 40, et
+          le calcul du focus est une <b>hypothèse non officielle</b> : à confirmer en jeu.
         </p>
       </div>
 
       <section className="panel brisage-block" aria-labelledby="brisage-item">
-        <h2 id="brisage-item">Objet</h2>
+        <h2 id="brisage-item">Objet à briser</h2>
         <div className="search-input-wrap">
           <Icon name="search" size={18} className="search-input-icon" />
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet du catalogue…" aria-label="Chercher un objet" />
+          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet…" aria-label="Chercher un objet" />
         </div>
         {query.trim().length >= MIN_QUERY_LENGTH && (
           <div>
@@ -148,11 +147,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             {search.status === 'ready' && search.items.length === 0 && <p className="fm-note">Aucun objet ne correspond.</p>}
             {search.status === 'ready' && (
               <ul className="fm-picker-results">
-                {search.items.map((item) => (
-                  <li key={item.id}>
-                    <button type="button" className="fm-picker-result" onClick={() => pick(item)}>
-                      <span>{item.name}</span>
-                      {item.level !== undefined && <span className="fm-note">Niv. {item.level}</span>}
+                {search.items.map((found) => (
+                  <li key={found.id}>
+                    <button type="button" className="fm-picker-result" onClick={() => pick(found)}>
+                      <span>{found.name}</span>
+                      {found.level !== undefined && <span className="fm-note">Niv. {found.level}</span>}
                     </button>
                   </li>
                 ))}
@@ -160,214 +159,117 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             )}
           </div>
         )}
-        {itemName && <p className="brisage-picked">Objet choisi : <b>{itemName}</b></p>}
-        {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
-        {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues : saisissez les lignes à la main.</p>}
-
-        <div className="brisage-fields">
-          <label className="pet-level-field">Niveau de l'objet
-            <input type="number" inputMode="numeric" min={1} max={200} value={level} onChange={(event) => setLevel(event.target.value)} />
-          </label>
-          <label className="pet-level-field">Coefficient actuel (%)
-            <input type="number" inputMode="decimal" min={1} max={100} value={coefficient} onChange={(event) => setCoefficient(event.target.value)} />
-          </label>
-          <label className="pet-level-field">Coût de l'objet (kamas)
-            <input type="number" inputMode="numeric" min={0} value={cost} onChange={(event) => setCost(event.target.value)} />
-          </label>
-        </div>
-
-        <h3>Lignes de l'objet</h3>
-        {lines.length === 0 && <p className="fm-note">Aucune ligne : choisissez un objet ou ajoutez des lignes à la main.</p>}
-        <ul className="brisage-lines">
-          {lines.map((line) => (
-            <li key={line.key}>
-              <select
-                aria-label="Stat de la ligne"
-                value={line.effectId}
-                onChange={(event) => setLines(lines.map((l) => (l.key === line.key ? { ...l, effectId: Number(event.target.value) } : l)))}
-              >
-                {!brisageStat(line.effectId) && <option value={line.effectId}>Effet {line.effectId} (inconnu)</option>}
-                {BRISAGE_STATS.map((stat) => <option key={stat.effectId} value={stat.effectId}>{stat.label}</option>)}
-              </select>
-              <input
-                type="number" inputMode="decimal" min={0} aria-label={`Valeur de la ligne ${brisageStat(line.effectId)?.label ?? line.effectId}`}
-                value={line.value}
-                onChange={(event) => setLines(lines.map((l) => (l.key === line.key ? { ...l, value: event.target.value } : l)))}
-              />
-              <button type="button" className="btn btn-secondary btn-small" onClick={() => setLines(lines.filter((l) => l.key !== line.key))} aria-label={`Retirer la ligne ${brisageStat(line.effectId)?.label ?? line.effectId}`}>Retirer</button>
-            </li>
-          ))}
-        </ul>
-        <button type="button" className="btn btn-secondary btn-small" onClick={() => setLines([...lines, { key: nextKey.current++, effectId: BRISAGE_STATS[0].effectId, value: '' }])}>
-          Ajouter une ligne
-        </button>
-        {unconfirmed.length > 0 && (
-          <p className="fm-note">Poids à confirmer par un relevé : {[...new Set(unconfirmed)].join(', ')}.</p>
-        )}
+        {!item && <p className="fm-note">Choisissez l'objet que vous voulez briser.</p>}
       </section>
 
-      <section className="brisage-results" aria-labelledby="brisage-results-title">
-        <h2 id="brisage-results-title">Résultat</h2>
-        {analysis.status === 'invalid' ? (
-          <p className="empty" role="status">{analysis.reason}</p>
-        ) : (
-          <>
-            {fetched.communityUnavailable && <p className="fm-note" role="status">Les prix partagés sont injoignables : seuls vos prix enregistrés et saisis sont utilisés.</p>}
-            {analysis.ignoredEffectIds.length > 0 && (
-              <p className="fm-note">{analysis.ignoredEffectIds.length} ligne(s) sans poids ni rune connus ne sont pas comptées.</p>
-            )}
-            {missingIds.length > 0 && (
-              <p className="fm-note" role="status">
-                Prix manquant pour {missingIds.length} rune(s) : saisissez-les ci-dessous, aucun prix n'est inventé.
-              </p>
-            )}
-            <div className="stat-tile-row" aria-live="polite">
-              <StatTile
-                icon="trending-up"
-                label="Meilleure option"
-                value={best ? (best.gainKamas! < 0 ? 'Pas rentable' : optionLabel(best)) : 'Prix manquants'}
-                hint={best ? `${best.gainKamas! >= 0 ? '+' : '−'}${number.format(Math.abs(best.gainKamas!))} kamas par objet` : undefined}
-              />
-              <StatTile
-                icon="anvil"
-                label="Coefficient minimal rentable"
-                value={analysis.thresholdCoefficient === undefined ? '—' : `${number.format(analysis.thresholdCoefficient)} %`}
-                hint="Brisage normal"
-              />
-              <StatTile
-                icon="package"
-                label="Objets à briser"
-                value={analysis.itemsCount === undefined ? '—' : String(analysis.itemsCount)}
-                hint="Estimation, formule niveau 40"
-              />
-            </div>
+      {item && (
+        <section className="panel brisage-block" aria-labelledby="brisage-details">
+          <h2 id="brisage-details">{item.name}{item.level !== undefined ? ` (niveau ${item.level})` : ''}</h2>
 
-            <h3>Classement des options</h3>
-            <p className="fm-note">Focus : estimation non officielle, à confirmer en jeu.</p>
-            <div className="brisage-table-wrap">
-              <table className="brisage-table">
-                <thead>
-                  <tr><th scope="col">#</th><th scope="col">Option</th><th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Gain par objet</th></tr>
-                </thead>
-                <tbody>
-                  {analysis.options.map((option, index) => (
-                    <tr key={`${option.kind}-${option.focusEffectId ?? 'n'}`} className={option === best ? 'brisage-best' : undefined}>
-                      <td>{option.gainKamas === undefined ? '—' : index + 1}</td>
-                      <td>{optionLabel(option)}</td>
-                      <td>
-                        {option.yields.filter((y) => y.count >= 0.05).map((y) => `${number.format(y.count)} ${y.runeName.replace('Rune ', '')}`).join(', ')}
-                      </td>
-                      <td>{option.missingRuneIds.length > 0 ? <span className="fm-note">prix manquant</span> : <Kamas value={Math.round(option.valueKamas)} />}</td>
-                      <td>{option.gainKamas === undefined ? <span className="fm-note">—</span> : <Kamas value={Math.round(option.gainKamas)} signed />}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {itemCost.status === 'ready' && itemCost.costKamas !== undefined && (
+            <p className="brisage-picked">Coût de l'objet : <b>{number.format(itemCost.costKamas)} kamas</b></p>
+          )}
+          {itemCost.status === 'ready' && itemCost.costKamas === undefined && (
+            <>
+              <label className="pet-level-field">Coût de l'objet (kamas)
+                <input type="number" inputMode="numeric" min={0} value={manualCost} onChange={(event) => setManualCost(event.target.value)} />
+              </label>
+              <p className="fm-note">Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.</p>
+            </>
+          )}
 
-            {analysis.thresholdCoefficient !== undefined && (
-              <>
-                <h3>Descente du coefficient</h3>
-                {analysis.descent.length === 0 ? (
-                  <p className="empty" role="status">Le coefficient actuel est déjà sous le seuil ({number.format(analysis.thresholdCoefficient)} %) : briser ne rapporte pas.</p>
-                ) : (
-                  <>
-                    <CoefficientCurve steps={analysis.descent} threshold={analysis.thresholdCoefficient} />
-                    <div className="brisage-table-wrap brisage-descent">
-                      <table className="brisage-table">
-                        <thead><tr><th scope="col">Objet n°</th><th scope="col">Coefficient</th><th scope="col">Valeur des runes</th><th scope="col">Gain</th></tr></thead>
-                        <tbody>
-                          {analysis.descent.map((step) => (
-                            <tr key={step.index}>
-                              <td>{step.index}</td>
-                              <td>{step.coefficient} %</td>
-                              <td><Kamas value={Math.round(step.valueKamas)} /></td>
-                              <td><Kamas value={Math.round(step.gainKamas)} signed /></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            <h3>Prix des runes</h3>
-            <p className="fm-note">
-              {priceMode === 'community' ? 'Prix partagés par la communauté' : 'Vos prix enregistrés'} ; une valeur saisie ici remplace le prix lu.
+          {stored ? (
+            <p className="brisage-picked">
+              Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
             </p>
-            <ul className="brisage-prices">
-              {runeIds.map((id) => {
-                const rune = RUNES.find((r) => r.id === id)!;
-                return (
-                  <li key={id}>
-                    <label>
-                      <span>{rune.name}</span>
-                      <input
-                        type="number" inputMode="numeric" min={0} aria-label={`Prix de ${rune.name}`}
-                        placeholder={fetched.prices[id] !== undefined ? String(fetched.prices[id]) : 'prix ?'}
-                        value={manualPrices[id] ?? ''}
-                        onChange={(event) => setManualPrices({ ...manualPrices, [id]: event.target.value })}
-                      />
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
-      </section>
+          ) : (
+            <p className="fm-note">Cet objet n'a pas encore été brisé ici : brisez-le en jeu, puis notez son coefficient.</p>
+          )}
+          <label className="pet-level-field">
+            {stored ? 'Nouveau coefficient relevé (%)' : 'Coefficient relevé en jeu après un brisage (%)'}
+            <input
+              type="number" inputMode="decimal" min={1} max={100}
+              value={coefficientText}
+              onChange={(event) => setCoefficientText(event.target.value)}
+              onBlur={rememberCoefficient}
+            />
+          </label>
 
-      <details className="panel brisage-block brisage-settings">
-        <summary>Réglages des poids et rendements</summary>
-        <p className="fm-note">Valeurs par défaut = hypothèses du projet. Modifiez-les pour coller à vos relevés ; elles sont gardées sur cet appareil.</p>
-        <div className="brisage-fields">
-          <label className="pet-level-field">Facteur de niveau
-            <input type="number" step="0.001" min={0} value={settings.levelFactor} onChange={(event) => update({ ...settings, levelFactor: Math.max(0, Number(event.target.value) || 0) })} />
-          </label>
-          <label className="pet-level-field">Bonus de ligne
-            <input type="number" step="0.1" min={0} value={settings.lineBonus} onChange={(event) => update({ ...settings, lineBonus: Math.max(0, Number(event.target.value) || 0) })} />
-          </label>
-          <label className="pet-level-field">Focus : part de la ligne ciblée (%)
-            <input type="number" min={0} max={100} value={Math.round(settings.focusTargetShare * 100)} onChange={(event) => update({ ...settings, focusTargetShare: Math.min(1, Math.max(0, (Number(event.target.value) || 0) / 100)) })} />
-          </label>
-          <label className="pet-level-field">Focus : part des autres lignes (%)
-            <input type="number" min={0} max={100} value={Math.round(settings.focusOtherShare * 100)} onChange={(event) => update({ ...settings, focusOtherShare: Math.min(1, Math.max(0, (Number(event.target.value) || 0) / 100)) })} />
-          </label>
-          <label className="pet-level-field">Taille de rune valorisée
-            <select value={settings.runeSize} onChange={(event) => update({ ...settings, runeSize: event.target.value as RuneSize })}>
-              {SIZES.map((size) => <option key={size.value} value={size.value}>{size.label}</option>)}
-            </select>
-          </label>
-          {SIZES.map((size) => (
-            <label className="pet-level-field" key={size.value}>Poids {size.label} (× rune simple)
-              <input type="number" min={0} value={settings.sizeMultipliers[size.value]} onChange={(event) => update({ ...settings, sizeMultipliers: { ...settings.sizeMultipliers, [size.value]: Math.max(0, Number(event.target.value) || 0) } })} />
-            </label>
-          ))}
-        </div>
-        <div className="brisage-table-wrap">
-          <table className="brisage-table">
-            <thead><tr><th scope="col">Stat</th><th scope="col">Poids par point</th><th scope="col">Points de la rune Ba</th><th scope="col">État</th></tr></thead>
-            <tbody>
-              {BRISAGE_STATS.map((stat) => {
-                const current = settings.stats[stat.effectId] ?? { weight: stat.weight, runePoints: stat.runePoints };
-                const set = (patch: Partial<typeof current>) => update({ ...settings, stats: { ...settings.stats, [stat.effectId]: { ...current, ...patch } } });
-                return (
-                  <tr key={stat.effectId}>
-                    <td>{stat.label}</td>
-                    <td><input type="number" step="any" min={0} aria-label={`Poids de ${stat.label}`} value={current.weight} onChange={(event) => set({ weight: Math.max(0, Number(event.target.value) || 0) })} /></td>
-                    <td><input type="number" step="any" min={0} aria-label={`Points de la rune ${stat.label}`} value={current.runePoints} onChange={(event) => set({ runePoints: Math.max(0, Number(event.target.value) || 0) })} /></td>
-                    <td className="fm-note">{stat.confirmed ? 'recoupé par un relevé' : 'à confirmer'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <button type="button" className="btn btn-secondary btn-small" onClick={() => setSettings(resetBrisageSettings())}>Rétablir les valeurs par défaut</button>
-      </details>
+          <h3>Lignes de l'objet</h3>
+          {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
+          {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
+          {loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
+          {lines.length > 0 && (
+            <>
+              <p className="fm-note">Chaque ligne part de son jet moyen ; saisissez un jet pour le remplacer.</p>
+              <ul className="brisage-lines">
+                {lines.map((line) => (
+                  <li key={line.index}>
+                    <span className="brisage-line-label">{statLabel(line.range.effectId)} <span className="fm-note">({rangeText(line.range)})</span></span>
+                    <input
+                      type="number" inputMode="decimal" min={0}
+                      aria-label={`Jet de ${statLabel(line.range.effectId)}`}
+                      placeholder={String(line.average)}
+                      value={rolls[line.index] ?? ''}
+                      onChange={(event) => setRolls({ ...rolls, [line.index]: event.target.value })}
+                    />
+                    <span className="fm-note">{line.modified ? 'modifié' : 'moyen'}</span>
+                  </li>
+                ))}
+              </ul>
+              {ranges.length > breakable.length && (
+                <p className="fm-note">{ranges.length - breakable.length} ligne(s) sans poids ni rune connus ne sont pas comptées.</p>
+              )}
+              {unconfirmed.length > 0 &&<p className="fm-note">Poids à confirmer par un relevé : {[...new Set(unconfirmed)].join(', ')}.</p>}
+            </>
+          )}
+        </section>
+      )}
+
+      {item && analysis && (
+        <section className="brisage-results" aria-labelledby="brisage-results-title">
+          <h2 id="brisage-results-title">Résultat</h2>
+          {analysis.status === 'invalid' ? (
+            <p className="empty" role="status">
+              {!(coefficient > 0) ? "Indiquez le coefficient de l'objet pour voir le résultat." : analysis.reason}
+            </p>
+          ) : (
+            <>
+              {fetched.communityUnavailable && <p className="fm-note" role="status">Les prix partagés sont injoignables : seuls vos prix enregistrés sont utilisés.</p>}
+              {missingNames.length > 0 && (
+                <p className="fm-note" role="status">
+                  Prix manquant pour : {missingNames.join(', ')}. Notez-les sur la page Prix : aucun prix n'est inventé.
+                </p>
+              )}
+              <div className="stat-tile-row" aria-live="polite">
+                <StatTile
+                  icon="check"
+                  label="Verdict"
+                  value={best ? (best.gainKamas! < 0 ? 'Pas rentable' : best.kind === 'focus' ? 'Rentable avec focus' : 'Rentable') : 'Prix manquants'}
+                  hint={best ? `${best.gainKamas! >= 0 ? '+' : '−'}${number.format(Math.abs(Math.round(best.gainKamas!)))} kamas par objet` : undefined}
+                />
+                <StatTile
+                  icon="package"
+                  label="Brisages avant le seuil"
+                  value={analysis.itemsCount === undefined ? '—' : String(analysis.itemsCount)}
+                  hint="Brisage normal ; le coefficient baisse à chaque brisage"
+                />
+                <StatTile
+                  icon="anvil"
+                  label="Coefficient minimal rentable"
+                  value={analysis.thresholdCoefficient === undefined ? '—' : `${number.format(analysis.thresholdCoefficient)} %`}
+                />
+                <StatTile
+                  icon="rune"
+                  label="Meilleure rune à focus"
+                  value={best ? optionLabel(best) : '—'}
+                  hint="Estimation non officielle"
+                />
+              </div>
+            </>
+          )}
+        </section>
+      )}
     </>
   );
 }
-

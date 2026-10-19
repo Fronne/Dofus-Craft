@@ -9,6 +9,11 @@ export function nextCoefficient(coefficient: number): number {
   return Math.max(0, Math.floor(coefficient - loss));
 }
 
+/** specs/061 (FR-006) – the default roll of a line: the middle of its range, rounded down (1–50 → 25, 5–10 → 7). */
+export function averageRoll(from: number, to: number): number {
+  return Math.floor((Math.min(from, to) + Math.max(from, to)) / 2);
+}
+
 const MAX_DESCENT_STEPS = 1000;
 
 /**

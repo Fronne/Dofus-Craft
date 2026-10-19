@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { getItemEffectLines } from '../../src/data/catalogue-repository';
+import { getItemEffectLines, getItemEffectRanges } from '../../src/data/catalogue-repository';
 import { clearCache, setPersistentStore } from '../../src/data/catalogue-cache';
 
 // specs/060-page-brisage (FR-002, FR-008): numeric lines of an item; weapon effects, negative lines
@@ -26,5 +26,14 @@ it('keeps positive non-weapon lines, with the maximum of a range', async () => {
     { effectId: 125, value: 44 },
     { effectId: 123, value: 38 },
     { effectId: 112, value: 4 },
+  ]);
+});
+
+// specs/061-simplification-page-brisage (FR-006): the roll range of each line; `to: 0` is a fixed value.
+it('keeps the roll range of positive non-weapon lines', async () => {
+  expect(await getItemEffectRanges('777')).toEqual([
+    { effectId: 125, from: 40, to: 44 },
+    { effectId: 123, from: 38, to: 38 },
+    { effectId: 112, from: 4, to: 4 },
   ]);
 });
