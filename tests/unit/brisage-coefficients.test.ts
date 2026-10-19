@@ -31,7 +31,7 @@ describe('brisage-coefficients', () => {
 
   it('refuses a coefficient out of bounds', () => {
     expect(saveCoefficient('mikhal', '777', 0)).toBeUndefined();
-    expect(saveCoefficient('mikhal', '777', 101)).toBeUndefined();
+    expect(saveCoefficient('mikhal', '777', 4001)).toBeUndefined();
     expect(getStoredCoefficient('mikhal', '777')).toBeUndefined();
   });
 

@@ -143,6 +143,19 @@ describe('Brisage page (specs/061)', () => {
     expect(screen.getByText(/· seuil/)).toBeInTheDocument();
   });
 
+  it('accepts a coefficient above 100 %', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    const input = await screen.findByLabelText(/Coefficient relevé en jeu/);
+    fireEvent.change(input, { target: { value: '150' } });
+    fireEvent.blur(input);
+    expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('150 %');
+    expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
+    expect(screen.getByText(/à 150 % · actuel/)).toBeInTheDocument();
+  });
+
   it('shows a stat that appears twice on the item as one line', async () => {
     getItemEffectRanges.mockResolvedValue([
       { effectId: 125, from: 20, to: 22 }, { effectId: 125, from: 20, to: 22 }, { effectId: 123, from: 38, to: 38 },

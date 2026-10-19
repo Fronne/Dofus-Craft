@@ -15,6 +15,8 @@ export function averageRoll(from: number, to: number): number {
 }
 
 const MAX_DESCENT_STEPS = 1000;
+/** A coefficient read in game can go above 100 % (a fresh item, a bonus): only an absurd value is refused. */
+export const MAX_COEFFICIENT = 4000;
 
 /**
  * The coefficients at which successive items are broken, from `start` while they stay at or above
@@ -315,7 +317,7 @@ export function analyzeBrisage(
 ): BrisageAnalysis {
   const { lines, ignored } = usableLines(input.lines, runes, settings);
   if (lines.length === 0) return { status: 'invalid', reason: "L'objet n'a aucune ligne exploitable." };
-  if (!(input.coefficient > 0 && input.coefficient <= 100)) return { status: 'invalid', reason: 'Le coefficient doit être supérieur à 0 et au plus 100 %.' };
+  if (!(input.coefficient > 0 && input.coefficient <= MAX_COEFFICIENT)) return { status: 'invalid', reason: `Le coefficient doit être supérieur à 0 et au plus ${MAX_COEFFICIENT} %.` };
   if (!(input.itemCostKamas >= 0)) return { status: 'invalid', reason: "Saisissez le coût de l'objet (0 s'il ne coûte rien)." };
   if (!(input.level >= 1)) return { status: 'invalid', reason: "Le niveau de l'objet doit être au moins 1." };
 

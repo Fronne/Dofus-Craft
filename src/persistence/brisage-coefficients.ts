@@ -1,14 +1,16 @@
 // specs/061-simplification-page-brisage (FR-004): the last breaking coefficient the player noted for an
 // item, with its date, kept on the device (one entry per server and item).
-const STORAGE_KEY = 'craftcheck-brisage-coefficients';
+import { MAX_COEFFICIENT } from '../domain/brisage';
+
+const STORAGE_KEY ='craftcheck-brisage-coefficients';
 
 export type StoredCoefficient = { coefficient: number; savedAt: string };
 
 const isValid = (value: unknown): value is StoredCoefficient => {
   if (typeof value !== 'object' || value === null) return false;
   const { coefficient, savedAt } = value as Record<string, unknown>;
-  return typeof coefficient === 'number' && coefficient > 0 && coefficient <= 100
-    && typeof savedAt === 'string' && !Number.isNaN(Date.parse(savedAt));
+  return typeof coefficient === 'number' && coefficient > 0 && coefficient <= MAX_COEFFICIENT
+    &&typeof savedAt === 'string' && !Number.isNaN(Date.parse(savedAt));
 };
 
 function readAll(): Record<string, unknown> {

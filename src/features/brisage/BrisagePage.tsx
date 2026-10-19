@@ -8,6 +8,7 @@ import {
   averageRoll,
   brisageStat,
   defaultBrisageSettings,
+  MAX_COEFFICIENT,
   runeForStat,
   type BrisageOption,
 } from '../../domain/brisage';
@@ -42,7 +43,7 @@ const shortRune = (option: BrisageOption) => (option.focusRuneName ?? '').replac
 /** The coefficients the gain strip shows: a bit above the current one, the current one, halfway to the threshold, the threshold, below it. */
 function strip(current: number, threshold: number): { coefficient: number; role?: 'current' | 'threshold' }[] {
   const points: { coefficient: number; role?: 'current' | 'threshold' }[] = [
-    { coefficient: Math.min(100, Math.round(current * 1.3)) },
+    { coefficient: Math.round(current * 1.3) },
     { coefficient: current, role: 'current' },
     { coefficient: Math.round((current + threshold) / 2) },
     { coefficient: threshold, role: 'threshold' },
@@ -51,7 +52,7 @@ function strip(current: number, threshold: number): { coefficient: number; role?
   const seen = new Set<number>();
   // The points that carry a role come first, so a plain point never hides « actuel » or « seuil » at the same value.
   return points
-    .filter((point) => point.coefficient >= 1 && point.coefficient <= 100)
+    .filter((point) => point.coefficient >= 1 && point.coefficient <= MAX_COEFFICIENT)
     .sort((a, b) => Number(b.role !== undefined) - Number(a.role !== undefined))
     .filter((point) => {
       const key = Math.round(point.coefficient * 10);
@@ -108,7 +109,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
   const rememberCoefficient = () => {
     const value = parse(coefficientText);
-    if (!serverId || !item || !(value > 0 && value <= 100)) return;
+    if (!serverId || !item || !(value > 0 && value <= MAX_COEFFICIENT)) return;
     setStored(saveCoefficient(serverId, item.id, value));
     setCoefficientText('');
   };
@@ -230,7 +231,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               </label>
               <input
                 id="brisage-coefficient"
-                type="number" inputMode="decimal" min={1} max={100}
+                type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
                 placeholder={stored ? String(stored.coefficient) : ''}
                 value={coefficientText}
                 onChange={(event) => setCoefficientText(event.target.value)}

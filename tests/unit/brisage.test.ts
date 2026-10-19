@@ -173,7 +173,7 @@ describe('analyzeBrisage', () => {
     const line = [{ effectId: INT, value: 5 }];
     for (const bad of [
       { level: 100, coefficient: 0, itemCostKamas: 1, lines: line },
-      { level: 100, coefficient: 101, itemCostKamas: 1, lines: line },
+      { level: 100, coefficient: 4001, itemCostKamas: 1, lines: line },
       { level: 100, coefficient: 50, itemCostKamas: -1, lines: line },
       { level: 0, coefficient: 50, itemCostKamas: 1, lines: line },
       { level: 100, coefficient: 50, itemCostKamas: 1, lines: [] },
