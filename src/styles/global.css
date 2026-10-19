@@ -2451,7 +2451,7 @@ select:focus {
 .brisage-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 .brisage-table th, .brisage-table td { padding: .8rem .75rem; text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .brisage-table thead th { font-size: .85rem; font-weight: 600; color: var(--text-muted); vertical-align: bottom; }
-.brisage-table th:first-child, .brisage-table td:nth-child(3) { text-align: left; }
+.brisage-table th:first-child { text-align: left; }
 .brisage-table tbody th { font-weight: 600; }
 .brisage-table tfoot th, .brisage-table tfoot td { font-weight: 700; border-bottom: 0; }
 .brisage-table .kamas-amount { justify-content: flex-end; }
@@ -2460,7 +2460,6 @@ select:focus {
 .brisage-jet { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); }
 .brisage-bound { min-width: 2rem; font-size: .9rem; color: var(--text-muted); }
 .brisage-table .brisage-jet-head, .brisage-table td:nth-child(2) { text-align: center; }
-.brisage-table thead tr:first-child th:nth-child(3) { text-align: left; }
 .brisage-table thead th { white-space: nowrap; }
 .brisage-jet-title { display: block; margin-bottom: var(--space-1); }
 .brisage-seg { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: rgba(3, 14, 17, .45); }
@@ -2472,9 +2471,11 @@ select:focus {
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
 .brisage-roll.is-modified { border-color: var(--kamas); color: var(--kamas); font-weight: 600; }
 .brisage-roll-state { display: none; }
+/* The stat's name is only read out on desktop (the icon and the hover show it); a card shows it. */
+.brisage-stat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .brisage-best th:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 .brisage-best th, .brisage-best td { background: var(--accent-soft); }
-.brisage-best td:nth-child(7), .brisage-best td:nth-child(8) { font-weight: 700; }
+.brisage-best td:nth-child(6), .brisage-best td:nth-child(7) { font-weight: 700; }
 /* The two groups of columns, framed: violet for the normal breaking, green for the focus. */
 @media (min-width: 641px) {
   .brisage-table .brisage-group--plain { color: #d9c9ff; background: rgba(150, 120, 255, .26); border: 2px solid #b99cff; border-bottom: 0; border-radius: 12px 12px 0 0; }
@@ -2487,14 +2488,14 @@ select:focus {
   .brisage-table thead tr:nth-child(2) th:nth-child(2) { border-right: 2px solid #b99cff; }
   .brisage-table thead tr:nth-child(2) th:nth-child(3) { border-left: 2px solid var(--accent); }
   .brisage-table thead tr:nth-child(2) th:nth-child(4) { border-right: 2px solid var(--accent); }
-  .brisage-table tbody td:nth-child(5), .brisage-table tbody td:nth-child(6) { background-color: rgba(150, 120, 255, .1); }
-  .brisage-table tbody td:nth-child(7), .brisage-table tbody td:nth-child(8) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); }
-  .brisage-table tbody td:nth-child(5) { border-left: 2px solid #b99cff; }
-  .brisage-table tbody td:nth-child(6) { border-right: 2px solid #b99cff; }
-  .brisage-table tbody td:nth-child(7) { border-left: 2px solid var(--accent); }
-  .brisage-table tbody td:nth-child(8) { border-right: 2px solid var(--accent); }
-  .brisage-table tbody .brisage-best td:nth-child(5), .brisage-table tbody .brisage-best td:nth-child(6) { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
-  .brisage-table tbody .brisage-best td:nth-child(7), .brisage-table tbody .brisage-best td:nth-child(8) { background-color: color-mix(in srgb, var(--accent) 34%, transparent); }
+  .brisage-table tbody td:nth-child(4), .brisage-table tbody td:nth-child(5) { background-color: rgba(150, 120, 255, .1); }
+  .brisage-table tbody td:nth-child(6), .brisage-table tbody td:nth-child(7) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); }
+  .brisage-table tbody td:nth-child(4) { border-left: 2px solid #b99cff; }
+  .brisage-table tbody td:nth-child(5) { border-right: 2px solid #b99cff; }
+  .brisage-table tbody td:nth-child(6) { border-left: 2px solid var(--accent); }
+  .brisage-table tbody td:nth-child(7) { border-right: 2px solid var(--accent); }
+  .brisage-table tbody .brisage-best td:nth-child(4), .brisage-table tbody .brisage-best td:nth-child(5) { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
+  .brisage-table tbody .brisage-best td:nth-child(6), .brisage-table tbody .brisage-best td:nth-child(7) { background-color: color-mix(in srgb, var(--accent) 34%, transparent); }
   .brisage-table tfoot td:nth-child(2), .brisage-table tfoot td:nth-child(3) { background-color: rgba(150, 120, 255, .1); border-bottom: 2px solid #b99cff; }
   .brisage-table tfoot td:nth-child(4), .brisage-table tfoot td:nth-child(5) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); border-bottom: 2px solid var(--accent); }
   .brisage-table tfoot td:nth-child(2) { border-left: 2px solid #b99cff; border-bottom-left-radius: 12px; }
@@ -2524,6 +2525,7 @@ select:focus {
   .brisage-table td::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--text-muted); }
   .brisage-table .kamas-amount { justify-content: flex-start; }
   .brisage-roll-state { display: inline; margin-left: var(--space-2); }
+  .brisage-stat-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--text-muted); font-size: .85rem; }
   .brisage-table tfoot tr { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-3); }
   .brisage-table tfoot th { grid-column: 1 / -1; padding: 0; }
   .brisage-table tfoot td:empty { display: none; }

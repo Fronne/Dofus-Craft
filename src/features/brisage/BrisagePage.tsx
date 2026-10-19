@@ -360,7 +360,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     <caption className="visually-hidden">Runes obtenues, avec et sans focus, pour chaque ligne de l'objet</caption>
                     <thead>
                       <tr role="row">
-                        <th scope="col" rowSpan={2}>Ligne</th>
+                        <th scope="col" rowSpan={2}>Rune</th>
                         <th scope="col" rowSpan={2} className="brisage-jet-head">
                           <span className="brisage-jet-title">Jet de la ligne</span>
                           <span className="brisage-seg" role="group" aria-label="Régler tous les jets">
@@ -369,7 +369,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             ))}
                           </span>
                         </th>
-                        <th scope="col" rowSpan={2}>Rune</th>
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span><span className="brisage-group-sub">brisage normal de l'objet</span></th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span><span className="brisage-group-sub">100 % de la rune visée</span></th>
@@ -388,10 +387,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         const label = statLabel(line.range.effectId);
                         return (
                           <tr role="row" key={line.index} className={isBest ? 'brisage-best' : undefined}>
-                            <th scope="row" role="rowheader" data-label="Ligne">
-                              <span className="brisage-line-name">
+                            <th scope="row" role="rowheader" data-label="Rune">
+                              <span className="brisage-line-name" title={label}>
                                 {line.range.icon && <CharacteristicIcon asset={line.range.icon} size={26} />}
-                                {label}
+                                <ResourceDisplay resource={{ id: found.rune.id, name: found.rune.name, imageUrl: found.rune.imageUrl }} />
+                                <span className="brisage-stat-name">{label}</span>
                                 {isBest && <span className="brisage-badge">Meilleur focus</span>}
                               </span>
                             </th>
@@ -417,7 +417,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                                 </>
                               )}
                             </td>
-                            <td role="cell" data-label="Rune"><ResourceDisplay resource={{ id: found.rune.id, name: found.rune.name, imageUrl: found.rune.imageUrl }} /></td>
                             <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(plain.count) : '—'}</td>
                             <td role="cell" data-label="Sans focus : valeur">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
@@ -429,7 +428,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     </tbody>
                     <tfoot>
                       <tr role="row">
-                        <th scope="row" role="rowheader" colSpan={4}>Total de l'objet, coût déduit</th>
+                        <th scope="row" role="rowheader" colSpan={3}>Total de l'objet, coût déduit</th>
                         <td />
                         <td role="cell" data-label="Sans focus : total">{normal?.gainKamas !== undefined ? <Kamas value={Math.round(normal.gainKamas)} signed /> : '—'}</td>
                         <td />
