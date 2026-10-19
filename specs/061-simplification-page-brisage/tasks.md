@@ -39,6 +39,13 @@
 - [x] T012 Réécrire `tests/integration/brisage-page.test.tsx` : choix d'objet avec prix épinglé, aucun champ de niveau, coefficient demandé puis mémorisé avec sa date, jet moyen modifiable, 4 infos du résultat, runes sans prix signalées.
 - [x] T013 Lancer `npm run test`, `npm run lint`, `npm run build` et le parcours de `quickstart.md`.
 
+## Phase 7 — Mise en page de la planche validée (FR-011 à FR-014)
+
+- [x] T014 Réécrire le rendu de `src/features/brisage/BrisagePage.tsx` : bloc objet (image, nom, niveau, coût avec `Kamas`, coefficient), verdict (trois cas : focus plus rentable / pas de focus à faire / pas rentable), tableau des lignes (rune via `ResourceDisplay`, prix via `Kamas`, colonnes sans focus et focus, pied de tableau), rangée « gain sans focus selon le coefficient », note d'estimation.
+- [x] T015 Styles `.brisage-*` dans `src/styles/global.css` (verdict, tableau, surbrillance, rangée de gains) et carte par ligne sous 640 px.
+- [x] T016 Adapter `tests/integration/brisage-page.test.tsx` : « Rentable sans focus » sans surbrillance quand le focus ne rapporte pas plus, surbrillance du meilleur focus sinon, icônes kamas et runes présentes.
+- [x] T017 Relancer `npm run test`, `tsc`, `eslint`, build ; vérifier la page dans le navigateur (bureau et mobile) ; relecteur.
+
 ## Dépendances
 
 T001–T004 indépendants → T005 → T006/T007 → T008 → T009 → T010 → T011 → T012 → T013.

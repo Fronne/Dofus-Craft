@@ -2429,8 +2429,68 @@ select:focus {
 .brisage-block { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
 .brisage-block h2, .brisage-block h3, .brisage-results h2, .brisage-results h3 { margin: 0; }
 .brisage-results { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
-.brisage-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
-.brisage-lines li { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
-.brisage-line-label { flex: 1 1 12rem; }
-.brisage-lines input { width: 7rem; }
+.brisage-block-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.brisage-item { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-6); }
+.brisage-item-id { flex: 1 1 16rem; display: grid; gap: var(--space-1); font-weight: 600; }
+.brisage-field { display: grid; gap: var(--space-1); align-content: start; }
+.brisage-field-label { font-size: .9rem; font-weight: 600; color: var(--text-muted); }
+.brisage-field input { width: 9rem; text-align: right; }
+.brisage-cost { display: flex; align-items: center; min-height: 2.5rem; font-family: var(--font-display); font-size: 1.5rem; color: var(--kamas); font-variant-numeric: tabular-nums; }
+.brisage-cost .kamas-amount-icon { width: 20px; height: 20px; }
+.brisage-verdict { height: auto; gap: var(--space-2); }
+.brisage-verdict > p { margin: 0; }
+.brisage-verdict-label { font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-bright); }
+.brisage-verdict-title { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; color: var(--accent-bright); }
+.brisage-verdict--bad { border-color: var(--danger); background: var(--panel); }
+.brisage-verdict--bad .brisage-verdict-title, .brisage-verdict--bad .brisage-verdict-label { color: var(--danger); }
+.brisage-verdict--neutral { border: 1px solid var(--border); background: var(--panel); }
+.brisage-verdict--neutral .brisage-verdict-title, .brisage-verdict--neutral .brisage-verdict-label { color: var(--text); }
+.brisage-verdict-gain .kamas-amount { font-weight: 700; }
+.brisage-facts { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: var(--space-2) 0 0; }
+.brisage-facts dt { font-size: .85rem; color: var(--text-muted); }
+.brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; }
 .brisage-picked { margin: 0; }
+.brisage-table-wrap { overflow-x: auto; }
+.brisage-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.brisage-table th, .brisage-table td { padding: .6rem .75rem; text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.brisage-table thead th { font-size: .85rem; font-weight: 600; color: var(--text-muted); vertical-align: bottom; }
+.brisage-table th:first-child, .brisage-table td:nth-child(3) { text-align: left; }
+.brisage-table tbody th { font-weight: 600; }
+.brisage-table .brisage-group { text-align: center; border-bottom: 0; padding-bottom: .15rem; border-left: 1px solid var(--border); }
+.brisage-table .brisage-group--focus { color: var(--link); }
+.brisage-table td:nth-child(5), .brisage-table td:nth-child(7) { border-left: 1px solid var(--border); }
+.brisage-table tfoot th, .brisage-table tfoot td { font-weight: 700; border-bottom: 0; }
+.brisage-table .kamas-amount { justify-content: flex-end; }
+.brisage-line-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.brisage-roll { width: 5rem; text-align: right; }
+.brisage-roll.is-modified { border-color: var(--kamas); color: var(--kamas); font-weight: 600; }
+.brisage-roll-state { display: none; }
+.brisage-best th, .brisage-best td { background: var(--accent-soft); }
+.brisage-best th:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+.brisage-best td:nth-child(7), .brisage-best td:nth-child(8) { font-weight: 700; }
+.brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
+.brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
+.brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); }
+.brisage-gains li.is-current { border: 2px solid var(--link); }
+.brisage-gains li.is-threshold { border: 2px solid var(--kamas); }
+.brisage-gain-label { font-size: .85rem; color: var(--text-muted); }
+.brisage-gain-value { font-size: 1.2rem; font-weight: 600; color: var(--accent-bright); }
+.brisage-gain-value.is-loss { color: var(--danger); }
+@media (max-width: 640px) {
+  .brisage-item { gap: var(--space-4); }
+  .brisage-verdict-title { font-size: 1.4rem; }
+  /* A card per line: each cell carries its own label. */
+  .brisage-table thead, .brisage-table caption { display: none; }
+  .brisage-table, .brisage-table tbody, .brisage-table tr, .brisage-table th, .brisage-table td { display: block; }
+  .brisage-table tbody tr { margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel); }
+  .brisage-table tbody tr.brisage-best { border: 2px solid var(--accent); }
+  .brisage-table tbody th, .brisage-table tbody td,
+  .brisage-table tbody tr.brisage-best th, .brisage-table tbody tr.brisage-best td { padding: var(--space-1) 0; border: 0; text-align: left; background: none; box-shadow: none; }
+  .brisage-table td::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--text-muted); }
+  .brisage-table .kamas-amount { justify-content: flex-start; }
+  .brisage-table td:nth-child(5), .brisage-table td:nth-child(7) { border-left: 0; }
+  .brisage-roll-state { display: inline; margin-left: var(--space-2); }
+  .brisage-table tfoot tr { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-3); }
+  .brisage-table tfoot th { grid-column: 1 / -1; padding: 0; }
+  .brisage-table tfoot td:empty { display: none; }
+}

@@ -48,7 +48,8 @@ async function openBrisage() {
 async function pickCape() {
   type('Chercher un objet', 'Cape');
   fireEvent.click(await screen.findByRole('button', { name: /Cape du Chef Bwork/ }));
-  await waitFor(() => expect(screen.getAllByLabelText(/^Jet de /)).toHaveLength(3));
+  await screen.findByLabelText(/^Coefficient/);
+  await waitFor(() => expect(screen.queryByText('Lecture des stats…')).not.toBeInTheDocument());
 }
 
 async function pricesKnown() {
@@ -83,7 +84,7 @@ describe('Brisage page (specs/061)', () => {
     await pinnedItemPrices.save('mikhal', '777', 12345);
     await openBrisage();
     await pickCape();
-    expect(await screen.findByText(/12\D345 kamas/)).toBeInTheDocument();
+    expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/niveau de l'objet/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Coût de l'objet/)).not.toBeInTheDocument();
   });
@@ -117,11 +118,54 @@ describe('Brisage page (specs/061)', () => {
     await openBrisage();
     await pickCape();
     fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
-    expect(await screen.findByText('Verdict')).toBeInTheDocument();
-    expect(screen.getByText('Verdict').parentElement).toHaveTextContent('Rentable');
-    expect(screen.getByText('Meilleure rune à focus').parentElement).toHaveTextContent('Focus Do');
-    expect(screen.getByText('Coefficient minimal rentable').parentElement).not.toHaveTextContent('—');
-    expect(screen.getByText('Brisages avant le seuil').parentElement).not.toHaveTextContent('—');
+    expect(await screen.findByText('Rentable avec un focus Do')).toBeInTheDocument();
+    expect(screen.getByText("Sans focus, rentable jusqu'à").nextElementSibling).toHaveTextContent('%');
+    expect(screen.getByText('Brisages possibles avant ce seuil').nextElementSibling).toHaveTextContent(/^\d+$/);
+    // The best focus is highlighted on its line, with the rune icon and the kamas icon of the site.
+    const best = screen.getByText('Meilleur focus').closest('tr')!;
+    expect(best).toHaveTextContent('Dommages');
+    expect(best.querySelector('img[src*="78015"]')).not.toBeNull();
+    expect(document.querySelector('img.kamas-amount-icon')).not.toBeNull();
+  });
+
+  it('says to break normally, with no highlighted line, when no focus pays more', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    // At 100 % the normal breaking keeps every line whole: a focus cannot beat it.
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '100' } });
+    expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
+    expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
+    expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
+    // The gain strip keeps « actuel » on the 100 % point, with the break-even point.
+    expect(screen.getByText(/à 100 % · actuel/)).toBeInTheDocument();
+    expect(screen.getByText(/· seuil/)).toBeInTheDocument();
+  });
+
+  it('shows a stat that appears twice on the item as one line', async () => {
+    getItemEffectRanges.mockResolvedValue([
+      { effectId: 125, from: 20, to: 22 }, { effectId: 125, from: 20, to: 22 }, { effectId: 123, from: 38, to: 38 },
+    ]);
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    expect(await screen.findAllByLabelText('Jet de Vitalité')).toHaveLength(1);
+    expect(field('Jet de Vitalité').placeholder).toBe('42');
+  });
+
+  it('flags a negative roll and keeps the average', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    await screen.findByLabelText('Jet de Vitalité');
+    type('Jet de Vitalité', '-3');
+    expect(field('Jet de Vitalité')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText(/jet invalide/)).toBeInTheDocument();
   });
 
   it('remembers the coefficient with its date for the next time', async () => {
@@ -134,7 +178,7 @@ describe('Brisage page (specs/061)', () => {
     fireEvent.blur(input);
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('38 %');
     expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-coefficients')!)['mikhal:777'].coefficient).toBe(38);
-    expect(await screen.findByText('Verdict')).toBeInTheDocument();
+    expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
   });
 
   it('starts from a stored coefficient', async () => {
@@ -145,7 +189,7 @@ describe('Brisage page (specs/061)', () => {
     await pickCape();
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('44 %');
     expect(screen.getByText(/Dernier coefficient/)).toHaveTextContent('12/10/2026');
-    expect(await screen.findByText('Verdict')).toBeInTheDocument();
+    expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
   });
 
   it('starts each line at its average roll and lets a roll be typed', async () => {
@@ -153,6 +197,8 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    await screen.findByLabelText('Jet de Vitalité');
     expect(field('Jet de Vitalité').placeholder).toBe('42');
     expect(field('Jet de Dommages').placeholder).toBe('5');
     expect(screen.getAllByText('moyen')).toHaveLength(3);

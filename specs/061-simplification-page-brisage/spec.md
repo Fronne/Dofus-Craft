@@ -106,6 +106,19 @@ gain par objet de cette option. Le détail des autres options n'est pas mis en a
   sur la page principale (réglages avancés de la spec 060 retirés de l'interface).
 - **FR-009** Le bandeau d'estimation non officielle (H1–H4) reste visible mais court.
 - **FR-010** Aucune valeur fabriquée : donnée manquante → message explicite (Constitution I).
+- **FR-011** *(planche « Page Brisage — proposition (tableau) » du canevas de design, validée le
+  2026-10-19)* Disposition : objet (image, nom, niveau, coût, coefficient) → **verdict** → **tableau des
+  lignes** → **gain sans focus selon le coefficient** → note d'estimation. Sur téléphone, le tableau devient
+  une carte par ligne.
+- **FR-012** Tableau : une ligne par stat avec jet (champ modifiable, jet moyen en valeur de départ),
+  rune (icône et nom), prix unitaire de la rune, runes et valeur **sans focus**, runes et gain de l'objet
+  **avec focus sur cette rune** ; pied de tableau : total de l'objet coût déduit.
+- **FR-013** La ligne du meilleur focus est mise en surbrillance avec « Meilleur focus » **seulement si un
+  focus rapporte plus que le brisage normal**. Si la meilleure option est de ne pas faire de focus, le
+  verdict dit « Rentable sans focus » (ou « Pas rentable ») avec la mention « le focus ne rapporte pas
+  plus », et aucune ligne n'est mise en surbrillance.
+- **FR-014** Les montants en kamas portent l'icône des kamas du site, les runes leur icône (comme les
+  autres pages) ; plus aucun rond jaune de substitution.
 - **Hors périmètre** : saisie manuelle d'objet, courbe détaillée de descente, brisage en lot, partage des
   coefficients entre joueurs.
 
