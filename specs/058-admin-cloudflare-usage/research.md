@@ -31,7 +31,7 @@ les relevés dans D1 chaque jour (écritures D1 en plus, hors besoin — FR-010)
 
 **À vérifier à l'implémentation** : les noms exacts de champs ne peuvent pas être testés contre le
 vrai compte sans jeton ; le code les isole dans une constante de requête et les tests figent la
-forme de la réponse attendue. Une réponse de forme inattendue donne l'état `unavailable`, jamais
+forme de la réponse attendue. Le jeu des Workers est regroupé par heure (dimension `datetimeHour`) puis sommé par jour UTC côté Worker, la dimension `date` n'étant pas garantie. Une réponse de forme inattendue donne l'état `unavailable`, jamais
 des zéros inventés. La vérification réelle se fait au premier déploiement avec accord du
 propriétaire (voir quickstart).
 

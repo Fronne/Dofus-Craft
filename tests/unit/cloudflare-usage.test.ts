@@ -79,7 +79,7 @@ let env: Env;
 const analytics = (account: unknown) => new Response(JSON.stringify({ data: { viewer: { accounts: [account] } }, errors: null }), { status: 200 });
 const nominal = () =>
   analytics({
-    workers: [{ sum: { requests: 1234 }, dimensions: { date: '2026-10-19' } }],
+    workers: [{ sum: { requests: 1234 }, dimensions: { datetimeHour: '2026-10-19T09:00:00Z' } }, { sum: { requests: 6 }, dimensions: { datetimeHour: '2026-10-19T10:00:00Z' } }],
     d1: [{ sum: { rowsRead: 4_000_000, rowsWritten: 321 }, dimensions: { date: '2026-10-18' } }],
   });
 
@@ -116,7 +116,7 @@ describe('GET /api/usage', () => {
     const body = (await response.json()) as { state: string; days: number; readAt: string; history: UsageDay[] };
     expect(body).toMatchObject({ state: 'ok', days: 7, readAt: NOW.toISOString() });
     expect(body.history).toHaveLength(7);
-    expect(body.history[6]).toMatchObject({ date: '2026-10-19', workersRequests: 1234, d1RowsRead: 0 });
+    expect(body.history[6]).toMatchObject({ date: '2026-10-19', workersRequests: 1240, d1RowsRead: 0 });
     expect(body.history[5]).toMatchObject({ date: '2026-10-18', d1RowsRead: 4_000_000, d1RowsWritten: 321 });
     expect(body.history[0]).toMatchObject({ date: '2026-10-13', workersRequests: 0 });
 
@@ -157,6 +157,7 @@ describe('GET /api/usage', () => {
   it.each([
     ['HTTP 401', () => new Response('{}', { status: 401 })],
     ['HTTP 403', () => new Response('{}', { status: 403 })],
+    ['a GraphQL access error', () => new Response(JSON.stringify({ data: null, errors: [{ message: 'does not have access to the path' }] }))],
     ['a GraphQL authentication error', () => new Response(JSON.stringify({ data: null, errors: [{ message: 'not authorized to access this field' }] }))],
   ])('answers "denied" on %s', async (_name, reply) => {
     expect(await (await call('/api/usage', vi.fn().mockResolvedValue(reply()))).json()).toEqual({ state: 'denied' });

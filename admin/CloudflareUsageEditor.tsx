@@ -30,12 +30,15 @@ export function CloudflareUsageEditor() {
   const [days, setDays] = useState<UsageWindow>(7);
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const latest = useRef(0);
 
   const read = useCallback(async (period: UsageWindow) => {
     const request = ++latest.current;
+    setRefreshing(true);
     const result = await adminApi.getUsage(period);
     if (request !== latest.current) return;
+    setRefreshing(false);
     setLoad(result.status === 'ok' ? { state: 'done', usage: result.value } : { state: 'error', message: failureMessage(result) });
   }, []);
 
@@ -138,6 +141,7 @@ export function CloudflareUsageEditor() {
             </button>
             <span className="usage-read-at">Dernière lecture : {timeFormatter.format(new Date(usage.readAt))} UTC</span>
           </div>
+          {refreshing && <p className="empty" role="status">Chargement…</p>}
           <UsageChart history={usage.history} />
         </>
       )}

@@ -18,9 +18,9 @@ export const GRAPHQL_URL = 'https://api.cloudflare.com/client/v4/graphql';
 export const USAGE_QUERY = `query Usage($account: String!, $from: Date!, $to: Date!, $fromTime: Time!, $toTime: Time!) {
   viewer {
     accounts(filter: { accountTag: $account }) {
-      workers: workersInvocationsAdaptive(limit: 100, filter: { datetime_geq: $fromTime, datetime_leq: $toTime }) {
+      workers: workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $fromTime, datetime_leq: $toTime }) {
         sum { requests }
-        dimensions { date }
+        dimensions { datetimeHour }
       }
       d1: d1AnalyticsAdaptiveGroups(limit: 100, filter: { date_geq: $from, date_leq: $to }) {
         sum { rowsRead rowsWritten }
@@ -44,7 +44,8 @@ function readRows(account: Record<string, unknown>): UsageDay[] | undefined {
   if (!workers || !d1) return undefined;
   const rows: UsageDay[] = [];
   for (const group of workers) {
-    const date = isRecord(group.dimensions) ? group.dimensions.date : undefined;
+    const hour = isRecord(group.dimensions) ? group.dimensions.datetimeHour : undefined;
+    const date = typeof hour === 'string' ? hour.slice(0, 10) : undefined;
     const sum = isRecord(group.sum) ? group.sum : {};
     if (typeof date !== 'string') return undefined;
     rows.push({ date, workersRequests: count(sum.requests), d1RowsRead: 0, d1RowsWritten: 0 });
@@ -61,7 +62,7 @@ function readRows(account: Record<string, unknown>): UsageDay[] | undefined {
 const isAuthError = (errors: unknown[]) =>
   errors.some((error) => {
     const text = isRecord(error) ? `${String(error.message ?? '')} ${JSON.stringify(error.extensions ?? '')}`.toLowerCase() : '';
-    return /authenticat|authoriz|unauthor|permission|forbidden|invalid.*token|token.*invalid/.test(text);
+    return /authenticat|does not have access|authoriz|unauthor|permission|forbidden|invalid.*token|token.*invalid/.test(text);
   });
 
 export async function readCloudflareUsage(
