@@ -368,8 +368,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           </span>
                         </th>
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span><span className="brisage-group-sub">brisage normal de l'objet</span></th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span><span className="brisage-group-sub">100 % de la rune visée</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
                       </tr>
                       <tr role="row">
                         <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">Gain de l'objet</th>
@@ -407,7 +407,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                                     />
                                     {!line.fixed && <span className="brisage-bound">{line.range.to}</span>}
                                   </span>
-                                  <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : line.modified ? 'modifié' : line.fixed ? 'fixe' : 'moyen'}</span>
+                                  <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : line.modified ? 'modifié' : line.fixed ? '' : 'moyen'}</span>
                               </>
                             </td>
                             <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>

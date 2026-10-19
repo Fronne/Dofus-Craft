@@ -2468,7 +2468,6 @@ select:focus {
 .brisage-seg button.is-on { background: var(--link); color: #06201d; }
 .brisage-roll-fixed { display: inline-flex; align-items: baseline; gap: var(--space-2); }
 .brisage-group-title { display: block; font-size: .95rem; font-weight: 700; }
-.brisage-group-sub { display: block; margin-top: 2px; font-size: .8rem; font-weight: 500; opacity: .85; }
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
 .brisage-roll.is-modified { border-color: var(--kamas); color: var(--kamas); font-weight: 600; }
 .brisage-roll-state { display: none; }
