@@ -370,9 +370,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           </span>
                         </th>
                         <th scope="col" rowSpan={2}>Rune</th>
-                        <th scope="col" rowSpan={2}>Prix de la rune</th>
+                        <th scope="col" rowSpan={2}>Prix unitaire</th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span><span className="brisage-group-sub">brisage normal de l'objet</span></th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus sur cette rune</span><span className="brisage-group-sub">100 % de la ligne visée</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span><span className="brisage-group-sub">100 % de la rune visée</span></th>
                       </tr>
                       <tr role="row">
                         <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">Gain de l'objet</th>

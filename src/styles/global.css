@@ -2461,6 +2461,7 @@ select:focus {
 .brisage-bound { min-width: 2rem; font-size: .9rem; color: var(--text-muted); }
 .brisage-table .brisage-jet-head, .brisage-table td:nth-child(2) { text-align: center; }
 .brisage-table thead tr:first-child th:nth-child(3) { text-align: left; }
+.brisage-table thead th { white-space: nowrap; }
 .brisage-jet-title { display: block; margin-bottom: var(--space-1); }
 .brisage-seg { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: rgba(3, 14, 17, .45); }
 .brisage-seg button { min-height: 28px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
