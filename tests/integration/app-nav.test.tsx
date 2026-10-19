@@ -47,7 +47,7 @@ describe('navigation principale (specs/051)', () => {
     expect(nav).toHaveTextContent(/^DofusCraft/);
     expect(entries(nav)).toEqual([
       'DofusCraft, aller à la recherche',
-      'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie',
+      'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie', 'Brisage',
       'Serveur actif Mikhal', 'Paramètres', 'Activer le thème clair',
     ]);
   });

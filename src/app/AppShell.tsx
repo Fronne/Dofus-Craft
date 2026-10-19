@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
   { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false },
   { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false },
+  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false },
 ];
 
 const SITE_NAME = 'Dofus Craft';
@@ -260,7 +261,7 @@ export function AppShell() {
                   ? <p className="empty" role="status">Chargement…</p>
                   : <HdvUnavailablePage />}
             />
-            {/* specs/060-page-brisage (FR-001): reachable by its address only, no menu entry for now. */}
+            {/* specs/060-page-brisage (FR-001): reachable from the Brisage link of the menu. */}
             <Route path={ROUTES.brisage} element={<BrisagePage priceMode={priceMode} />} />
             <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />} />
             <Route
