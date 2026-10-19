@@ -27,4 +27,13 @@ POLICY_AUD = "416fd7bb648d27081356c08d8a7f84a39b711f231391483542b3ca041eba9928"
 
 # OWNER_EMAIL is a secret (a personal address, never committed):
 #   npx wrangler secret put OWNER_EMAIL --config admin-worker/wrangler.toml
+#
+# specs/058-admin-cloudflare-usage: the "Utilisation Cloudflare" section reads Cloudflare's GraphQL
+# Analytics API. Two more secrets (never committed); without them the section only explains how to set them:
+#   1. Create an API token (My Profile > API Tokens > Create Token > Custom) with the single
+#      permission Account > Account Analytics > Read.
+#   2. Copy the account ID (dashboard > Workers & Pages, right-hand column).
+#   npx wrangler secret put CLOUDFLARE_API_TOKEN --config admin-worker/wrangler.toml
+#   npx wrangler secret put CLOUDFLARE_ACCOUNT_ID --config admin-worker/wrangler.toml
+#
 # Until TEAM_DOMAIN, POLICY_AUD and OWNER_EMAIL are all set, every /api/* request is refused.

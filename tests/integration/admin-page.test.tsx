@@ -19,6 +19,7 @@ const api = vi.hoisted(() => ({
   listSnifferMappings: vi.fn(),
   uploadSnifferMapping: vi.fn(),
   activateSnifferMapping: vi.fn(),
+  getUsage: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -60,6 +61,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
+    api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'] } });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -356,5 +358,110 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       expect(await within(section).findByText('Mapping n° 1 réactivé pour 3.7.10.10.')).toBeInTheDocument();
       expect(api.activateSnifferMapping).toHaveBeenCalledWith(1);
     });
+  });
+});
+
+// specs/058-admin-cloudflare-usage: the "Utilisation Cloudflare" section.
+describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', () => {
+  const day = (date: string, workersRequests: number, d1RowsRead = 0, d1RowsWritten = 0) => ({ date, workersRequests, d1RowsRead, d1RowsWritten });
+  const history = (days: number, last = day('2026-10-19', 50_000, 4_000_000, 112_000)) =>
+    [...Array.from({ length: days - 1 }, (_, index) => day(`2026-09-${String(index + 1).padStart(2, '0')}`, 0)), last];
+  const ok = (days: 7 | 30, last?: ReturnType<typeof day>) => ({
+    status: 'ok',
+    value: { state: 'ok', days, readAt: '2026-10-19T14:03:00.000Z', history: history(days, last) },
+  });
+  const section = () => screen.getByRole('region', { name: 'Utilisation Cloudflare' });
+  const row = (label: string) => within(section().querySelector('.usage-list') as HTMLElement).getByText(label).closest('li')!;
+
+  beforeEach(() => {
+    for (const fn of Object.values(api)) fn.mockReset();
+    api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
+    api.list.mockResolvedValue({ status: 'ok', value: [] });
+    api.getMessage.mockResolvedValue({ status: 'ok', value: null });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+    api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
+    api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
+    api.getUsage.mockResolvedValue(ok(7));
+  });
+  afterEach(cleanup);
+
+  it('shows consumed / limit / percent with a bar and the level in words (US1)', async () => {
+    await renderPage();
+    const workers = row('Requêtes Workers');
+    expect(workers).toHaveTextContent('50 000 / 100 000');
+    expect(workers).toHaveTextContent('50 %');
+    expect(within(workers).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50000');
+    expect(workers).toHaveTextContent('Dans la limite');
+    const reads = row('Lectures de lignes D1');
+    expect(reads).toHaveTextContent('80 %');
+    expect(reads).toHaveTextContent('Proche de la limite');
+  });
+
+  it('shows an overrun as it is while the bar stays full, and zero as zero', async () => {
+    await renderPage();
+    const writes = row('Écritures de lignes D1');
+    expect(writes).toHaveTextContent('112 %');
+    expect(writes).toHaveTextContent('Limite dépassée');
+    expect(writes.querySelector('.usage-bar-fill')).toHaveStyle({ width: '100%' });
+    api.getUsage.mockResolvedValue(ok(7, day('2026-10-19', 0)));
+    fireEvent.click(within(section()).getByRole('button', { name: 'Actualiser' }));
+    await act(async () => {});
+    const workers = row('Requêtes Workers');
+    expect(workers).toHaveTextContent('0 / 100 000');
+    expect(workers).toHaveTextContent('0 %');
+  });
+
+  it('refreshes on demand and tells when it last read (US1)', async () => {
+    await renderPage();
+    expect(section()).toHaveTextContent('Dernière lecture : 14:03 UTC');
+    fireEvent.click(within(section()).getByRole('button', { name: 'Actualiser' }));
+    await act(async () => {});
+    expect(api.getUsage).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws 7 days by default and 30 days on request, without reloading the page (US2)', async () => {
+    api.getUsage.mockImplementation(async (days: 7 | 30) => ok(days));
+    await renderPage();
+    expect(api.getUsage).toHaveBeenLastCalledWith(7);
+    const chart = () => section().querySelector('figure')!;
+    expect(chart().querySelectorAll('polyline')[0].getAttribute('points')!.split(' ')).toHaveLength(7);
+    fireEvent.click(within(section()).getByRole('button', { name: '30 jours' }));
+    await act(async () => {});
+    expect(api.getUsage).toHaveBeenLastCalledWith(30);
+    expect(chart().querySelectorAll('polyline')[0].getAttribute('points')!.split(' ')).toHaveLength(30);
+    expect(within(section()).getByRole('button', { name: '30 jours' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it("keeps a day without consumption as a 0 point and gives each day's values as text (US2)", async () => {
+    await renderPage();
+    const rows = section().querySelectorAll('figure tbody tr');
+    expect(rows).toHaveLength(7);
+    expect(rows[0]).toHaveTextContent('2026-09-01');
+    expect(rows[0]).toHaveTextContent('0 (0 %)');
+    expect(rows[6]).toHaveTextContent('50 000 (50 %)');
+  });
+
+  it('explains how to configure the token instead of failing (US3)', async () => {
+    api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN'] } });
+    await renderPage();
+    expect(section()).toHaveTextContent('Jeton Cloudflare non configuré');
+    expect(section()).toHaveTextContent('CLOUDFLARE_API_TOKEN');
+    expect(section()).toHaveTextContent('wrangler secret put CLOUDFLARE_API_TOKEN');
+    expect(within(section()).queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Compteurs' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['a refused token', { status: 'ok', value: { state: 'denied' } }, 'Cloudflare a refusé le jeton'],
+    ['Cloudflare being down', { status: 'ok', value: { state: 'unavailable' } }, 'indisponibles'],
+    ['the call failing', { status: 'unavailable' }, 'Enregistrement impossible'],
+  ])('says so and offers to retry on %s, leaving the other sections usable (US3)', async (_name, reply, text) => {
+    api.getUsage.mockResolvedValueOnce(reply).mockResolvedValue(ok(7));
+    await renderPage();
+    expect(within(section()).getByRole('alert')).toHaveTextContent(text);
+    expect(screen.getByRole('region', { name: 'Compteurs' })).toBeInTheDocument();
+    fireEvent.click(within(section()).getByRole('button', { name: 'Réessayer' }));
+    await act(async () => {});
+    expect(section()).toHaveTextContent('50 000 / 100 000');
   });
 });
