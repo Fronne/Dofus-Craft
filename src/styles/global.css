@@ -2514,7 +2514,12 @@ select:focus {
 @media (max-width: 640px) {
   .brisage-item { gap: var(--space-4); }
   /* A card per line: each cell carries its own label. */
-  .brisage-table thead, .brisage-table caption { display: none; }
+  .brisage-table caption { display: none; }
+  /* The column titles go; the Min / Moyen / Max switch of the Jet column stays, above the cards. */
+  .brisage-table thead, .brisage-table thead tr { display: block; }
+  .brisage-table thead th { display: none; }
+  .brisage-table thead tr:nth-child(2) { display: none; }
+  .brisage-table thead th.brisage-jet-head { display: block; padding: 0 0 var(--space-3); text-align: left; border: 0; }
   .brisage-table, .brisage-table tbody, .brisage-table tr, .brisage-table th, .brisage-table td { display: block; }
   .brisage-table tbody tr { margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel); }
   .brisage-table tbody tr.brisage-best { border: 2px solid var(--accent); }
