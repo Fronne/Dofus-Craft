@@ -109,6 +109,13 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       });
   };
 
+  const changeItem = () => {
+    pickToken.current += 1;
+    setItem(undefined);
+    setRanges([]);
+    setLoadState('idle');
+  };
+
   const pick = (found: Item) => openItem({ id: found.id, name: found.name, level: found.level, imageUrl: found.imageUrl });
 
   // A reload brings back the item and what was typed on it; nothing is saved before this has run.
@@ -194,12 +201,14 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       </header>
 
       <section className="panel brisage-block" aria-labelledby="brisage-item">
-        <h2 id="brisage-item">{item ? 'Objet à briser' : 'Choisissez un objet'}</h2>
-        <div className="search-input-wrap">
-          <Icon name="search" size={18} className="search-input-icon" />
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet…" aria-label="Chercher un objet" />
-        </div>
-        {query.trim().length >= MIN_QUERY_LENGTH && (
+        <h2 id="brisage-item" className={item ? 'visually-hidden' : undefined}>{item ? 'Objet à briser' : 'Choisissez un objet'}</h2>
+        {!item && (
+          <div className="search-input-wrap">
+            <Icon name="search" size={18} className="search-input-icon" />
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet…" aria-label="Chercher un objet" />
+          </div>
+        )}
+        {!item && query.trim().length >= MIN_QUERY_LENGTH && (
           <div>
             {search.status === 'searching' && <p className="fm-note" role="status">Recherche…</p>}
             {search.status === 'unavailable' && <p className="fm-error" role="alert">Le catalogue est indisponible pour le moment.</p>}
@@ -221,9 +230,15 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
         {item && (
           <div className="brisage-item">
-            <div className="brisage-item-id">
-              <ResourceDisplay resource={{ id: item.id, name: item.name, imageUrl: item.imageUrl }} />
-              {item.level !== undefined && <span className="fm-note">Niveau {item.level}</span>}
+            <div className="brisage-item-card">
+              <span className="brisage-item-image" aria-hidden="true">
+                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <Icon name="search" size={22} />}
+              </span>
+              <div className="brisage-item-id">
+                <h3 className="brisage-item-name">{item.name}</h3>
+                {item.level !== undefined && <span className="fm-note">Niveau {item.level}</span>}
+                <button type="button" className="brisage-change" onClick={changeItem}>Changer d'objet</button>
+              </div>
             </div>
 
             <div className="brisage-field">
@@ -247,14 +262,17 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               <label className="brisage-field-label" htmlFor="brisage-coefficient">
                 {stored ? 'Coefficient de brisage (nouveau relevé)' : 'Coefficient relevé en jeu après un brisage (%)'}
               </label>
-              <input
-                id="brisage-coefficient"
-                type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
-                placeholder={stored ? String(stored.coefficient) : ''}
-                value={coefficientText}
-                onChange={(event) => setCoefficientText(event.target.value)}
-                onBlur={rememberCoefficient}
-              />
+              <div className="brisage-coef">
+                <input
+                  id="brisage-coefficient"
+                  type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
+                  placeholder={stored ? String(stored.coefficient) : ''}
+                  value={coefficientText}
+                  onChange={(event) => setCoefficientText(event.target.value)}
+                  onBlur={rememberCoefficient}
+                />
+                <span aria-hidden="true">%</span>
+              </div>
               {stored ? (
                 <span className="fm-note" id="brisage-last">
                   Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
@@ -287,17 +305,19 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               )}
 
               <div className={`pet-podium-card brisage-verdict brisage-verdict--${verdict.tone}`} aria-live="polite">
-                <span className="brisage-verdict-label">Verdict</span>
-                <p className="brisage-verdict-title">{verdict.title}</p>
-                {best && (
-                  <p className="brisage-verdict-gain">
-                    <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
-                    {focusWins && normal?.gainKamas !== undefined && (
-                      <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
-                    )}
-                  </p>
-                )}
-                {verdict.hint && <p className="fm-note">{verdict.hint}</p>}
+                <div className="brisage-verdict-main">
+                  <span className="brisage-verdict-label">Verdict</span>
+                  <p className="brisage-verdict-title">{verdict.title}</p>
+                  {best && (
+                    <p className="brisage-verdict-gain">
+                      <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
+                      {focusWins && normal?.gainKamas !== undefined && (
+                        <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
+                      )}
+                    </p>
+                  )}
+                  {verdict.hint && <p className="fm-note">{verdict.hint}</p>}
+                </div>
                 {analysis.thresholdCoefficient !== undefined && (
                   <dl className="brisage-facts">
                     <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(analysis.thresholdCoefficient)} %</dd></div>
