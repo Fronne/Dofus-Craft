@@ -152,13 +152,29 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
       {state.status === 'unavailable' && <p className="fm-error" role="alert">La liste des objets est indisponible pour le moment. Réessayez plus tard.</p>}
       {index && !rangeError && (
         <>
-          <p className="fm-note brisage-found" role="status">
-            {results.length === 0
-              ? (chosen.length > 1 ? 'Aucun objet ne porte toutes ces stats. Retirez une stat ou élargissez les filtres.' : searching ? 'Aucun objet ne correspond à ces filtres.' : 'Aucun objet à afficher.')
-              : `${results.length} objet${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}${chosen.length > 0 ? ' · estimation à 100 % de coefficient, jet moyen' : ''}`}
-          </p>
+          {/* Like the Recherche page: the count on the left, how many are shown and the way to see more or fewer on the right. */}
+          <div className="brisage-results-meta">
+            <span className="results-meta-count" role="status">
+              {results.length === 0
+                ? (chosen.length > 1 ? 'Aucun objet ne porte toutes ces stats. Retirez une stat ou élargissez les filtres.' : searching ? 'Aucun objet ne correspond à ces filtres.' : 'Aucun objet à afficher.')
+                : `${results.length} objet${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}${chosen.length > 0 ? ' · estimation à 100 % de coefficient, jet moyen' : ''}`}
+            </span>
+            {(results.length > visible || visible > PAGE_SIZE) && (
+              <span className="results-more">
+                <span className="results-more-count">{Math.min(visible, results.length)} sur {results.length}</span>
+                {results.length > visible && (
+                  <button type="button" className="results-more-button" onClick={() => setVisible(visible + PAGE_SIZE)}>
+                    Afficher {Math.min(PAGE_SIZE, results.length - visible)} de plus
+                  </button>
+                )}
+                {visible > PAGE_SIZE && (
+                  <button type="button" className="results-collapse" onClick={() => setVisible(PAGE_SIZE)}>Réduire</button>
+                )}
+              </span>
+            )}
+          </div>
           {results.length > 0 && (
-            <ul className="brisage-cards">
+            <ul className="results brisage-cards" aria-label="Objets trouvés">
               {results.slice(0, visible).map((result) => (
                 <li key={result.item.id}>
                   <ItemCard
@@ -170,20 +186,6 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
                 </li>
               ))}
             </ul>
-          )}
-          {(results.length > visible || visible > PAGE_SIZE) && (
-            <div className="brisage-more-row">
-              {results.length > visible && (
-                <button type="button" className="brisage-search-more" onClick={() => setVisible(visible + PAGE_SIZE)}>
-                  Afficher plus ({results.length - visible} restants)
-                </button>
-              )}
-              {visible > PAGE_SIZE && (
-                <button type="button" className="brisage-search-more" onClick={() => setVisible(PAGE_SIZE)}>
-                  Réduire
-                </button>
-              )}
-            </div>
           )}
         </>
       )}

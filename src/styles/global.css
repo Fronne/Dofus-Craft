@@ -2508,11 +2508,6 @@ select:focus {
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
 /* Price source: a two-segment switch, the chosen segment filled. The radios stay in the page (keyboard,
    screen readers) but are hidden; .brisage-field input would otherwise size them like a typed field. */
-.brisage-price-source { display: inline-flex; width: fit-content; max-width: 100%; padding: 3px; gap: 3px; border: 1px solid var(--border-control); border-radius: var(--radius-pill); background: var(--input-bg); }
-.brisage-price-source label { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--text-muted); font-size: .92rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
-.brisage-price-source label:hover { color: var(--text); }
-.brisage-price-source label.is-selected { background: var(--accent); color: var(--bg, #10200a); box-shadow: var(--shadow-sm); }
-.brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
 .brisage-field .brisage-price-source input { width: 1px; height: 1px; }
 .brisage-price-origin { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--panel-soft); color: var(--text-muted); font-size: .8rem; }
 .brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
@@ -2559,34 +2554,6 @@ select:focus {
 .brisage-filters[hidden] { display: none; }
 .brisage-stat-filter { grid-column: 1 / -1; border: 0; padding: 0; margin: 0; min-width: 0; }
 .brisage-stat-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
-/* One tinted card per theme: its colour (--group) marks the title, the top bar and the chosen stats. */
-.brisage-stat-column { --group: var(--link); padding: 0 var(--space-2) var(--space-2); border: 1px solid color-mix(in srgb, var(--group) 28%, transparent); border-top: 3px solid var(--group); border-radius: var(--radius-md); background: color-mix(in srgb, var(--group) 6%, transparent); }
-.brisage-stat-column--degats { --group: #f0883e; }
-.brisage-stat-column--resistances { --group: #5aa9f0; }
-.brisage-stat-column h3 { margin: 0 0 var(--space-1); padding: var(--space-2) .6rem .35rem; font-size: .82rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--group); border-bottom: 1px solid color-mix(in srgb, var(--group) 25%, transparent); }
-.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-2); }
-.brisage-search-stat { position: relative; display: flex; align-items: center; gap: var(--space-2); width: 100%; border: 1px solid transparent; border-radius: 999px; background: none; color: var(--text); font: inherit; font-size: .88rem; line-height: 1.2; min-height: 28px; padding: .15rem .6rem; text-align: left; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease; }
-.brisage-search-stat:hover { background: color-mix(in srgb, var(--group, var(--link)) 14%, transparent); border-color: color-mix(in srgb, var(--group, var(--link)) 40%, transparent); transform: translateX(2px); }
-.brisage-search-stat:focus-visible { outline: 2px solid var(--group, var(--link)); outline-offset: 1px; }
-.brisage-search-stat.is-selected { background: color-mix(in srgb, var(--group, var(--link)) 18%, transparent); border-color: var(--group, var(--link)); color: var(--group, var(--link)); font-weight: 700; box-shadow: 0 0 0 1px color-mix(in srgb, var(--group, var(--link)) 35%, transparent); }
-.brisage-search-stat.is-selected:hover { transform: none; }
-/* Room for the stat icon: stays out of the way (labels line up with the group title) until an icon is put in. */
-.brisage-stat-icon { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 4px; }
-.brisage-stat-icon:empty { display: none; }
-.brisage-found { margin: 0; }
-.brisage-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-2); }
-.brisage-card { display: flex; align-items: center; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.brisage-card:hover { border-color: var(--border-strong); background: var(--accent-soft); }
-.brisage-card.is-selected { border-color: var(--border-strong); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--link); }
-.brisage-card img, .brisage-card-noimage { flex: 0 0 44px; width: 44px; height: 44px; object-fit: contain; }
-.brisage-card-noimage { display: grid; place-items: center; }
-.brisage-card-text { display: grid; gap: 1px; min-width: 0; }
-.brisage-card-text strong { overflow-wrap: anywhere; line-height: 1.2; }
-.brisage-card-coef { font-size: .85rem; }
-.brisage-card-coef.is-missing { color: var(--text-muted); font-style: italic; }
-.brisage-more-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
-.brisage-search-more { justify-self: center; padding: .6rem 1.2rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; cursor: pointer; }
-.brisage-search-more:hover { background: var(--accent-soft); }
 .brisage-invite { margin: 0; }
 .brisage-item-head { display: grid; gap: var(--space-3); }
 .brisage-both-prices { display: block; }
@@ -2625,3 +2592,34 @@ select:focus {
 .brisage-part { margin: 0; padding: var(--space-4) 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: none; box-shadow: none; }
 .brisage-part.market-price-panel { padding-left: 0; padding-right: 0; }
 .brisage-part.brisage-footline { padding: var(--space-3) 0 0; }
+
+/* ---- Brisage: finder, stat filters, price source — built on the site's own pieces (category chips, .results cards, results-more). ---- */
+.brisage-results-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-4); min-height: 44px; color: var(--text); font-size: .88rem; font-weight: 700; }
+.brisage-cards { list-style: none; margin: 0; padding: 0; }
+.brisage-cards > li { display: contents; }
+.brisage-cards button { width: 100%; height: 100%; text-align: left; display: flex; align-items: center; }
+.brisage-cards .result-item-info { flex: 1 1 auto; }
+.brisage-card-coef { color: var(--text-muted); font-size: .8rem; font-weight: 600; }
+.brisage-card-coef.is-missing { color: var(--text-faint); font-weight: 500; }
+.brisage-cards button.selected .brisage-card-coef { color: var(--accent-bright); }
+
+/* Stats: one quiet card per theme, the stats as the same pills as the categories. */
+.brisage-stat-column { --group: var(--accent-bright); padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); }
+.brisage-stat-column--degats { --group: #f0883e; }
+.brisage-stat-column--resistances { --group: #5aa9f0; }
+.brisage-stat-column h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 var(--space-3); font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text); }
+.brisage-stat-column h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--group); }
+.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.brisage-search-stat { display: inline-flex; align-items: center; gap: .4rem; min-height: 32px; padding: .2rem .7rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); font: inherit; font-size: .84rem; font-weight: 700; line-height: 1.2; cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
+.brisage-search-stat:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
+.brisage-search-stat:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.brisage-search-stat.is-selected { background: color-mix(in srgb, var(--group) 16%, transparent); border-color: var(--group); color: var(--text); }
+.brisage-stat-icon { flex: 0 0 18px; width: 18px; height: 18px; }
+.brisage-stat-icon:empty { display: none; }
+
+/* Price source: the same pills as the categories. */
+.brisage-price-source { display: flex; flex-wrap: wrap; gap: .5rem; }
+.brisage-price-source label { display: inline-flex; align-items: center; min-height: 40px; padding: .4rem .9rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); font-size: .88rem; font-weight: 700; cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
+.brisage-price-source label:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
+.brisage-price-source label.is-selected { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
+.brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
