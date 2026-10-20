@@ -229,10 +229,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const switchCoefficient = adviceOk?.switchCoefficient;
   const adviceTitle = adviceOk?.bestFocus && switchCoefficient !== undefined
     ? `Focus ${shortRune(adviceOk.bestFocus)} sous ${number.format(switchCoefficient)} %`
-    : 'Prix manquants';
+    : adviceOk?.bestFocus ? `Focus ${shortRune(adviceOk.bestFocus)}` : 'Prix manquants';
   const adviceHint = adviceOk?.bestFocus && switchCoefficient !== undefined
     ? `Au-dessus de ce coefficient, brisez sans focus.${switchCoefficient > 100 ? ' Le focus reste conseillé sur les coefficients courants.' : ''}`
-    : 'Notez les prix des runes pour obtenir un conseil.';
+    : adviceOk?.bestFocus ? 'Le brisage normal ne vaut rien à 100 % : pas de coefficient de bascule.' : 'Notez les prix des runes pour obtenir un conseil.';
 
   return (
     <>
@@ -480,7 +480,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     </tbody>
                     <tfoot>
                       <tr role="row">
-                        <th scope="row" role="rowheader" colSpan={3}>Total de l'objet, prix déduit</th>
+                        <th scope="row" role="rowheader" colSpan={3}>{noCoefficient && !costKnown ? 'Total des runes' : "Total de l'objet, prix déduit"}</th>
                         <td />
                         <td role="cell" data-label="Sans focus : total">{gainOf(normal) !== undefined ? <Kamas value={Math.round(gainOf(normal)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
                         <td />
