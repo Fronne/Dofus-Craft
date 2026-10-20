@@ -9,6 +9,7 @@ import {
   brisageStat,
   defaultBrisageSettings,
   MAX_COEFFICIENT,
+  nextCoefficient,
   runeForStat,
   type BrisageOption,
 } from '../../domain/brisage';
@@ -40,27 +41,16 @@ const parse = (text: string): number => (text.trim() === '' ? NaN : Number(text.
 const statLabel = (effectId: number) => brisageStat(effectId)?.label ?? `Effet ${effectId}`;
 const shortRune = (option: BrisageOption) => (option.focusRuneName ?? '').replace('Rune ', '').trim();
 
-/** The coefficients the gain strip shows: a bit above the current one, the current one, halfway to the threshold, the threshold, below it. */
-function strip(current: number, threshold: number): { coefficient: number; role?: 'current' | 'threshold' }[] {
-  const points: { coefficient: number; role?: 'current' | 'threshold' }[] = [
-    { coefficient: Math.round(current * 1.3) },
-    { coefficient: current, role: 'current' },
-    { coefficient: Math.round((current + threshold) / 2) },
-    { coefficient: threshold, role: 'threshold' },
-    { coefficient: Math.round(threshold * 0.75) },
-  ];
-  const seen = new Set<number>();
-  // The points that carry a role come first, so a plain point never hides « actuel » or « seuil » at the same value.
-  return points
-    .filter((point) => point.coefficient >= 1 && point.coefficient <= MAX_COEFFICIENT)
-    .sort((a, b) => Number(b.role !== undefined) - Number(a.role !== undefined))
-    .filter((point) => {
-      const key = Math.round(point.coefficient * 10);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => b.coefficient - a.coefficient);
+/** The coefficients of the next breaks: each item broken lowers the coefficient (see nextCoefficient). */
+function nextCoefficients(current: number, count: number): number[] {
+  const list: number[] = [];
+  let value = current;
+  for (let i = 0; i < count; i += 1) {
+    value = nextCoefficient(value);
+    if (!(value > 0)) break;
+    list.push(value);
+  }
+  return list;
 }
 
 /** Two lines of the same stat count as one (the analysis adds them up): one row, the ranges added. */
@@ -191,11 +181,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   // A focus is only worth showing when it pays more than breaking normally (FR-013).
   const focusWins = best?.kind === 'focus' && best.gainKamas! >= 0;
   const missingNames = ok ? [...new Set(ok.options.flatMap((o) => o.missingRuneIds))].map((id) => RUNES.find((r) => r.id === id)?.name ?? id) : [];
-  const gains = ok && normal?.gainKamas !== undefined && ok.thresholdCoefficient !== undefined
-    ? strip(coefficient, ok.thresholdCoefficient).map((point) => ({
-      ...point,
-      gain: (normal.valueKamas * point.coefficient) / coefficient - cost,
-    }))
+  const currentGain = ok ? normal?.gainKamas : undefined;
+  const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
+    ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
     : [];
 
   let verdict = { title: 'Prix manquants', hint: undefined as string | undefined, tone: 'neutral' as 'good' | 'bad' | 'neutral' };
@@ -438,24 +426,40 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                 )}
               </section>
 
-              {gains.length > 0 && (
+              {nextGains.length > 0 && (
                 <section className="panel brisage-block" aria-labelledby="brisage-gains-title">
                   <div className="brisage-block-head">
-                    <h2 id="brisage-gains-title">Gain sans focus selon le coefficient</h2>
-                    <span className="fm-note">Le coefficient baisse à chaque brisage</span>
+                    <h2 id="brisage-gains-title">Gain selon le coefficient</h2>
                   </div>
-                  <ul className="brisage-gains">
-                    {gains.map((point) => (
-                      <li key={point.coefficient} className={point.role ? `is-${point.role}` : undefined}>
-                        <span className="brisage-gain-label">
-                          à {number.format(point.coefficient)} %{point.role === 'current' ? ' · actuel' : point.role === 'threshold' ? ' · seuil' : ''}
+                  <div className="brisage-gains-layout">
+                    <div className="brisage-gains-now">
+                      <span className="brisage-gain-label">Coefficient actuel</span>
+                      <span className="brisage-gain-coef">{number.format(coefficient)} %</span>
+                      {currentGain !== undefined && currentGain > 0.5 && (
+                        <span className="brisage-gain-value">
+                          <Kamas value={Math.round(currentGain)} signed /> <span className="fm-note">sans focus</span>
                         </span>
-                        <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
-                          <Kamas value={Math.round(point.gain)} signed />
+                      )}
+                      {focusWins && (
+                        <span className="brisage-gain-value">
+                          <Kamas value={Math.round(best!.gainKamas!)} signed /> <span className="fm-note">avec un focus {shortRune(best!)}</span>
                         </span>
-                      </li>
-                    ))}
-                  </ul>
+                      )}
+                    </div>
+                    <div className="brisage-gains-next">
+                      <span className="brisage-gain-label">3 prochains brisages (sans focus, estimation)</span>
+                      <ul className="brisage-gains">
+                        {nextGains.map((point) => (
+                          <li key={point.coefficient}>
+                            <span className="brisage-gain-label">à {number.format(point.coefficient)} %</span>
+                            <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
+                              <Kamas value={Math.round(point.gain)} signed />
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </section>
               )}
             </>

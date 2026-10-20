@@ -2507,10 +2507,12 @@ select:focus {
 .brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
 .brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
-.brisage-gains li.is-current { border: 2px solid var(--link); background: color-mix(in srgb, var(--link) 12%, transparent); }
-.brisage-gains li.is-current .brisage-gain-label { color: var(--link); font-weight: 600; }
-.brisage-gains li.is-threshold { border: 2px solid var(--kamas); background: color-mix(in srgb, var(--kamas) 10%, transparent); }
-.brisage-gains li.is-threshold .brisage-gain-label { color: var(--kamas); font-weight: 600; }
+.brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
+.brisage-gains-now { display: grid; gap: 4px; padding: var(--space-4); border: 2px solid var(--link); border-radius: var(--radius-md); background: color-mix(in srgb, var(--link) 12%, transparent); font-variant-numeric: tabular-nums; }
+.brisage-gains-now .brisage-gain-label { color: var(--link); font-weight: 600; }
+.brisage-gain-coef { font-size: 1.8rem; font-weight: 700; }
+.brisage-gains-next { display: grid; gap: var(--space-2); }
+@media (max-width: 40rem) { .brisage-gains-layout { grid-template-columns: 1fr; } }
 .brisage-gain-label { font-size: .85rem; color: var(--text-muted); }
 .brisage-gain-value { font-size: 1.2rem; font-weight: 600; color: var(--accent-bright); }
 .brisage-gain-value.is-loss { color: var(--danger); }

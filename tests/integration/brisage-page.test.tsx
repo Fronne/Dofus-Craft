@@ -132,9 +132,9 @@ describe('Brisage page (specs/061)', () => {
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
     expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
-    // The gain strip keeps « actuel » on the 100 % point, with the break-even point.
-    expect(screen.getByText(/à 100 % · actuel/)).toBeInTheDocument();
-    expect(screen.getByText(/· seuil/)).toBeInTheDocument();
+    // The gain block shows the current coefficient on the left, the next three breaks on the right.
+    expect(screen.getByText('Coefficient actuel')).toBeInTheDocument();
+    expect(screen.getAllByText(/^à [\d,]+ %$/)).toHaveLength(3);
   });
 
   it('accepts a coefficient above 100 %', async () => {
@@ -147,7 +147,7 @@ describe('Brisage page (specs/061)', () => {
     fireEvent.blur(input);
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('150 %');
     expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
-    expect(screen.getByText(/à 150 % · actuel/)).toBeInTheDocument();
+    expect(screen.getByText('Coefficient actuel')).toBeInTheDocument();
   });
 
   it('brings back the item, the typed coefficient and the typed rolls after a reload', async () => {
