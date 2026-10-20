@@ -65,7 +65,7 @@ export type BrisageStat = {
   weight: number;
   /** Points of the stat given by the simple (Ba) rune. */
   runePoints: number;
-  /** True when the weight matches a real reading or the DoFocus brisage guide table (dofocus.fr/guide); the others are community values to confirm. */
+  /** True when the weight matches a real reading or the brisage tables of DoFocus (dofocus.fr/guide) and Dofus pour les Noobs (guide-forgemagie); the others are community values to confirm. */
   confirmed: boolean;
 };
 
@@ -92,16 +92,16 @@ export const BRISAGE_STATS: BrisageStat[] = [
   stat(158, 'Pods', 0.25, 10, true),
   stat(226, 'Puissance Pièges', 2, 1, true),
   stat(225, 'Dommages Pièges', 5, 1, true),
-  stat(220, 'Dommages Renvoyés', 10, 1, true),
-  stat(414, 'Dommages Poussée', 5),
+  stat(220, 'Dommages Renvoyés', 10),
+  stat(414, 'Dommages Poussée', 5, 1, true),
   stat(416, 'Résistances Poussée', 2, 1, true),
-  stat(418, 'Dommages Critiques', 5),
+  stat(418, 'Dommages Critiques', 5, 1, true),
   stat(420, 'Résistances Critiques', 2, 1, true),
-  stat(422, 'Dommages Terre', 5),
-  stat(424, 'Dommages Feu', 5),
-  stat(426, 'Dommages Eau', 5),
-  stat(428, 'Dommages Air', 5),
-  stat(430, 'Dommages Neutre', 5),
+  stat(422, 'Dommages Terre', 5, 1, true),
+  stat(424, 'Dommages Feu', 5, 1, true),
+  stat(426, 'Dommages Eau', 5, 1, true),
+  stat(428, 'Dommages Air', 5, 1, true),
+  stat(430, 'Dommages Neutre', 5, 1, true),
   stat(240, 'Résistances Terre', 2, 1, true),
   stat(241, 'Résistances Eau', 2, 1, true),
   stat(242, 'Résistances Air', 2, 1, true),
@@ -112,12 +112,12 @@ export const BRISAGE_STATS: BrisageStat[] = [
   stat(212, 'Résistance Air (%)', 6, 1, true),
   stat(213, 'Résistance Feu (%)', 6, 1, true),
   stat(214, 'Résistance Neutre (%)', 6, 1, true),
-  stat(2800, 'Dommages mêlée (%)', 15),
-  stat(2804, 'Dommages distance (%)', 15),
-  stat(2808, "Dommages d'armes (%)", 15),
-  stat(2812, 'Dommages aux sorts (%)', 15),
-  stat(2803, 'Résistance mêlée (%)', 6),
-  stat(2807, 'Résistance distance (%)', 6),
+  stat(2800, 'Dommages mêlée (%)', 15, 1, true),
+  stat(2804, 'Dommages distance (%)', 15, 1, true),
+  stat(2808, "Dommages d'armes (%)", 15, 1, true),
+  stat(2812, 'Dommages aux sorts (%)', 15, 1, true),
+  stat(2803, 'Résistance mêlée (%)', 15, 1, true),
+  stat(2807, 'Résistance distance (%)', 15, 1, true),
   stat(160, 'Esquive PA', 7, 1, true),
   stat(161, 'Esquive PM', 7, 1, true),
   stat(410, 'Retrait PA', 7, 1, true),
