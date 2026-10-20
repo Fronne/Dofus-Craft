@@ -57,7 +57,7 @@ export function ItemFilters({ id, hidden, categories, categoryId, onCategory, le
         <legend>Stats présentes sur l'objet</legend>
         <div className="brisage-stat-columns">
           {columns.map((column) => (
-            <div key={column.id} className="brisage-stat-column">
+            <div key={column.id} className={`brisage-stat-column brisage-stat-column--${column.id}`}>
               <h3>{column.label}</h3>
               <ul>
                 {column.stats.map((stat) => {
