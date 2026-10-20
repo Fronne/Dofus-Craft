@@ -2558,9 +2558,9 @@ select:focus {
 .brisage-filters { display: grid; gap: var(--space-3); }
 .brisage-filters[hidden] { display: none; }
 .brisage-stat-filter { border: 0; padding: 0; margin: 0; min-width: 0; }
-.brisage-stat-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.brisage-stat-columns { display: grid; gap: var(--space-2); }
 .brisage-stat-column h3 { margin: 0 0 var(--space-1); font-size: .9rem; color: var(--text-muted); }
-.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0 var(--space-2); }
 .brisage-search-stat { display: flex; align-items: center; gap: var(--space-2); width: 100%; border: 1px solid transparent; border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; font-size: .88rem; line-height: 1.2; min-height: 26px; padding: .1rem .4rem; text-align: left; cursor: pointer; }
 .brisage-search-stat:hover { border-color: var(--border-strong); }
 .brisage-search-stat.is-selected { border-color: var(--border-strong); background: var(--accent-soft); font-weight: 600; }
