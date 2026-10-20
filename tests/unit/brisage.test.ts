@@ -217,6 +217,12 @@ describe('stat table and runes', () => {
     expect(new Set(BRISAGE_STATS.map((s) => s.effectId)).size).toBe(BRISAGE_STATS.length);
     BRISAGE_STATS.forEach((s) => expect(s.weight).toBeGreaterThan(0));
   });
+  it('follows the DoFocus guide for Soins, Critique and Dommages Pièges', () => {
+    const weight = (id: number) => BRISAGE_STATS.find((s) => s.effectId === id);
+    expect(weight(178)).toMatchObject({ weight: 10, confirmed: true });
+    expect(weight(115)).toMatchObject({ weight: 10, confirmed: true });
+    expect(weight(225)).toMatchObject({ weight: 5, confirmed: true });
+  });
   it('reads rune sizes from names and falls back to a smaller size', () => {
     const find = (name: string) => RUNES.find((r: RuneItem) => r.name === name)!;
     expect(runeSizeOf(find('Rune Fo'))).toBe('ba');
