@@ -9,8 +9,10 @@ import {
   averageRoll,
   brisageStat,
   defaultBrisageSettings,
+  displayedCoefficient,
   MAX_COEFFICIENT,
   nextCoefficient,
+  wholeRunes,
   runeForStat,
   type BrisageOption,
 } from '../../domain/brisage';
@@ -470,9 +472,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                               </>
                             </td>
                             <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
-                            <td role="cell" data-label="Sans focus : runes">{plain ? number.format(plain.count) : '—'}</td>
+                            <td role="cell" data-label="Sans focus : runes">{plain ? number.format(wholeRunes(plain.count)) : '—'}</td>
                             <td role="cell" data-label="Sans focus : valeur">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
-                            <td role="cell" data-label="Focus : runes">{focusYield ? number.format(focusYield.count) : '—'}</td>
+                            <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
                             <td role="cell" data-label="Focus : gain de l'objet">{focusGain !== undefined ? <Kamas value={Math.round(focusGain)} signed={!noCoefficient || costKnown} /> : <span className="fm-note">—</span>}</td>
                           </tr>
                         );
@@ -517,9 +519,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     <div className="brisage-gains-next">
                       <span className="brisage-gain-label">3 prochains brisages (sans focus, estimation)</span>
                       <ul className="brisage-gains">
-                        {nextGains.map((point) => (
-                          <li key={point.coefficient}>
-                            <span className="brisage-gain-label">à {number.format(point.coefficient)} %</span>
+                        {nextGains.map((point, index) => (
+                          <li key={index}>
+                            <span className="brisage-gain-label">à {displayedCoefficient(point.coefficient)} %</span>
                             <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
                               <Kamas value={Math.round(point.gain)} signed />
                             </span>

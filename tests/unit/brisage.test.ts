@@ -7,6 +7,7 @@ import {
   averageRoll,
   coefficientDescent,
   defaultBrisageSettings,
+  displayedCoefficient,
   lineWeight,
   mergeBrisageSettings,
   minimumProfitableCoefficient,
@@ -14,6 +15,7 @@ import {
   runeForStat,
   runeSizeOf,
   runesForLine,
+  wholeRunes,
 } from '../../src/domain/brisage';
 
 // specs/060-page-brisage: the formulas are estimates (spec.md H1–H4); these tests pin them and the
@@ -27,24 +29,37 @@ function runeId(effectId: number): string {
 }
 
 describe('nextCoefficient', () => {
-  it('lowers 100 to 99 and 50 to 49', () => {
-    expect(nextCoefficient(100)).toBe(99);
-    expect(nextCoefficient(50)).toBe(49);
+  it('keeps the decimals: the loss at 100 is about 0.26 point and at 50 about 0.06', () => {
+    expect(nextCoefficient(100)).toBeCloseTo(99.738, 2);
+    expect(nextCoefficient(50)).toBeCloseTo(49.936, 2);
   });
-  it('matches the formula x − (2.63e-5 − 5.958e-10·x)·x² rounded down', () => {
+  it('matches the formula x − (2.63e-5 − 5.958e-10·x)·x²', () => {
     for (const x of [90, 75, 60, 30, 10]) {
-      expect(nextCoefficient(x)).toBe(Math.floor(x - (2.63e-5 - 5.958e-10 * x) * x * x));
+      expect(nextCoefficient(x)).toBeCloseTo(x - (2.63e-5 - 5.958e-10 * x) * x * x, 10);
     }
   });
-  it('always goes down and ends at 0', () => {
+  it('always goes down and stays above 0', () => {
     let x = 100;
-    for (let i = 0; i < 200 && x > 0; i++) {
+    for (let i = 0; i < 200; i++) {
       const next = nextCoefficient(x);
       expect(next).toBeLessThan(x);
+      expect(next).toBeGreaterThan(0);
       x = next;
     }
-    expect(x).toBe(0);
     expect(nextCoefficient(0)).toBe(0);
+  });
+  it('loses about a third of a point in three breaks at 66 %, so the same value can show several times (66, 66, 65 in game)', () => {
+    const afterThree = nextCoefficient(nextCoefficient(nextCoefficient(66)));
+    expect(66 - afterThree).toBeGreaterThan(0.3);
+    expect(66 - afterThree).toBeLessThan(0.4);
+    expect([66, 65.8, 65.7].map(displayedCoefficient)).toEqual([66, 66, 66]);
+  });
+});
+
+describe('wholeRunes', () => {
+  it('rounds to a whole number of runes', () => {
+    expect(wholeRunes(51.6)).toBe(52);
+    expect(wholeRunes(51.4)).toBe(51);
   });
 });
 
@@ -59,7 +74,7 @@ describe('coefficientDescent', () => {
     expect(coefficientDescent(30, 40)).toEqual([]);
   });
   it('is bounded even with a threshold of 0 or less', () => {
-    expect(coefficientDescent(100, 0).length).toBeLessThanOrEqual(1000);
+    expect(coefficientDescent(100, 0).length).toBeLessThanOrEqual(20000);
     expect(coefficientDescent(100, -5).length).toBeGreaterThan(0);
   });
 });

@@ -254,6 +254,25 @@ describe('Brisage page (specs/061)', () => {
     expect(document.querySelector('img.kamas-amount-icon')).not.toBeNull();
   });
 
+  it('shows whole numbers of runes only, and the next breaks at whole coefficients that can repeat', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '66' } });
+    await screen.findByText('Verdict');
+    const rows = document.querySelectorAll('.brisage-table tbody tr');
+    for (const row of rows) {
+      for (const label of ['Sans focus : runes', 'Focus : runes']) {
+        const cell = row.querySelector(`td[data-label="${label}"]`)!;
+        expect(cell.textContent).toMatch(/^(—|\d+)$/);
+      }
+    }
+    // The loss at 66 % is about 0.11 point per break: the three next breaks all still show 66 % (rounded).
+    const labels = (await screen.findAllByText(/^à \d+ %$/)).map((el) => el.textContent);
+    expect(labels).toEqual(['à 66 %', 'à 66 %', 'à 66 %']);
+  });
+
   it('says to break normally, with no highlighted line, when no focus pays more', async () => {
     await pinnedItemPrices.save('mikhal', '777', 1000);
     await pricesKnown();
