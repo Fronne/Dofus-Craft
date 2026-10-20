@@ -2506,11 +2506,15 @@ select:focus {
 .brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
 .brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
-.brisage-price-source { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
-.brisage-price-source label { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; }
-.brisage-price-source label.is-selected { border: 2px solid var(--link); background: color-mix(in srgb, var(--link) 12%, transparent); }
-.brisage-price-source input { accent-color: var(--link); }
+/* Price source: a two-segment switch, the chosen segment filled. The radios stay in the page (keyboard,
+   screen readers) but are hidden; .brisage-field input would otherwise size them like a typed field. */
+.brisage-price-source { display: inline-flex; width: fit-content; max-width: 100%; padding: 3px; gap: 3px; border: 1px solid var(--border-control); border-radius: var(--radius-pill); background: var(--input-bg); }
+.brisage-price-source label { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 var(--space-4); border-radius: var(--radius-pill); color: var(--text-muted); font-size: .92rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
+.brisage-price-source label:hover { color: var(--text); }
+.brisage-price-source label.is-selected { background: var(--accent); color: var(--bg, #10200a); box-shadow: var(--shadow-sm); }
 .brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
+.brisage-field .brisage-price-source input { width: 1px; height: 1px; }
+.brisage-price-origin { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--panel-soft); color: var(--text-muted); font-size: .8rem; }
 .brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
 .brisage-gains-now { display: grid; gap: 4px; padding: var(--space-4); border: 2px solid var(--link); border-radius: var(--radius-md); background: color-mix(in srgb, var(--link) 12%, transparent); font-variant-numeric: tabular-nums; }
 .brisage-gains-now .brisage-gain-label { color: var(--link); font-weight: 600; }

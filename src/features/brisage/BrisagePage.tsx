@@ -268,8 +268,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               <div className="brisage-price-source" role="radiogroup" aria-labelledby="brisage-price-label">
                 {(['hdv', 'craft'] as const).map((source) => (
                   <label key={source} className={priceSource === source ? 'is-selected' : undefined}>
-                    <input type="radio" name="brisage-price-source" value={source} checked={priceSource === source} onChange={() => setPriceSource(source)} />
-                    {source === 'hdv' ? 'Prix HDV' : 'Prix de craft'}
+                    <input className="visually-hidden" type="radio" name="brisage-price-source" value={source} checked={priceSource === source} onChange={() => setPriceSource(source)} />
+                    <span>{source === 'hdv' ? 'Prix HDV' : 'Prix de craft'}</span>
                   </label>
                 ))}
               </div>
@@ -277,7 +277,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               {priceState.status === 'ready' && priceState.costKamas !== undefined && (
                 <>
                   <span className="brisage-cost"><Kamas value={priceState.costKamas} /></span>
-                  <span className="fm-note">{priceOrigin}</span>
+                  <span className="brisage-price-origin">{priceOrigin}</span>
                 </>
               )}
               {priceState.status === 'ready' && priceState.costKamas === undefined && (
@@ -285,7 +285,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                   <label className="visually-hidden" htmlFor="brisage-cost-input">Prix de l'objet (kamas)</label>
                   <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} value={manualCost} onChange={(event) => setManualCost(event.target.value)} />
                   <span className="fm-note">{noPriceReason}</span>
-                  {priceOrigin && <span className="fm-note">{priceOrigin}</span>}
+                  {priceOrigin && <span className="brisage-price-origin">{priceOrigin}</span>}
                 </>
               )}
             </div>
