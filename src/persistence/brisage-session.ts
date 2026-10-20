@@ -9,7 +9,11 @@ export type BrisageSession = {
   rolls: Record<number, string>;
   coefficientText: string;
   manualCost: string;
+  /** specs/062: where the price of the item comes from. A session saved before that has none: HDV. */
+  priceSource: PriceSource;
 };
+
+export type PriceSource = 'hdv' | 'craft';
 
 /** Reads a stored value back; anything of the wrong type makes the whole session unusable. */
 function mergeSession(value: unknown): BrisageSession | undefined {
@@ -35,6 +39,7 @@ function mergeSession(value: unknown): BrisageSession | undefined {
     rolls,
     coefficientText: typeof raw.coefficientText === 'string' ? raw.coefficientText : '',
     manualCost: typeof raw.manualCost === 'string' ? raw.manualCost : '',
+    priceSource: raw.priceSource === 'craft' ? 'craft' : 'hdv',
   };
 }
 

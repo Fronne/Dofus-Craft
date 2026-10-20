@@ -8,14 +8,14 @@ describe('brisage-session', () => {
   it('round-trips', () => {
     const session = {
       serverId: 'mikhal', item: { id: '777', name: 'Cape', level: 100, imageUrl: undefined },
-      rolls: { 0: '44' }, coefficientText: '150', manualCost: '5000',
+      rolls: { 0: '44' }, coefficientText: '150', manualCost: '5000', priceSource: 'craft' as const,
     };
     setBrisageSession(session);
     expect(getBrisageSession()).toEqual(session);
   });
 
   it('forgets the session when cleared', () => {
-    setBrisageSession({ serverId: 'mikhal', item: { id: '1', name: 'A' }, rolls: {}, coefficientText: '', manualCost: '' });
+    setBrisageSession({ serverId: 'mikhal', item: { id: '1', name: 'A' }, rolls: {}, coefficientText: '', manualCost: '', priceSource: 'hdv' });
     setBrisageSession(undefined);
     expect(getBrisageSession()).toBeUndefined();
   });
@@ -26,6 +26,15 @@ describe('brisage-session', () => {
     window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify({ serverId: 'm', item: { id: 5, name: 'A' } }));
     expect(getBrisageSession()).toBeUndefined();
     window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify({ serverId: 'm', item: { id: '1', name: 'A' }, rolls: { 0: 3, 1: '7' }, coefficientText: 9 }));
-    expect(getBrisageSession()).toEqual({ serverId: 'm', item: { id: '1', name: 'A', level: undefined, imageUrl: undefined }, rolls: { 1: '7' }, coefficientText: '', manualCost: '' });
+    expect(getBrisageSession()).toEqual({ serverId: 'm', item: { id: '1', name: 'A', level: undefined, imageUrl: undefined }, rolls: { 1: '7' }, coefficientText: '', manualCost: '', priceSource: 'hdv' });
+  });
+
+  // specs/062-prix-objet-brisage (FR-007): a session saved before the price source existed comes back on HDV.
+  it('reads a session saved without a price source, or with an unknown one, as HDV', () => {
+    const base = { serverId: 'm', item: { id: '1', name: 'A' }, rolls: {}, coefficientText: '', manualCost: '' };
+    window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify(base));
+    expect(getBrisageSession()?.priceSource).toBe('hdv');
+    window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify({ ...base, priceSource: 'autre' }));
+    expect(getBrisageSession()?.priceSource).toBe('hdv');
   });
 });

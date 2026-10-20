@@ -4,6 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 
 // specs/061-simplification-page-brisage. Real rune data: Rune Vi 1523, Rune Cha 1525, Rune Do 7435.
 const getItemEffectRanges = vi.fn();
+const getItemDetail = vi.fn();
 
 vi.mock('../../src/services/community-price-api', () => ({
   getCommunityPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
@@ -16,7 +17,7 @@ vi.mock('../../src/services/community-price-api', () => ({
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([]),
   searchItems: vi.fn().mockResolvedValue({ data: [{ id: '777', name: 'Cape du Chef Bwork', level: 100, kind: 'Equipment', categoryId: 'c' }], total: 1 }),
-  getItemDetail: vi.fn(),
+  getItemDetail: (id: string) => getItemDetail(id),
   getItemEffectRanges: (id: string) => getItemEffectRanges(id),
   getResourceRecipe: vi.fn().mockResolvedValue(null),
   getResourceDetails: vi.fn().mockResolvedValue([]),
@@ -64,6 +65,12 @@ describe('Brisage page (specs/061)', () => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
     getItemEffectRanges.mockReset();
+    getItemDetail.mockReset();
+    // The cape is crafted from 3 Laine (100 each) and 2 Cuir (250 each): 800 kamas when both are priced.
+    getItemDetail.mockResolvedValue({
+      recipe: { id: 'r-777', itemId: '777', ingredients: [{ resourceId: 'laine', quantity: 3 }, { resourceId: 'cuir', quantity: 2 }] },
+      resources: [{ id: 'laine', name: 'Laine', craftable: false }, { id: 'cuir', name: 'Cuir', craftable: false }],
+    });
     // Vi 40–44, Cha fixed 38, Do 1–9 and a line the table does not know.
     getItemEffectRanges.mockResolvedValue([
       { effectId: 125, from: 40, to: 44 }, { effectId: 123, from: 38, to: 38 }, { effectId: 112, from: 1, to: 9 }, { effectId: 999999, from: 2, to: 2 },
@@ -80,20 +87,108 @@ describe('Brisage page (specs/061)', () => {
     await pickCape();
     expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/niveau de l'objet/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Coût de l'objet/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Prix de l'objet \(kamas\)/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Prix HDV')).toBeChecked();
+    expect(screen.getByText('Prix noté sur la page Recherche')).toBeInTheDocument();
   });
 
-  it('asks for the cost when the item has no recorded price', async () => {
+  it('asks for the price when the item has no recorded price', async () => {
     await openBrisage();
     await pickCape();
-    expect(await screen.findByLabelText(/Coût de l'objet/)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toBeInTheDocument();
   });
 
   it('treats a recorded price of 0 as no price', async () => {
     await pinnedItemPrices.save('mikhal', '777', 0);
     await openBrisage();
     await pickCape();
-    expect(await screen.findByLabelText(/Coût de l'objet/)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toBeInTheDocument();
+  });
+
+  describe('price of the item: HDV or craft (specs/062)', () => {
+    const craftPrices = async (only?: string) => {
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', 'laine', 100);
+      if (only !== 'laine') await carnet.save('mikhal', 'cuir', 250);
+    };
+
+    it('switches to the cost of the craft chain and the page follows that price', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 12345);
+      await craftPrices();
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      expect(await screen.findByText(/Coût de la chaîne de craft \(mode personnel\)/)).toBeInTheDocument();
+      expect(screen.getByText(/^800$/)).toBeInTheDocument();
+      expect(screen.queryByText(/12\D345/)).not.toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText('Prix HDV'));
+      expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
+    });
+
+    it('says the craft price is incomplete, shows no partial total, and uses the typed price', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 12345);
+      await craftPrices('laine');
+      await openBrisage();
+      await pickCape();
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
+      expect(screen.queryByText(/^300$/)).not.toBeInTheDocument();
+      fireEvent.change(await screen.findByLabelText(/Prix de l'objet \(kamas\)/), { target: { value: '900' } });
+      expect(await screen.findByText('Saisi à la main')).toBeInTheDocument();
+      // The typed price is kept when switching back and forth.
+      fireEvent.click(screen.getByLabelText('Prix HDV'));
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toHaveValue(900);
+    });
+
+    it('says there is no craft for an item without recipe', async () => {
+      getItemDetail.mockResolvedValue({ recipe: undefined, resources: [] });
+      await openBrisage();
+      await pickCape();
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      expect(await screen.findByText(/Aucun craft n'existe pour cet objet/)).toBeInTheDocument();
+    });
+
+    it('falls back on the typed price when the craft chain cannot be read', async () => {
+      getItemDetail.mockRejectedValue(new Error('offline'));
+      await openBrisage();
+      await pickCape();
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Prix de l'objet \(kamas\)/)).toBeInTheDocument();
+    });
+
+    it('does not take a zero or negative typed price', async () => {
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Prix de l'objet \(kamas\)/), { target: { value: '0' } });
+      expect(screen.queryByText('Saisi à la main')).not.toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText(/Prix de l'objet \(kamas\)/), { target: { value: '-5' } });
+      expect(screen.queryByText('Saisi à la main')).not.toBeInTheDocument();
+    });
+
+    it('brings back the chosen source after a reload, and an old session on HDV', async () => {
+      await craftPrices();
+      await openBrisage();
+      await pickCape();
+      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      await screen.findByText(/Coût de la chaîne de craft/);
+      cleanup();
+      // The server is remembered: the page opens straight on Brisage.
+      render(<App />);
+      await screen.findByRole('heading', { name: 'Brisage' });
+      expect(await screen.findByLabelText('Prix de craft')).toBeChecked();
+    });
+
+    it('brings back a session saved before the price source existed on HDV', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 12345);
+      window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify({
+        serverId: 'mikhal', item: { id: '777', name: 'Cape du Chef Bwork', level: 100 }, rolls: {}, coefficientText: '', manualCost: '',
+      }));
+      await openBrisage();
+      expect(await screen.findByLabelText('Prix HDV')).toBeChecked();
+    });
   });
 
   it('asks for the coefficient of an item never broken, and shows no result until it is given', async () => {

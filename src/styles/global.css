@@ -2506,6 +2506,11 @@ select:focus {
 .brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
 .brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
+.brisage-price-source { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
+.brisage-price-source label { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; }
+.brisage-price-source label.is-selected { border: 2px solid var(--link); background: color-mix(in srgb, var(--link) 12%, transparent); }
+.brisage-price-source input { accent-color: var(--link); }
+.brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
 .brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
 .brisage-gains-now { display: grid; gap: 4px; padding: var(--space-4); border: 2px solid var(--link); border-radius: var(--radius-md); background: color-mix(in srgb, var(--link) 12%, transparent); font-variant-numeric: tabular-nums; }
 .brisage-gains-now .brisage-gain-label { color: var(--link); font-weight: 600; }

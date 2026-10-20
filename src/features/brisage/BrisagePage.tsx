@@ -17,11 +17,12 @@ import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import type { Item } from '../../domain/types';
 import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
-import { getBrisageSession, setBrisageSession, type BrisageSession } from '../../persistence/brisage-session';
+import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSource } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { MIN_QUERY_LENGTH, useEquipmentSearch } from '../forgemagie/useEquipmentSearch';
 import { Kamas } from '../prices/PricesPage';
 import { useItemCost } from './useItemCost';
+import { useItemCraftCost } from './useItemCraftCost';
 import { useRunePrices } from './useRunePrices';
 
 // specs/061-simplification-page-brisage: pick an item, read the verdict. The cost comes from the price
@@ -74,10 +75,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
+  const [priceSource, setPriceSource] = useState<PriceSource>('hdv');
   const pickToken = useRef(0);
 
   /** Opens an item; `restore` brings back what was typed on it before a reload. */
-  const openItem = (picked: PickedItem, restore?: Pick<BrisageSession, 'rolls' | 'coefficientText' | 'manualCost'>) => {
+  const openItem = (picked: PickedItem, restore?: Pick<BrisageSession, 'rolls' | 'coefficientText' | 'manualCost' | 'priceSource'>) => {
     const token = ++pickToken.current;
     setItem(picked);
     setQuery('');
@@ -85,6 +87,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setRolls(restore?.rolls ?? {});
     setCoefficientText(restore?.coefficientText ?? '');
     setManualCost(restore?.manualCost ?? '');
+    // Picking another item keeps the chosen source; only a restored session brings its own back.
+    if (restore) setPriceSource(restore.priceSource);
     setStored(serverId ? getStoredCoefficient(serverId, picked.id) : undefined);
     setLoadState('loading');
     getItemEffectRanges(picked.id)
@@ -118,8 +122,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   }, [serverId, restored]);
   useEffect(() => {
     if (!restored || !serverId) return;
-    setBrisageSession(item ? { serverId, item, rolls, coefficientText, manualCost } : undefined);
-  }, [restored, serverId, item, rolls, coefficientText, manualCost]);
+    setBrisageSession(item ? { serverId, item, rolls, coefficientText, manualCost, priceSource } : undefined);
+  }, [restored, serverId, item, rolls, coefficientText, manualCost, priceSource]);
 
   const rememberCoefficient = () => {
     const value = parse(coefficientText);
@@ -128,10 +132,24 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setCoefficientText('');
   };
 
-  const itemCost = useItemCost(serverId, item?.id, priceMode);
+  // specs/062: the price of the item is the HDV price noted on Recherche or the cost of its craft chain.
+  // The craft chain is only loaded when it is the chosen source. A typed price fills in when the chosen
+  // source has none; a zero or negative price is never accepted.
+  const hdvCost = useItemCost(serverId, item?.id, priceMode);
+  const craftCost = useItemCraftCost(serverId, priceSource === 'craft' ? item?.id : undefined, priceMode);
+  const priceState = priceSource === 'craft' ? craftCost : hdvCost;
+  const typedPrice = parse(manualCost);
   const typedCoefficient = parse(coefficientText);
   const coefficient = typedCoefficient > 0 ? typedCoefficient : stored?.coefficient ?? NaN;
-  const cost = itemCost.costKamas ?? parse(manualCost);
+  const cost = priceState.costKamas ?? (typedPrice > 0 ? typedPrice : NaN);
+  const priceOrigin = priceState.costKamas !== undefined
+    ? (priceSource === 'craft' ? `Coût de la chaîne de craft (${priceMode === 'community' ? 'mode communautaire' : 'mode personnel'})` : 'Prix noté sur la page Recherche')
+    : typedPrice > 0 ? 'Saisi à la main' : undefined;
+  const noPriceReason = priceSource === 'craft'
+    ? (craftCost.reason === 'no-recipe'
+      ? 'Aucun craft n\'existe pour cet objet : saisissez son prix.'
+      : 'Prix de craft incomplet (il manque le prix d\'une ressource) : saisissez le prix de l\'objet.')
+    : 'Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.';
 
   // Only the lines that break into a known rune are shown; the others are just counted.
   const breakable = mergeRanges(ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)));
@@ -166,7 +184,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   }, [ranges]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
 
-  const analysis = item && ranges.length > 0 && itemCost.status === 'ready'
+  const analysis = item && ranges.length > 0 && priceState.status === 'ready'
     ? analyzeBrisage(
       { level: item.level ?? NaN, lines: lines.map((line) => ({ effectId: line.range.effectId, value: line.value })), coefficient, itemCostKamas: cost },
       RUNES,
@@ -188,7 +206,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     : [];
 
   let verdict = { title: 'Prix manquants', hint: undefined as string | undefined, tone: 'neutral' as 'good' | 'bad' | 'neutral' };
-  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: 'Même le meilleur choix ne couvre pas le coût de l\'objet.', tone: 'bad' };
+  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: 'Même le meilleur choix ne couvre pas le prix de l\'objet.', tone: 'bad' };
   else if (best?.kind === 'normal') verdict = { title: 'Rentable sans focus', hint: 'Le focus ne rapporte pas plus : brisez normalement.', tone: 'good' };
   else if (best) verdict = { title: `Rentable avec un focus ${shortRune(best)}`, hint: undefined, tone: 'good' };
 
@@ -246,18 +264,28 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         {item && (
           <div className="brisage-item">
             <div className="brisage-field">
-              <span className="brisage-field-label">Coût de l'objet</span>
-              {itemCost.status === 'ready' && itemCost.costKamas !== undefined && (
+              <span className="brisage-field-label" id="brisage-price-label">Prix de l'objet</span>
+              <div className="brisage-price-source" role="radiogroup" aria-labelledby="brisage-price-label">
+                {(['hdv', 'craft'] as const).map((source) => (
+                  <label key={source} className={priceSource === source ? 'is-selected' : undefined}>
+                    <input type="radio" name="brisage-price-source" value={source} checked={priceSource === source} onChange={() => setPriceSource(source)} />
+                    {source === 'hdv' ? 'Prix HDV' : 'Prix de craft'}
+                  </label>
+                ))}
+              </div>
+              {priceState.status === 'loading' && <span className="fm-note">Calcul du prix en cours…</span>}
+              {priceState.status === 'ready' && priceState.costKamas !== undefined && (
                 <>
-                  <span className="brisage-cost"><Kamas value={itemCost.costKamas} /></span>
-                  <span className="fm-note">Prix noté sur la page Recherche</span>
+                  <span className="brisage-cost"><Kamas value={priceState.costKamas} /></span>
+                  <span className="fm-note">{priceOrigin}</span>
                 </>
               )}
-              {itemCost.status === 'ready' && itemCost.costKamas === undefined && (
+              {priceState.status === 'ready' && priceState.costKamas === undefined && (
                 <>
-                  <label className="visually-hidden" htmlFor="brisage-cost-input">Coût de l'objet (kamas)</label>
-                  <input id="brisage-cost-input" type="number" inputMode="numeric" min={0} value={manualCost} onChange={(event) => setManualCost(event.target.value)} />
-                  <span className="fm-note">Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.</span>
+                  <label className="visually-hidden" htmlFor="brisage-cost-input">Prix de l'objet (kamas)</label>
+                  <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} value={manualCost} onChange={(event) => setManualCost(event.target.value)} />
+                  <span className="fm-note">{noPriceReason}</span>
+                  {priceOrigin && <span className="fm-note">{priceOrigin}</span>}
                 </>
               )}
             </div>
@@ -409,7 +437,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     </tbody>
                     <tfoot>
                       <tr role="row">
-                        <th scope="row" role="rowheader" colSpan={3}>Total de l'objet, coût déduit</th>
+                        <th scope="row" role="rowheader" colSpan={3}>Total de l'objet, prix déduit</th>
                         <td />
                         <td role="cell" data-label="Sans focus : total">{normal?.gainKamas !== undefined ? <Kamas value={Math.round(normal.gainKamas)} signed /> : '—'}</td>
                         <td />

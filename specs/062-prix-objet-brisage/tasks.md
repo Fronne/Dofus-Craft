@@ -20,10 +20,10 @@ description: "Liste de tâches : Prix de l'objet sur la page Brisage (HDV ou cra
 
 **But** : la mémorisation du choix et le calcul du prix de craft, nécessaires à la page.
 
-- [ ] T001 [P] Ajouter `priceSource: 'hdv' | 'craft'` à `BrisageSession` dans `src/persistence/brisage-session.ts` : lecture tolérante (champ absent ou valeur inconnue → `'hdv'`), écriture avec le champ
-- [ ] T002 [P] Créer `src/features/brisage/useItemCraftCost.ts` : pour (serveur, objet, mode de prix), charge `getItemDetail`, `loadRecipeTree` (`src/features/comparison/recipe-tree-loader.ts`), lit le carnet via `resourcePricesFor(priceMode)`, applique `effectiveIngredientPrices` puis `compare`, et, en mode communautaire, `syncCommunityPrices` comme `src/features/catalogue/EpinglesPage.tsx`. Retourne `{ status: 'loading' | 'ready'; costKamas?: number; reason?: 'incomplete' | 'no-recipe' }` ; `costKamas` défini seulement si `craftCostStatus === 'complete'` et total > 0 ; annuler le résultat d'un calcul périmé (changement d'objet, serveur ou mode)
-- [ ] T003 [P] Test `tests/unit/brisage-session.test.ts` : session ancienne sans `priceSource` → `'hdv'` ; valeur inconnue → `'hdv'` ; `'craft'` restitué (FR-007)
-- [ ] T004 Test `tests/unit/item-craft-cost.test.ts` : chaîne complète (même total que `compare` sur le même arbre), ressource sans prix → `incomplete` sans montant, objet sans recette → `no-recipe`, total nul → indisponible, changement de mode de prix, calcul périmé ignoré (FR-004, FR-005, FR-008, FR-011)
+- [X] T001 [P] Ajouter `priceSource: 'hdv' | 'craft'` à `BrisageSession` dans `src/persistence/brisage-session.ts` : lecture tolérante (champ absent ou valeur inconnue → `'hdv'`), écriture avec le champ
+- [X] T002 [P] Créer `src/features/brisage/useItemCraftCost.ts` : pour (serveur, objet, mode de prix), charge `getItemDetail`, `loadRecipeTree` (`src/features/comparison/recipe-tree-loader.ts`), lit le carnet via `resourcePricesFor(priceMode)`, applique `effectiveIngredientPrices` puis `compare`, et, en mode communautaire, `syncCommunityPrices` comme `src/features/catalogue/EpinglesPage.tsx`. Retourne `{ status: 'loading' | 'ready'; costKamas?: number; reason?: 'incomplete' | 'no-recipe' }` ; `costKamas` défini seulement si `craftCostStatus === 'complete'` et total > 0 ; annuler le résultat d'un calcul périmé (changement d'objet, serveur ou mode)
+- [X] T003 [P] Test `tests/unit/brisage-session.test.ts` : session ancienne sans `priceSource` → `'hdv'` ; valeur inconnue → `'hdv'` ; `'craft'` restitué (FR-007)
+- [X] T004 Test `tests/unit/item-craft-cost.test.ts` : chaîne complète (même total que `compare` sur le même arbre), ressource sans prix → `incomplete` sans montant, objet sans recette → `no-recipe`, total nul → indisponible, changement de mode de prix, calcul périmé ignoré (FR-004, FR-005, FR-008, FR-011)
 
 **Point de contrôle** : `npx vitest run tests/unit/brisage-session.test.ts tests/unit/item-craft-cost.test.ts` passe.
 
@@ -33,11 +33,11 @@ description: "Liste de tâches : Prix de l'objet sur la page Brisage (HDV ou cra
 
 **Test indépendant** : un objet avec prix HDV et chaîne de craft chiffrée ; basculer et vérifier montant, verdict, gains, cartes.
 
-- [ ] T005 [US1] Dans `src/features/brisage/BrisagePage.tsx`, renommer « Coût de l'objet » en « Prix de l'objet » (étiquette, libellé accessible du champ de saisie, texte du verdict « …le prix de l'objet », libellé de tableau « Total de l'objet, prix déduit ») (FR-001)
-- [ ] T006 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter l'état `priceSource` (initialisé depuis la session, `'hdv'` par défaut), l'appel à `useItemCraftCost`, et le calcul du prix retenu : `(priceSource === 'craft' ? craft.costKamas : itemCost.costKamas) ?? parse(manualCost)` ; écrire `priceSource` dans `setBrisageSession` et le restituer dans `openItem` (FR-002, FR-006, FR-007)
-- [ ] T007 [US1] Dans `src/features/brisage/BrisagePage.tsx`, afficher le sélecteur à deux choix « Prix HDV » / « Prix de craft » (boutons radio accessibles) au-dessus du montant, et passer l'analyse en attente tant que la source choisie charge (FR-010)
-- [ ] T008 [P] [US1] Style du sélecteur à deux choix dans `src/styles/global.css` (mobile compris, 16 px de marge, focus visible)
-- [ ] T009 [US1] Tests d'intégration dans `tests/integration/brisage-page.test.tsx` : HDV par défaut inchangé (SC-005), bascule vers craft change montant et verdict, choix restitué après rechargement, libellé « Prix de l'objet » (scénarios 1 à 4 de l'histoire 1)
+- [X] T005 [US1] Dans `src/features/brisage/BrisagePage.tsx`, renommer « Coût de l'objet » en « Prix de l'objet » (étiquette, libellé accessible du champ de saisie, texte du verdict « …le prix de l'objet », libellé de tableau « Total de l'objet, prix déduit ») (FR-001)
+- [X] T006 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter l'état `priceSource` (initialisé depuis la session, `'hdv'` par défaut), l'appel à `useItemCraftCost`, et le calcul du prix retenu : `(priceSource === 'craft' ? craft.costKamas : itemCost.costKamas) ?? parse(manualCost)` ; écrire `priceSource` dans `setBrisageSession` et le restituer dans `openItem` (FR-002, FR-006, FR-007)
+- [X] T007 [US1] Dans `src/features/brisage/BrisagePage.tsx`, afficher le sélecteur à deux choix « Prix HDV » / « Prix de craft » (boutons radio accessibles) au-dessus du montant, et passer l'analyse en attente tant que la source choisie charge (FR-010)
+- [X] T008 [P] [US1] Style du sélecteur à deux choix dans `src/styles/global.css` (mobile compris, 16 px de marge, focus visible)
+- [X] T009 [US1] Tests d'intégration dans `tests/integration/brisage-page.test.tsx` : HDV par défaut inchangé (SC-005), bascule vers craft change montant et verdict, choix restitué après rechargement, libellé « Prix de l'objet » (scénarios 1 à 4 de l'histoire 1)
 
 **Point de contrôle** : l'histoire 1 fonctionne seule ; craft complet = montant d'Épingles (SC-002).
 
@@ -47,9 +47,9 @@ description: "Liste de tâches : Prix de l'objet sur la page Brisage (HDV ou cra
 
 **Test indépendant** : « Prix de craft » sur un objet dont une ressource n'a pas de prix, puis saisir un montant.
 
-- [ ] T010 [US2] Dans `src/features/brisage/BrisagePage.tsx`, quand la source choisie n'a pas de montant : message selon `reason` (« prix de craft incomplet : il manque le prix d'une ressource » / « aucun craft pour cet objet » / message HDV actuel) et champ de saisie manuelle unique, valeur conservée en basculant (FR-005, scénarios 1 à 4)
-- [ ] T011 [US2] Dans `src/features/brisage/BrisagePage.tsx`, refuser un prix nul ou négatif quelle que soit la source, y compris la saisie manuelle (FR-008)
-- [ ] T012 [US2] Tests d'intégration dans `tests/integration/brisage-page.test.tsx` : craft incomplet (message, pas de total partiel, saisie utilisée par le verdict), objet sans recette, prix nul refusé, saisie conservée en basculant, HDV sans prix inchangé
+- [X] T010 [US2] Dans `src/features/brisage/BrisagePage.tsx`, quand la source choisie n'a pas de montant : message selon `reason` (« prix de craft incomplet : il manque le prix d'une ressource » / « aucun craft pour cet objet » / message HDV actuel) et champ de saisie manuelle unique, valeur conservée en basculant (FR-005, scénarios 1 à 4)
+- [X] T011 [US2] Dans `src/features/brisage/BrisagePage.tsx`, refuser un prix nul ou négatif quelle que soit la source, y compris la saisie manuelle (FR-008)
+- [X] T012 [US2] Tests d'intégration dans `tests/integration/brisage-page.test.tsx` : craft incomplet (message, pas de total partiel, saisie utilisée par le verdict), objet sans recette, prix nul refusé, saisie conservée en basculant, HDV sans prix inchangé
 
 **Point de contrôle** : les histoires 1 et 2 passent ensemble.
 
@@ -59,12 +59,12 @@ description: "Liste de tâches : Prix de l'objet sur la page Brisage (HDV ou cra
 
 **Test indépendant** : vérifier la mention dans les trois cas.
 
-- [ ] T013 [US3] Dans `src/features/brisage/BrisagePage.tsx`, afficher sous le montant « Prix noté sur la page Recherche », « Coût de la chaîne de craft » (avec le mode de prix actif : personnel ou communautaire) ou « Saisi à la main » selon la source qui a fourni le montant (FR-009)
-- [ ] T014 [US3] Test d'intégration dans `tests/integration/brisage-page.test.tsx` : les trois mentions, et le prix qui suit le changement de mode de prix (scénarios 1 et 2)
+- [X] T013 [US3] Dans `src/features/brisage/BrisagePage.tsx`, afficher sous le montant « Prix noté sur la page Recherche », « Coût de la chaîne de craft » (avec le mode de prix actif : personnel ou communautaire) ou « Saisi à la main » selon la source qui a fourni le montant (FR-009)
+- [X] T014 [US3] Test d'intégration dans `tests/integration/brisage-page.test.tsx` : les trois mentions, et le prix qui suit le changement de mode de prix (scénarios 1 et 2)
 
 ## Phase 5 : Finition
 
-- [ ] T015 Lancer `npx tsc --noEmit -p tsconfig.app.json`, `npx eslint src tests` et `npx vitest run tests/unit tests/integration/brisage-page.test.tsx` ; corriger ce qui casse
+- [X] T015 Lancer `npx tsc --noEmit -p tsconfig.app.json`, `npx eslint src tests` et `npx vitest run tests/unit tests/integration/brisage-page.test.tsx` ; corriger ce qui casse
 - [ ] T016 Vérifier à la main les 6 scénarios de `specs/062-prix-objet-brisage/quickstart.md` sur le serveur de dev (port 5173)
 
 ## Dépendances
