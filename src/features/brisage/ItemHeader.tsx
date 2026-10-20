@@ -40,7 +40,7 @@ export function ItemHeader({
 }) {
   return (
     <div className="brisage-item-head">
-      <div className="item-head">
+      <div className="brisage-identity">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.name} />
         ) : (
@@ -48,13 +48,13 @@ export function ItemHeader({
         )}
         <div className="item-head-text">
           <h2>{item.name}</h2>
-          {item.level !== undefined && <div className="item-head-tags"><p>Niveau : {item.level}</p></div>}
+          {item.level !== undefined && <p className="fm-note">Niveau {item.level}</p>}
         </div>
       </div>
 
-      <div className="brisage-item">
-        <div className="brisage-field">
-          <span className="brisage-field-label" id="brisage-price-label">Prix de l'objet</span>
+      <div className="brisage-field">
+        <span className="brisage-field-label" id="brisage-price-label">Prix de l'objet</span>
+        <div className="brisage-price-line">
           <div className="brisage-price-source" role="radiogroup" aria-labelledby="brisage-price-label">
             {SOURCES.map((source) => (
               <label key={source.id} className={priceSource === source.id ? 'is-selected' : undefined}>
@@ -63,50 +63,41 @@ export function ItemHeader({
               </label>
             ))}
           </div>
-          {loading && <span className="fm-note">Calcul du prix en cours…</span>}
-          {!loading && resolved && (
-            <>
-              <span className="brisage-cost"><Kamas value={resolved.kamas} /></span>
-              <span className="brisage-price-origin">{originText}</span>
-            </>
-          )}
+          {loading && <span className="fm-note">Calcul…</span>}
+          {!loading && resolved && <span className="brisage-cost"><Kamas value={resolved.kamas} /></span>}
           {!loading && !resolved && (
             <>
               <label className="visually-hidden" htmlFor="brisage-cost-input">Prix de l'objet (kamas)</label>
-              <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} value={manualCost} onChange={(event) => onManualCost(event.target.value)} />
-              <span className="fm-note">{noPriceReason}</span>
-              {originText && <span className="brisage-price-origin">{originText}</span>}
+              <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} placeholder="Prix en kamas" value={manualCost} onChange={(event) => onManualCost(event.target.value)} />
             </>
           )}
-          {!loading && (
-            <span className="fm-note brisage-both-prices">
-              Achat : {hdvKamas === undefined ? 'inconnu' : <Kamas value={hdvKamas} />} · Craft : {craftKamas === undefined ? 'inconnu' : <Kamas value={craftKamas} />}
-            </span>
-          )}
         </div>
+        {!loading && (resolved || originText) && <span className="brisage-price-origin">{originText}</span>}
+        {!loading && !resolved && <span className="fm-note">{noPriceReason}</span>}
+        {!loading && priceSource === 'auto' && hdvKamas !== undefined && craftKamas !== undefined && (
+          <span className="fm-note brisage-both-prices">Achat <Kamas value={hdvKamas} /> · Craft <Kamas value={craftKamas} /></span>
+        )}
+      </div>
 
-        <div className="brisage-field">
-          <label className="brisage-field-label" htmlFor="brisage-coefficient">Coefficient de brisage (%)</label>
-          <div className="brisage-coef">
-            <input
-              id="brisage-coefficient"
-              type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
-              placeholder={stored ? String(stored.coefficient) : 'à saisir'}
-              className={stored ? undefined : 'is-missing'}
-              value={coefficientText}
-              onChange={(event) => onCoefficientText(event.target.value)}
-              onBlur={onRememberCoefficient}
-            />
-            <span aria-hidden="true">%</span>
-          </div>
-          {stored ? (
-            <span className="fm-note" id="brisage-last">
-              Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
-            </span>
-          ) : (
-            <span className="fm-note">Cet objet n'a pas encore été brisé ici : brisez-le en jeu, puis notez son coefficient.</span>
-          )}
+      <div className="brisage-field">
+        <label className="brisage-field-label" htmlFor="brisage-coefficient">Coefficient de brisage (%)</label>
+        <div className="brisage-coef">
+          <input
+            id="brisage-coefficient"
+            type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
+            placeholder={stored ? String(stored.coefficient) : 'à saisir'}
+            className={stored ? undefined : 'is-missing'}
+            value={coefficientText}
+            onChange={(event) => onCoefficientText(event.target.value)}
+            onBlur={onRememberCoefficient}
+          />
+          <span aria-hidden="true">%</span>
         </div>
+        {stored && (
+          <span className="fm-note" id="brisage-last">
+            Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
+          </span>
+        )}
       </div>
     </div>
   );

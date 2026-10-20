@@ -2601,6 +2601,18 @@ select:focus {
 @media (max-width: 700px) {
   .brisage-stat-columns { grid-template-columns: 1fr; }
 }
+/* Item header: identity on the left, price and coefficient on one row beside it. */
+.brisage-item-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-7, 2rem); }
+.brisage-identity { display: flex; align-items: center; gap: var(--space-3); flex: 1 1 260px; min-width: 0; }
+.brisage-identity > img, .brisage-identity > .image-fallback { flex: 0 0 56px; width: 56px; height: 56px; object-fit: contain; }
+.brisage-identity h2 { margin: 0; font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.15; }
+.brisage-identity p { margin: .15rem 0 0; }
+.brisage-item-head .brisage-field { gap: var(--space-1); }
+.brisage-price-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.brisage-item-head .brisage-cost, .brisage-item-head .brisage-field input, .brisage-item-head .brisage-coef input { height: 44px; }
+.brisage-item-head .brisage-cost { font-size: 1.35rem; }
+.brisage-item-head .brisage-coef input { font-size: 1.1rem; }
+.brisage-item-head .brisage-field .brisage-price-source input { height: 1px; }
 /* One single block for the chosen item: header, advice / verdict, lines, bottom line — told apart by thin rules. */
 .brisage-unit { display: grid; gap: var(--space-4); }
 .brisage-unit .brisage-block { margin-bottom: 0; }

@@ -145,11 +145,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     : typedPrice > 0 ? 'Saisi à la main' : undefined;
   const noPriceReason = priceSource === 'craft'
     ? (craftCost.reason === 'no-recipe'
-      ? 'Aucun craft n\'existe pour cet objet : saisissez son prix.'
-      : 'Prix de craft incomplet (il manque le prix d\'une ressource) : saisissez le prix de l\'objet.')
-    : priceSource === 'auto'
-      ? 'Ni prix noté sur la page Recherche ni craft complet pour cet objet : saisissez son prix.'
-      : 'Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.';
+      ? 'Aucun craft n\'existe pour cet objet.'
+      : 'Prix de craft incomplet (ressource sans prix).')
+    : 'Aucun prix connu pour cet objet.';
 
   // Only the lines that break into a known rune are shown; the others are just counted.
   const breakable = mergeRanges(ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)));
