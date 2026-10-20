@@ -171,10 +171,19 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
               ))}
             </ul>
           )}
-          {results.length > visible && (
-            <button type="button" className="brisage-search-more" onClick={() => setVisible(visible + PAGE_SIZE)}>
-              Afficher plus ({results.length - visible} restants)
-            </button>
+          {(results.length > visible || visible > PAGE_SIZE) && (
+            <div className="brisage-more-row">
+              {results.length > visible && (
+                <button type="button" className="brisage-search-more" onClick={() => setVisible(visible + PAGE_SIZE)}>
+                  Afficher plus ({results.length - visible} restants)
+                </button>
+              )}
+              {visible > PAGE_SIZE && (
+                <button type="button" className="brisage-search-more" onClick={() => setVisible(PAGE_SIZE)}>
+                  Réduire
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

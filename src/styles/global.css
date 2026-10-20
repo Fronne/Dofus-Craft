@@ -2584,6 +2584,7 @@ select:focus {
 .brisage-card-text strong { overflow-wrap: anywhere; line-height: 1.2; }
 .brisage-card-coef { font-size: .85rem; }
 .brisage-card-coef.is-missing { color: var(--text-muted); font-style: italic; }
+.brisage-more-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
 .brisage-search-more { justify-self: center; padding: .6rem 1.2rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; cursor: pointer; }
 .brisage-search-more:hover { background: var(--accent-soft); }
 .brisage-invite { margin: 0; }

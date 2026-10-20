@@ -184,5 +184,8 @@ describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
     expect(resultNames()).toHaveLength(6);
     fireEvent.click(screen.getByRole('button', { name: /Afficher plus \(2 restants\)/ }));
     expect(resultNames()).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: 'Réduire' }));
+    expect(resultNames()).toHaveLength(6);
+    expect(screen.queryByRole('button', { name: 'Réduire' })).not.toBeInTheDocument();
   });
 });
