@@ -138,12 +138,11 @@ describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
     expect(await screen.findByText(/4 objets trouvés/)).toBeInTheDocument();
   });
 
-  it('changes the sort without leaving the page', async () => {
+  it('offers no sort field in the filters', async () => {
     await openFilters();
     fireEvent.click(stat('Prospection'));
     await screen.findByText(/3 objets trouvés/);
-    fireEvent.change(screen.getByLabelText('Trier par'), { target: { value: 'maxRoll' } });
-    expect(resultNames()[0]).toBe('Anneau Costaud');
+    expect(screen.queryByLabelText('Trier par')).not.toBeInTheDocument();
   });
 
   it('applies the level range', async () => {

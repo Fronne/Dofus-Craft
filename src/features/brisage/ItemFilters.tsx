@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { brisageStat } from '../../domain/brisage';
-import { statGroup, type SearchSort, type StatGroup } from '../../domain/brisage-search';
+import { statGroup, type StatGroup } from '../../domain/brisage-search';
 import type { BrisageStat } from '../../domain/brisage';
 import type { Category } from '../../domain/types';
 import { CategoryFilter } from '../catalogue/CategoryFilter';
@@ -15,13 +15,7 @@ const GROUPS: { id: StatGroup; label: string }[] = [
   { id: 'resistances', label: 'Résistances' },
 ];
 
-export const SORT_LABELS: Record<SearchSort, string> = {
-  runes: 'Runes ciblées estimées',
-  kamas: 'Valeur des runes (kamas)',
-  maxRoll: 'Jet maximal',
-};
-
-export function ItemFilters({ id, hidden, categories, categoryId, onCategory, levelMin, levelMax, onLevelMin, onLevelMax, levelError, stats, chosen, onToggleStat, sort, onSort }: {
+export function ItemFilters({ id, hidden, categories, categoryId, onCategory, levelMin, levelMax, onLevelMin, onLevelMax, levelError, stats, chosen, onToggleStat }: {
   id: string;
   hidden: boolean;
   categories: Category[];
@@ -35,8 +29,6 @@ export function ItemFilters({ id, hidden, categories, categoryId, onCategory, le
   stats: BrisageStat[];
   chosen: number[];
   onToggleStat: (effectId: number) => void;
-  sort: SearchSort;
-  onSort: (sort: SearchSort) => void;
 }) {
   const columns = useMemo(
     () => GROUPS.map((group) => ({ ...group, stats: stats.filter((stat) => statGroup(stat.effectId) === group.id) })),
@@ -77,14 +69,6 @@ export function ItemFilters({ id, hidden, categories, categoryId, onCategory, le
           ))}
         </div>
       </fieldset>
-      {chosen.length > 0 && (
-        <div className="brisage-field">
-          <label className="brisage-field-label" htmlFor="brisage-search-sort">Trier par</label>
-          <select id="brisage-search-sort" value={sort} onChange={(event) => onSort(event.target.value as SearchSort)}>
-            {(Object.keys(SORT_LABELS) as SearchSort[]).map((key) => <option key={key} value={key}>{SORT_LABELS[key]}</option>)}
-          </select>
-        </div>
-      )}
     </fieldset>
   );
 }

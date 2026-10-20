@@ -135,8 +135,6 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
         stats={stats}
         chosen={chosen}
         onToggleStat={toggle}
-        sort={sort}
-        onSort={(next) => update({ sort: next })}
       />
 
       {activeCount > 0 && (
