@@ -14,7 +14,7 @@ const EQUIPMENT_SUPER_TYPE_IDS = new Set([1, 2, 3, 4, 5, 7, 10, 11, 13]);
 const TROPHY_TYPE_IDS = new Set([151, 217]);
 // The stats the site knows a rune for: effect ids of BRISAGE_STATS in src/domain/brisage.ts, read from the file
 // so the index never drifts from it.
-const HUNT_EFFECT_ID = 696969;
+const HUNT_EFFECT_IDS = [696969, 795];
 const TYPE_BATCH = 10;
 
 async function get(path, params) {
@@ -54,7 +54,7 @@ const { readFile } = await import('node:fs/promises');
 const brisageSource = await readFile(new URL('../src/domain/brisage.ts', import.meta.url), 'utf-8');
 const statBlock = brisageSource.slice(brisageSource.indexOf('export const BRISAGE_STATS'), brisageSource.indexOf('export type BrisageSettings'));
 const statEffectIds = new Set([...statBlock.matchAll(/stat\((\d+),/g)].map((match) => Number(match[1])));
-statEffectIds.delete(HUNT_EFFECT_ID);
+for (const id of HUNT_EFFECT_IDS) statEffectIds.delete(id);
 if (statEffectIds.size < 10) throw new Error('BRISAGE_STATS illisible : le script doit suivre src/domain/brisage.ts.');
 
 const types = await getAll('item-types', [['$select[]', 'id'], ['$select[]', 'superTypeId'], ['$select[]', 'categoryId']]);

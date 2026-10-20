@@ -5,8 +5,8 @@ import type { RuneItem } from './forgemagie';
 // specs/064-recherche-objets-par-stats: which items to break to get the runes of chosen stats. The estimate is the
 // normal breaking of specs/060 at a reference coefficient of 100 %, from the average roll — an ESTIMATE, never a result.
 
-/** DofusDB's « chasse » stat: not a stat one can focus (DoFocus leaves it out too). */
-export const HUNT_EFFECT_ID = 696969;
+/** DofusDB's « chasse » stat (696969, left out by DoFocus) and the hunting weapon effect (795): not stats to target. */
+export const HUNT_EFFECT_IDS = [696969, 795];
 
 export type IndexedEffect = { effectId: number; from: number; to: number };
 export type IndexedItem = { id: string; name: string; level: number; imageUrl?: string; effects: IndexedEffect[] };
@@ -29,7 +29,7 @@ export type SearchResult = {
 
 /** The stats one can target: a known stat with a rune, never the hunt stat. */
 export function targetableStats(runes: RuneItem[], size: BrisageSettings['runeSize'] = 'ba'): BrisageStat[] {
-  return BRISAGE_STATS.filter((stat) => stat.effectId !== HUNT_EFFECT_ID && runeForStat(runes, stat.effectId, size) !== undefined);
+  return BRISAGE_STATS.filter((stat) => !HUNT_EFFECT_IDS.includes(stat.effectId) && runeForStat(runes, stat.effectId, size) !== undefined);
 }
 
 /** A message when the level range cannot hold any item, else undefined. */
@@ -56,7 +56,7 @@ function rollOf(item: IndexedItem, effectId: number): { from: number; to: number
 
 /** The items with a positive roll on EVERY chosen stat and a level in the range; none when no stat is chosen. */
 export function searchItemsByStats(items: IndexedItem[], effectIds: number[], range: LevelRange = {}): IndexedItem[] {
-  const wanted = [...new Set(effectIds)].filter((id) => id !== HUNT_EFFECT_ID);
+  const wanted = [...new Set(effectIds)].filter((id) => !HUNT_EFFECT_IDS.includes(id));
   if (wanted.length === 0 || levelRangeError(range)) return [];
   return items.filter((item) =>
     (range.minLevel === undefined || item.level >= range.minLevel) &&

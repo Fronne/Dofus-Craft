@@ -89,6 +89,7 @@ describe('Brisage – recherche par stats (specs/064)', () => {
     await screen.findByText(/Choisissez au moins une stat/);
     expect(chip('Prospection')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /chasse/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Arme de chasse' })).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Filtrer les stats'), { target: { value: 'sagess' } });
     expect(chip('Sagesse')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Prospection' })).not.toBeInTheDocument();

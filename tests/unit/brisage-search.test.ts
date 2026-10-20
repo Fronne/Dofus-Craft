@@ -4,7 +4,7 @@ import type { RuneItemsData } from '../../src/domain/forgemagie';
 import { analyzeBrisage, defaultBrisageSettings, runeForStat, wholeRunes } from '../../src/domain/brisage';
 import {
   estimateTargetRunes,
-  HUNT_EFFECT_ID,
+  HUNT_EFFECT_IDS,
   levelRangeError,
   searchItemsByStats,
   searchResults,
@@ -26,7 +26,7 @@ describe('targetableStats', () => {
   it('keeps the stats with a rune and never the hunt stat', () => {
     const ids = targetableStats(RUNES).map((stat) => stat.effectId);
     expect(ids).toContain(PROSPE);
-    expect(ids).not.toContain(HUNT_EFFECT_ID);
+    for (const hunt of HUNT_EFFECT_IDS) expect(ids).not.toContain(hunt);
   });
 
   it('drops a stat that has no rune', () => {
@@ -60,7 +60,7 @@ describe('searchItemsByStats', () => {
   });
 
   it('ignores the hunt stat', () => {
-    expect(searchItemsByStats(items, [HUNT_EFFECT_ID])).toEqual([]);
+    expect(searchItemsByStats(items, HUNT_EFFECT_IDS)).toEqual([]);
   });
 
   it('applies the level range, bounds included', () => {

@@ -1,4 +1,4 @@
-import { HUNT_EFFECT_ID, type SearchSort } from '../domain/brisage-search';
+import { HUNT_EFFECT_IDS, type SearchSort } from '../domain/brisage-search';
 
 // specs/064-recherche-objets-par-stats (FR-009): what the player chose on the "Par stats" search (the stats, the
 // sort, the level range), kept on the device so leaving for an item and coming back finds it again.
@@ -26,7 +26,7 @@ export function mergeSearchPrefs(value: unknown): SearchPrefs {
   if (typeof value !== 'object' || value === null) return defaults;
   const raw = value as Record<string, unknown>;
   const effectIds = Array.isArray(raw.effectIds)
-    ? [...new Set(raw.effectIds.filter((id): id is number => Number.isInteger(id) && id !== HUNT_EFFECT_ID))]
+    ? [...new Set(raw.effectIds.filter((id): id is number => Number.isInteger(id) && !HUNT_EFFECT_IDS.includes(id)))]
     : defaults.effectIds;
   return {
     effectIds,
