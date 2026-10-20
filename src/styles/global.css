@@ -2601,3 +2601,11 @@ select:focus {
 @media (max-width: 700px) {
   .brisage-stat-columns { grid-template-columns: 1fr; }
 }
+/* One single block for the chosen item: header, advice / verdict, lines, bottom line — told apart by thin rules. */
+.brisage-unit { display: grid; gap: var(--space-4); }
+.brisage-unit .brisage-block { margin-bottom: 0; }
+.brisage-results { display: grid; gap: var(--space-4); }
+.brisage-results > .brisage-block, .brisage-results > .empty { margin: 0; }
+.brisage-part { margin: 0; padding: var(--space-4) 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: none; box-shadow: none; }
+.brisage-part.market-price-panel { padding-left: 0; padding-right: 0; }
+.brisage-part.brisage-footline { padding: var(--space-3) 0 0; }

@@ -256,7 +256,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
       {!item && <p className="fm-note brisage-invite">Choisissez un objet ci-dessus pour voir son brisage.</p>}
       {item && (
-        <section className="panel brisage-block" aria-label="Objet à briser">
+        <section className="panel brisage-unit" aria-label="Objet à briser">
+        <div className="brisage-block">
           <ItemHeader
             item={item}
             priceSource={priceSource}
@@ -277,11 +278,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
           {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
           {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
           {loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
-        </section>
-      )}
+        </div>
 
-      {item && (analysis || advice) && (
-        <section className="brisage-results" aria-labelledby="brisage-results-title">
+      {(analysis || advice) && (
+        <div className="brisage-results" role="group" aria-labelledby="brisage-results-title">
           <h2 id="brisage-results-title" className="visually-hidden">Résultat</h2>
           {invalidReason !== undefined ? (
             <p className="empty" role="status">{invalidReason}</p>
@@ -295,7 +295,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               )}
 
               {adviceOk && (
-                <section className="panel market-price-panel item-verdict-panel" aria-live="polite">
+                <section className="brisage-part market-price-panel item-verdict-panel" aria-live="polite">
                   <div className="market-price-summary">
                     <div className={`verdict brisage-verdict verdict--${adviceOk.bestFocus && switchCoefficient !== undefined ? 'craft' : 'insufficient-data'}`}>
                       <div className="verdict-head">
@@ -313,7 +313,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               )}
 
               {ok && (
-              <section className="panel market-price-panel item-verdict-panel" aria-live="polite">
+              <section className="brisage-part market-price-panel item-verdict-panel" aria-live="polite">
                 <div className="market-price-summary">
                   <div className={`verdict brisage-verdict verdict--${verdict.tone === 'good' ? 'craft' : verdict.tone === 'bad' ? 'bad' : 'insufficient-data'}`}>
                     <div className="verdict-head">
@@ -343,7 +343,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               </section>
               )}
 
-              <section className="panel brisage-block" aria-labelledby="brisage-lines-title">
+              <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
                   <h2 id="brisage-lines-title">Lignes de l'objet</h2>
                 </div>
@@ -433,7 +433,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             </>
           )}
           {(runesValue !== undefined || nextGains.length > 0) && (
-            <section className="panel brisage-footline" aria-label="Informations annexes">
+            <section className="brisage-part brisage-footline" aria-label="Informations annexes">
               {runesValue !== undefined && (
                 <section className="brisage-estimate" aria-labelledby="brisage-estimate-title">
                   <h2 id="brisage-estimate-title" className="brisage-gain-label">Valeur estimée des runes</h2>
@@ -479,6 +479,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               )}
             </section>
           )}
+        </div>
+      )}
         </section>
       )}
     </>
