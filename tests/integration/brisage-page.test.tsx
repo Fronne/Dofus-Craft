@@ -212,7 +212,7 @@ describe('Brisage page (specs/061)', () => {
       await openBrisage();
       await pickCape();
       expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
-      expect(screen.getByText('Valeur des runes')).toBeInTheDocument();
+      expect(screen.getAllByText('Valeur des runes')).toHaveLength(2);
     });
 
     it('gives no advice while a rune has no price', async () => {

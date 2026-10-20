@@ -454,7 +454,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
                       </tr>
                       <tr role="row">
-                        <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">{noCoefficient && !costKnown ? 'Valeur des runes' : "Gain de l'objet"}</th>
+                        <th scope="col">Runes</th><th scope="col">Valeur des runes</th><th scope="col">Runes</th><th scope="col">Valeur des runes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -464,7 +464,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         const focus = focusOptions.find((option) => option.focusEffectId === line.range.effectId);
                         const focusYield = focus?.yields.find((y) => y.effectId === line.range.effectId);
                         const isBest = highlightedEffectId === line.range.effectId;
-                        const focusGain = gainOf(focus);
+                        const focusValue = focus && focus.missingRuneIds.length === 0 ? focus.valueKamas : undefined;
                         const label = statLabel(line.range.effectId);
                         return (
                           <tr role="row" key={line.index} className={isBest ? 'brisage-best' : undefined}>
@@ -495,9 +495,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             </td>
                             <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(wholeRunes(plain.count)) : '—'}</td>
-                            <td role="cell" data-label="Sans focus : valeur">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
+                            <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
-                            <td role="cell" data-label="Focus : gain de l'objet">{focusGain !== undefined ? <Kamas value={Math.round(focusGain)} signed={!noCoefficient || costKnown} /> : <span className="fm-note">—</span>}</td>
+                            <td role="cell" data-label="Focus : valeur des runes">{focusValue !== undefined ? <Kamas value={Math.round(focusValue)} /> : <span className="fm-note">—</span>}</td>
                           </tr>
                         );
                       })}
