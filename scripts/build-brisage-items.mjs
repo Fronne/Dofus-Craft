@@ -58,9 +58,12 @@ for (const id of HUNT_EFFECT_IDS) statEffectIds.delete(id);
 if (statEffectIds.size < 10) throw new Error('BRISAGE_STATS illisible : le script doit suivre src/domain/brisage.ts.');
 
 const types = await getAll('item-types', [['$select[]', 'id'], ['$select[]', 'superTypeId'], ['$select[]', 'categoryId']]);
-const typeIds = types
-  .filter((type) => (type.superTypeId === 13 ? TROPHY_TYPE_IDS.has(type.id) : type.categoryId === 0 && EQUIPMENT_SUPER_TYPE_IDS.has(type.superTypeId)))
-  .map((type) => type.id);
+const equipmentTypes = types
+  .filter((type) => (type.superTypeId === 13 ? TROPHY_TYPE_IDS.has(type.id) : type.categoryId === 0 && EQUIPMENT_SUPER_TYPE_IDS.has(type.superTypeId)));
+const typeIds = equipmentTypes.map((type) => type.id);
+// specs/065-refonte-page-brisage: the category of an item, the same id as the Recherche page filter
+// (equipmentCategoryId in src/services/dofusdb-mappers.ts): the super type, the Trophées folded together.
+const categoryByType = new Map(equipmentTypes.map((type) => [type.id, type.superTypeId === 13 ? 'equipment-type-151' : `equipment-type-${type.superTypeId}`]));
 
 const records = [];
 for (let index = 0; index < typeIds.length; index += TYPE_BATCH) {
@@ -77,10 +80,13 @@ for (const record of records) {
   if (!name || typeof record.level !== 'number') continue;
   const effects = effectRanges(record.effects).filter((range) => statEffectIds.has(range.effectId));
   if (effects.length === 0) continue;
+  const categoryId = categoryByType.get(record.typeId);
+  if (!categoryId) continue;
   items.push({
     id: String(record.id),
     name,
     level: record.level,
+    categoryId,
     ...(record.iconId ? { imageUrl: `${API}/img/items/${record.iconId}.png` } : {}),
     effects,
   });

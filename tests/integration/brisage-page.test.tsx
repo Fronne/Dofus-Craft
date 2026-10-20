@@ -26,6 +26,16 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   getManifest: vi.fn().mockReturnValue({ sourceName: 'test', sourceVersion: '1', catalogueVersion: '1', publishedAt: new Date().toISOString() }),
 }));
 
+vi.mock('../../src/data/brisage-items-repository', () => ({
+  loadBrisageItemsIndex: vi.fn().mockResolvedValue({
+    source: 'test', sourceUrl: 'https://example.test', retrievedAt: '2026-10-20',
+    items: [
+      { id: '777', name: 'Cape du Chef Bwork', level: 100, categoryId: 'equipment-type-17', effects: [{ effectId: 125, from: 40, to: 44 }] },
+      { id: '888', name: 'Anneau du Sage', level: 60, categoryId: 'equipment-type-9', effects: [{ effectId: 124, from: 10, to: 20 }] },
+    ],
+  }),
+}));
+
 vi.mock('../../src/data/servers-repository', () => ({
   getServers: vi.fn().mockResolvedValue([{ id: 'mikhal', name: 'Mikhal', type: 'mono' }]),
 }));
@@ -35,6 +45,7 @@ import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-pr
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
+const cost = () => document.querySelector('.brisage-cost')?.textContent ?? undefined;
 const type = (label: string, value: string) => fireEvent.change(field(label), { target: { value } });
 
 async function openBrisage() {
@@ -85,10 +96,11 @@ describe('Brisage page (specs/061)', () => {
     await pinnedItemPrices.save('mikhal', '777', 12345);
     await openBrisage();
     await pickCape();
-    expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
+    await waitFor(() => expect(cost()).toMatch(/12\D345/));
     expect(screen.queryByLabelText(/niveau de l'objet/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Prix de l'objet \(kamas\)/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Prix HDV')).toBeChecked();
+    // Auto is the default: only the HDV price is known here, so it is the one kept.
+    expect(screen.getByLabelText('Auto')).toBeChecked();
     expect(screen.getByText('Prix noté sur la page Recherche')).toBeInTheDocument();
   });
 
@@ -117,13 +129,16 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices();
       await openBrisage();
       await pickCape();
-      expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      // Auto takes the cheaper of the two: the craft (800) beats the HDV (12 345).
+      await waitFor(() => expect(cost()).toMatch(/800/));
+      fireEvent.click(screen.getByLabelText('Achat'));
+      await waitFor(() => expect(cost()).toMatch(/12\D345/));
+      fireEvent.click(screen.getByLabelText('Craft'));
       expect(await screen.findByText(/Coût de la chaîne de craft \(mode personnel\)/)).toBeInTheDocument();
-      expect(screen.getByText(/^800$/)).toBeInTheDocument();
-      expect(screen.queryByText(/12\D345/)).not.toBeInTheDocument();
-      fireEvent.click(screen.getByLabelText('Prix HDV'));
-      expect(await screen.findByText(/12\D345/)).toBeInTheDocument();
+      expect(cost()).toMatch(/800/);
+      expect(cost()).not.toMatch(/12\D345/);
+      fireEvent.click(screen.getByLabelText('Achat'));
+      await waitFor(() => expect(cost()).toMatch(/12\D345/));
     });
 
     it('says the craft price is incomplete, shows no partial total, and uses the typed price', async () => {
@@ -131,14 +146,14 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices('laine');
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      fireEvent.click(screen.getByLabelText('Craft'));
       expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
-      expect(screen.queryByText(/^300$/)).not.toBeInTheDocument();
+      expect(cost() ?? "").not.toMatch(/300/);
       fireEvent.change(await screen.findByLabelText(/Prix de l'objet \(kamas\)/), { target: { value: '900' } });
       expect(await screen.findByText('Saisi à la main')).toBeInTheDocument();
       // The typed price is kept when switching back and forth.
-      fireEvent.click(screen.getByLabelText('Prix HDV'));
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      fireEvent.click(screen.getByLabelText('Achat'));
+      fireEvent.click(screen.getByLabelText('Craft'));
       expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toHaveValue(900);
     });
 
@@ -146,7 +161,7 @@ describe('Brisage page (specs/061)', () => {
       getItemDetail.mockResolvedValue({ recipe: undefined, resources: [] });
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      fireEvent.click(screen.getByLabelText('Craft'));
       expect(await screen.findByText(/Aucun craft n'existe pour cet objet/)).toBeInTheDocument();
     });
 
@@ -154,7 +169,7 @@ describe('Brisage page (specs/061)', () => {
       getItemDetail.mockRejectedValue(new Error('offline'));
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      fireEvent.click(screen.getByLabelText('Craft'));
       expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
       expect(screen.getByLabelText(/Prix de l'objet \(kamas\)/)).toBeInTheDocument();
     });
@@ -172,13 +187,13 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices();
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Prix de craft'));
+      fireEvent.click(screen.getByLabelText('Craft'));
       await screen.findByText(/Coût de la chaîne de craft/);
       cleanup();
       // The server is remembered: the page opens straight on Brisage.
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
-      expect(await screen.findByLabelText('Prix de craft')).toBeChecked();
+      expect(await screen.findByLabelText('Craft')).toBeChecked();
     });
 
     it('brings back a session saved before the price source existed on HDV', async () => {
@@ -187,7 +202,7 @@ describe('Brisage page (specs/061)', () => {
         serverId: 'mikhal', item: { id: '777', name: 'Cape du Chef Bwork', level: 100 }, rolls: {}, coefficientText: '', manualCost: '',
       }));
       await openBrisage();
-      expect(await screen.findByLabelText('Prix HDV')).toBeChecked();
+      expect(await screen.findByLabelText('Achat')).toBeChecked();
     });
   });
 
@@ -197,7 +212,7 @@ describe('Brisage page (specs/061)', () => {
       await pricesKnown();
       await openBrisage();
       await pickCape();
-      expect(await screen.findByLabelText(/Coefficient relevé en jeu/)).toBeInTheDocument();
+      expect(await screen.findByLabelText(/Coefficient de brisage/)).toBeInTheDocument();
       expect(await screen.findByText('Conseil')).toBeInTheDocument();
       expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
       expect(screen.getByText(/Au-dessus de ce coefficient, brisez sans focus/)).toBeInTheDocument();
@@ -228,7 +243,7 @@ describe('Brisage page (specs/061)', () => {
       await pricesKnown();
       await openBrisage();
       await pickCape();
-      const input = await screen.findByLabelText(/Coefficient relevé en jeu/);
+      const input = await screen.findByLabelText(/Coefficient de brisage/);
       fireEvent.change(input, { target: { value: '50' } });
       expect(await screen.findByText('Verdict')).toBeInTheDocument();
       expect(screen.queryByText('Conseil')).not.toBeInTheDocument();
@@ -243,7 +258,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     expect(await screen.findByText('Rentable avec un focus Do')).toBeInTheDocument();
     expect(screen.getByText("Sans focus, rentable jusqu'à").nextElementSibling).toHaveTextContent('%');
     expect(screen.getByText('Brisages possibles avant ce seuil').nextElementSibling).toHaveTextContent(/^\d+$/);
@@ -274,7 +289,7 @@ describe('Brisage page (specs/061)', () => {
       fireEvent.change(screen.getByLabelText('Jet de Dommages'), { target: { value: '9' } });
       await waitFor(() => expect(value()).not.toBe(at100));
       // The coefficient scales it, and the page keeps showing it with the coefficient but no price for the item.
-      fireEvent.change(screen.getByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+      fireEvent.change(screen.getByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
       await waitFor(() => expect(screen.getByText('Valeur estimée des runes').closest('section')).toHaveTextContent('par brisage à 50 %'));
     });
 
@@ -291,7 +306,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '66' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '66' } });
     await screen.findByText('Verdict');
     const rows = document.querySelectorAll('.brisage-table tbody tr');
     for (const row of rows) {
@@ -311,7 +326,7 @@ describe('Brisage page (specs/061)', () => {
     await openBrisage();
     await pickCape();
     // At 100 % the normal breaking keeps every line whole: a focus cannot beat it.
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '100' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
     expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
@@ -325,7 +340,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    const input = await screen.findByLabelText(/Coefficient relevé en jeu/);
+    const input = await screen.findByLabelText(/Coefficient de brisage/);
     fireEvent.change(input, { target: { value: '150' } });
     fireEvent.blur(input);
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('150 %');
@@ -338,14 +353,14 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '60' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '60' } });
     await screen.findByLabelText('Jet de Vitalité');
     type('Jet de Vitalité', '44');
     cleanup();
     // The server is remembered: the page opens straight on Brisage.
     render(<App />);
     await screen.findByRole('heading', { name: 'Brisage' });
-    expect(await screen.findByText(/Cape du Chef Bwork/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Cape du Chef Bwork' })).toBeInTheDocument();
     expect(await screen.findByLabelText('Jet de Vitalité')).toHaveValue(44);
     expect((screen.getByLabelText(/Coefficient/) as HTMLInputElement).value).toBe('60');
     expect(screen.getByText('modifié')).toBeInTheDocument();
@@ -359,7 +374,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     expect(await screen.findAllByLabelText('Jet de Vitalité')).toHaveLength(1);
     expect(field('Jet de Vitalité').placeholder).toBe('42');
   });
@@ -369,7 +384,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     await screen.findByLabelText('Jet de Vitalité');
     type('Jet de Vitalité', '-3');
     expect(field('Jet de Vitalité')).toHaveAttribute('aria-invalid', 'true');
@@ -381,7 +396,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    const input = await screen.findByLabelText(/Coefficient relevé en jeu/);
+    const input = await screen.findByLabelText(/Coefficient de brisage/);
     fireEvent.change(input, { target: { value: '38' } });
     fireEvent.blur(input);
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('38 %');
@@ -405,7 +420,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     await screen.findByLabelText('Jet de Vitalité');
     expect(field('Jet de Vitalité').placeholder).toBe('42');
     expect(field('Jet de Dommages').placeholder).toBe('5');
@@ -421,7 +436,7 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     await screen.findByLabelText('Jet de Vitalité');
     // Vitalité 40–44 and Dommages 1–9 are free; Chance (38) is fixed: a field, but the switch skips it.
     expect(field('Jet de Chance').placeholder).toBe('38');
@@ -449,7 +464,7 @@ describe('Brisage page (specs/061)', () => {
     await pinnedItemPrices.save('mikhal', '777', 1000);
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     expect(await screen.findByText(/Prix manquant pour : /)).toHaveTextContent('Rune Vi');
     expect(screen.getByText('Verdict').parentElement).toHaveTextContent('Prix manquants');
   });
@@ -459,8 +474,42 @@ describe('Brisage page (specs/061)', () => {
     await pricesKnown();
     await openBrisage();
     await pickCape();
-    fireEvent.change(await screen.findByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     expect(await screen.findByText('Pas rentable')).toBeInTheDocument();
+  });
+
+  describe('simplified layout (specs/065)', () => {
+    it('opens on the search and invites to choose an item, with no sliders in the table', async () => {
+      await openBrisage();
+      expect(screen.getByLabelText('Chercher un objet')).toBeInTheDocument();
+      expect(screen.getByText(/Choisissez un objet ci-dessus/)).toBeInTheDocument();
+      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+      await pickCape();
+      expect(screen.queryByText(/Choisissez un objet ci-dessus/)).not.toBeInTheDocument();
+      expect(document.querySelectorAll('.brisage-table input[type="range"]')).toHaveLength(0);
+      expect(screen.getByRole('heading', { name: 'Cape du Chef Bwork' })).toBeInTheDocument();
+    });
+
+    it('shows the cards of the index and filters them by name', async () => {
+      await openBrisage();
+      expect(await screen.findByRole('button', { name: /Anneau du Sage/ })).toBeInTheDocument();
+      type('Chercher un objet', 'anneau');
+      await waitFor(() => expect(screen.queryByRole('button', { name: /Cape du Chef Bwork/ })).not.toBeInTheDocument());
+      expect(screen.getByRole('button', { name: /Anneau du Sage/ })).toHaveTextContent('Coef. à saisir');
+    });
+
+    it('keeps the Auto choice after a reload', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 12345);
+      await openBrisage();
+      await pickCape();
+      fireEvent.click(screen.getByLabelText('Achat'));
+      fireEvent.click(screen.getByLabelText('Auto'));
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-session')!).priceSource).toBe('auto'));
+      cleanup();
+      render(<App />);
+      await screen.findByRole('heading', { name: 'Brisage' });
+      expect(await screen.findByLabelText('Auto')).toBeChecked();
+    });
   });
 
   it('says so when the item stats cannot be read', async () => {

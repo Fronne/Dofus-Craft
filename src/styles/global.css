@@ -2553,28 +2553,42 @@ select:focus {
 .brisage-block input[type='number']::-webkit-inner-spin-button, .brisage-block input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .brisage-table .resource-display img { background: transparent; }
 
-/* specs/064-recherche-objets-par-stats */
-.brisage-search { display: grid; gap: var(--space-3); }
-.brisage-search-chosen, .brisage-search-stats, .brisage-search-results { list-style: none; margin: 0; padding: 0; }
-.brisage-search-chosen { display: flex; flex-wrap: wrap; gap: var(--space-1); }
-.brisage-search-chip { border: 1px solid var(--border-strong); border-radius: 999px; background: var(--accent-soft); color: var(--text); font: inherit; padding: .2rem .7rem; cursor: pointer; }
-.brisage-search-stats { display: flex; flex-wrap: wrap; gap: var(--space-1); max-height: 11rem; overflow-y: auto; }
-.brisage-search-stat { border: 1px solid var(--border); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; padding: .3rem .7rem; cursor: pointer; }
+/* specs/065-refonte-page-brisage: item finder (search, filters, cards), item header, bottom line */
+.brisage-finder { display: grid; gap: var(--space-3); }
+.brisage-filters { display: grid; gap: var(--space-3); }
+.brisage-filters[hidden] { display: none; }
+.brisage-stat-filter { border: 0; padding: 0; margin: 0; min-width: 0; }
+.brisage-stat-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.brisage-stat-column h3 { margin: 0 0 var(--space-1); font-size: .9rem; color: var(--text-muted); }
+.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.brisage-search-stat { display: flex; align-items: center; gap: var(--space-2); width: 100%; border: 1px solid transparent; border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; font-size: .88rem; line-height: 1.2; min-height: 26px; padding: .1rem .4rem; text-align: left; cursor: pointer; }
 .brisage-search-stat:hover { border-color: var(--border-strong); }
 .brisage-search-stat.is-selected { border-color: var(--border-strong); background: var(--accent-soft); font-weight: 600; }
-.brisage-search-options { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; }
-.brisage-search-options input, .brisage-search-options select { height: 52px; }
-.brisage-search-options input { width: 7rem; text-align: right; }
-.brisage-search-results { display: grid; gap: var(--space-1); }
-.brisage-search-result { display: grid; grid-template-columns: 40px minmax(0, 1.2fr) minmax(0, 2fr) auto; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.brisage-search-result:hover { border-color: var(--border-strong); background: var(--accent-soft); }
-.brisage-search-name, .brisage-search-stats-detail, .brisage-search-total { display: grid; gap: .1rem; }
-.brisage-search-noimage { width: 40px; height: 40px; }
-.brisage-search-total { text-align: right; justify-items: end; }
-@media (max-width: 640px) {
-  .brisage-search-result { grid-template-columns: 40px minmax(0, 1fr); }
-  .brisage-search-stats-detail, .brisage-search-total { grid-column: 1 / -1; text-align: left; justify-items: start; }
-}
-.brisage-search-filter { width: 100%; max-width: 22rem; }
+.brisage-stat-icon { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 4px; background: var(--surface-2, transparent); }
+.brisage-found { margin: 0; }
+.brisage-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-2); }
+.brisage-card { display: flex; align-items: center; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.brisage-card:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+.brisage-card.is-selected { border-color: var(--border-strong); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--link); }
+.brisage-card img, .brisage-card-noimage { flex: 0 0 44px; width: 44px; height: 44px; object-fit: contain; }
+.brisage-card-noimage { display: grid; place-items: center; }
+.brisage-card-text { display: grid; gap: 1px; min-width: 0; }
+.brisage-card-text strong { overflow-wrap: anywhere; line-height: 1.2; }
+.brisage-card-coef { font-size: .85rem; }
+.brisage-card-coef.is-missing { color: var(--text-muted); font-style: italic; }
 .brisage-search-more { justify-self: center; padding: .6rem 1.2rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; cursor: pointer; }
 .brisage-search-more:hover { background: var(--accent-soft); }
+.brisage-invite { margin: 0; }
+.brisage-item-head { display: grid; gap: var(--space-3); }
+.brisage-both-prices { display: block; }
+.brisage-coef input.is-missing { border-style: dashed; border-color: var(--warning, #c77d1a); }
+.brisage-footline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); padding: var(--space-3) var(--space-4); }
+.brisage-footline .brisage-estimate-value { margin: 0; }
+.brisage-footline .brisage-gains-layout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); }
+.brisage-footline .brisage-gains-now { padding: 0; border: 0; background: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.brisage-footline .brisage-gains-next { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.brisage-footline .brisage-gains { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.brisage-footline .brisage-gains li { padding: var(--space-1) var(--space-3); }
+@media (max-width: 700px) {
+  .brisage-stat-columns { grid-template-columns: 1fr; }
+}

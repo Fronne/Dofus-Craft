@@ -3,12 +3,14 @@ import runeItems from '../../src/data/rune-items.json';
 import type { RuneItemsData } from '../../src/domain/forgemagie';
 import { analyzeBrisage, defaultBrisageSettings, runeForStat, wholeRunes } from '../../src/domain/brisage';
 import {
+  browseItems,
   estimateTargetRunes,
   HUNT_EFFECT_IDS,
   levelRangeError,
   searchItemsByStats,
   searchResults,
   sortSearchResults,
+  statGroup,
   targetableStats,
   type IndexedItem,
 } from '../../src/domain/brisage-search';
@@ -143,5 +145,85 @@ describe('searchResults', () => {
     const items = [item('1', 'Faible', 50, [range(FO, 10)]), item('2', 'Fort', 200, [range(FO, 60)]), item('3', 'Autre', 200, [range(VI, 60)])];
     const results = searchResults(items, [FO], {}, RUNES, SETTINGS, {}, 'runes');
     expect(results.map((r) => r.item.id)).toEqual(['2', '1']);
+  });
+});
+
+// specs/065-refonte-page-brisage: one list for the name, the category, the level and the stats.
+describe('statGroup', () => {
+  it('puts every targetable stat in exactly one group', () => {
+    for (const stat of targetableStats(RUNES)) {
+      expect(['caracteristiques', 'degats', 'resistances']).toContain(statGroup(stat.effectId));
+    }
+  });
+
+  it('files tackle, dodge, lock and withdrawal under the characteristics', () => {
+    for (const effectId of [753, 752, 160, 161, 410, 412]) expect(statGroup(effectId)).toBe('caracteristiques');
+  });
+
+  it('files the damages and the resistances apart', () => {
+    expect(statGroup(112)).toBe('degats');
+    expect(statGroup(422)).toBe('degats');
+    expect(statGroup(240)).toBe('resistances');
+    expect(statGroup(210)).toBe('resistances');
+    expect(statGroup(VI)).toBe('caracteristiques');
+  });
+});
+
+describe('browseItems', () => {
+  const withCategory = (source: IndexedItem, categoryId: string): IndexedItem => ({ ...source, categoryId });
+  const items = [
+    withCategory(item('1', 'Cape Étoilée', 150, [range(VI, 100, 150), range(SA, 20, 30)]), 'equipment-type-10'),
+    withCategory(item('2', 'Anneau du Corbeau', 120, [range(VI, 200)]), 'equipment-type-3'),
+    withCategory(item('3', 'Cape Sombre', 80, [range(SA, 10)]), 'equipment-type-10'),
+    item('4', 'Sans catégorie', 60, [range(VI, 10, 20)]),
+  ];
+  const base = { query: '', effectIds: [] as number[], sort: 'runes' as const };
+  const ids = (results: ReturnType<typeof browseItems>) => results.map((r) => r.item.id);
+  const browse = (change: Partial<typeof base> & { categoryId?: string; minLevel?: number; maxLevel?: number }) =>
+    browseItems(items, { ...base, ...change }, RUNES, SETTINGS, {});
+
+  it('lists every item, highest level first then by name, while nothing is chosen', () => {
+    const results = browse({});
+    expect(ids(results)).toEqual(['1', '2', '3', '4']);
+    expect(results[0].perStat).toEqual([]);
+    expect(results[0].valueKamas).toBeUndefined();
+  });
+
+  it('matches the name without accents or case, every word', () => {
+    expect(ids(browse({ query: 'cape' }))).toEqual(['1', '3']);
+    expect(ids(browse({ query: 'ETOILEE cape' }))).toEqual(['1']);
+    expect(ids(browse({ query: 'corbeau anneau' }))).toEqual(['2']);
+    expect(ids(browse({ query: 'zzz' }))).toEqual([]);
+  });
+
+  it('ignores a name shorter than two letters', () => {
+    expect(ids(browse({ query: 'c' }))).toEqual(['1', '2', '3', '4']);
+    expect(ids(browse({ query: '  ' }))).toEqual(['1', '2', '3', '4']);
+  });
+
+  it('filters by category and never lists an item without category under one', () => {
+    expect(ids(browse({ categoryId: 'equipment-type-10' }))).toEqual(['1', '3']);
+    expect(ids(browse({ categoryId: 'equipment-type-99' }))).toEqual([]);
+  });
+
+  it('filters by level, bounds included, and refuses an inverted range', () => {
+    expect(ids(browse({ minLevel: 120, maxLevel: 150 }))).toEqual(['1', '2']);
+    expect(ids(browse({ minLevel: 200, maxLevel: 100 }))).toEqual([]);
+  });
+
+  it('requires every chosen stat and sorts like searchResults', () => {
+    expect(ids(browse({ effectIds: [VI, SA] }))).toEqual(['1']);
+    expect(browse({ effectIds: [VI] })).toEqual(searchResults(items, [VI], {}, RUNES, SETTINGS, {}, 'runes'));
+    expect(browse({ effectIds: [VI] })[0].perStat.length).toBe(1);
+  });
+
+  it('combines the name, the category, the level and the stats', () => {
+    expect(ids(browse({ query: 'cape', categoryId: 'equipment-type-10', minLevel: 100, effectIds: [SA] }))).toEqual(['1']);
+  });
+
+  it('does not change what it is given', () => {
+    const copy = JSON.parse(JSON.stringify(items));
+    browse({ query: 'cape', effectIds: [VI] });
+    expect(items).toEqual(copy);
   });
 });

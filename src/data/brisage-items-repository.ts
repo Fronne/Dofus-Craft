@@ -20,7 +20,14 @@ function toItem(value: unknown): IndexedItem | undefined {
   if (typeof value.id !== 'string' || typeof value.name !== 'string' || typeof value.level !== 'number' || !Array.isArray(value.effects)) return undefined;
   const effects = value.effects.map(toEffect).filter((effect): effect is IndexedEffect => effect !== undefined);
   if (effects.length === 0) return undefined;
-  return { id: value.id, name: value.name, level: value.level, imageUrl: typeof value.imageUrl === 'string' ? value.imageUrl : undefined, effects };
+  return {
+    id: value.id,
+    name: value.name,
+    level: value.level,
+    categoryId: typeof value.categoryId === 'string' && value.categoryId !== '' ? value.categoryId : undefined,
+    imageUrl: typeof value.imageUrl === 'string' ? value.imageUrl : undefined,
+    effects,
+  };
 }
 
 /** Reads the index back; an item of the wrong shape is dropped, an index of the wrong shape is refused. */

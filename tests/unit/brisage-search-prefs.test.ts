@@ -11,8 +11,25 @@ describe('brisage search preferences', () => {
   });
 
   it('gives back what was saved', () => {
-    setSearchPrefs({ effectIds: [176, 125], sort: 'kamas', minLevel: 100, maxLevel: 200 });
-    expect(getSearchPrefs()).toEqual({ effectIds: [176, 125], sort: 'kamas', minLevel: 100, maxLevel: 200 });
+    setSearchPrefs({ effectIds: [176, 125], sort: 'kamas', minLevel: 100, maxLevel: 200, panelOpen: false });
+    expect(getSearchPrefs()).toEqual({ effectIds: [176, 125], sort: 'kamas', minLevel: 100, maxLevel: 200, categoryId: undefined, panelOpen: false });
+  });
+
+  // specs/065-refonte-page-brisage: the category and the open / closed filter panel are remembered too.
+  it('starts with every category and the panel closed', () => {
+    expect(defaultSearchPrefs().categoryId).toBeUndefined();
+    expect(defaultSearchPrefs().panelOpen).toBe(false);
+  });
+
+  it('gives back the category and the panel state', () => {
+    setSearchPrefs({ effectIds: [125], sort: 'runes', categoryId: 'equipment-type-10', panelOpen: true });
+    expect(getSearchPrefs()).toMatchObject({ effectIds: [125], categoryId: 'equipment-type-10', panelOpen: true });
+  });
+
+  it('falls back to the defaults for a missing or wrong-typed value, and reads an old save', () => {
+    expect(mergeSearchPrefs({ effectIds: [176], sort: 'kamas' })).toMatchObject({ categoryId: undefined, panelOpen: false });
+    expect(mergeSearchPrefs({ categoryId: 5, panelOpen: 'oui' })).toMatchObject({ categoryId: undefined, panelOpen: false });
+    expect(mergeSearchPrefs({ categoryId: '' }).categoryId).toBeUndefined();
   });
 
   it('falls back to the defaults on invalid JSON', () => {
@@ -22,7 +39,7 @@ describe('brisage search preferences', () => {
 
   it('keeps only valid values field by field', () => {
     expect(mergeSearchPrefs({ effectIds: [176, 'x', 696969, 176, 1.5], sort: 'inconnu', minLevel: 0, maxLevel: '200' }))
-      .toEqual({ effectIds: [176], sort: 'runes', minLevel: undefined, maxLevel: undefined });
+      .toEqual({ effectIds: [176], sort: 'runes', minLevel: undefined, maxLevel: undefined, categoryId: undefined, panelOpen: false });
     expect(mergeSearchPrefs(null)).toEqual(defaultSearchPrefs());
     expect(mergeSearchPrefs({ effectIds: 'non' }).effectIds).toEqual([]);
   });

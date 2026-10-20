@@ -13,7 +13,8 @@ export type BrisageSession = {
   priceSource: PriceSource;
 };
 
-export type PriceSource = 'hdv' | 'craft';
+/** specs/065: 'auto' keeps the cheaper of the HDV price and the craft cost. */
+export type PriceSource = 'hdv' | 'craft' | 'auto';
 
 /** Reads a stored value back; anything of the wrong type makes the whole session unusable. */
 function mergeSession(value: unknown): BrisageSession | undefined {
@@ -39,7 +40,7 @@ function mergeSession(value: unknown): BrisageSession | undefined {
     rolls,
     coefficientText: typeof raw.coefficientText === 'string' ? raw.coefficientText : '',
     manualCost: typeof raw.manualCost === 'string' ? raw.manualCost : '',
-    priceSource: raw.priceSource === 'craft' ? 'craft' : 'hdv',
+    priceSource: raw.priceSource === 'craft' || raw.priceSource === 'auto' ? raw.priceSource : 'hdv',
   };
 }
 

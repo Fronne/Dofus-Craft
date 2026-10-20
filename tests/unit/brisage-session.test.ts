@@ -37,4 +37,13 @@ describe('brisage-session', () => {
     window.localStorage.setItem('craftcheck-brisage-session', JSON.stringify({ ...base, priceSource: 'autre' }));
     expect(getBrisageSession()?.priceSource).toBe('hdv');
   });
+
+  // specs/065-refonte-page-brisage: the price source can also be Auto (the cheaper of buying and crafting).
+  it('round-trips Auto and keeps HDV and craft as they were saved', () => {
+    for (const priceSource of ['auto', 'hdv', 'craft'] as const) {
+      const session = { serverId: 'm', item: { id: '1', name: 'A', level: undefined, imageUrl: undefined }, rolls: {}, coefficientText: '', manualCost: '', priceSource };
+      setBrisageSession(session);
+      expect(getBrisageSession()).toEqual(session);
+    }
+  });
 });

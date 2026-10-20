@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
-// specs/064-recherche-objets-par-stats. Effect ids: Vitalité 125, Sagesse 124, Prospection 176.
+// specs/064-recherche-objets-par-stats, reprise par specs/065-refonte-page-brisage : the stats filter now lives in the
+// "Filtres" panel above the cards. Effect ids: Vitalité 125, Sagesse 124, Prospection 176.
 const getItemEffectRanges = vi.fn();
 const loadIndex = vi.fn();
 
@@ -41,29 +42,32 @@ const INDEX = {
   sourceUrl: 'https://example.test',
   retrievedAt: '2026-10-20',
   items: [
-    { id: '1', name: 'Coiffe du Chasseur', level: 150, effects: [{ effectId: 176, from: 10, to: 20 }, { effectId: 125, from: 100, to: 150 }] },
-    { id: '2', name: 'Cape du Sage', level: 100, effects: [{ effectId: 124, from: 30, to: 40 }, { effectId: 125, from: 50, to: 60 }] },
-    { id: '3', name: 'Amulette du Prospecteur', level: 60, effects: [{ effectId: 176, from: 5, to: 5 }] },
-    { id: '4', name: 'Anneau Costaud', level: 190, effects: [{ effectId: 176, from: 40, to: 60 }] },
+    { id: '1', name: 'Coiffe du Chasseur', level: 150, categoryId: 'equipment-type-16', effects: [{ effectId: 176, from: 10, to: 20 }, { effectId: 125, from: 100, to: 150 }] },
+    { id: '2', name: 'Cape du Sage', level: 100, categoryId: 'equipment-type-17', effects: [{ effectId: 124, from: 30, to: 40 }, { effectId: 125, from: 50, to: 60 }] },
+    { id: '3', name: 'Amulette du Prospecteur', level: 60, categoryId: 'equipment-type-1', effects: [{ effectId: 176, from: 5, to: 5 }] },
+    { id: '4', name: 'Anneau Costaud', level: 190, categoryId: 'equipment-type-9', effects: [{ effectId: 176, from: 40, to: 60 }] },
   ],
 };
 
-const names = () => screen.queryAllByRole('strong').map((node) => node.textContent);
 const resultNames = () => screen.queryAllByRole('listitem').map((li) => within(li).queryByText(/^(Coiffe|Cape|Amulette|Anneau)/)?.textContent).filter(Boolean);
 
-async function openStats() {
+async function openBrisage() {
   window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   window.history.pushState({}, '', '/brisage');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
   await screen.findByRole('heading', { name: 'Brisage' });
-  fireEvent.click(screen.getByLabelText('Par stats'));
 }
 
-const chip = (label: string) => screen.getByRole('button', { name: label });
+async function openFilters() {
+  await openBrisage();
+  fireEvent.click(await screen.findByRole('button', { name: /^Filtres/ }));
+}
 
-describe('Brisage – recherche par stats (specs/064)', () => {
+const stat = (label: string) => screen.getByRole('button', { name: label });
+
+describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
@@ -78,26 +82,35 @@ describe('Brisage – recherche par stats (specs/064)', () => {
     document.body.innerHTML = '';
   });
 
-  it('invites to choose a stat and lists nothing before', async () => {
-    await openStats();
-    expect(await screen.findByText(/Choisissez au moins une stat/)).toBeInTheDocument();
-    expect(screen.queryByText(/objets? trouvés?/)).not.toBeInTheDocument();
+  it('lists the items by level before any filter, with no estimate', async () => {
+    await openBrisage();
+    expect(await screen.findByText(/4 objets trouvés/)).toBeInTheDocument();
+    expect(screen.queryByText(/estimation à 100 %/)).not.toBeInTheDocument();
+    expect(resultNames()[0]).toBe('Anneau Costaud');
+  });
+
+  it('keeps the filters folded until the button is pressed, in three columns of stats', async () => {
+    await openBrisage();
+    const toggle = await screen.findByRole('button', { name: /^Filtres/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: 'Prospection' })).not.toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Caractéristiques', 'Dommages', 'Résistances']);
+    expect(document.querySelectorAll('.brisage-stat-column')).toHaveLength(3);
   });
 
   it('offers only targetable stats: the hunt stat is not there', async () => {
-    await openStats();
-    await screen.findByText(/Choisissez au moins une stat/);
-    expect(chip('Prospection')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /chasse/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Arme de chasse' })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Filtrer les stats'), { target: { value: 'sagess' } });
-    expect(chip('Sagesse')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Prospection' })).not.toBeInTheDocument();
+    await openFilters();
+    expect(stat('Prospection')).toBeInTheDocument();
+    const panel = within(document.querySelector('.brisage-filters') as HTMLElement);
+    expect(panel.queryByRole('button', { name: /chasse/i })).not.toBeInTheDocument();
+    expect(panel.queryByRole('button', { name: 'Arme de chasse' })).not.toBeInTheDocument();
   });
 
   it('lists the items with the stat, labelled as an estimate at 100 %, most runes first', async () => {
-    await openStats();
-    fireEvent.click(await screen.findByRole('button', { name: 'Prospection' }));
+    await openFilters();
+    fireEvent.click(stat('Prospection'));
     expect(await screen.findByText(/3 objets trouvés/)).toBeInTheDocument();
     expect(screen.getByText(/estimation à 100 %/)).toBeInTheDocument();
     const order = resultNames();
@@ -107,62 +120,69 @@ describe('Brisage – recherche par stats (specs/064)', () => {
   });
 
   it('keeps only the items that have EVERY chosen stat and explains an empty list', async () => {
-    await openStats();
-    fireEvent.click(await screen.findByRole('button', { name: 'Prospection' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Vitalité' }));
+    await openFilters();
+    fireEvent.click(stat('Prospection'));
+    fireEvent.click(stat('Vitalité'));
     expect(await screen.findByText(/1 objet trouvé/)).toBeInTheDocument();
     expect(resultNames()).toEqual(['Coiffe du Chasseur']);
-    fireEvent.click(screen.getByRole('button', { name: 'Sagesse' }));
+    fireEvent.click(stat('Sagesse'));
     expect(await screen.findByText(/Aucun objet ne porte toutes ces stats/)).toBeInTheDocument();
   });
 
-  it('changes the sort without leaving the page, an unknown value is shown as a dash', async () => {
-    await openStats();
-    fireEvent.click(await screen.findByRole('button', { name: 'Prospection' }));
+  it('shows the active filters as removable chips even when the panel is folded', async () => {
+    await openFilters();
+    fireEvent.click(stat('Prospection'));
+    fireEvent.click(screen.getByRole('button', { name: /^Filtres/ }));
+    expect(screen.queryByRole('button', { name: 'Vitalité' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer le filtre Prospection' }));
+    expect(await screen.findByText(/4 objets trouvés/)).toBeInTheDocument();
+  });
+
+  it('changes the sort without leaving the page', async () => {
+    await openFilters();
+    fireEvent.click(stat('Prospection'));
     await screen.findByText(/3 objets trouvés/);
     fireEvent.change(screen.getByLabelText('Trier par'), { target: { value: 'maxRoll' } });
     expect(resultNames()[0]).toBe('Anneau Costaud');
-    fireEvent.change(screen.getByLabelText('Trier par'), { target: { value: 'kamas' } });
-    await waitFor(() => expect(screen.getAllByText('Valeur : —')).toHaveLength(3));
   });
 
-  it('applies the level range and refuses an inverted one', async () => {
-    await openStats();
-    fireEvent.click(await screen.findByRole('button', { name: 'Prospection' }));
+  it('applies the level range', async () => {
+    await openFilters();
+    fireEvent.click(stat('Prospection'));
     await screen.findByText(/3 objets trouvés/);
-    fireEvent.change(screen.getByLabelText('Niveau minimum'), { target: { value: '100' } });
-    expect(await screen.findByText(/2 objets trouvés/)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Niveau maximum'), { target: { value: '50' } });
-    expect(await screen.findByRole('alert')).toHaveTextContent(/niveau minimum/i);
-    fireEvent.change(screen.getByLabelText('Niveau maximum'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Niveau min'), { target: { value: '100' } });
     expect(await screen.findByText(/2 objets trouvés/)).toBeInTheDocument();
   });
 
-  it('opens the item in the brisage, then finds the choices again; nothing else is written', async () => {
-    await openStats();
-    fireEvent.click(await screen.findByRole('button', { name: 'Prospection' }));
-    await screen.findByText(/3 objets trouvés/);
-    fireEvent.click(screen.getByRole('button', { name: /Anneau Costaud/ }));
-    expect(await screen.findByText('Anneau Costaud')).toBeInTheDocument();
+  it('opens the item in the brisage from its card; nothing else is written', async () => {
+    await openBrisage();
+    fireEvent.click(await screen.findByRole('button', { name: /Anneau Costaud/ }));
+    expect(await screen.findByRole('heading', { name: 'Anneau Costaud' })).toBeInTheDocument();
     expect(getItemEffectRanges).toHaveBeenCalledWith('4');
     expect(window.localStorage.getItem('craftcheck-brisage-session')).toContain('"id":"4"');
     expect(Object.keys(window.localStorage).filter((key) => key.includes('coefficient'))).toEqual([]);
-
-    fireEvent.click(await screen.findByRole('button', { name: /Changer d'objet/ }));
-    expect(await screen.findByText(/3 objets trouvés/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Prospection', pressed: true })).toBeInTheDocument();
+    // The cards stay there to pick another item, the chosen one marked.
+    expect(screen.getByRole('button', { name: /Anneau Costaud/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /Cape du Sage/ }));
+    expect(await screen.findByRole('heading', { name: 'Cape du Sage' })).toBeInTheDocument();
   });
 
-  it('says so when the list of items is unavailable and shows no list', async () => {
+  it('says so when the list of items is unavailable and shows no card', async () => {
     loadIndex.mockRejectedValue(new Error('indisponible'));
-    await openStats();
+    await openBrisage();
     expect(await screen.findByRole('alert')).toHaveTextContent(/indisponible/);
-    expect(names()).not.toContain('Coiffe du Chasseur');
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Coiffe du Chasseur/ })).not.toBeInTheDocument());
   });
 
-  it('does not touch the search by name', async () => {
-    await openStats();
-    fireEvent.click(screen.getByLabelText('Par nom'));
-    expect(await screen.findByLabelText('Chercher un objet')).toBeInTheDocument();
+  it('shows "Afficher plus" beyond six cards', async () => {
+    loadIndex.mockResolvedValue({
+      ...INDEX,
+      items: Array.from({ length: 8 }, (_, i) => ({ id: String(100 + i), name: `Cape numéro ${i}`, level: 10 + i, effects: [{ effectId: 125, from: 1, to: 2 }] })),
+    });
+    await openBrisage();
+    expect(await screen.findByText(/8 objets trouvés/)).toBeInTheDocument();
+    expect(resultNames()).toHaveLength(6);
+    fireEvent.click(screen.getByRole('button', { name: /Afficher plus \(2 restants\)/ }));
+    expect(resultNames()).toHaveLength(8);
   });
 });

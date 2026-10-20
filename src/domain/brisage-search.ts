@@ -9,7 +9,8 @@ import type { RuneItem } from './forgemagie';
 export const HUNT_EFFECT_IDS = [696969, 795];
 
 export type IndexedEffect = { effectId: number; from: number; to: number };
-export type IndexedItem = { id: string; name: string; level: number; imageUrl?: string; effects: IndexedEffect[] };
+/** `categoryId` is the Recherche page's equipment category (specs/065); absent on an older index. */
+export type IndexedItem = { id: string; name: string; level: number; categoryId?: string; imageUrl?: string; effects: IndexedEffect[] };
 
 export type SearchSort = 'runes' | 'kamas' | 'maxRoll';
 
@@ -109,6 +110,59 @@ export function sortSearchResults(results: SearchResult[], sort: SearchSort): Se
     if (sort === 'runes' && a.item.level !== b.item.level) return b.item.level - a.item.level;
     return a.item.name.localeCompare(b.item.name, 'fr') || Number(a.item.id) - Number(b.item.id);
   });
+}
+
+// specs/065-refonte-page-brisage: the stats of the filter panel are shown in three columns.
+export type StatGroup = 'caracteristiques' | 'degats' | 'resistances';
+
+const DAMAGE_EFFECT_IDS = new Set([112, 414, 418, 422, 424, 426, 428, 430, 225, 220, 2800, 2804, 2808, 2812, 178]);
+const RESISTANCE_EFFECT_IDS = new Set([416, 420, 240, 241, 242, 243, 244, 210, 211, 212, 213, 214, 2803, 2807]);
+
+/** The column of a stat: damages (and heals), resistances, else characteristics (tackle, dodge, lock and withdrawal too). */
+export function statGroup(effectId: number): StatGroup {
+  if (DAMAGE_EFFECT_IDS.has(effectId)) return 'degats';
+  if (RESISTANCE_EFFECT_IDS.has(effectId)) return 'resistances';
+  return 'caracteristiques';
+}
+
+export type BrowseFilters = {
+  /** Part of the name; under two letters it is ignored. */
+  query: string;
+  categoryId?: string;
+  effectIds: number[];
+  minLevel?: number;
+  maxLevel?: number;
+  sort: SearchSort;
+};
+
+const MIN_NAME_LENGTH = 2;
+
+const plain = (text: string): string => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** The items matching the name (every word), the category, the level and every chosen stat. With no stat, the highest level first. */
+export function browseItems(
+  items: IndexedItem[],
+  filters: BrowseFilters,
+  runes: RuneItem[],
+  settings: BrisageSettings,
+  prices: Record<string, number | undefined>,
+): SearchResult[] {
+  const range: LevelRange = { minLevel: filters.minLevel, maxLevel: filters.maxLevel };
+  if (levelRangeError(range)) return [];
+  const words = plain(filters.query.trim()).split(/\s+/).filter((word) => word !== '');
+  const byName = filters.query.trim().length >= MIN_NAME_LENGTH && words.length > 0;
+  const kept = items.filter((item) => {
+    if (filters.categoryId !== undefined && item.categoryId !== filters.categoryId) return false;
+    if (!byName) return true;
+    const name = plain(item.name);
+    return words.every((word) => name.includes(word));
+  });
+  const wanted = [...new Set(filters.effectIds)].filter((id) => !HUNT_EFFECT_IDS.includes(id));
+  if (wanted.length > 0) return searchResults(kept, wanted, range, runes, settings, prices, filters.sort);
+  return kept
+    .filter((item) => (range.minLevel === undefined || item.level >= range.minLevel) && (range.maxLevel === undefined || item.level <= range.maxLevel))
+    .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name, 'fr') || Number(a.id) - Number(b.id))
+    .map((item) => ({ item, perStat: [], totalRunes: 0, maxRoll: 0 }));
 }
 
 /** Search, estimate and sort in one go: what the panel shows. */

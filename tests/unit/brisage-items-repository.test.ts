@@ -40,4 +40,24 @@ describe('loadBrisageItemsIndex', () => {
     expect(index.items.length).toBeGreaterThan(100);
     expect(index.retrievedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  // specs/065-refonte-page-brisage: each item carries its Recherche category.
+  it('gives a category to every item of the shipped index', async () => {
+    const index = await loadBrisageItemsIndex();
+    for (const item of index.items) expect(item.categoryId).toMatch(/^equipment-type-\d+$/);
+  });
+});
+
+describe('item categories', () => {
+  it('reads the category of an item and keeps an item without a valid one', () => {
+    const index = parseBrisageItemsIndex({
+      ...valid,
+      items: [
+        { ...valid.items[0], categoryId: 'equipment-type-1' },
+        { ...valid.items[0], id: '71', categoryId: 5 },
+        { ...valid.items[0], id: '72' },
+      ],
+    });
+    expect(index.items.map((item) => item.categoryId)).toEqual(['equipment-type-1', undefined, undefined]);
+  });
 });

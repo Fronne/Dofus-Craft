@@ -16,19 +16,21 @@ import {
   runeForStat,
   type BrisageOption,
 } from '../../domain/brisage';
+import { resolveItemPrice } from '../../domain/brisage-price';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
-import type { Item } from '../../domain/types';
 import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
 import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSource } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
-import { MIN_QUERY_LENGTH, useEquipmentSearch } from '../forgemagie/useEquipmentSearch';
 import { Kamas } from '../prices/PricesPage';
-import { ItemSearchByStats } from './ItemSearchByStats';
+import { ItemFinder } from './ItemFinder';
+import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
 import { useItemCraftCost } from './useItemCraftCost';
 import { useRunePrices } from './useRunePrices';
 
+// specs/065-refonte-page-brisage: the page opens on the item search (ItemFinder: name, filters, cards), then the item
+// header (ItemHeader), the table, and a compact line of side figures at the bottom.
 // specs/061-simplification-page-brisage: pick an item, read the verdict. The cost comes from the price
 // already noted on Recherche, the coefficient is remembered per item, each line starts at its average
 // roll. Everything shown is an ESTIMATE from unofficial formulas (specs/060-page-brisage H1–H4).
@@ -36,7 +38,6 @@ import { useRunePrices } from './useRunePrices';
 const RUNES = (runeItems as RuneItemsData).runes;
 const SETTINGS = defaultBrisageSettings();
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
-const date = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 type PickedItem = { id: string; name: string; level?: number; imageUrl?: string };
 type Range = { effectId: number; from: number; to: number };
@@ -70,10 +71,6 @@ function mergeRanges(ranges: Range[]): Range[] {
 
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
-  const [query, setQuery] = useState('');
-  // specs/064: find the item by its name, or by the stats one wants as runes.
-  const [searchMode, setSearchMode] = useState<'name' | 'stats'>('name');
-  const search = useEquipmentSearch(query);
   const [item, setItem] = useState<PickedItem>();
   const [ranges, setRanges] = useState<Range[]>([]);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
@@ -81,14 +78,16 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
-  const [priceSource, setPriceSource] = useState<PriceSource>('hdv');
+  // specs/065: a new item starts on Auto, the cheaper of the HDV price and the craft cost.
+  const [priceSource, setPriceSource] = useState<PriceSource>('auto');
   const pickToken = useRef(0);
 
   /** Opens an item; `restore` brings back what was typed on it before a reload. */
   const openItem = (picked: PickedItem, restore?: Pick<BrisageSession, 'rolls' | 'coefficientText' | 'manualCost' | 'priceSource'>) => {
+    // Clicking the item already open must not wipe what was typed on it.
+    if (!restore && picked.id === item?.id) return;
     const token = ++pickToken.current;
     setItem(picked);
-    setQuery('');
     setRanges([]);
     setRolls(restore?.rolls ?? {});
     setCoefficientText(restore?.coefficientText ?? '');
@@ -107,15 +106,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         if (pickToken.current === token) setLoadState('failed');
       });
   };
-
-  const changeItem = () => {
-    pickToken.current += 1;
-    setItem(undefined);
-    setRanges([]);
-    setLoadState('idle');
-  };
-
-  const pick = (found: Item) => openItem({ id: found.id, name: found.name, level: found.level, imageUrl: found.imageUrl });
 
   // A reload brings back the item and what was typed on it; nothing is saved before this has run.
   const [restored, setRestored] = useState(false);
@@ -138,24 +128,28 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setCoefficientText('');
   };
 
-  // specs/062: the price of the item is the HDV price noted on Recherche or the cost of its craft chain.
-  // The craft chain is only loaded when it is the chosen source. A typed price fills in when the chosen
-  // source has none; a zero or negative price is never accepted.
+  // specs/062 + specs/065: the price of the item is the HDV price noted on Recherche, the cost of its craft chain, or
+  // the cheaper of the two (Auto). Both are read as soon as an item is picked so they can be shown side by side. A
+  // typed price fills in when the chosen source has none; a zero or negative price is never accepted.
   const hdvCost = useItemCost(serverId, item?.id, priceMode);
-  const craftCost = useItemCraftCost(serverId, priceSource === 'craft' ? item?.id : undefined, priceMode);
-  const priceState = priceSource === 'craft' ? craftCost : hdvCost;
+  const craftCost = useItemCraftCost(serverId, item?.id, priceMode);
+  const priceLoading = (priceSource !== 'craft' && hdvCost.status === 'loading') || (priceSource !== 'hdv' && craftCost.status === 'loading');
+  const priceReady = !priceLoading;
+  const resolvedPrice = priceReady ? resolveItemPrice(hdvCost.costKamas, craftCost.costKamas, priceSource) : undefined;
   const typedPrice = parse(manualCost);
   const typedCoefficient = parse(coefficientText);
   const coefficient = typedCoefficient > 0 ? typedCoefficient : stored?.coefficient ?? NaN;
-  const cost = priceState.costKamas ?? (typedPrice > 0 ? typedPrice : NaN);
-  const priceOrigin = priceState.costKamas !== undefined
-    ? (priceSource === 'craft' ? `Coût de la chaîne de craft (${priceMode === 'community' ? 'mode communautaire' : 'mode personnel'})` : 'Prix noté sur la page Recherche')
+  const cost = resolvedPrice?.kamas ?? (typedPrice > 0 ? typedPrice : NaN);
+  const priceOrigin = resolvedPrice
+    ? (resolvedPrice.origin === 'craft' ? `Coût de la chaîne de craft (${priceMode === 'community' ? 'mode communautaire' : 'mode personnel'})` : 'Prix noté sur la page Recherche')
     : typedPrice > 0 ? 'Saisi à la main' : undefined;
   const noPriceReason = priceSource === 'craft'
     ? (craftCost.reason === 'no-recipe'
       ? 'Aucun craft n\'existe pour cet objet : saisissez son prix.'
       : 'Prix de craft incomplet (il manque le prix d\'une ressource) : saisissez le prix de l\'objet.')
-    : 'Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.';
+    : priceSource === 'auto'
+      ? 'Ni prix noté sur la page Recherche ni craft complet pour cet objet : saisissez son prix.'
+      : 'Aucun prix disponible pour cet objet (page Recherche) : saisissez-le.';
 
   // Only the lines that break into a known rune are shown; the others are just counted.
   const breakable = mergeRanges(ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)));
@@ -190,7 +184,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   }, [ranges]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
 
-  const ready = item && ranges.length > 0 && priceState.status === 'ready';
+  const ready = item && ranges.length > 0 && priceReady;
   const lineInputs = lines.map((line) => ({ effectId: line.range.effectId, value: line.value }));
   const analysis = ready && coefficient > 0
     ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
@@ -249,144 +243,46 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
   return (
     <>
-      <header className="page-header">
-        <h1>Brisage</h1>
-        <p>Cet objet est-il rentable à briser ? Sur quelle rune faire un focus ?</p>
-      </header>
+      <h1 className="visually-hidden">Brisage</h1>
 
-      <section className="panel brisage-block" aria-labelledby="brisage-item">
-        <h2 id="brisage-item" className={item ? 'visually-hidden' : undefined}>{item ? 'Objet à briser' : 'Choisissez un objet'}</h2>
-        {!item && (
-          <div className="brisage-price-source" role="radiogroup" aria-label="Mode de recherche">
-            {(['name', 'stats'] as const).map((mode) => (
-              <label key={mode} className={searchMode === mode ? 'is-selected' : undefined}>
-                <input className="visually-hidden" type="radio" name="brisage-search-mode" value={mode} checked={searchMode === mode} onChange={() => setSearchMode(mode)} />
-                <span>{mode === 'name' ? 'Par nom' : 'Par stats'}</span>
-              </label>
-            ))}
-          </div>
-        )}
-        {!item && searchMode === 'stats' && (
-          <ItemSearchByStats runes={RUNES} settings={SETTINGS} serverId={serverId} priceMode={priceMode} onPick={(found) => openItem(found)} />
-        )}
-        {!item && searchMode === 'name' && (
-          <div className="search-input-wrap">
-            <Icon name="search" size={18} className="search-input-icon" />
-            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet…" aria-label="Chercher un objet" />
-          </div>
-        )}
-        {!item && searchMode === 'name' && query.trim().length >= MIN_QUERY_LENGTH && (
-          <div>
-            {search.status === 'searching' && <p className="fm-note" role="status">Recherche…</p>}
-            {search.status === 'unavailable' && <p className="fm-error" role="alert">Le catalogue est indisponible pour le moment.</p>}
-            {search.status === 'ready' && search.items.length === 0 && <p className="fm-note">Aucun objet ne correspond.</p>}
-            {search.status === 'ready' && (
-              <ul className="fm-picker-results">
-                {search.items.map((found) => (
-                  <li key={found.id}>
-                    <button type="button" className="fm-picker-result" onClick={() => pick(found)}>
-                      <span>{found.name}</span>
-                      {found.level !== undefined && <span className="fm-note">Niv. {found.level}</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+      <ItemFinder
+        runes={RUNES}
+        settings={SETTINGS}
+        serverId={serverId}
+        priceMode={priceMode}
+        selectedId={item?.id}
+        onPick={(found) => openItem(found)}
+      />
 
-        {item && (
-          <div className="item-head">
-            {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} />
-            ) : (
-              <div className="image-fallback" role="img" aria-label={`Visuel indisponible pour ${item.name}`}><Icon name="search" size={22} /></div>
-            )}
-            <div className="item-head-text">
-              <h3>{item.name}</h3>
-              {item.level !== undefined && <div className="item-head-tags"><p>Niveau : {item.level}</p></div>}
-            </div>
-            <div className="item-head-actions">
-              <button type="button" className="pin-item-button item-history-button" onClick={changeItem}>Changer d'objet</button>
-            </div>
-          </div>
-        )}
-        {item && (
-          <div className="brisage-item">
-            <div className="brisage-field">
-              <span className="brisage-field-label" id="brisage-price-label">Prix de l'objet</span>
-              <div className="brisage-price-source" role="radiogroup" aria-labelledby="brisage-price-label">
-                {(['hdv', 'craft'] as const).map((source) => (
-                  <label key={source} className={priceSource === source ? 'is-selected' : undefined}>
-                    <input className="visually-hidden" type="radio" name="brisage-price-source" value={source} checked={priceSource === source} onChange={() => setPriceSource(source)} />
-                    <span>{source === 'hdv' ? 'Prix HDV' : 'Prix de craft'}</span>
-                  </label>
-                ))}
-              </div>
-              {priceState.status === 'loading' && <span className="fm-note">Calcul du prix en cours…</span>}
-              {priceState.status === 'ready' && priceState.costKamas !== undefined && (
-                <>
-                  <span className="brisage-cost"><Kamas value={priceState.costKamas} /></span>
-                  <span className="brisage-price-origin">{priceOrigin}</span>
-                </>
-              )}
-              {priceState.status === 'ready' && priceState.costKamas === undefined && (
-                <>
-                  <label className="visually-hidden" htmlFor="brisage-cost-input">Prix de l'objet (kamas)</label>
-                  <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} value={manualCost} onChange={(event) => setManualCost(event.target.value)} />
-                  <span className="fm-note">{noPriceReason}</span>
-                  {priceOrigin && <span className="brisage-price-origin">{priceOrigin}</span>}
-                </>
-              )}
-            </div>
-
-            <div className="brisage-field">
-              <label className="brisage-field-label" htmlFor="brisage-coefficient">
-                {stored ? 'Coefficient de brisage (nouveau relevé)' : 'Coefficient relevé en jeu après un brisage (%)'}
-              </label>
-              <div className="brisage-coef">
-                <input
-                  id="brisage-coefficient"
-                  type="number" inputMode="decimal" min={1} max={MAX_COEFFICIENT}
-                  placeholder={stored ? String(stored.coefficient) : ''}
-                  value={coefficientText}
-                  onChange={(event) => setCoefficientText(event.target.value)}
-                  onBlur={rememberCoefficient}
-                />
-                <span aria-hidden="true">%</span>
-              </div>
-              {stored ? (
-                <span className="fm-note" id="brisage-last">
-                  Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
-                </span>
-              ) : (
-                <span className="fm-note">Cet objet n'a pas encore été brisé ici : brisez-le en jeu, puis notez son coefficient.</span>
-              )}
-            </div>
-          </div>
-        )}
-        {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
-        {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
-        {item && loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
-      </section>
+      {!item && <p className="fm-note brisage-invite">Choisissez un objet ci-dessus pour voir son brisage.</p>}
+      {item && (
+        <section className="panel brisage-block" aria-label="Objet à briser">
+          <ItemHeader
+            item={item}
+            priceSource={priceSource}
+            onPriceSource={setPriceSource}
+            loading={priceLoading}
+            hdvKamas={hdvCost.costKamas}
+            craftKamas={craftCost.costKamas}
+            resolved={resolvedPrice}
+            originText={priceOrigin}
+            manualCost={manualCost}
+            onManualCost={setManualCost}
+            noPriceReason={noPriceReason}
+            stored={stored}
+            coefficientText={coefficientText}
+            onCoefficientText={setCoefficientText}
+            onRememberCoefficient={rememberCoefficient}
+          />
+          {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
+          {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
+          {loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
+        </section>
+      )}
 
       {item && (analysis || advice) && (
         <section className="brisage-results" aria-labelledby="brisage-results-title">
           <h2 id="brisage-results-title" className="visually-hidden">Résultat</h2>
-          {runesValue !== undefined && (
-            <section className="panel brisage-block brisage-estimate" aria-labelledby="brisage-estimate-title">
-              <div className="brisage-block-head">
-                <h2 id="brisage-estimate-title">Valeur estimée des runes</h2>
-              </div>
-              <p className="brisage-estimate-value">
-                <Kamas value={Math.round(runesValue)} />{' '}
-                <span className="fm-note">
-                  {coefficient > 0 ? `par brisage à ${displayedCoefficient(coefficient)} %` : 'par brisage à 100 % (maximum : le coefficient est inconnu)'}
-                </span>
-              </p>
-              <p className="fm-note">Calculée avec les jets du tableau et les prix des runes, sans focus, avant tout brisage.</p>
-            </section>
-          )}
           {invalidReason !== undefined ? (
             <p className="empty" role="status">{invalidReason}</p>
           ) : (
@@ -534,43 +430,54 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                 )}
               </section>
 
+            </>
+          )}
+          {(runesValue !== undefined || nextGains.length > 0) && (
+            <section className="panel brisage-footline" aria-label="Informations annexes">
+              {runesValue !== undefined && (
+                <section className="brisage-estimate" aria-labelledby="brisage-estimate-title">
+                  <h2 id="brisage-estimate-title" className="brisage-gain-label">Valeur estimée des runes</h2>
+                  <p className="brisage-estimate-value">
+                    <Kamas value={Math.round(runesValue)} />{' '}
+                    <span className="fm-note">
+                      {coefficient > 0 ? `par brisage à ${displayedCoefficient(coefficient)} %` : 'par brisage à 100 % (maximum : le coefficient est inconnu)'}
+                    </span>
+                  </p>
+                </section>
+              )}
               {nextGains.length > 0 && (
-                <section className="panel brisage-block" aria-labelledby="brisage-gains-title">
-                  <div className="brisage-block-head">
-                    <h2 id="brisage-gains-title">Gain selon le coefficient</h2>
+                <section className="brisage-gains-layout" aria-labelledby="brisage-gains-title">
+                  <h2 id="brisage-gains-title" className="visually-hidden">Gain selon le coefficient</h2>
+                  <div className="brisage-gains-now">
+                    <span className="brisage-gain-label">Coefficient actuel</span>
+                    <span className="brisage-gain-coef">{number.format(coefficient)} %</span>
+                    {currentGain !== undefined && currentGain > 0.5 && (
+                      <span className="brisage-gain-value">
+                        <Kamas value={Math.round(currentGain)} signed /> <span className="fm-note">sans focus</span>
+                      </span>
+                    )}
+                    {focusWins && (
+                      <span className="brisage-gain-value">
+                        <Kamas value={Math.round(best!.gainKamas!)} signed /> <span className="fm-note">avec un focus {shortRune(best!)}</span>
+                      </span>
+                    )}
                   </div>
-                  <div className="brisage-gains-layout">
-                    <div className="brisage-gains-now">
-                      <span className="brisage-gain-label">Coefficient actuel</span>
-                      <span className="brisage-gain-coef">{number.format(coefficient)} %</span>
-                      {currentGain !== undefined && currentGain > 0.5 && (
-                        <span className="brisage-gain-value">
-                          <Kamas value={Math.round(currentGain)} signed /> <span className="fm-note">sans focus</span>
-                        </span>
-                      )}
-                      {focusWins && (
-                        <span className="brisage-gain-value">
-                          <Kamas value={Math.round(best!.gainKamas!)} signed /> <span className="fm-note">avec un focus {shortRune(best!)}</span>
-                        </span>
-                      )}
-                    </div>
-                    <div className="brisage-gains-next">
-                      <span className="brisage-gain-label">3 prochains brisages (sans focus, estimation)</span>
-                      <ul className="brisage-gains">
-                        {nextGains.map((point, index) => (
-                          <li key={index}>
-                            <span className="brisage-gain-label">à {displayedCoefficient(point.coefficient)} %</span>
-                            <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
-                              <Kamas value={Math.round(point.gain)} signed />
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="brisage-gains-next">
+                    <span className="brisage-gain-label">Après 1, 2, 3 brisages (sans focus, estimation)</span>
+                    <ul className="brisage-gains">
+                      {nextGains.map((point, index) => (
+                        <li key={index}>
+                          <span className="brisage-gain-label">à {displayedCoefficient(point.coefficient)} %</span>
+                          <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
+                            <Kamas value={Math.round(point.gain)} signed />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </section>
               )}
-            </>
+            </section>
           )}
         </section>
       )}

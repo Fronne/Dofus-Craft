@@ -9,12 +9,16 @@ export type SearchPrefs = {
   sort: SearchSort;
   minLevel?: number;
   maxLevel?: number;
+  /** specs/065: the equipment category chosen on the Brisage page, every category when absent. */
+  categoryId?: string;
+  /** specs/065: whether the filter panel is open. */
+  panelOpen: boolean;
 };
 
 const SORTS: SearchSort[] = ['runes', 'kamas', 'maxRoll'];
 
 export function defaultSearchPrefs(): SearchPrefs {
-  return { effectIds: [], sort: 'runes' };
+  return { effectIds: [], sort: 'runes', panelOpen: false };
 }
 
 const level = (value: unknown): number | undefined =>
@@ -33,6 +37,8 @@ export function mergeSearchPrefs(value: unknown): SearchPrefs {
     sort: SORTS.includes(raw.sort as SearchSort) ? (raw.sort as SearchSort) : defaults.sort,
     minLevel: level(raw.minLevel),
     maxLevel: level(raw.maxLevel),
+    categoryId: typeof raw.categoryId === 'string' && raw.categoryId !== '' ? raw.categoryId : undefined,
+    panelOpen: raw.panelOpen === true,
   };
 }
 
