@@ -92,7 +92,7 @@ export const BRISAGE_STATS: BrisageStat[] = [
   stat(158, 'Pods', 0.25, 10, true),
   stat(226, 'Puissance Pièges', 2, 1, true),
   stat(225, 'Dommages Pièges', 5, 1, true),
-  stat(220, 'Dommages Renvoyés', 10),
+  stat(220, 'Dommages Renvoyés', 5, 1, true),
   stat(414, 'Dommages Poussée', 5, 1, true),
   stat(416, 'Résistances Poussée', 2, 1, true),
   stat(418, 'Dommages Critiques', 5, 1, true),
