@@ -24,6 +24,7 @@ import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSo
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { MIN_QUERY_LENGTH, useEquipmentSearch } from '../forgemagie/useEquipmentSearch';
 import { Kamas } from '../prices/PricesPage';
+import { ItemSearchByStats } from './ItemSearchByStats';
 import { useItemCost } from './useItemCost';
 import { useItemCraftCost } from './useItemCraftCost';
 import { useRunePrices } from './useRunePrices';
@@ -70,6 +71,8 @@ function mergeRanges(ranges: Range[]): Range[] {
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   const [query, setQuery] = useState('');
+  // specs/064: find the item by its name, or by the stats one wants as runes.
+  const [searchMode, setSearchMode] = useState<'name' | 'stats'>('name');
   const search = useEquipmentSearch(query);
   const [item, setItem] = useState<PickedItem>();
   const [ranges, setRanges] = useState<Range[]>([]);
@@ -254,12 +257,25 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       <section className="panel brisage-block" aria-labelledby="brisage-item">
         <h2 id="brisage-item" className={item ? 'visually-hidden' : undefined}>{item ? 'Objet à briser' : 'Choisissez un objet'}</h2>
         {!item && (
+          <div className="brisage-price-source" role="radiogroup" aria-label="Mode de recherche">
+            {(['name', 'stats'] as const).map((mode) => (
+              <label key={mode} className={searchMode === mode ? 'is-selected' : undefined}>
+                <input className="visually-hidden" type="radio" name="brisage-search-mode" value={mode} checked={searchMode === mode} onChange={() => setSearchMode(mode)} />
+                <span>{mode === 'name' ? 'Par nom' : 'Par stats'}</span>
+              </label>
+            ))}
+          </div>
+        )}
+        {!item && searchMode === 'stats' && (
+          <ItemSearchByStats runes={RUNES} settings={SETTINGS} serverId={serverId} priceMode={priceMode} onPick={(found) => openItem(found)} />
+        )}
+        {!item && searchMode === 'name' && (
           <div className="search-input-wrap">
             <Icon name="search" size={18} className="search-input-icon" />
             <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Chercher un objet…" aria-label="Chercher un objet" />
           </div>
         )}
-        {!item && query.trim().length >= MIN_QUERY_LENGTH && (
+        {!item && searchMode === 'name' && query.trim().length >= MIN_QUERY_LENGTH && (
           <div>
             {search.status === 'searching' && <p className="fm-note" role="status">Recherche…</p>}
             {search.status === 'unavailable' && <p className="fm-error" role="alert">Le catalogue est indisponible pour le moment.</p>}

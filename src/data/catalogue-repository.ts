@@ -3,6 +3,7 @@ import { cached, hydrateFromPersistentStore, peekCached } from './catalogue-cach
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
+import type { DofusDbItemEffect } from '../services/dofusdb-types';
 import { CHARACTERISTIC_ASSET_BY_ID, ELEMENT_ASSET_BY_ID } from '../domain/characteristic-icons';
 
 export const getManifest = () => ({
@@ -318,10 +319,14 @@ export async function getItemEffectLines(id: string): Promise<{ effectId: number
 
 // specs/061-simplification-page-brisage (FR-006): the same lines with their roll range, so the page can
 // start from the average roll. DofusDB writes a fixed effect as `to: 0`: that is a range of one value.
-export async function getItemEffectRanges(id: string): Promise<{ effectId: number; from: number; to: number }[]> {
-  const item = await cached(`item:${id}`, () => getDofusDbItem(id));
-  const ranges: { effectId: number; from: number; to: number }[] = [];
-  for (const effect of item.effects ?? []) {
+type EffectRange = { effectId: number; from: number; to: number };
+
+// specs/064-recherche-objets-par-stats (T001): the rule that turns DofusDB effect lines into rolls, shared by
+// the Brisage page and by the index of items scripts/build-brisage-items.mjs writes (which repeats it —
+// keep both in step).
+export function effectRangesOf(effects: DofusDbItemEffect[] | undefined): EffectRange[] {
+  const ranges: EffectRange[] = [];
+  for (const effect of effects ?? []) {
     if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
     if (effect.category === 2) continue;
     if (!(Math.max(effect.from, effect.to) > 0 && effect.from >= 0 && effect.to >= 0)) continue;
@@ -330,4 +335,9 @@ export async function getItemEffectRanges(id: string): Promise<{ effectId: numbe
       : { effectId: effect.effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
   }
   return ranges;
+}
+
+export async function getItemEffectRanges(id: string): Promise<EffectRange[]> {
+  const item = await cached(`item:${id}`, () => getDofusDbItem(id));
+  return effectRangesOf(item.effects);
 }
