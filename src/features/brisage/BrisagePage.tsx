@@ -137,10 +137,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const breakable = mergeRanges(ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)));
   const lines = breakable.map((range, index) => {
     const average = averageRoll(range.from, range.to);
-    // A line that cannot vary has nothing to type.
+    // A line with a single value (PO, Ga PA, Ga PM…) can still be typed over; only the Min / Max switch skips it.
     const fixed = range.from === range.to;
-    const typed = fixed ? NaN : parse(rolls[index] ?? '');
-    const invalid = typed < 0;
+    const parsed = parse(rolls[index] ?? '');
+    const typed = Number.isFinite(parsed) ? parsed : NaN;
+    const invalid = parsed < 0 || parsed === Infinity;
     const modified = typed >= 0 && typed !== average;
     return { index, range, average, fixed, value: typed >= 0 ? typed : average, modified, invalid };
   });
@@ -347,7 +348,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                       <tr role="row">
                         <th scope="col" rowSpan={2}>Rune</th>
                         <th scope="col" rowSpan={2} className="brisage-jet-head">
-                          <span className="brisage-jet-title">Jet de la ligne</span>
+                          <span className="brisage-jet-title">Jet</span>
                           <span className="brisage-seg" role="group" aria-label="Régler tous les jets">
                             {([['min', 'Min'], ['average', 'Moyen'], ['max', 'Max']] as const).map(([mode, text]) => (
                               <button key={mode} type="button" aria-pressed={rollMode === mode} className={rollMode === mode ? 'is-on' : undefined} onClick={() => setAllRolls(mode)}>{text}</button>
@@ -355,8 +356,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           </span>
                         </th>
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span><span className="brisage-group-sub">brisage normal de l'objet</span></th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span><span className="brisage-group-sub">100 % de la rune visée</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
                       </tr>
                       <tr role="row">
                         <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">Gain de l'objet</th>
@@ -380,12 +381,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                               </span>
                             </th>
                             <td role="cell" data-label={line.modified ? 'Jet modifié' : 'Jet'}>
-                              {line.fixed ? (
-                                <span className="brisage-roll-fixed">{line.range.from} <span className="fm-note">ligne fixe</span></span>
-                              ) : (
-                                <>
+                              <>
                                   <span className="brisage-jet">
-                                    <span className="brisage-bound">{line.range.from}</span>
+                                    {!line.fixed && <span className="brisage-bound">{line.range.from}</span>}
                                     <input
                                       type="number" inputMode="decimal" min={0}
                                       className={line.modified ? 'brisage-roll is-modified' : 'brisage-roll'}
@@ -395,11 +393,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                                       value={rolls[line.index] ?? ''}
                                       onChange={(event) => setRolls({ ...rolls, [line.index]: event.target.value })}
                                     />
-                                    <span className="brisage-bound">{line.range.to}</span>
+                                    {!line.fixed && <span className="brisage-bound">{line.range.to}</span>}
                                   </span>
-                                  <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : line.modified ? 'modifié' : 'moyen'}</span>
-                                </>
-                              )}
+                                  <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : line.modified ? 'modifié' : line.fixed ? '' : 'moyen'}</span>
+                              </>
                             </td>
                             <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(plain.count) : '—'}</td>
