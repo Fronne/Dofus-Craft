@@ -2603,11 +2603,15 @@ select:focus {
 }
 /* Item header: identity on the left, price and coefficient on one row beside it. */
 .brisage-item-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-7, 2rem); }
-.brisage-identity { display: flex; align-items: center; gap: var(--space-3); flex: 1 1 260px; min-width: 0; }
+.brisage-identity { display: flex; align-items: flex-start; gap: var(--space-3); flex: 1 1 260px; min-width: 0; }
 .brisage-identity > img, .brisage-identity > .image-fallback { flex: 0 0 56px; width: 56px; height: 56px; object-fit: contain; }
 .brisage-identity h2 { margin: 0; font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.15; }
 .brisage-identity p { margin: .15rem 0 0; }
 .brisage-item-head .brisage-field { gap: var(--space-1); }
+.brisage-identity-main { display: grid; gap: var(--space-3); min-width: 0; }
+.brisage-coef-field { margin-left: auto; }
+.brisage-coef-field .brisage-field-label, .brisage-coef-field .fm-note { text-align: right; }
+.brisage-coef-field .brisage-coef { justify-content: flex-end; }
 .brisage-price-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .brisage-item-head .brisage-cost, .brisage-item-head .brisage-field input, .brisage-item-head .brisage-coef input { height: 44px; }
 .brisage-item-head .brisage-cost { font-size: 1.35rem; }

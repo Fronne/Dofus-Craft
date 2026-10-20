@@ -46,13 +46,13 @@ export function ItemHeader({
         ) : (
           <div className="image-fallback" role="img" aria-label={`Visuel indisponible pour ${item.name}`}><Icon name="search" size={22} /></div>
         )}
+        <div className="brisage-identity-main">
         <div className="item-head-text">
           <h2>{item.name}</h2>
           {item.level !== undefined && <p className="fm-note">Niveau {item.level}</p>}
         </div>
-      </div>
 
-      <div className="brisage-field">
+      <div className="brisage-field brisage-price-field">
         <span className="brisage-field-label" id="brisage-price-label">Prix de l'objet</span>
         <div className="brisage-price-line">
           <div className="brisage-price-source" role="radiogroup" aria-labelledby="brisage-price-label">
@@ -78,8 +78,10 @@ export function ItemHeader({
           <span className="fm-note brisage-both-prices">Achat <Kamas value={hdvKamas} /> · Craft <Kamas value={craftKamas} /></span>
         )}
       </div>
+        </div>
+      </div>
 
-      <div className="brisage-field">
+      <div className="brisage-field brisage-coef-field">
         <label className="brisage-field-label" htmlFor="brisage-coefficient">Coefficient de brisage (%)</label>
         <div className="brisage-coef">
           <input
