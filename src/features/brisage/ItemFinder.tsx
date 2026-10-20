@@ -91,6 +91,33 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
     [index, query, categoryId, chosen, minLevel, maxLevel, sort, runes, settings, fetched.prices],
   );
 
+  // Vertical wheel scrolls the cards row sideways; at either end it falls through to the page.
+  const carousel = useRef<HTMLUListElement>(null);
+  useEffect(() => {
+    const list = carousel.current;
+    if (!list) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const max = list.scrollWidth - list.clientWidth;
+      if (max <= 0) return;
+      const atStart = list.scrollLeft <= 0 && event.deltaY < 0;
+      const atEnd = list.scrollLeft >= max - 1 && event.deltaY > 0;
+      if (atStart || atEnd) return;
+      event.preventDefault();
+      list.scrollLeft += event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+    };
+    // Near the right end, bring in the next cards on their own.
+    const onScroll = () => {
+      if (results.length > visible && list.scrollLeft + list.clientWidth >= list.scrollWidth - 240) setVisible((count) => count + PAGE_SIZE);
+    };
+    list.addEventListener('wheel', onWheel, { passive: false });
+    list.addEventListener('scroll', onScroll);
+    return () => {
+      list.removeEventListener('wheel', onWheel);
+      list.removeEventListener('scroll', onScroll);
+    };
+  });
+
   const levelLabel = minLevel !== undefined && maxLevel !== undefined ? `Niveau ${minLevel} – ${maxLevel}`
     : minLevel !== undefined ? `Niveau ${minLevel} et plus`
       : maxLevel !== undefined ? `Niveau ${maxLevel} et moins` : '';
@@ -172,7 +199,7 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
             )}
           </div>
           {results.length > 0 && (
-            <ul className="results brisage-cards" aria-label="Objets trouvés">
+            <ul className="results brisage-cards" aria-label="Objets trouvés" ref={carousel}>
               {results.slice(0, visible).map((result) => (
                 <li key={result.item.id}>
                   <ItemCard
