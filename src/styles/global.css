@@ -2559,12 +2559,16 @@ select:focus {
 .brisage-filters[hidden] { display: none; }
 .brisage-stat-filter { grid-column: 1 / -1; border: 0; padding: 0; margin: 0; min-width: 0; }
 .brisage-stat-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
-.brisage-stat-column h3 { margin: 0 0 var(--space-1); font-size: .9rem; color: var(--text-muted); }
+.brisage-stat-column h3 { margin: 0 0 var(--space-1); padding-left: .6rem; font-size: .9rem; color: var(--text-muted); }
 .brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-2); }
-.brisage-search-stat { display: flex; align-items: center; gap: var(--space-2); width: 100%; border: 1px solid transparent; border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; font-size: .88rem; line-height: 1.2; min-height: 26px; padding: .1rem .4rem; text-align: left; cursor: pointer; }
-.brisage-search-stat:hover { border-color: var(--border-strong); }
-.brisage-search-stat.is-selected { border-color: var(--border-strong); background: var(--accent-soft); font-weight: 600; }
-.brisage-stat-icon { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 4px; background: var(--surface-2, transparent); }
+.brisage-search-stat { position: relative; display: flex; align-items: center; gap: var(--space-2); width: 100%; border: 1px solid transparent; border-radius: 999px; background: none; color: var(--text); font: inherit; font-size: .88rem; line-height: 1.2; min-height: 28px; padding: .15rem .6rem; text-align: left; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease; }
+.brisage-search-stat:hover { background: var(--accent-soft); border-color: var(--border); transform: translateX(2px); }
+.brisage-search-stat:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+.brisage-search-stat.is-selected { background: var(--accent-soft); border-color: var(--link); color: var(--link); font-weight: 700; box-shadow: 0 0 0 1px color-mix(in srgb, var(--link) 35%, transparent); }
+.brisage-search-stat.is-selected:hover { transform: none; }
+/* Room for the stat icon: stays out of the way (labels line up with the group title) until an icon is put in. */
+.brisage-stat-icon { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 4px; }
+.brisage-stat-icon:empty { display: none; }
 .brisage-found { margin: 0; }
 .brisage-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-2); }
 .brisage-card { display: flex; align-items: center; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
