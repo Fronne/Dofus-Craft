@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { PlayerCounter } from '../src/domain/player-counter';
 import { adminApi } from './admin-api';
+import { CloudflareUsageEditor } from './CloudflareUsageEditor';
 import { CounterEditor } from './CounterEditor';
 import { failureMessage } from './messages';
 import { NewCounterForm } from './NewCounterForm';
@@ -92,6 +93,8 @@ export function AdminPage() {
       <SnifferKeysEditor />
 
       <SnifferMappingsEditor />
+
+      <CloudflareUsageEditor />
     </main>
   );
 }

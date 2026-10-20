@@ -118,6 +118,13 @@ La mise en place initiale de l'API est décrite dans [worker/README.md](worker/R
 l'administration (Cloudflare Access, secret `OWNER_EMAIL`) dans
 [specs/014-admin-counters](specs/014-admin-counters/quickstart.md).
 
+La section « Utilisation Cloudflare » de l'administration lit l'API GraphQL d'analyse de Cloudflare
+avec deux secrets du Worker `dofus-craft-admin` (jamais committés) : `CLOUDFLARE_API_TOKEN` (jeton
+personnalisé avec la seule permission Compte ▸ Analyse du compte ▸ Lecture) et
+`CLOUDFLARE_ACCOUNT_ID`. Création pas à pas dans
+[specs/058-admin-cloudflare-usage](specs/058-admin-cloudflare-usage/quickstart.md) ; sans eux, la
+section affiche la marche à suivre.
+
 ## Confidentialité
 
 - Rien n'est partagé en Mode personnel.

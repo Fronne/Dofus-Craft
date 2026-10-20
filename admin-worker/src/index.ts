@@ -1,3 +1,5 @@
+import { isUsageWindow } from '../../src/domain/cloudflare-usage';
+import { readCloudflareUsage, type FetchLike, type UsageEnv } from './cloudflare-usage';
 import { validateCounterInput } from '../../src/domain/player-counter';
 import { verifyAccessToken, verifyOwner, type AccessEnv, type TokenVerifier } from './access';
 import { createCounter, deleteCounter, listCounters, updateCounter, type CountersDb } from './counters';
@@ -10,7 +12,7 @@ import { validateSiteSettingsChange } from '../../src/domain/site-settings';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
-export interface Env extends AccessEnv {
+export interface Env extends AccessEnv, UsageEnv {
   DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
@@ -30,7 +32,12 @@ async function readBody(request: Request): Promise<unknown> {
   }
 }
 
-export async function handleApi(request: Request, env: Env, verify: TokenVerifier = verifyAccessToken): Promise<Response> {
+export async function handleApi(
+  request: Request,
+  env: Env,
+  verify: TokenVerifier = verifyAccessToken,
+  fetchFn: FetchLike = fetch,
+): Promise<Response> {
   const owner = await verifyOwner(request, env, verify);
   if (!owner.ok) return json({ error: 'Accès réservé au propriétaire.' }, 403);
 
@@ -38,6 +45,14 @@ export async function handleApi(request: Request, env: Env, verify: TokenVerifie
   const counterId = pathname.match(/^\/api\/counters\/([^/]+)$/)?.[1];
 
   if (request.method === 'GET' && pathname === '/api/me') return json({ email: owner.email });
+  // specs/058-admin-cloudflare-usage (contracts/admin-usage-api.md): today's consumption and history.
+  // Always 200 with a `state`, so a missing token is a normal case for the page, not a failed call.
+  if (request.method === 'GET' && pathname === '/api/usage') {
+    const raw = new URL(request.url).searchParams.get('days');
+    const days = raw === null ? 7 : Number(raw);
+    if (!isUsageWindow(days)) return json({ error: 'La période doit être de 7 ou 30 jours.', field: 'days' }, 400);
+    return json(await readCloudflareUsage(env, days, new Date(), fetchFn));
+  }
   // specs/020-info-banner: the information banner's message. GET returns it even once expired, so
   // the editor can show it and say so.
   if (pathname === '/api/message') {

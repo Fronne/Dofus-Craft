@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "../src/domain/player-counter.ts", "../src/domain/breeds.ts", "../worker/src/player-counters.ts", "../worker/src/fm/http.ts", "../worker/src/cors.ts"]
+  "include": ["src", "../src/domain/player-counter.ts", "../src/domain/cloudflare-usage.ts", "../src/domain/breeds.ts", "../worker/src/player-counters.ts", "../worker/src/fm/http.ts", "../worker/src/cors.ts"]
 }

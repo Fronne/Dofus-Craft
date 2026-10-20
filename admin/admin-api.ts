@@ -1,3 +1,4 @@
+import { parseUsageResponse, type UsageWindow } from '../src/domain/cloudflare-usage';
 import { isInfoMessage, type InfoMessage, type InfoMessageInput } from '../src/domain/info-message';
 import { parseSiteSettings, type SiteSettingsChange } from '../src/domain/site-settings';
 import { isPlayerCounter, type PlayerCounter, type PlayerCounterInput } from '../src/domain/player-counter';
@@ -81,6 +82,8 @@ export const adminApi = {
   // specs/053-hdv-page-toggle: only the settings changed are sent, so one never overwrites the other.
   getSettings: () => call('GET', '/settings', undefined, parseSiteSettings),
   saveSettings: (change: SiteSettingsChange) => call('PUT', '/settings', change, parseSiteSettings),
+  // specs/058-admin-cloudflare-usage: always answers 200 with a `state`, so "not configured" is a value, not a failure.
+  getUsage: (days: UsageWindow) => call('GET', `/usage?days=${days}`, undefined, parseUsageResponse),
   remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
   // specs/057-sniffer-admin: the key itself (secret) is only in the creation's answer.
   listSnifferKeys: () => call('GET', '/sniffer/keys', undefined, (payload) =>
