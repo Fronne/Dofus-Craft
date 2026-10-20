@@ -75,7 +75,7 @@ Les objets sont triés pour mettre en haut ceux dont le brisage donne le plus de
 
 ### User Story 4 - Ouvrir un objet de la liste dans le brisage (Priorité : P2)
 
-En cliquant sur un objet de la liste, le joueur arrive sur la page Brisage de cet objet (jets, prix, coefficient, focus), avec la stat ciblée prête à être choisie comme stat de focus quand elle est ciblable en focus.
+En cliquant sur un objet de la liste, le joueur arrive sur la page Brisage de cet objet (jets, prix, coefficient, focus).
 
 **Pourquoi cette priorité** : relie la recherche au calcul existant ; sans lui, la liste reste une simple consultation.
 
