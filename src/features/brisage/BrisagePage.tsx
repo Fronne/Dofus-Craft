@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon';
 import { getItemEffectRanges } from '../../data/catalogue-repository';
 import {
   analyzeBrisage,
+  analyzeFocusAdvice,
   averageRoll,
   brisageStat,
   defaultBrisageSettings,
@@ -184,22 +185,35 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   }, [ranges]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
 
-  const analysis = item && ranges.length > 0 && priceState.status === 'ready'
-    ? analyzeBrisage(
-      { level: item.level ?? NaN, lines: lines.map((line) => ({ effectId: line.range.effectId, value: line.value })), coefficient, itemCostKamas: cost },
-      RUNES,
-      fetched.prices,
-      SETTINGS,
-    )
+  const ready = item && ranges.length > 0 && priceState.status === 'ready';
+  const lineInputs = lines.map((line) => ({ effectId: line.range.effectId, value: line.value }));
+  const analysis = ready && coefficient > 0
+    ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
     : undefined;
+  // specs/063: without a coefficient the table and a focus advice are still shown (normal breaking at 100 %).
+  const advice = ready && !(coefficient > 0)
+    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs }, RUNES, fetched.prices, SETTINGS)
+    : undefined;
+  const adviceOk = advice?.status === 'ok' ? advice : undefined;
   const ok = analysis?.status === 'ok' ? analysis : undefined;
   const best = ok?.best;
-  const normal = ok?.options.find((option) => option.kind === 'normal');
-  const focusOptions = ok?.options.filter((option) => option.kind === 'focus') ?? [];
-  const bestFocus = focusOptions.find((option) => option.gainKamas !== undefined);
+  const normal = ok ? ok.options.find((option) => option.kind === 'normal') : adviceOk?.reference;
+  const focusOptions = ok ? ok.options.filter((option) => option.kind === 'focus') : adviceOk?.focusOptions ?? [];
+  const bestFocus = ok ? focusOptions.find((option) => option.gainKamas !== undefined) : adviceOk?.bestFocus;
   // A focus is only worth showing when it pays more than breaking normally (FR-013).
   const focusWins = best?.kind === 'focus' && best.gainKamas! >= 0;
-  const missingNames = ok ? [...new Set(ok.options.flatMap((o) => o.missingRuneIds))].map((id) => RUNES.find((r) => r.id === id)?.name ?? id) : [];
+  const noCoefficient = adviceOk !== undefined;
+  const costKnown = Number.isFinite(cost);
+  /** Gain of the item for an option; without a coefficient, the item price is only deducted when known. */
+  const gainOf = (option: BrisageOption | undefined): number | undefined => {
+    if (!option) return undefined;
+    if (!noCoefficient) return option.gainKamas;
+    if (option.missingRuneIds.length > 0) return undefined;
+    return costKnown ? option.valueKamas - cost : option.valueKamas;
+  };
+  const highlightedEffectId = noCoefficient ? bestFocus?.focusEffectId : focusWins ? best?.focusEffectId : undefined;
+  const missingOptions = ok ? ok.options.flatMap((o) => o.missingRuneIds) : adviceOk?.missingRuneIds ?? [];
+  const missingNames = [...new Set(missingOptions)].map((id) => RUNES.find((r) => r.id === id)?.name ?? id);
   const currentGain = ok ? normal?.gainKamas : undefined;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
@@ -209,6 +223,16 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: 'Même le meilleur choix ne couvre pas le prix de l\'objet.', tone: 'bad' };
   else if (best?.kind === 'normal') verdict = { title: 'Rentable sans focus', hint: 'Le focus ne rapporte pas plus : brisez normalement.', tone: 'good' };
   else if (best) verdict = { title: `Rentable avec un focus ${shortRune(best)}`, hint: undefined, tone: 'good' };
+
+  const invalidReason = analysis?.status === 'invalid' ? analysis.reason : advice?.status === 'invalid' ? advice.reason : undefined;
+  // specs/063: the advice shown while the coefficient is unknown.
+  const switchCoefficient = adviceOk?.switchCoefficient;
+  const adviceTitle = adviceOk?.bestFocus && switchCoefficient !== undefined
+    ? `Focus ${shortRune(adviceOk.bestFocus)} sous ${number.format(switchCoefficient)} %`
+    : 'Prix manquants';
+  const adviceHint = adviceOk?.bestFocus && switchCoefficient !== undefined
+    ? `Au-dessus de ce coefficient, brisez sans focus.${switchCoefficient > 100 ? ' Le focus reste conseillé sur les coefficients courants.' : ''}`
+    : 'Notez les prix des runes pour obtenir un conseil.';
 
   return (
     <>
@@ -320,13 +344,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         {item && loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
       </section>
 
-      {item && analysis && (
+      {item && (analysis || advice) && (
         <section className="brisage-results" aria-labelledby="brisage-results-title">
           <h2 id="brisage-results-title" className="visually-hidden">Résultat</h2>
-          {analysis.status === 'invalid' ? (
-            <p className="empty" role="status">
-              {!(coefficient > 0) ? "Indiquez le coefficient de l'objet pour voir le résultat." : analysis.reason}
-            </p>
+          {invalidReason !== undefined ? (
+            <p className="empty" role="status">{invalidReason}</p>
           ) : (
             <>
               {fetched.communityUnavailable && <p className="fm-note" role="status">Les prix partagés sont injoignables : seuls vos prix enregistrés sont utilisés.</p>}
@@ -336,6 +358,25 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                 </p>
               )}
 
+              {adviceOk && (
+                <section className="panel market-price-panel item-verdict-panel" aria-live="polite">
+                  <div className="market-price-summary">
+                    <div className={`verdict brisage-verdict verdict--${adviceOk.bestFocus && switchCoefficient !== undefined ? 'craft' : 'insufficient-data'}`}>
+                      <div className="verdict-head">
+                        <span className="verdict-icon" aria-hidden="true"><Icon name={adviceOk.bestFocus && switchCoefficient !== undefined ? 'check' : 'info'} size={22} /></span>
+                        <div className="verdict-text">
+                          <span className="brisage-verdict-label">Conseil</span>
+                          <p className="verdict-title">{adviceTitle}</p>
+                          <p className="verdict-subtitle">{adviceHint}</p>
+                          <p className="verdict-subtitle">Coefficient inconnu : indiquez-le (relevé en jeu) pour un verdict précis.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {ok && (
               <section className="panel market-price-panel item-verdict-panel" aria-live="polite">
                 <div className="market-price-summary">
                   <div className={`verdict brisage-verdict verdict--${verdict.tone === 'good' ? 'craft' : verdict.tone === 'bad' ? 'bad' : 'insufficient-data'}`}>
@@ -355,15 +396,16 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         {verdict.hint && <p className="verdict-subtitle">{verdict.hint}</p>}
                       </div>
                     </div>
-                    {analysis.thresholdCoefficient !== undefined && (
+                    {ok.thresholdCoefficient !== undefined && (
                       <dl className="brisage-facts">
-                        <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(analysis.thresholdCoefficient)} %</dd></div>
-                        <div><dt>Brisages possibles avant ce seuil</dt><dd>{analysis.itemsCount}</dd></div>
+                        <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(ok.thresholdCoefficient)} %</dd></div>
+                        <div><dt>Brisages possibles avant ce seuil</dt><dd>{ok.itemsCount}</dd></div>
                       </dl>
                     )}
                   </div>
                 </div>
               </section>
+              )}
 
               <section className="panel brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
@@ -384,11 +426,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           </span>
                         </th>
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">{noCoefficient ? 'Sans focus (à 100 % : référence)' : 'Sans focus'}</span></th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
                       </tr>
                       <tr role="row">
-                        <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">Gain de l'objet</th>
+                        <th scope="col">Runes</th><th scope="col">Valeur</th><th scope="col">Runes</th><th scope="col">{noCoefficient && !costKnown ? 'Valeur des runes' : "Gain de l'objet"}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -397,7 +439,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         const plain = normal?.yields.find((y) => y.effectId === line.range.effectId);
                         const focus = focusOptions.find((option) => option.focusEffectId === line.range.effectId);
                         const focusYield = focus?.yields.find((y) => y.effectId === line.range.effectId);
-                        const isBest = focusWins && best?.focusEffectId === line.range.effectId;
+                        const isBest = highlightedEffectId === line.range.effectId;
+                        const focusGain = gainOf(focus);
                         const label = statLabel(line.range.effectId);
                         return (
                           <tr role="row" key={line.index} className={isBest ? 'brisage-best' : undefined}>
@@ -430,7 +473,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(plain.count) : '—'}</td>
                             <td role="cell" data-label="Sans focus : valeur">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(focusYield.count) : '—'}</td>
-                            <td role="cell" data-label="Focus : gain de l'objet">{focus?.gainKamas !== undefined ? <Kamas value={Math.round(focus.gainKamas)} signed /> : <span className="fm-note">—</span>}</td>
+                            <td role="cell" data-label="Focus : gain de l'objet">{focusGain !== undefined ? <Kamas value={Math.round(focusGain)} signed={!noCoefficient || costKnown} /> : <span className="fm-note">—</span>}</td>
                           </tr>
                         );
                       })}
@@ -439,9 +482,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                       <tr role="row">
                         <th scope="row" role="rowheader" colSpan={3}>Total de l'objet, prix déduit</th>
                         <td />
-                        <td role="cell" data-label="Sans focus : total">{normal?.gainKamas !== undefined ? <Kamas value={Math.round(normal.gainKamas)} signed /> : '—'}</td>
+                        <td role="cell" data-label="Sans focus : total">{gainOf(normal) !== undefined ? <Kamas value={Math.round(gainOf(normal)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
                         <td />
-                        <td role="cell" data-label="Meilleur focus : total">{bestFocus ?<Kamas value={Math.round(bestFocus.gainKamas!)} signed /> : '—'}</td>
+                        <td role="cell" data-label="Meilleur focus : total">{gainOf(bestFocus) !== undefined ? <Kamas value={Math.round(gainOf(bestFocus)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
                       </tr>
                     </tfoot>
                   </table>

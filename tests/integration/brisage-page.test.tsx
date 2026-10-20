@@ -191,14 +191,51 @@ describe('Brisage page (specs/061)', () => {
     });
   });
 
-  it('asks for the coefficient of an item never broken, and shows no result until it is given', async () => {
-    await pinnedItemPrices.save('mikhal', '777', 1000);
-    await pricesKnown();
-    await openBrisage();
-    await pickCape();
-    expect(await screen.findByLabelText(/Coefficient relevé en jeu/)).toBeInTheDocument();
-    expect(await screen.findByText(/Indiquez le coefficient/)).toBeInTheDocument();
-    expect(screen.queryByText('Verdict')).not.toBeInTheDocument();
+  describe('without a known coefficient (specs/063)', () => {
+    it('shows the table, the best focus line and the switch coefficient, but no verdict', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByLabelText(/Coefficient relevé en jeu/)).toBeInTheDocument();
+      expect(await screen.findByText('Conseil')).toBeInTheDocument();
+      expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
+      expect(screen.getByText(/Au-dessus de ce coefficient, brisez sans focus/)).toBeInTheDocument();
+      expect(screen.getByText('Meilleur focus').closest('tr')).toHaveTextContent('Dommages');
+      expect(screen.getByText(/Sans focus \(à 100 %/)).toBeInTheDocument();
+      expect(screen.queryByText('Verdict')).not.toBeInTheDocument();
+      expect(screen.queryByText('Gain selon le coefficient')).not.toBeInTheDocument();
+    });
+
+    it('keeps the advice when the price of the item is unknown and shows the value of the runes', async () => {
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
+      expect(screen.getByText('Valeur des runes')).toBeInTheDocument();
+    });
+
+    it('gives no advice while a rune has no price', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText('Prix manquants')).toBeInTheDocument();
+      expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
+    });
+
+    it('goes back to the full result once the coefficient is given, and back again when it is cleared', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      const input = await screen.findByLabelText(/Coefficient relevé en jeu/);
+      fireEvent.change(input, { target: { value: '50' } });
+      expect(await screen.findByText('Verdict')).toBeInTheDocument();
+      expect(screen.queryByText('Conseil')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Sans focus \(à 100 %/)).not.toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText(/Coefficient/), { target: { value: '' } });
+      expect(await screen.findByText('Conseil')).toBeInTheDocument();
+    });
   });
 
   it('shows the verdict, the item count, the minimal coefficient and the focus rune', async () => {

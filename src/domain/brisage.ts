@@ -348,3 +348,49 @@ export function analyzeBrisage(
   }
   return { status: 'ok', options, best: complete[0], thresholdCoefficient, itemsCount, descent, ignoredEffectIds: ignored };
 }
+
+// specs/063-brisage-sans-coefficient: advice when the coefficient is unknown. The normal breaking
+// is proportional to the coefficient, a focus is not, so the two meet at a switch coefficient.
+// The price of the item cancels out of that comparison.
+
+export type FocusAdviceInput = { level: number; lines: BrisageLine[] };
+
+export type FocusAdvice =
+  | { status: 'invalid'; reason: string }
+  | {
+    status: 'ok';
+    /** The normal breaking computed as if the coefficient were 100 %. */
+    reference: BrisageOption;
+    focusOptions: BrisageOption[];
+    /** The priced focus worth the most (first line wins a tie); absent while a rune has no price. */
+    bestFocus?: BrisageOption;
+    /** Below this coefficient (%) the best focus pays more than breaking normally. */
+    switchCoefficient?: number;
+    missingRuneIds: string[];
+  };
+
+export function analyzeFocusAdvice(
+  input: FocusAdviceInput,
+  runes: RuneItem[],
+  prices: Record<string, number | undefined>,
+  settings: BrisageSettings = defaultBrisageSettings(),
+): FocusAdvice {
+  const { lines } = usableLines(input.lines, runes, settings);
+  if (lines.length === 0) return { status: 'invalid', reason: "L'objet n'a aucune ligne exploitable." };
+  if (!(input.level >= 1)) return { status: 'invalid', reason: "Le niveau de l'objet doit être au moins 1." };
+
+  const base: BrisageInput = { level: input.level, lines, coefficient: 100, itemCostKamas: 0 };
+  const reference = buildOption('normal', undefined, lines, () => 1, base, runes, prices, settings);
+  const focusOptions = lines.map((line) => buildOption(
+    'focus', line.effectId, lines,
+    (effectId) => (effectId === line.effectId ? settings.focusTargetShare : settings.focusOtherShare),
+    base, runes, prices, settings,
+  ));
+  const priced = focusOptions.filter((option) => option.missingRuneIds.length === 0);
+  const bestFocus = priced.reduce<BrisageOption | undefined>((best, option) => (!best || option.valueKamas > best.valueKamas ? option : best), undefined);
+  const switchCoefficient = bestFocus && reference.missingRuneIds.length === 0 && reference.valueKamas > 0
+    ? (100 * bestFocus.valueKamas) / reference.valueKamas
+    : undefined;
+  const missingRuneIds = [...new Set([...reference.missingRuneIds, ...focusOptions.flatMap((o) => o.missingRuneIds)])];
+  return { status: 'ok', reference, focusOptions, bestFocus, switchCoefficient, missingRuneIds };
+}
