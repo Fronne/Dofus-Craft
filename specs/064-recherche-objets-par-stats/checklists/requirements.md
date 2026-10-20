@@ -13,7 +13,7 @@
 
 ## Complétude des exigences
 
-- [ ] Aucun marqueur [NEEDS CLARIFICATION] (2 restants : combinaison des stats, critère de tri par défaut)
+- [x] Aucun marqueur [NEEDS CLARIFICATION]
 - [x] Exigences testables et non ambiguës
 - [x] Critères de réussite mesurables
 - [x] Critères de réussite sans détail technique
@@ -30,4 +30,4 @@
 
 ## Notes
 
-- Les 2 marqueurs restants sont à résoudre avec `/speckit-clarify` avant `/speckit-plan`.
+- Les 2 marqueurs ont été résolus en clarification (2026-10-20). Prêt pour `/speckit-plan`.

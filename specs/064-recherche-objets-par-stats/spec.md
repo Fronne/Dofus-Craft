@@ -10,6 +10,13 @@
 
 Cette spec prolonge `specs/060-page-brisage` (modèle de calcul du brisage et des poids de runes), `specs/061-simplification-page-brisage` (jet moyen par défaut, lignes d'effets d'un objet), `specs/062-prix-objet-brisage` et `specs/063-brisage-sans-coefficient`. Aujourd'hui, la page Brisage part d'un objet que le joueur cherche **par son nom** ; il n'existe aucun moyen de partir d'une **stat** (par exemple « je veux des runes Prospection ») pour trouver les objets à briser.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q : Avec plusieurs stats, quels objets lister ? → R : ceux qui portent **toutes** les stats choisies (pas d'interrupteur « au moins une » dans cette version).
+- Q : Tri par défaut ? → R : **nombre estimé de runes ciblées** à 100 % de coefficient ; tri par valeur en kamas et par jet maximal proposés comme critères secondaires.
+
 ## Principe
 
 Le joueur choisit les stats qu'il veut obtenir sous forme de runes. La page liste les objets du jeu qui portent ces stats, avec pour chacun le jet de chaque stat ciblée et une estimation des runes que son brisage donnerait. Ouvrir un objet de la liste mène à la page Brisage de cet objet, avec tout le calcul existant (prix, coefficient, focus).
@@ -37,7 +44,7 @@ Sur la page Brisage, un sélecteur de stats permet de choisir une stat (par exem
 
 ### User Story 2 - Combiner plusieurs stats (Priorité : P1)
 
-Le joueur sélectionne plusieurs stats à la fois (par exemple Vitalité et Sagesse). La liste ne garde que les objets qui répondent à la sélection, selon le mode de combinaison [NEEDS CLARIFICATION: les objets doivent-ils porter TOUTES les stats choisies, ou AU MOINS UNE ? ou les deux avec un choix ?].
+Le joueur sélectionne plusieurs stats à la fois (par exemple Vitalité et Sagesse). La liste ne garde que les objets qui répondent à la sélection, qui portent **toutes** les stats choisies (mode « et » ; un objet qui n'en a qu'une partie n'est pas listé).
 
 **Pourquoi cette priorité** : le joueur cible rarement une seule rune ; il veut trouver les objets qui en donnent plusieurs d'un coup.
 
@@ -52,7 +59,7 @@ Le joueur sélectionne plusieurs stats à la fois (par exemple Vitalité et Sage
 
 ### User Story 3 - Trier pour savoir quel objet briser en premier (Priorité : P1)
 
-Les objets sont triés pour mettre en haut ceux dont le brisage donne le plus des runes ciblées. Chaque ligne affiche une estimation du nombre de runes de chaque stat ciblée, calculée avec la même formule et le même jet moyen que la page Brisage, **au coefficient de référence 100 %** (étiqueté comme tel), en brisage normal. Le tri porte sur [NEEDS CLARIFICATION: quel critère de classement par défaut — le nombre de runes ciblées estimé (somme pour plusieurs stats), la valeur en kamas de ces runes avec les prix du serveur, ou le jet maximal de la stat ?]. Le joueur peut changer de critère de tri.
+Les objets sont triés pour mettre en haut ceux dont le brisage donne le plus des runes ciblées. Chaque ligne affiche une estimation du nombre de runes de chaque stat ciblée, calculée avec la même formule et le même jet moyen que la page Brisage, **au coefficient de référence 100 %** (étiqueté comme tel), en brisage normal. Le tri par défaut porte sur le nombre estimé de runes ciblées (somme si plusieurs stats), sans dépendre d'aucun prix. Le joueur peut changer de critère de tri.
 
 **Pourquoi cette priorité** : « quels objets briser » est la question posée ; une liste non triée oblige à tout ouvrir.
 
@@ -112,10 +119,10 @@ Le joueur limite la liste à une plage de niveaux d'objet (par exemple 150 à 20
 
 - **FR-001** : La page Brisage MUST offrir un sélecteur de stats à choix multiple, qui ne propose que les stats ciblables (stat ayant une rune connue, hors stat « chasse » 696969, hors effets exo).
 - **FR-002** : Le sélecteur MUST afficher les stats par leur libellé français, permettre de filtrer par saisie et de retirer une stat choisie.
-- **FR-003** : Le système MUST lister les équipements brisables du jeu qui ont un jet **positif** sur la sélection, selon la règle de combinaison retenue (voir User Story 2).
+- **FR-003** : Le système MUST lister les équipements brisables du jeu qui ont un jet **positif** sur la sélection, portant toutes les stats choisies (voir User Story 2).
 - **FR-004** : Chaque ligne MUST afficher le nom, l'image, le niveau de l'objet et, pour chaque stat choisie, la fourchette du jet.
 - **FR-005** : Chaque ligne MUST afficher une estimation des runes de chaque stat choisie, calculée avec la formule du brisage existante (`specs/060`), le jet moyen par défaut (`specs/061`, FR-006) et un coefficient de référence de 100 %, étiquetée comme estimation.
-- **FR-006** : La liste MUST pouvoir être triée selon au moins le critère par défaut retenu (voir User Story 3) et un second critère au choix du joueur ; l'ordre MUST être stable et reproductible.
+- **FR-006** : La liste MUST pouvoir être triée par défaut selon les runes ciblées estimées, et selon au moins un critère au choix (valeur en kamas, jet maximal) ; l'ordre MUST être stable et reproductible.
 - **FR-007** : Le tri par valeur en kamas MUST utiliser les prix de runes du serveur actif ; un prix manquant MUST être traité comme inconnu, jamais comme 0 (constitution III).
 - **FR-008** : Choisir un objet dans la liste MUST ouvrir la page Brisage de cet objet.
 - **FR-009** : La sélection de stats, le tri et la plage de niveaux MUST être conservés tant que le joueur navigue entre la recherche et le brisage d'un objet.
@@ -137,7 +144,7 @@ Le joueur limite la liste à une plage de niveaux d'objet (par exemple 150 à 20
 
 - **SC-001** : Un joueur obtient la liste des objets portant une stat donnée en moins de 3 actions (ouvrir la recherche, choisir la stat, lire la liste).
 - **SC-002** : Après un premier chargement, un changement de sélection, de tri ou de niveau met la liste à jour en moins de 1 seconde dans 95 % des cas.
-- **SC-003** : 100 % des objets listés ont un jet positif sur chacune des stats exigées par la règle de combinaison, et 0 stat « chasse » ou exo n'apparaît comme ciblable.
+- **SC-003** : 100 % des objets listés ont un jet positif sur chacune des stats choisies, et 0 stat « chasse » ou exo n'apparaît comme ciblable.
 - **SC-004** : Pour la stat Prospection, les 5 premiers objets du tri par défaut correspondent à ceux qu'un calcul manuel avec la formule du brisage classerait en tête.
 - **SC-005** : Aucune valeur estimée n'est présentée sans l'indication « estimation à 100 % » ni aucun prix inconnu présenté comme 0.
 
