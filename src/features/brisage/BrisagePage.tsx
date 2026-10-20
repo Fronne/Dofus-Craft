@@ -217,8 +217,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     return costKnown ? option.valueKamas - cost : option.valueKamas;
   };
   const highlightedEffectId = noCoefficient ? bestFocus?.focusEffectId : focusWins ? best?.focusEffectId : undefined;
-  const missingOptions = ok ? ok.options.flatMap((o) => o.missingRuneIds) : adviceOk?.missingRuneIds ?? [];
-  const missingNames = [...new Set(missingOptions)].map((id) => RUNES.find((r) => r.id === id)?.name ?? id);
   const currentGain = ok ? normal?.gainKamas : undefined;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
@@ -285,13 +283,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             <p className="empty" role="status">{invalidReason}</p>
           ) : (
             <>
-              {fetched.communityUnavailable && <p className="fm-note" role="status">Les prix partagés sont injoignables : seuls vos prix enregistrés sont utilisés.</p>}
-              {missingNames.length > 0 && (
-                <p className="fm-note" role="status">
-                  Prix manquant pour : {missingNames.join(', ')}. Notez-les sur la page Prix : aucun prix n'est inventé.
-                </p>
-              )}
-
               {adviceOk && (
                 <section className="brisage-part market-price-panel item-verdict-panel" aria-live="polite">
                   <div className="market-price-summary">

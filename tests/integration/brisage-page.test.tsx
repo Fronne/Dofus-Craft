@@ -465,7 +465,8 @@ describe('Brisage page (specs/061)', () => {
     await openBrisage();
     await pickCape();
     fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
-    expect(await screen.findByText(/Prix manquant pour : /)).toHaveTextContent('Rune Vi');
+    expect(await screen.findByText('Verdict')).toBeInTheDocument();
+    expect(screen.queryByText(/Prix manquant pour/)).not.toBeInTheDocument();
     expect(screen.getByText('Verdict').parentElement).toHaveTextContent('Prix manquants');
   });
 
