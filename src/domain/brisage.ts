@@ -124,6 +124,7 @@ export const BRISAGE_STATS: BrisageStat[] = [
   stat(412, 'Retrait PM', 7, 1, true),
   stat(752, 'Fuite', 4, 1, true),
   stat(753, 'Tacle', 4, 1, true),
+  stat(795, 'Arme de chasse', 5, 1, true),
 ];
 
 export type BrisageSettings = {

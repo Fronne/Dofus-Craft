@@ -222,6 +222,13 @@ describe('stat table and runes', () => {
     expect(weight(178)).toMatchObject({ weight: 10, confirmed: true });
     expect(weight(115)).toMatchObject({ weight: 10, confirmed: true });
     expect(weight(225)).toMatchObject({ weight: 5, confirmed: true });
+    // Dofus pour les Noobs, confirmed in game: melee / ranged resistances in % weigh 15.
+    expect(weight(2803)).toMatchObject({ weight: 15, confirmed: true });
+    expect(weight(2807)).toMatchObject({ weight: 15, confirmed: true });
+    // Reflected damage: DoFocus says 10, Dofus pour les Noobs and the game say 5.
+    expect(weight(220)).toMatchObject({ weight: 5, confirmed: true });
+    // Arme de chasse (Rune de chasse), exo that adds weight to an item.
+    expect(weight(795)).toMatchObject({ weight: 5, confirmed: true });
   });
   it('reads rune sizes from names and falls back to a smaller size', () => {
     const find = (name: string) => RUNES.find((r: RuneItem) => r.name === name)!;
