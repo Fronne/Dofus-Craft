@@ -197,6 +197,14 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs }, RUNES, fetched.prices, SETTINGS)
     : undefined;
   const adviceOk = advice?.status === 'ok' ? advice : undefined;
+  // specs/063: the value of the runes of one breaking, known before breaking anything: the lines (with the
+  // rolls typed) and the rune prices are enough, the price of the item is not needed. Without a coefficient
+  // it is the value at 100 %, the most the item can give.
+  const estimateSource = advice ?? (ready ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs }, RUNES, fetched.prices, SETTINGS) : undefined);
+  const estimateRef = estimateSource?.status === 'ok' && estimateSource.reference.missingRuneIds.length === 0 && !(coefficient > MAX_COEFFICIENT)
+    ? estimateSource.reference
+    : undefined;
+  const runesValue = estimateRef ? estimateRef.valueKamas * (coefficient > 0 ? coefficient / 100 : 1) : undefined;
   const ok = analysis?.status === 'ok' ? analysis : undefined;
   const best = ok?.best;
   const normal = ok ? ok.options.find((option) => option.kind === 'normal') : adviceOk?.reference;
@@ -349,6 +357,20 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       {item && (analysis || advice) && (
         <section className="brisage-results" aria-labelledby="brisage-results-title">
           <h2 id="brisage-results-title" className="visually-hidden">Résultat</h2>
+          {runesValue !== undefined && (
+            <section className="panel brisage-block brisage-estimate" aria-labelledby="brisage-estimate-title">
+              <div className="brisage-block-head">
+                <h2 id="brisage-estimate-title">Valeur estimée des runes</h2>
+              </div>
+              <p className="brisage-estimate-value">
+                <Kamas value={Math.round(runesValue)} />{' '}
+                <span className="fm-note">
+                  {coefficient > 0 ? `par brisage à ${displayedCoefficient(coefficient)} %` : 'par brisage à 100 % (maximum : le coefficient est inconnu)'}
+                </span>
+              </p>
+              <p className="fm-note">Calculée avec les jets du tableau et les prix des runes, sans focus, avant tout brisage.</p>
+            </section>
+          )}
           {invalidReason !== undefined ? (
             <p className="empty" role="status">{invalidReason}</p>
           ) : (

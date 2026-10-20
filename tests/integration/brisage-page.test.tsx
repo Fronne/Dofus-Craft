@@ -254,6 +254,38 @@ describe('Brisage page (specs/061)', () => {
     expect(document.querySelector('img.kamas-amount-icon')).not.toBeNull();
   });
 
+  describe('estimated value of the runes (specs/063)', () => {
+    it('is shown at 100 % before any coefficient is known, even without a price for the item', async () => {
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText('Valeur estimée des runes')).toBeInTheDocument();
+      expect(screen.getByText(/par brisage à 100 % \(maximum/)).toBeInTheDocument();
+    });
+
+    it('follows the coefficient and the rolls, still without a price for the item', async () => {
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      const value = () => screen.getByText('Valeur estimée des runes').closest('section')!.querySelector('.brisage-estimate-value')!.textContent;
+      await screen.findByText('Valeur estimée des runes');
+      const at100 = value();
+      // A roll typed in the table changes the value.
+      fireEvent.change(screen.getByLabelText('Jet de Dommages'), { target: { value: '9' } });
+      await waitFor(() => expect(value()).not.toBe(at100));
+      // The coefficient scales it, and the page keeps showing it with the coefficient but no price for the item.
+      fireEvent.change(screen.getByLabelText(/Coefficient relevé en jeu/), { target: { value: '50' } });
+      await waitFor(() => expect(screen.getByText('Valeur estimée des runes').closest('section')).toHaveTextContent('par brisage à 50 %'));
+    });
+
+    it('is not shown while a rune has no price', async () => {
+      await openBrisage();
+      await pickCape();
+      await screen.findAllByText(/Prix manquants?/);
+      expect(screen.queryByText('Valeur estimée des runes')).not.toBeInTheDocument();
+    });
+  });
+
   it('shows whole numbers of runes only, and the next breaks at whole coefficients that can repeat', async () => {
     await pinnedItemPrices.save('mikhal', '777', 1000);
     await pricesKnown();
