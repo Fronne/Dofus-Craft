@@ -10,6 +10,7 @@
 
 ## Ligne exo dans le tableau
 
+- Les lignes exo sont placées **en tête du tableau**, avant les lignes d'origine, comme en jeu (le dernier exo ajouté en première position), et affichées **en bleu** (nom de stat et jet), lisible en thème clair et sombre.
 - Même colonnes que les autres lignes. Le nom de stat porte un badge « exo ».
 - Colonne Jet : la valeur de l'exo, sans bornes min/max, sans saisie ; un bouton « Retirer l'exo » (nom accessible « Retirer l'exo <stat> »).
 - Colonnes Avec focus : « — » (aucun focus possible sur un exo), jamais badge « Meilleur focus ».

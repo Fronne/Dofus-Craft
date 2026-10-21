@@ -35,7 +35,7 @@ Sous le tableau des lignes de l'objet choisi, le joueur a une action « Ajouter 
 
 **Scénarios d'acceptation** :
 
-1. **Étant donné** un objet choisi, **quand** le joueur ajoute un exo de Force à 5, **alors** une ligne exo Force 5 apparaît dans le tableau, distincte des lignes d'origine.
+1. **Étant donné** un objet choisi, **quand** le joueur ajoute un exo de Force à 5, **alors** une ligne exo Force 5 apparaît en première ligne du tableau, en bleu, distincte des lignes d'origine.
 2. **Étant donné** un exo déjà ajouté, **quand** le joueur en ajoute un second sur une autre stat, **alors** les deux lignes coexistent.
 3. **Étant donné** une ligne exo, **quand** le joueur la retire, **alors** elle disparaît et les totaux reviennent à ce qu'ils étaient sans elle.
 4. **Étant donné** un objet qui a déjà la stat (ex. Force) en ligne d'origine, **quand** le joueur ouvre la liste des stats d'un exo, **alors** cette stat n'y figure pas : pour la dépasser, il règle le jet de la ligne d'origine (over).
@@ -117,7 +117,7 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 - **FR-001** : Le joueur peut ajouter à l'objet choisi une ou plusieurs lignes exo, chacune avec une stat et une valeur entière positive.
 - **FR-002** : Toute stat connue du brisage et ayant une rune peut être choisie en exo, sauf une stat que l'objet a déjà (ligne d'origine) ou qui est déjà en exo sur cet objet.
 - **FR-003** : Le poids d'un exo (valeur × poids de la stat) ne dépasse pas 101 ; au-delà la saisie est refusée avec la valeur maximale indiquée.
-- **FR-004** : Une ligne exo est affichée dans le tableau, repérée comme exo, et peut être retirée.
+- **FR-004** : Une ligne exo est affichée dans le tableau, repérée comme exo, et peut être retirée. Comme en jeu, les exos sont placés avant les lignes d'origine (le dernier ajouté en première ligne) et affichés en bleu.
 - **FR-005** : Un exo est une ligne séparée des lignes d'origine ; il n'y a jamais d'exo sur une stat déjà présente sur l'objet.
 - **FR-006** : Sans focus, un exo produit des runes comme une ligne normale, au coefficient de l'objet.
 - **FR-007** : En focus sur une ligne d'origine, un exo compte à la même part que les autres lignes non ciblées (50 % par défaut, réglable dans les réglages existants).
