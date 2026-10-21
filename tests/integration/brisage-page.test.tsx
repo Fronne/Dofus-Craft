@@ -99,8 +99,9 @@ describe('Brisage page (specs/061)', () => {
     await waitFor(() => expect(cost()).toMatch(/12\D345/));
     expect(screen.queryByLabelText(/niveau de l'objet/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Prix de l'objet \(kamas\)/)).not.toBeInTheDocument();
-    // Auto is the default: only the HDV price is known here, so it is the one kept.
-    expect(screen.getByLabelText('Auto')).toBeChecked();
+    // No Auto button: the cheaper source is lit first, and only the HDV price is known here.
+    expect(screen.queryByLabelText('Auto')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Achat')).toBeChecked();
     expect(screen.getByText('Prix noté sur la page Recherche')).toBeInTheDocument();
   });
 
@@ -129,8 +130,9 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices();
       await openBrisage();
       await pickCape();
-      // Auto takes the cheaper of the two: the craft (800) beats the HDV (12 345).
+      // The cheaper of the two is lit first: the craft (800) beats the HDV (12 345).
       await waitFor(() => expect(cost()).toMatch(/800/));
+      expect(screen.getByLabelText('Craft')).toBeChecked();
       fireEvent.click(screen.getByLabelText('Achat'));
       await waitFor(() => expect(cost()).toMatch(/12\D345/));
       fireEvent.click(screen.getByLabelText('Craft'));
@@ -525,17 +527,22 @@ describe('Brisage page (specs/061)', () => {
       expect(screen.getByRole('button', { name: /Anneau du Sage/ })).toHaveTextContent('Coef. à saisir');
     });
 
-    it('keeps the Auto choice after a reload', async () => {
+    it('offers a custom price that starts from the kept price, is used by the page and survives a reload', async () => {
       await pinnedItemPrices.save('mikhal', '777', 12345);
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Achat'));
-      fireEvent.click(screen.getByLabelText('Auto'));
-      await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-session')!).priceSource).toBe('auto'));
+      fireEvent.click(await screen.findByLabelText('Perso'));
+      const input = await screen.findByLabelText(/Prix de l'objet \(kamas\)/);
+      expect(input).toHaveValue(12345);
+      fireEvent.change(input, { target: { value: '5000' } });
+      expect(await screen.findByText('Prix personnalisé')).toBeInTheDocument();
+      expect(screen.queryByText('Saisis le prix à utiliser.')).not.toBeInTheDocument();
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-session')!).priceSource).toBe('custom'));
       cleanup();
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
-      expect(await screen.findByLabelText('Auto')).toBeChecked();
+      expect(await screen.findByLabelText('Perso')).toBeChecked();
+      expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toHaveValue(5000);
     });
   });
 

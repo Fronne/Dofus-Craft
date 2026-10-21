@@ -89,7 +89,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
-  // specs/065: a new item starts on Auto, the cheaper of the HDV price and the craft cost.
+  // A new item starts with no source chosen ('auto'): the button of the cheaper of the HDV price and the craft cost is lit.
   const [priceSource, setPriceSource] = useState<PriceSource>('auto');
   const pickToken = useRef(0);
 
@@ -104,8 +104,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setRolls(restore?.rolls ?? {});
     setCoefficientText(restore?.coefficientText ?? '');
     setManualCost(restore?.manualCost ?? '');
-    // Picking another item keeps the chosen source; only a restored session brings its own back.
-    if (restore) setPriceSource(restore.priceSource);
+    // Another item starts on the cheaper source again; a restored session brings its own back.
+    setPriceSource(restore?.priceSource ?? 'auto');
     setStored(serverId ? getStoredCoefficient(serverId, picked.id) : undefined);
     setLoadState('loading');
     getItemEffectRanges(picked.id)
@@ -150,17 +150,22 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   // typed price fills in when the chosen source has none; a zero or negative price is never accepted.
   const hdvCost = useItemCost(serverId, item?.id, priceMode);
   const craftCost = useItemCraftCost(serverId, item?.id, priceMode);
-  const priceLoading = (priceSource !== 'craft' && hdvCost.status === 'loading') || (priceSource !== 'hdv' && craftCost.status === 'loading');
-  const priceReady = !priceLoading;
-  const resolvedPrice = priceReady ? resolveItemPrice(hdvCost.costKamas, craftCost.costKamas, priceSource) : undefined;
+  const hdvPending = hdvCost.status === 'loading';
+  const craftPending = craftCost.status === 'loading';
+  const isKnown = (kamas: number | undefined) => kamas !== undefined && kamas > 0;
+  // No button chosen yet: the cheaper of the two (the HDV on a tie, or when neither price is known).
+  const cheaperSource = isKnown(craftCost.costKamas) && (!isKnown(hdvCost.costKamas) || craftCost.costKamas! < hdvCost.costKamas!) ? 'craft' : 'hdv';
+  const source: Exclude<PriceSource, 'auto'> = priceSource === 'auto' ? cheaperSource : priceSource;
+  const priceLoading = priceSource === 'auto' ? hdvPending || craftPending : source === 'hdv' ? hdvPending : source === 'craft' ? craftPending : false;
+  const resolvedPrice = !priceLoading && source !== 'custom' ? resolveItemPrice(hdvCost.costKamas, craftCost.costKamas, source) : undefined;
   const typedPrice = parse(manualCost);
   const typedCoefficient = parse(coefficientText);
   const coefficient = typedCoefficient > 0 ? typedCoefficient : stored?.coefficient ?? NaN;
   const cost = resolvedPrice?.kamas ?? (typedPrice > 0 ? typedPrice : NaN);
   const priceOrigin = resolvedPrice
     ? (resolvedPrice.origin === 'craft' ? `Coût de la chaîne de craft (${priceMode === 'community' ? 'mode communautaire' : 'mode personnel'})` : 'Prix noté sur la page Recherche')
-    : typedPrice > 0 ? 'Saisi à la main' : undefined;
-  const noPriceReason = priceSource === 'craft'
+    : typedPrice > 0 ? (source === 'custom' ? 'Prix personnalisé' : 'Saisi à la main') : undefined;
+  const noPriceReason = source === 'custom' ? 'Saisis le prix à utiliser.' : source === 'craft'
     ? (craftCost.reason === 'no-recipe'
       ? 'Aucun craft n\'existe pour cet objet.'
       : 'Prix de craft incomplet (ressource sans prix).')
@@ -208,7 +213,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   }, [ranges, storedExos]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
 
-  const ready = item && ranges.length > 0 && priceReady;
+  const ready = item && ranges.length > 0 && !priceLoading;
   const lineInputs = [
     ...exos.map((exo) => ({ effectId: exo.effectId, value: exo.value, exo: true })),
     ...lines.map((line) => ({ effectId: line.range.effectId, value: line.value })),
@@ -291,8 +296,12 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         <div className="brisage-block">
           <ItemHeader
             item={item}
-            priceSource={priceSource}
-            onPriceSource={setPriceSource}
+            priceSource={source}
+            onPriceSource={(next) => {
+              // Perso starts from the price that was kept, so it only has to be adjusted.
+              if (next === 'custom' && !manualCost.trim() && resolvedPrice) setManualCost(String(Math.round(resolvedPrice.kamas)));
+              setPriceSource(next);
+            }}
             loading={priceLoading}
             hdvKamas={hdvCost.costKamas}
             craftKamas={craftCost.costKamas}
