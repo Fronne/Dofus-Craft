@@ -4,6 +4,7 @@
 
 - `negativeRangesOf(effects)` (catalogue-repository) renvoie les plages `{ effectId, from, to }` des effets dont les deux bornes sont ≤ 0 et au moins une < 0 (hors catégorie 2, comme les positifs). `from` ≤ `to` ≤ 0 (ex. −15 à −10). Un effet fixe écrit `to: 0` par DofusDB est une plage d'une valeur (`from = to`).
 - `getItemNegativeRanges(id)` : lit l'objet (cache existant) et applique `negativeRangesOf`.
+- DofusDB donne à chaque malus son propre `effectId` (−Force = 157, −PA = 168…). `negativeStatId(effectId)` (domaine) renvoie l'id de la stat retirée (157 → 118) ; `negativeRangesOf` l'applique, et un id sans correspondance reste tel quel.
 - Les deux plages (positives et négatives) d'une même stat restent séparées.
 
 ## Domaine (`src/domain/brisage.ts`)

@@ -56,6 +56,21 @@ it('reads a negative range written from the highest to the lowest, and a fixed m
   ]);
 });
 
+// DofusDB gives each malus its own id (-Force is 157, -PA is 168): the range carries the id of the stat it takes away.
+it('gives a malus the id of the stat it takes away', () => {
+  expect(negativeRangesOf([
+    { effectId: 157, from: -11, to: -40, category: 1 },
+    { effectId: 168, from: -1, to: 0, category: 1 },
+    { effectId: 175, from: -300, to: 0, category: 1 },
+    { effectId: 2893, from: -2, to: 0, category: 1 },
+  ])).toEqual([
+    { effectId: 118, from: -40, to: -11 },
+    { effectId: 111, from: -1, to: -1 },
+    { effectId: 174, from: -300, to: -300 },
+    { effectId: 2893, from: -2, to: -2 },
+  ]);
+});
+
 it('does not let a negative line into the positive ranges', () => {
   expect(effectRangesOf([{ effectId: 118, from: -5, to: -5, category: 1 }])).toEqual([]);
 });

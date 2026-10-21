@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import runeItems from '../../src/data/rune-items.json';
 import type { RuneItemsData } from '../../src/domain/forgemagie';
 import {
-  analyzeBrisage, analyzeFocusAdvice, defaultBrisageSettings, negativeLineWeight, runeForStat,
+  analyzeBrisage, analyzeFocusAdvice, brisageStat, defaultBrisageSettings, negativeLineWeight, negativeStatId, runeForStat,
 } from '../../src/domain/brisage';
 
 // specs/067-brisage-lignes-negatives: a negative line weighs like a positive one (never below 0), gives no rune,
@@ -22,6 +22,26 @@ const ok = (analysis: ReturnType<typeof analyzeBrisage>) => {
 };
 const focusOn = (analysis: ReturnType<typeof ok>, effectId: number) => analysis.options.find((o) => o.kind === 'focus' && o.focusEffectId === effectId)!;
 const normalOf = (analysis: ReturnType<typeof ok>) => analysis.options.find((o) => o.kind === 'normal')!;
+
+describe('negativeStatId', () => {
+  it('maps the malus effects of DofusDB to the stat they take away, and leaves other ids alone', () => {
+    expect(negativeStatId(157)).toBe(FO);
+    expect(negativeStatId(153)).toBe(VI);
+    expect(negativeStatId(168)).toBe(111);
+    expect(negativeStatId(FO)).toBe(FO);
+    expect(negativeStatId(2893)).toBe(2893);
+  });
+
+  it('only points at stats the Brisage table knows, with a rune', () => {
+    for (const malus of [116, 145, 152, 153, 154, 155, 156, 157, 159, 162, 163, 168, 169, 171, 175, 177, 179, 186, 215, 216, 217, 218, 219, 245, 246, 247, 248, 249,
+      411, 413, 415, 417, 419, 421, 423, 425, 427, 429, 431, 754, 755, 2801, 2802, 2805, 2806, 2809, 2813, 2990]) {
+      const stat = negativeStatId(malus);
+      expect(stat, `malus ${malus}`).not.toBe(malus);
+      expect(brisageStat(stat), `stat ${stat} of malus ${malus}`).toBeDefined();
+      expect(runeForStat(RUNES, stat, 'ba'), `rune of stat ${stat}`).toBeDefined();
+    }
+  });
+});
 
 describe('negativeLineWeight', () => {
   it('is brought back to 0 when the line is heavy (level 200, Force -10)', () => {

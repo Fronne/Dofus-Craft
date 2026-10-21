@@ -101,6 +101,7 @@ Sans focus : runes(stat) = Ml(jet) × coef/100 / poids      (arrondi à 2 décim
 - **Écartée, DoFocus** : `3 × jet / (200 × valeur) + 1` pour un jet négatif (sans niveau ni poids de stat). La constante `valeur` vient d'une API non lisible, et la formule donne un poids positif à un malus.
 - **Écartée, forgemagie** : en forgemagie, le poids d'un malus est divisé par 2. Kama Master ne reprend pas cette règle au brisage, et nous non plus.
 - **Estimation, à confirmer par un relevé en jeu** : un focus sur un objet avec un malus, à coefficient connu, comparé au nombre de runes prévu. La règle est isolée dans `negativeLineWeight` (`src/domain/brisage.ts`).
+- **Identifiants DofusDB** : un malus a son propre identifiant d'effet (« −Force » est 157, « −PA » 168, « −Initiative » 175…), avec une valeur négative. Le tableau `NEGATIVE_EFFECT_STAT` de `src/domain/brisage.ts` donne pour chacun la stat qu'il retire (157 → 118). Il couvre les 48 malus relevés sur les ~24 000 objets de DofusDB (octobre 2026) ; un malus absent de la table est ignoré et compté avec les lignes sans rune connue.
 - **Affichage** : les malus sont en rouge après les lignes positives, avec le badge « Malus » et la mention « aucune rune ». Leur jet reste modifiable dans l'étendue de la ligne. Les données viennent de `negativeRangesOf` (`src/data/catalogue-repository.ts`), à part de `effectRangesOf` que l'index de recherche utilise.
 
 ## Modèle de focus corrigé

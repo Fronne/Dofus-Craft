@@ -5,6 +5,7 @@ import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, map
 import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
 import type { DofusDbItemEffect } from '../services/dofusdb-types';
 import { CHARACTERISTIC_ASSET_BY_ID, ELEMENT_ASSET_BY_ID } from '../domain/characteristic-icons';
+import { negativeStatId } from '../domain/brisage';
 
 export const getManifest = () => ({
   ...manifest,
@@ -350,9 +351,11 @@ export function negativeRangesOf(effects: DofusDbItemEffect[] | undefined): Effe
     if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
     if (effect.category === 2) continue;
     if (!(Math.min(effect.from, effect.to) < 0 && effect.from <= 0 && effect.to <= 0)) continue;
+    // The id is the one of the stat the malus takes away (-Force 157 → Force 118), so the page finds its weight and rune.
+    const effectId = negativeStatId(effect.effectId);
     ranges.push(effect.to === 0
-      ? { effectId: effect.effectId, from: effect.from, to: effect.from }
-      : { effectId: effect.effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
+      ? { effectId, from: effect.from, to: effect.from }
+      : { effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
   }
   return ranges;
 }

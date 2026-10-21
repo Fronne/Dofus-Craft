@@ -116,5 +116,6 @@ Le joueur peut régler le jet d'une ligne négative dans l'étendue de l'objet (
 - Aucun relevé en jeu n'a encore confirmé le comportement. Un relevé futur pourra faire changer la règle.
 - Le jet par défaut d'une ligne négative est le milieu de son étendue arrondi à l'entier inférieur (même règle que les lignes positives, `Math.floor`).
 - Une étendue qui change de signe (−5 à +5) n'existe pas sur les objets du catalogue ; elle n'est pas gérée.
+- Dans DofusDB, un malus porte son propre identifiant d'effet (« −Force », « −PA »…) : une correspondance vers la stat retirée est nécessaire. Un malus sans correspondance connue est ignoré.
 - Les exos restent positifs : on ne peut pas ajouter d'exo négatif.
 - Le maximum de poids de 101 ne s'applique pas aux lignes négatives.
