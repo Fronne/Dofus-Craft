@@ -23,7 +23,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
 }) {
   const [typed, setTyped] = useState<string>();
   const [dialog, confirmOutlier] = useOutlierConfirm();
-  const value = typed ?? (price !== undefined && price > 0 ? formatKamasInput(String(price)) : '');
+  const value = typed ?? (price !== undefined && price > 0 ? formatKamasInput(String(price)) : '0');
 
   // A commit waits for the shared price and the confirmation: a second blur meanwhile must not save or share twice.
   const busy = useRef(false);
@@ -61,6 +61,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
           aria-label={`Prix de ${runeName}`}
           value={value}
           onChange={(event) => setTyped(formatKamasInput(event.target.value))}
+          onFocus={(event) => event.currentTarget.select()}
           onBlur={() => { void commit(); }}
           onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
         />
