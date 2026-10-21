@@ -25,6 +25,28 @@ export const priceModes: PriceModeOption[] = [
   },
 ];
 
+// What each mode means, worded once for the top bar's tooltip, the page badge and the switch toast.
+export const priceModeCopy: Record<PriceMode, { name: string; badge: string; toast: string; details: string[] }> = {
+  community: {
+    name: 'Mode communautaire',
+    badge: 'Prix communautaires',
+    toast: 'Mode communautaire activé : prix du groupe affichés, vos saisies sont partagées anonymement.',
+    details: [
+      'Chaque ressource affiche le dernier prix relevé par le groupe, avec sa date.',
+      'Les prix que vous saisissez sont partagés anonymement.',
+    ],
+  },
+  personal: {
+    name: 'Mode personnel',
+    badge: 'Prix personnels',
+    toast: 'Mode personnel activé : seuls vos prix sont utilisés, rien n\'est envoyé.',
+    details: [
+      'Seuls vos propres prix sont utilisés.',
+      'Ils restent sur cet appareil : rien n\'est envoyé.',
+    ],
+  },
+};
+
 export function isKnownPriceMode(value: string): value is PriceMode {
   return priceModes.some((mode) => mode.id === value && !mode.comingSoon);
 }

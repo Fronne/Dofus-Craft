@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,8 +48,36 @@ describe('navigation principale (specs/051)', () => {
     expect(entries(nav)).toEqual([
       'DofusCraft, aller à la recherche',
       'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie', 'Brisage',
-      'Serveur actif Mikhal', 'Paramètres', 'Activer le thème clair',
+      'Serveur actif Mikhal',
+      'Communauté, prix partagés avec le groupe', 'Perso, prix gardés sur cet appareil',
+      'Paramètres', 'Activer le thème clair',
     ]);
+  });
+
+  it('switches the price mode in one click from the bar', async () => {
+    getSiteSettings.mockResolvedValue({ forgemagiePage: true, hdvPage: true });
+    const nav = open('/');
+    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    const community = within(nav).getByRole('button', { name: /Communauté/ });
+    const personal = within(nav).getByRole('button', { name: /Perso/ });
+    expect(community).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(personal);
+    expect(personal).toHaveAttribute('aria-pressed', 'true');
+    expect(community).toHaveAttribute('aria-pressed', 'false');
+    // The change is confirmed in a toast, and the page badge follows the mode.
+    expect(screen.getByText(/Mode personnel activé/)).toBeInTheDocument();
+    expect(screen.getByText('Prix personnels')).toBeInTheDocument();
+  });
+
+  it('shows no mode toast on load, and no mode badge on Paramètres', async () => {
+    getSiteSettings.mockResolvedValue({ forgemagiePage: true, hdvPage: true });
+    const nav = open('/');
+    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    expect(screen.queryByText(/Mode (personnel|communautaire) activé/)).not.toBeInTheDocument();
+    expect(screen.getByText('Prix communautaires')).toBeInTheDocument();
+    cleanup();
+    open('/parametres');
+    expect(screen.queryByText('Prix communautaires')).not.toBeInTheDocument();
   });
 
   it('marks the page being shown, and only that one', async () => {

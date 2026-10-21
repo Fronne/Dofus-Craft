@@ -137,6 +137,59 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .app-nav-footer .icon-button { border-color: transparent; background: none; }
 .app-nav-footer .icon-button:hover { background: var(--button-bg); }
 .app-nav-settings.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-bright); }
+/* Price-mode switch: two pills, the active one tinted green (whichever mode: green means "active"). */
+.price-mode-switch { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--button-bg); }
+.price-mode-switch-option { display: inline-flex; align-items: center; gap: .35rem; min-height: calc(var(--control-md) - 8px); padding: 0 .7rem; border: 1px solid transparent; border-radius: calc(var(--radius-md) - 3px); background: none; color: var(--text-faint); font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; transition: background var(--transition-fast), color var(--transition-fast); }
+.price-mode-switch-option:hover { color: var(--text); }
+.price-mode-switch-option.selected { color: var(--accent-bright); background: var(--accent-soft); border-color: var(--accent); }
+/* Tooltip of a pill: what the mode shows and what it sends. Anchored to the group's right edge. */
+.price-mode-switch { position: relative; }
+.price-mode-switch-item { display: contents; }
+.price-mode-tip {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 30;
+  display: grid; gap: .35rem; width: 270px; padding: .75rem .9rem;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  background: var(--panel-strong); box-shadow: var(--shadow-md);
+  color: var(--text-muted); font-size: .84rem; line-height: 1.35; font-weight: 500; text-align: left;
+  opacity: 0; visibility: hidden; transform: translateY(-4px); pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+}
+/* The tip can be hovered itself (WCAG 1.4.13): a bridge covers the gap, Échap closes it (data-dismissed).
+   Hover only where a real pointer exists, so a tap on a touch screen doesn't leave it stuck open. */
+.price-mode-tip::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 12px; }
+@media (hover: hover) {
+  .price-mode-switch-item:hover .price-mode-tip { opacity: 1; visibility: visible; transform: none; transition-delay: .25s; pointer-events: auto; }
+}
+.price-mode-switch-item:has(:focus-visible) .price-mode-tip { opacity: 1; visibility: visible; transform: none; transition-delay: .25s; }
+.price-mode-switch-item[data-dismissed] .price-mode-tip { opacity: 0; visibility: hidden; transition-delay: 0s; }
+.price-mode-tip-title { display: flex; align-items: center; gap: .5rem; color: var(--text); font-size: .9rem; }
+.price-mode-tip-state { padding: .05rem .45rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-bright); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.price-mode-tip-action { margin-top: .15rem; color: var(--accent-bright); font-weight: 700; }
+
+/* Reminder of the active price mode, top of each price page. */
+.price-mode-badge { display: inline-flex; align-items: center; gap: .45rem; margin: 0 0 var(--space-3); padding: .2rem .7rem; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent-soft); color: var(--accent-bright); font-size: .78rem; font-weight: 700; }
+
+/* Confirmation after a mode change. */
+.price-mode-toast-region { position: fixed; left: 50%; bottom: var(--space-5); z-index: 60; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 2 * var(--space-4)); pointer-events: none; }
+.price-mode-toast { margin: 0; padding: .65rem 1rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: var(--shadow-md); color: var(--text); font-size: .9rem; font-weight: 600; animation: price-mode-toast-in .22s ease-out; }
+@keyframes price-mode-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 960px) { .price-mode-toast-region { bottom: calc(64px + var(--space-4)); } }
+
+/* The top bar's own width decides what gives way (it is not the window's: the bar is capped and
+   scaled with the page). Tight: the page links drop their icons, then the brand drops its name, so
+   the server / mode / settings group stays on the row of the links instead of wrapping under them.
+   Roomy: the mode pills spell out their label (title + aria-pressed tell them apart otherwise). */
+@media (min-width: 961px) { .app-nav { container-type: inline-size; } }
+.price-mode-switch-label { display: none; }
+.price-mode-switch-option { padding: 0 .55rem; }
+@media (min-width: 961px) {
+  @container (max-width: 1040px) { .app-nav-link > svg { display: none; } }
+  @container (max-width: 940px) { .app-nav-brand-name { display: none; } }
+  @container (min-width: 1200px) {
+    .price-mode-switch-label { display: inline; }
+    .price-mode-switch-option { padding: 0 .7rem; }
+  }
+}
 
 .app-page { flex: 1 1 auto; max-width: var(--app-width); width: 100%; margin: 0 auto; padding: var(--space-5) var(--space-6) var(--space-6); }
 
@@ -1380,7 +1433,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
      theme controls); only the Paramètres icon stays, as the last tab. The server switcher escapes
      .app-nav entirely: .app-nav is the bottom tab bar here, with no room for a text dropdown, so
      it's pinned to the top of the screen instead. */
-  .app-nav-footer > :not(.app-nav-settings):not(.server-switcher) { display: none; }
+  .app-nav-footer > :not(.app-nav-settings):not(.server-switcher) { display: none; } /* also hides .price-mode-switch: Paramètres keeps the choice */
   .app-nav-footer { flex: 0 0 44px; justify-content: center; margin-left: 0; }
   .app-nav-settings { align-self: center; flex: 0 0 auto; width: 44px; height: 44px; }
   .server-switcher {

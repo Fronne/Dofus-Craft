@@ -6,6 +6,9 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ROUTES } from './router';
 import { Icon } from '../components/Icon';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
+import { PriceModeSwitch } from '../features/settings/PriceModeSwitch';
+import { PriceModeBadge } from '../features/settings/PriceModeBadge';
+import { PriceModeToast } from '../features/settings/PriceModeToast';
 import { PinnedPriceMigrationNotice } from '../features/server/PinnedPriceMigrationNotice';
 import { RecherchePage } from '../features/search/RecherchePage';
 import { EpinglesPage } from '../features/catalogue/EpinglesPage';
@@ -215,6 +218,7 @@ export function AppShell() {
             Paramètres (reached from this icon, not from the page list) and the theme toggle. */}
         <div className="app-nav-footer">
           <ServerSwitcher />
+          <PriceModeSwitch priceMode={priceMode} setPriceMode={setPriceModeState} />
           <NavLink
             to={ROUTES.settings}
             className={({ isActive }) => `icon-button app-nav-settings${isActive ? ' active' : ''}`}
@@ -233,9 +237,11 @@ export function AppShell() {
           </button>
         </div>
       </nav>
+      <PriceModeToast priceMode={priceMode} />
       <div className="app-shell-main">
         <PinnedPriceMigrationNotice />
         <main className="app-page" id="contenu" tabIndex={-1} ref={mainRef}>
+          {pathname !== ROUTES.settings && <PriceModeBadge priceMode={priceMode} />}
           <InfoBanner />
           <ErrorBoundary key={pathname}>
           {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
