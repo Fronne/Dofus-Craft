@@ -215,7 +215,7 @@ describe('Brisage page (specs/061)', () => {
       expect(await screen.findByLabelText(/Coefficient de brisage/)).toBeInTheDocument();
       expect(await screen.findByText('Conseil')).toBeInTheDocument();
       expect(await screen.findByText('Focus Do')).toBeInTheDocument();
-      expect(screen.getByText(/quel que soit le coefficient/)).toBeInTheDocument();
+      expect(screen.getByText(/Le focus rapporte plus que le brisage normal\./)).toBeInTheDocument();
       // DoFocus focus model: with the price of the item known, the coefficient under which breaking stops paying.
       expect(screen.getByText(/Rentable tant que le coefficient reste au-dessus de/).nextElementSibling).toHaveTextContent('%');
       expect(screen.getByText('Meilleur focus').closest('tr')).toHaveTextContent('Dommages');

@@ -269,7 +269,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const adviceTitle = !adviceKnown ? 'Prix manquants' : adviceOk.focusBeatsNormal ? `Focus ${shortRune(adviceOk.bestFocus!)}` : 'Brisez sans focus';
   const adviceHint = !adviceKnown
     ? 'Notez les prix des runes pour obtenir un conseil.'
-    : adviceOk.focusBeatsNormal ? 'Le focus rapporte plus que le brisage normal, quel que soit le coefficient.' : 'Aucun focus ne rapporte plus que le brisage normal, quel que soit le coefficient.';
+    : adviceOk.focusBeatsNormal ? 'Le focus rapporte plus que le brisage normal.' : 'Aucun focus ne rapporte plus que le brisage normal.';
   const breakEvenValue = adviceKnown ? (adviceOk.focusBeatsNormal ? adviceOk.focusBreakEven : adviceOk.normalBreakEven) : undefined;
   const adviceBreakEven = breakEvenValue !== undefined && breakEvenValue > 0 ? breakEvenValue : undefined;
 
