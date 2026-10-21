@@ -10,6 +10,8 @@ La page Brisage garde les **lignes à jet négatif** de l'objet, les affiche en 
 
 Approche : les lignes négatives ne passent **pas** par les lignes de rune. Elles forment une liste à part (`negatives`) que l'analyse reçoit en plus des lignes positives. Elles n'ajoutent donc aucun rendement (`yields`), ce qui évite toute collision avec une ligne positive de la même stat. Côté données, une nouvelle fonction lit les plages négatives de l'objet **sans toucher** à `effectRangesOf`, qui sert aussi à l'index de recherche par stats (spec 064) et au script de build : la recherche ne doit pas trouver un objet à cause d'un malus, et `brisage-items.json` n'a pas à être régénéré.
 
+**Révision (histoire 4, malus passé en positif)** : le jet d'une ligne de malus peut devenir un entier positif (forgemagie). La page traite alors la ligne comme une ligne **exo** (`exo: true` dans `lineInputs`) : runes au coefficient, 50 % en focus, jamais cible. Plafond de poids de 101 via `lineValueLimit`. Le domaine ne change que sur un point : à la fusion de deux lignes d'une même stat, `exo` ne reste vrai que si toutes les parties le sont (une ligne d'origine ne devient pas non-focalisable). Le prix de la rune de chaque malus est récupéré (`runeIds`) et affiché à côté de la ligne, sans bloquer le calcul.
+
 ## Contexte technique
 
 **Langage/Version** : TypeScript (React 18, Vite), tests Vitest

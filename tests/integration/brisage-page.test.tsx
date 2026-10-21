@@ -42,6 +42,7 @@ vi.mock('../../src/data/servers-repository', () => ({
   getServers: vi.fn().mockResolvedValue([{ id: 'mikhal', name: 'Mikhal', type: 'mono' }]),
 }));
 
+import runeItems from '../../src/data/rune-items.json';
 import App from '../../src/app/App';
 import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
@@ -720,6 +721,49 @@ describe('Brisage page (specs/061)', () => {
       expect(within(row).queryByText('Meilleur focus')).not.toBeInTheDocument();
       expect(row.querySelectorAll('td[data-label^="Focus"]')).toHaveLength(2);
       row.querySelectorAll('td[data-label^="Focus"], td[data-label^="Sans focus"]').forEach((cell) => expect(cell).toHaveTextContent('—'));
+    });
+
+    // Histoire 4: forgemagie turned the malus positive; the line then counts like an exo.
+    const SAGESSE_MALUS = { effectId: 124, from: -30, to: -30 };
+    const saRuneId = (runeItems as { runes: { id: string; name: string; effectId: number }[] }).runes.find((rune) => rune.effectId === 124 && rune.name === 'Rune Sa')!.id;
+    const priceCell = (label: string) => field(label).closest('tr')!.querySelector('[data-label="Prix de la rune"]')!;
+    const total = () => document.querySelector('tfoot td[data-label="Sans focus : total"]')?.textContent ?? '';
+
+    it('shows the price of the rune on every malus, and says when it is missing', async () => {
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
+      await openWithMalus([FORCE_MALUS, SAGESSE_MALUS]);
+      await screen.findByLabelText('Jet de Sagesse (malus)');
+      await waitFor(() => expect(priceCell('Jet de Sagesse (malus)')).not.toHaveTextContent('prix manquant'));
+      expect(priceCell('Jet de Force (malus)')).toHaveTextContent('prix manquant');
+    });
+
+    it('counts a malus turned positive like an exo: runes, no focus, back to a malus when the roll is negative again', async () => {
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
+      await openWithMalus([SAGESSE_MALUS]);
+      await screen.findByLabelText('Jet de Sagesse (malus)');
+      const before = total();
+      type('Jet de Sagesse (malus)', '10');
+      const row = field('Jet de Sagesse (malus)').closest('tr')!;
+      await waitFor(() => expect(row).toHaveClass('brisage-line--exo'));
+      expect(within(row).getByText('Malus corrigé')).toBeInTheDocument();
+      expect(row.querySelector('[data-label="Sans focus : runes"]')).not.toHaveTextContent('—');
+      expect(row.querySelector('[data-label="Focus : runes"]')).toHaveTextContent('—');
+      expect(total()).not.toBe(before);
+      type('Jet de Sagesse (malus)', '-30');
+      await waitFor(() => expect(row).toHaveClass('brisage-negative'));
+      expect(total()).toBe(before);
+    });
+
+    it('refuses a positive roll above the weight limit of an exo, and a roll of 0', async () => {
+      await openWithMalus([SAGESSE_MALUS]);
+      await screen.findByLabelText('Jet de Sagesse (malus)');
+      type('Jet de Sagesse (malus)', '34');
+      expect(field('Jet de Sagesse (malus)')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText(/jet maximal 33 : moyen utilisé/)).toBeInTheDocument();
+      type('Jet de Sagesse (malus)', '0');
+      expect(field('Jet de Sagesse (malus)')).toHaveAttribute('aria-invalid', 'true');
+      type('Jet de Sagesse (malus)', '33');
+      expect(field('Jet de Sagesse (malus)')).not.toHaveAttribute('aria-invalid');
     });
 
     it('keeps the page as it was for an item without malus', async () => {

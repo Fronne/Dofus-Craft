@@ -98,6 +98,22 @@ describe('negative lines in the analysis', () => {
       .toBeCloseTo(normalOf(ok(analyzeBrisage(input(20), RUNES, prices))).yields.find((y) => y.effectId === VI)!.count, 10);
   });
 
+  it('keeps a stat a focus target when an exo of the same stat is added to its original line', () => {
+    const analysis = ok(analyzeBrisage({
+      level: 20, coefficient: 80, itemCostKamas: 1000,
+      lines: [...base, { effectId: VI, value: 10, exo: true }],
+    }, RUNES, prices));
+    expect(analysis.options.filter((o) => o.kind === 'focus').map((o) => o.focusEffectId).sort()).toEqual([VI, CHA].sort());
+  });
+
+  it('still refuses a focus on a stat that only exists as an exo', () => {
+    const analysis = ok(analyzeBrisage({
+      level: 20, coefficient: 80, itemCostKamas: 1000,
+      lines: [...base, { effectId: FO, value: 5, exo: true }],
+    }, RUNES, prices));
+    expect(analysis.options.filter((o) => o.kind === 'focus').map((o) => o.focusEffectId).sort()).toEqual([VI, CHA].sort());
+  });
+
   it('refuses an item that only has negative lines', () => {
     const analysis = analyzeBrisage(input(20, { lines: [], negatives: [{ effectId: FO, value: -1 }] }), RUNES, prices);
     expect(analysis.status).toBe('invalid');

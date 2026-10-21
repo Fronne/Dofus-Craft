@@ -69,7 +69,25 @@ Le joueur peut régler le jet d'une ligne négative dans l'étendue de l'objet (
 **Scénarios d'acceptation** :
 
 1. **Étant donné** une ligne négative avec une étendue −15 à −10, **quand** la page s'ouvre, **alors** le jet par défaut est le milieu de l'étendue, arrondi à l'entier inférieur (−13).
-2. **Étant donné** une ligne négative, **quand** le joueur modifie le jet, **alors** il ne peut saisir qu'un nombre négatif dans l'étendue de l'objet.
+2. **Étant donné** une ligne négative, **quand** le joueur saisit un jet négatif dans l'étendue de l'objet, **alors** il est pris en compte ; un jet négatif hors étendue ou égal à 0 est refusé et le jet par défaut reste utilisé.
+
+---
+
+### User Story 4 - Passer un malus en positif après une forgemagie (Priorité : P1)
+
+Un malus peut avoir été retourné en positif par forgemagie (ex. −30 Sagesse devient +10 Sagesse). Le joueur tape alors un jet positif sur la ligne du malus : elle devient une ligne positive comptée comme un exo (une ligne que la forgemagie a créée). Elle donne des runes, son prix compte, elle pèse à 50 % dans un focus et n'est jamais cible d'un focus. Le prix de la rune s'affiche sur toutes les lignes de malus, pour être déjà connu au moment de la bascule.
+
+**Pourquoi cette priorité** : sans cela, un objet corrigé par forgemagie serait sous-estimé et sa ligne resterait bloquée en malus.
+
+**Test indépendant** : sur un objet avec −Sagesse, taper un jet positif et vérifier que la ligne donne des runes et que le gain augmente du prix de ces runes.
+
+**Scénarios d'acceptation** :
+
+1. **Étant donné** une ligne de malus, **quand** le joueur tape un jet positif entier, **alors** la ligne cesse d'être rouge, donne des runes sans focus et compte dans les totaux.
+2. **Étant donné** une ligne de malus passée en positif, **quand** un focus porte sur une autre ligne, **alors** elle compte à 50 % comme un exo, et aucun focus n'est proposé sur elle.
+3. **Étant donné** une ligne de malus, **quand** la page s'affiche, **alors** le prix de sa rune est visible, que le jet soit négatif ou positif.
+4. **Étant donné** un jet positif au-dessus du poids maximal d'un exo (101), **quand** le joueur le saisit, **alors** il est refusé comme pour un exo et le jet par défaut reste utilisé.
+5. **Étant donné** un jet positif qui redevient négatif ou vide, **quand** le joueur le modifie, **alors** la ligne redevient un malus.
 
 ---
 
@@ -94,6 +112,9 @@ Le joueur peut régler le jet d'une ligne négative dans l'étendue de l'objet (
 - **FR-008** : Le résultat DOIT valoir pour les deux modes : coefficient connu, et coefficient inconnu (conseil de focus).
 - **FR-009** : Un objet qui n'a que des lignes négatives DOIT être signalé comme sans ligne exploitable.
 - **FR-010** : Les objets et la session déjà mémorisés avant cette fonction DOIVENT rester lisibles.
+- **FR-012** : Le jet d'une ligne de malus DOIT pouvoir être un entier positif ; la ligne est alors une ligne positive comptée comme un exo (runes au coefficient de l'objet, 50 % dans un focus, jamais cible de focus).
+- **FR-013** : Le poids d'une ligne de malus passée en positif DOIT respecter le plafond de 101 d'un exo.
+- **FR-014** : Le prix de la rune de chaque ligne de malus DOIT être affiché, sans jamais bloquer le calcul quand il manque.
 - **FR-011** : La règle DOIT être présentée comme une estimation, avec ses sources (Kama Master retenu, DoFocus écarté), dans la documentation du projet.
 
 ### Entités clés
@@ -118,4 +139,7 @@ Le joueur peut régler le jet d'une ligne négative dans l'étendue de l'objet (
 - Une étendue qui change de signe (−5 à +5) n'existe pas sur les objets du catalogue ; elle n'est pas gérée.
 - Dans DofusDB, un malus porte son propre identifiant d'effet (« −Force », « −PA »…) : une correspondance vers la stat retirée est nécessaire. Un malus sans correspondance connue est ignoré.
 - Les exos restent positifs : on ne peut pas ajouter d'exo négatif.
-- Le maximum de poids de 101 ne s'applique pas aux lignes négatives.
+- Le maximum de poids de 101 ne s'applique pas à un jet négatif ; il s'applique à un jet passé en positif (FR-013).
+- Une ligne de malus passée en positif se comporte comme un exo et non comme une ligne d'origine : elle n'est pas cible de focus. Si l'objet a déjà une ligne positive de la même stat, les deux s'additionnent et la ligne résultante reste cible de focus.
+- Un objet qui n'a que des malus n'affiche pas de tableau (message « aucune ligne exploitable ») : on n'y saisit donc pas de jet positif. Ces objets n'existent pratiquement pas ; hors périmètre.
+- Un jet de 0 sur un malus est refusé (le malus ne disparaît pas dans la page).

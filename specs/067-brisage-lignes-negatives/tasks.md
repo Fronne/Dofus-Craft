@@ -81,6 +81,21 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 ---
 
+## Phase 5b : Histoire 4 — Passer un malus en positif après une forgemagie (P1)
+
+**Objectif** : un jet positif sur un malus en fait une ligne exo qui donne des runes ; le prix de la rune est visible sur tous les malus.
+
+**Test indépendant** : sur un objet avec −Sagesse, taper un jet positif : la ligne donne des runes, le gain augmente.
+
+- [X] T020 [US4] Dans `src/domain/brisage.ts`, `usableLines` : à la fusion de deux lignes d'une même stat, `exo` n'est vrai que si toutes les parties sont exo (aujourd'hui `known?.exo || line.exo`). Ajouter un test dans `tests/unit/brisage-negative.test.ts` : une ligne d'origine + une ligne exo de la même stat restent cible de focus.
+- [X] T021 [US4] Dans `BrisagePage.tsx` : le jet d'un malus accepte une valeur négative dans l'étendue de la ligne, ou un entier positif de 1 à `lineValueLimit(effectId, SETTINGS)` (plafond 101) ; 0 et le reste sont refusés (jet par défaut, `aria-invalid`, message « jet maximal N : moyen utilisé » au-dessus du plafond). Un malus à jet positif passe dans `lineInputs` avec `exo: true` et non dans `negativeInputs`.
+- [X] T022 [US4] Dans `BrisagePage.tsx` : `ready` accepte aussi un objet sans ligne positive d'origine si un malus est passé en positif (cas d'une session restaurée) ; la note « aucune ligne exploitable » ne s'affiche que s'il n'y a aucune ligne positive, d'origine ou convertie.
+- [X] T023 [US4] Dans `BrisagePage.tsx` : ajouter les runes des malus à `runeIds` pour récupérer leur prix ; afficher le prix de la rune sur toutes les lignes de malus (prix manquant : « prix manquant », sans bloquer). Une ligne passée en positif affiche aussi ses runes et sa valeur, avec « — » en focus, et reprend le style exo (`brisage-line--exo`) avec le badge « Malus corrigé ».
+- [X] T024 [US4] Ajouter à `tests/integration/brisage-page.test.tsx` : (a) le prix de la rune d'un malus est visible ; (b) un jet positif sur un malus fait apparaître des runes et augmente le total ; (c) un jet au-dessus du plafond ou égal à 0 est refusé ; (d) revenir à un jet négatif refait un malus.
+- [X] T025 [US4] Lancer `npm run test`, `tsc` et eslint ; vérifier à la main sur la Cape du Tofu Fou (−Sagesse, −PA).
+
+---
+
 ## Phase 6 : Finitions
 
 - [X] T018 [P] Ajouter à `docs/dofocus-brisage.md` une section « Lignes négatives (specs/067) » : règle retenue (Kama Master), DoFocus écarté, ta règle de forgemagie non reprise, exemple chiffré, mention « estimation, à confirmer par un relevé ».

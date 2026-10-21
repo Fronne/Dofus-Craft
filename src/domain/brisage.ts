@@ -347,7 +347,8 @@ function usableLines(lines: BrisageLine[], runes: RuneItem[], settings: BrisageS
       continue;
     }
     const known = merged.get(line.effectId);
-    merged.set(line.effectId, { effectId: line.effectId, value: (known?.value ?? 0) + line.value, exo: known?.exo || line.exo || undefined });
+    // specs/067: two lines of one stat stay an exo only when both are; an original line is never made unfocusable by an exo.
+    merged.set(line.effectId, { effectId: line.effectId, value: (known?.value ?? 0) + line.value, exo: (known ? known.exo && line.exo : line.exo) || undefined });
   }
   return { lines: [...merged.values()], ignored };
 }
