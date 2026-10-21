@@ -100,7 +100,8 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 **Scénarios d'acceptation** :
 
 1. **Étant donné** une ligne d'origine de maximum 30, **quand** le joueur saisit 33, **alors** le jet 33 est accepté, indiqué comme over, et utilisé dans tous les calculs.
-2. **Étant donné** un jet en over, **quand** le joueur repasse sur Min / Moyen / Max, **alors** le jet revient dans la plage normale.
+2. **Étant donné** une ligne d'origine, **quand** le joueur saisit un jet dont le poids (jet × poids de la stat) dépasse 101, **alors** il est refusé et le jet maximal possible pour cette stat est indiqué.
+3. **Étant donné** un jet en over, **quand** le joueur repasse sur Min / Moyen / Max, **alors** le jet revient dans la plage normale.
 
 ## Cas limites
 
@@ -121,7 +122,7 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 - **FR-006** : Sans focus, un exo produit des runes comme une ligne normale, au coefficient de l'objet.
 - **FR-007** : En focus sur une ligne d'origine, un exo compte à la même part que les autres lignes non ciblées (50 % par défaut, réglable dans les réglages existants).
 - **FR-008** : Un exo ne peut pas être focalisé : aucune option de focus n'est proposée ni calculée pour une ligne exo.
-- **FR-013** : Le jet d'une ligne d'origine peut être réglé au-delà de son maximum (over) en tapant la valeur ; ce jet est utilisé dans tous les calculs et se réinitialise avec Min / Moyen / Max.
+- **FR-013** : Le jet d'une ligne d'origine peut être réglé au-delà de son maximum (over) en tapant la valeur, tant que le poids de la ligne (jet × poids de la stat) ne dépasse pas 101 ; ce jet est utilisé dans tous les calculs et se réinitialise avec Min / Moyen / Max.
 - **FR-009** : Les exos entrent dans les runes obtenues, la valeur en kamas, le gain, la meilleure option, le coefficient minimal rentable, la descente d'objets et le conseil de focus sans coefficient.
 - **FR-010** : Un prix de rune manquant pour un exo est signalé, jamais traité comme 0.
 - **FR-011** : Les exos d'un objet sont conservés avec la saisie de la page, par objet, et restaurés à la reprise de l'objet.
@@ -130,7 +131,7 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 ## Entités clés
 
 - **Ligne exo** : stat que l'objet n'a pas, valeur entière, rattachée à un objet ; participe au calcul comme une ligne séparée, jamais comme cible de focus.
-- **Over** : jet d'une ligne d'origine réglé au-dessus de son maximum ; ce n'est pas un exo.
+- **Over** : jet d'une ligne d'origine réglé au-dessus de son maximum, avec la même limite de poids 101 qu'un exo ; ce n'est pas un exo.
 - **Objet choisi** : objet du catalogue avec ses lignes d'origine et, en plus, ses lignes exo.
 
 ## Hypothèses
