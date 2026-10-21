@@ -10,6 +10,7 @@ import type { Category } from '../../domain/types';
 import { getStoredCoefficient } from '../../persistence/brisage-coefficients';
 import { getSearchPrefs, setSearchPrefs, type SearchPrefs } from '../../persistence/brisage-search-prefs';
 import { ItemCard } from './ItemCard';
+import { ItemCarousel } from './ItemCarousel';
 import { ItemFilters, statChipLabel } from './ItemFilters';
 import { useRunePrices } from './useRunePrices';
 
@@ -91,33 +92,6 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
     [index, query, categoryId, chosen, minLevel, maxLevel, sort, runes, settings, fetched.prices],
   );
 
-  // Vertical wheel scrolls the cards row sideways; at either end it falls through to the page.
-  const carousel = useRef<HTMLUListElement>(null);
-  useEffect(() => {
-    const list = carousel.current;
-    if (!list) return;
-    const onWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-      const max = list.scrollWidth - list.clientWidth;
-      if (max <= 0) return;
-      const atStart = list.scrollLeft <= 0 && event.deltaY < 0;
-      const atEnd = list.scrollLeft >= max - 1 && event.deltaY > 0;
-      if (atStart || atEnd) return;
-      event.preventDefault();
-      list.scrollLeft += event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
-    };
-    // Near the right end, bring in the next cards on their own.
-    const onScroll = () => {
-      if (results.length > visible && list.scrollLeft + list.clientWidth >= list.scrollWidth - 240) setVisible((count) => count + PAGE_SIZE);
-    };
-    list.addEventListener('wheel', onWheel, { passive: false });
-    list.addEventListener('scroll', onScroll);
-    return () => {
-      list.removeEventListener('wheel', onWheel);
-      list.removeEventListener('scroll', onScroll);
-    };
-  });
-
   const levelLabel = minLevel !== undefined && maxLevel !== undefined ? `Niveau ${minLevel} – ${maxLevel}`
     : minLevel !== undefined ? `Niveau ${minLevel} et plus`
       : maxLevel !== undefined ? `Niveau ${maxLevel} et moins` : '';
@@ -177,29 +151,21 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
       {state.status === 'unavailable' && <p className="fm-error" role="alert">La liste des objets est indisponible pour le moment. Réessayez plus tard.</p>}
       {index && !rangeError && (
         <>
-          {/* Like the Recherche page: the count on the left, how many are shown and the way to see more or fewer on the right. */}
-          <div className="brisage-results-meta">
-            <span className="results-meta-count" role="status">
-              {results.length === 0
-                ? (chosen.length > 1 ? 'Aucun objet ne porte toutes ces stats. Retirez une stat ou élargissez les filtres.' : searching ? 'Aucun objet ne correspond à ces filtres.' : 'Aucun objet à afficher.')
-                : `${results.length} objet${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}${chosen.length > 0 ? ' · estimation à 100 % de coefficient, jet moyen' : ''}`}
-            </span>
-            {(results.length > visible || visible > PAGE_SIZE) && (
-              <span className="results-more">
-                <span className="results-more-count">{Math.min(visible, results.length)} sur {results.length}</span>
-                {results.length > visible && (
-                  <button type="button" className="results-more-button" onClick={() => setVisible(visible + PAGE_SIZE)}>
-                    Afficher {Math.min(PAGE_SIZE, results.length - visible)} de plus
-                  </button>
-                )}
-                {visible > PAGE_SIZE && (
-                  <button type="button" className="results-collapse" onClick={() => setVisible(PAGE_SIZE)}>Réduire</button>
-                )}
+          {/* The count is shown under the carousel (and read out here); the carousel loads more cards as it is scrolled. */}
+          {results.length === 0 ? (
+            <div className="brisage-results-meta">
+              <span className="results-meta-count" role="status">
+                {chosen.length > 1 ? 'Aucun objet ne porte toutes ces stats. Retirez une stat ou élargissez les filtres.' : searching ? 'Aucun objet ne correspond à ces filtres.' : 'Aucun objet à afficher.'}
               </span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              <span className="visually-hidden" role="status">{results.length} objet{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}</span>
+              {chosen.length > 0 && <p className="brisage-results-meta">Chiffres en estimation à 100 % de coefficient, jet moyen</p>}
+            </>
+          )}
           {results.length > 0 && (
-            <ul className="results brisage-cards" aria-label="Objets trouvés" ref={carousel}>
+            <ItemCarousel key={`${query}|${categoryId}|${chosen.join(',')}|${minLevel}|${maxLevel}|${sort}`} total={results.length} shown={Math.min(visible, results.length)} onNearEnd={() => { if (results.length > visible) setVisible((count) => count + PAGE_SIZE); }}>
               {results.slice(0, visible).map((result) => (
                 <li key={result.item.id}>
                   <ItemCard
@@ -210,7 +176,7 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
                   />
                 </li>
               ))}
-            </ul>
+            </ItemCarousel>
           )}
         </>
       )}

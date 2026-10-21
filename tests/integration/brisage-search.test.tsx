@@ -173,7 +173,7 @@ describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: /Coiffe du Chasseur/ })).not.toBeInTheDocument());
   });
 
-  it('shows "Afficher plus" beyond six cards', async () => {
+  it('shows the first six cards as a carousel, without a "show more" button', async () => {
     loadIndex.mockResolvedValue({
       ...INDEX,
       items: Array.from({ length: 8 }, (_, i) => ({ id: String(100 + i), name: `Cape numéro ${i}`, level: 10 + i, effects: [{ effectId: 125, from: 1, to: 2 }] })),
@@ -181,10 +181,7 @@ describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
     await openBrisage();
     expect(await screen.findByText(/8 objets trouvés/)).toBeInTheDocument();
     expect(resultNames()).toHaveLength(6);
-    fireEvent.click(screen.getByRole('button', { name: /Afficher 2 de plus/ }));
-    expect(resultNames()).toHaveLength(8);
-    fireEvent.click(screen.getByRole('button', { name: 'Réduire' }));
-    expect(resultNames()).toHaveLength(6);
+    expect(screen.queryByRole('button', { name: /Afficher/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Réduire' })).not.toBeInTheDocument();
   });
 });

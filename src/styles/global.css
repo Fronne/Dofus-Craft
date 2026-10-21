@@ -2597,8 +2597,26 @@ select:focus {
 .brisage-results-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-4); min-height: 44px; color: var(--text); font-size: .88rem; font-weight: 700; }
 .brisage-cards { list-style: none; margin: 0; padding: 0; }
 .brisage-cards > li { display: contents; }
-/* Carousel: one row of cards running off to the right; the wheel scrolls it sideways (ItemFinder). */
-.results.brisage-cards { grid-template-columns: none; grid-template-rows: none; grid-auto-flow: column; grid-auto-columns: min(15rem, 85%); overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: var(--space-2); }
+/* Carousel (ItemCarousel): one row of cards, snapping, with arrows, edge fades, a slim scrollbar and a position counter. */
+.brisage-carousel { position: relative; min-width: 0; margin-top: var(--space-4); }
+.brisage-carousel > .results.brisage-cards { margin-top: 0; grid-template-columns: none; grid-template-rows: none; grid-auto-flow: column; grid-auto-columns: min(15rem, 85%); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-3); scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; cursor: grab; }
+.brisage-carousel .brisage-cards button { scroll-snap-align: start; }
+.brisage-carousel[data-dragging] > .results.brisage-cards { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+.brisage-carousel[data-dragging] .brisage-cards button { pointer-events: none; }
+/* Fades on the edges that still hide cards. */
+.brisage-carousel::before, .brisage-carousel::after { content: ''; position: absolute; top: 0; bottom: 14px; width: 2.5rem; z-index: 1; pointer-events: none; opacity: 1; transition: opacity .2s; }
+.brisage-carousel::before { left: 0; background: linear-gradient(to right, var(--bg, var(--panel)), transparent); }
+.brisage-carousel::after { right: 0; background: linear-gradient(to left, var(--bg, var(--panel)), transparent); }
+.brisage-carousel[data-start]::before, .brisage-carousel[data-end]::after { opacity: 0; }
+.carousel-arrow { position: absolute; top: calc(50% - 7px); z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; transform: translateY(-50%); border: 1px solid var(--border-strong); border-radius: 50%; background: var(--panel-strong); color: var(--text); box-shadow: var(--shadow-md); cursor: pointer; transition: opacity .2s, background-color .15s, border-color .15s, transform .15s; }
+.carousel-arrow--prev { left: -.6rem; }
+.carousel-arrow--next { right: -.6rem; }
+.carousel-arrow:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-bright); transform: translateY(-50%) scale(1.06); }
+.carousel-arrow:disabled { opacity: 0; pointer-events: none; }
+.carousel-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.carousel-counter { margin: 0; text-align: center; color: var(--text-muted); font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .carousel-arrow, .brisage-carousel::before, .brisage-carousel::after { transition: none; } }
+@media (max-width: 640px) { .carousel-arrow { display: none; } }
 .brisage-cards button { width: 100%; height: 100%; text-align: left; display: flex; align-items: center; }
 .brisage-cards .result-item-info { flex: 1 1 auto; }
 .brisage-card-coef { color: var(--text-muted); font-size: .8rem; font-weight: 600; }
