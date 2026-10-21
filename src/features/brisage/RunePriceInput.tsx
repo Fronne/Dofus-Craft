@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { formatKamasInput, parseKamas } from '../../domain/kamas';
+import { formatKamasInput, KAMAS_ICON_URL, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import type { PriceMode } from '../../domain/price-modes';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
@@ -55,14 +55,17 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
 
   return (
     <>
-      <input
-        type="text" inputMode="numeric" className="brisage-price-input" placeholder="prix"
-        aria-label={`Prix de ${runeName}`}
-        value={value}
-        onChange={(event) => setTyped(formatKamasInput(event.target.value))}
-        onBlur={() => { void commit(); }}
-        onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
-      />
+      <span className="kamas-input-wrap brisage-price-wrap">
+        <input
+          type="text" inputMode="numeric" className="brisage-price-input" placeholder="prix"
+          aria-label={`Prix de ${runeName}`}
+          value={value}
+          onChange={(event) => setTyped(formatKamasInput(event.target.value))}
+          onBlur={() => { void commit(); }}
+          onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+        />
+        {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
+      </span>
       {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
       {dialog}
     </>

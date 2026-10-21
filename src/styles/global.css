@@ -2573,7 +2573,8 @@ select:focus {
 .brisage-line--exo .brisage-badge--exo { background: var(--exo); color: var(--bg, #08181c); }
 :root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
 /* specs/067: the unit price of a rune is typed in the table. */
-.brisage-price-input { width: 6.5rem; height: 36px; text-align: right; }
+.brisage-price-wrap { display: inline-block; width: 7.5rem; }
+.brisage-price-input { height: 36px; }
 .brisage-price-missing { display: block; text-align: right; }
 /* specs/067: a malus (negative line) is red, gives no rune and has no focus. */
 .brisage-negative th, .brisage-negative th *, .brisage-negative input.brisage-roll, .brisage-negative .brisage-bound { color: var(--danger); }
