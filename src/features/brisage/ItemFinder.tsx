@@ -8,6 +8,7 @@ import type { RuneItem } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import type { Category } from '../../domain/types';
 import { getStoredCoefficient } from '../../persistence/brisage-coefficients';
+import { useSharedCoefficients } from './use-shared-coefficients';
 import { getSearchPrefs, setSearchPrefs, type SearchPrefs } from '../../persistence/brisage-search-prefs';
 import { ItemCard } from './ItemCard';
 import { ItemCarousel } from './ItemCarousel';
@@ -91,6 +92,10 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
     [index, query, categoryId, chosen, minLevel, maxLevel, sort, runes, settings, fetched.prices],
   );
 
+  // specs/069: the coefficients noted by other players, read for the cards on screen.
+  const shownIds = useMemo(() => results.slice(0, visible).map((result) => result.item.id), [results, visible]);
+  const sharedCoefficientOf = useSharedCoefficients(serverId, shownIds);
+
   const levelLabel = minLevel !== undefined && maxLevel !== undefined ? `Niveau ${minLevel} – ${maxLevel}`
     : minLevel !== undefined ? `Niveau ${minLevel} et plus`
       : maxLevel !== undefined ? `Niveau ${maxLevel} et moins` : '';
@@ -170,7 +175,7 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
                   <ItemCard
                     item={result.item}
                     selected={result.item.id === selectedId}
-                    stored={serverId ? getStoredCoefficient(serverId, result.item.id) : undefined}
+                    stored={sharedCoefficientOf(result.item.id, serverId ? getStoredCoefficient(serverId, result.item.id) : undefined)}
                     onPick={() => onPick({ id: result.item.id, name: result.item.name, level: result.item.level, imageUrl: result.item.imageUrl })}
                   />
                 </li>

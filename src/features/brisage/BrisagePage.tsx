@@ -21,7 +21,8 @@ import {
 import { resolveItemPrice } from '../../domain/brisage-price';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
-import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
+import { getStoredCoefficient, hasImportedCoefficients, listImportableCoefficients, markCoefficientsImported, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
+import { MAX_ENTRIES_PER_SEND, submitCoefficients } from '../../services/brisage-coefficient-api';
 import { getBrisageExos, setBrisageExos } from '../../persistence/brisage-exos';
 import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSource } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
@@ -30,6 +31,7 @@ import { ExoRow, type ExoEntry, type ExoRuneChoice } from './ExoRow';
 import { ItemFinder } from './ItemFinder';
 import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
+import { useSharedCoefficients } from './use-shared-coefficients';
 import { useItemCraftCost } from './useItemCraftCost';
 import { RunePriceInput } from './RunePriceInput';
 import { useRunePrices } from './useRunePrices';
@@ -90,6 +92,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     || (runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && ![...ranges, ...negativeRanges].some((range) => range.effectId === exo.effectId)));
   const exos = exoEntries.filter((exo): exo is ExoEntry & { effectId: number } => exo.effectId !== undefined);
   const [stored, setStored] = useState<StoredCoefficient>();
+  // specs/069: the coefficient shown is the more recent of the one noted on this device and the one shared by the players.
+  const sharedCoefficientOf = useSharedCoefficients(serverId, item ? [item.id] : []);
+  const shownCoefficient = item ? sharedCoefficientOf(item.id, stored) : stored;
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
   // A new item starts with no source chosen ('auto'): the button of the cheaper of the HDV price and the craft cost is lit.
@@ -143,10 +148,27 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     if (serverId && item) setBrisageExos(serverId, item.id, next.flatMap((exo) => (exo.effectId === undefined ? [] : [{ effectId: exo.effectId, value: exo.value }])));
   };
 
+  // specs/069 (FR-006): the notes made before they were shared are sent once, with their original date; the flag is
+  // set only once the server has them, so a failed send is tried again at the next visit.
+  useEffect(() => {
+    if (hasImportedCoefficients()) return;
+    const notes = listImportableCoefficients();
+    if (notes.length === 0) { markCoefficientsImported(); return; }
+    (async () => {
+      for (let start = 0; start < notes.length; start += MAX_ENTRIES_PER_SEND) {
+        if (!(await submitCoefficients(notes.slice(start, start + MAX_ENTRIES_PER_SEND)))) return;
+      }
+      markCoefficientsImported();
+    })();
+  }, []);
+
   const rememberCoefficient = () => {
     const value = parse(coefficientText);
     if (!serverId || !item || !(value > 0 && value <= MAX_COEFFICIENT)) return;
-    setStored(saveCoefficient(serverId, item.id, value));
+    const saved = saveCoefficient(serverId, item.id, value);
+    setStored(saved);
+    // specs/069: shared with the players; if the server doesn't answer, the note stays on this device.
+    if (saved) void submitCoefficients([{ serverId, itemId: item.id, coefficient: value }]);
     setCoefficientText('');
   };
 
@@ -165,7 +187,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const resolvedPrice = !priceLoading && source !== 'custom' ? resolveItemPrice(hdvCost.costKamas, craftCost.costKamas, source) : undefined;
   const typedPrice = parse(manualCost);
   const typedCoefficient = parse(coefficientText);
-  const coefficient = typedCoefficient > 0 ? typedCoefficient : stored?.coefficient ?? NaN;
+  const coefficient = typedCoefficient > 0 ? typedCoefficient : shownCoefficient?.coefficient ?? NaN;
   const cost = resolvedPrice?.kamas ?? (typedPrice > 0 ? typedPrice : NaN);
   const priceOrigin = resolvedPrice
     ? (resolvedPrice.origin === 'craft' ? `Coût de la chaîne de craft (${priceMode === 'community' ? 'mode communautaire' : 'mode personnel'})` : 'Prix noté sur la page Recherche')
@@ -361,7 +383,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             manualCost={manualCost}
             onManualCost={setManualCost}
             noPriceReason={noPriceReason}
-            stored={stored}
+            stored={shownCoefficient}
             coefficientText={coefficientText}
             onCoefficientText={setCoefficientText}
             onRememberCoefficient={rememberCoefficient}

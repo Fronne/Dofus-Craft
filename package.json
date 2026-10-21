@@ -35,6 +35,7 @@
     "worker:db:migrate-sniffer-tables": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0018_add_sniffer_tables.sql --remote",
     "worker:db:migrate-sniffer-origin": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0019_add_sniffer_origin.sql --remote",
     "worker:db:migrate-lot-prices": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0020_add_lot_prices.sql --remote",
+    "worker:db:migrate-brisage-coefficients": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0021_add_brisage_coefficients.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",
     "admin:deploy": "wrangler deploy --config admin-worker/wrangler.toml"

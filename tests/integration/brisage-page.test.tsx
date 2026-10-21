@@ -15,6 +15,15 @@ vi.mock('../../src/services/community-price-api', () => ({
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
+const getSharedCoefficients = vi.fn();
+const submitCoefficients = vi.fn();
+vi.mock('../../src/services/brisage-coefficient-api', () => ({
+  MAX_ITEMS_PER_READ: 98,
+  MAX_ENTRIES_PER_SEND: 100,
+  getSharedCoefficients: (...args: unknown[]) => getSharedCoefficients(...args),
+  submitCoefficients: (...args: unknown[]) => submitCoefficients(...args),
+}));
+
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([]),
   searchItems: vi.fn().mockResolvedValue({ data: [{ id: '777', name: 'Cape du Chef Bwork', level: 100, kind: 'Equipment', categoryId: 'c' }], total: 1 }),
@@ -46,6 +55,7 @@ import runeItems from '../../src/data/rune-items.json';
 import App from '../../src/app/App';
 import { getCommunityPrice, submitCommunityPrice } from '../../src/services/community-price-api';
 import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
+import { forgetSharedCoefficients } from '../../src/features/brisage/use-shared-coefficients';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
@@ -58,6 +68,12 @@ async function openBrisage(mode = 'personal') {
   window.history.pushState({}, '', '/brisage');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+  await screen.findByRole('heading', { name: 'Brisage' });
+}
+
+/** Opens the page again as a returning visitor: the server is already chosen. */
+async function reopenBrisage() {
+  render(<App />);
   await screen.findByRole('heading', { name: 'Brisage' });
 }
 
@@ -79,6 +95,11 @@ describe('Brisage page (specs/061)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
+    forgetSharedCoefficients();
+    getSharedCoefficients.mockReset();
+    getSharedCoefficients.mockResolvedValue(new Map());
+    submitCoefficients.mockReset();
+    submitCoefficients.mockResolvedValue(true);
     getItemEffectRanges.mockReset();
     getItemNegativeRanges.mockReset();
     getItemNegativeRanges.mockResolvedValue([]);
@@ -446,6 +467,77 @@ describe('Brisage page (specs/061)', () => {
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('44 %');
     expect(screen.getByText(/Dernier coefficient/)).toHaveTextContent('12/10/2026');
     expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
+  });
+
+  // specs/069-coefficients-brisage-partages
+  describe('shared coefficients (specs/069)', () => {
+    const LOCAL = 'craftcheck-brisage-coefficients';
+
+    it('shows the coefficient noted by another player, with its date', async () => {
+      getSharedCoefficients.mockResolvedValue(new Map([['777', { coefficient: 52, savedAt: '2026-10-22T09:00:00.000Z' }]]));
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('52 %');
+      expect(screen.getByText(/Dernier coefficient/)).toHaveTextContent('22/10/2026');
+      expect(getSharedCoefficients).toHaveBeenCalledWith('mikhal', expect.arrayContaining(['777']));
+    });
+
+    it('shows the more recent of the shared and the local coefficient', async () => {
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-23T10:00:00.000Z' } }));
+      getSharedCoefficients.mockResolvedValue(new Map([['777', { coefficient: 52, savedAt: '2026-10-22T09:00:00.000Z' }]]));
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('44 %');
+    });
+
+    it('sends the coefficient it remembers, and keeps it on the device', async () => {
+      await openBrisage();
+      await pickCape();
+      const input = await screen.findByLabelText(/Coefficient de brisage/);
+      fireEvent.change(input, { target: { value: '38' } });
+      fireEvent.blur(input);
+      await screen.findByText(/Dernier coefficient/);
+      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 38 }]);
+      expect(JSON.parse(window.localStorage.getItem(LOCAL)!)['mikhal:777'].coefficient).toBe(38);
+    });
+
+    it('falls back on the local coefficient when the server does not answer', async () => {
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' } }));
+      getSharedCoefficients.mockResolvedValue(undefined);
+      submitCoefficients.mockResolvedValue(false);
+      await openBrisage();
+      await pickCape();
+      expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('44 %');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('imports the coefficients of the device once, with their date, and not those before the limit', async () => {
+      window.localStorage.setItem(LOCAL, JSON.stringify({
+        'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' },
+        'mikhal:888': { coefficient: 20, savedAt: '2026-10-12T10:00:00.000Z' },
+      }));
+      await openBrisage();
+      await waitFor(() => expect(submitCoefficients).toHaveBeenCalledTimes(1));
+      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' }]);
+      await waitFor(() => expect(window.localStorage.getItem('craftcheck-brisage-coefficients-imported')).toBe('1'));
+      cleanup();
+      await reopenBrisage();
+      expect(submitCoefficients).toHaveBeenCalledTimes(1);
+    });
+
+    it('tries the import again at the next visit when the server did not answer', async () => {
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' } }));
+      submitCoefficients.mockResolvedValue(false);
+      await openBrisage();
+      await waitFor(() => expect(submitCoefficients).toHaveBeenCalledTimes(1));
+      expect(window.localStorage.getItem('craftcheck-brisage-coefficients-imported')).toBeNull();
+      cleanup();
+      submitCoefficients.mockResolvedValue(true);
+      await reopenBrisage();
+      await waitFor(() => expect(submitCoefficients).toHaveBeenCalledTimes(2));
+    });
   });
 
   it('starts each line at its average roll and lets a roll be typed', async () => {

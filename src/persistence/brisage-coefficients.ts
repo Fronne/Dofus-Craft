@@ -37,3 +37,43 @@ export function saveCoefficient(serverId: string, itemId: string, coefficient: n
   }
   return entry;
 }
+
+/** The more recent of two coefficients (the first on a tie), or the one that exists. */
+export function latestCoefficient(a: StoredCoefficient | undefined, b: StoredCoefficient | undefined): StoredCoefficient | undefined {
+  if (!a || !b) return a ?? b;
+  return Date.parse(b.savedAt) > Date.parse(a.savedAt) ? b : a;
+}
+
+// specs/069-coefficients-brisage-partages (FR-006, FR-007): the coefficients noted before they were shared are sent
+// once to the server, with their original date. Those dated before this instant (21/10/2026 17:30 Paris) are not.
+export const IMPORT_NOT_BEFORE = '2026-10-21T15:30:00.000Z';
+const IMPORTED_KEY = 'craftcheck-brisage-coefficients-imported';
+
+export type ImportableCoefficient = StoredCoefficient & { serverId: string; itemId: string };
+
+export function hasImportedCoefficients(): boolean {
+  try {
+    return window.localStorage.getItem(IMPORTED_KEY) === '1';
+  } catch {
+    return true; // Without storage the flag can't be kept: don't send the same notes at every visit.
+  }
+}
+
+export function markCoefficientsImported(): void {
+  try {
+    window.localStorage.setItem(IMPORTED_KEY, '1');
+  } catch {
+    // Blocked storage: nothing to remember.
+  }
+}
+
+export function listImportableCoefficients(): ImportableCoefficient[] {
+  const limit = Date.parse(IMPORT_NOT_BEFORE);
+  const found: ImportableCoefficient[] = [];
+  for (const [key, entry] of Object.entries(readAll())) {
+    const colon = key.lastIndexOf(':');
+    if (colon <= 0 || colon === key.length - 1 || !isValid(entry) || Date.parse(entry.savedAt) < limit) continue;
+    found.push({ serverId: key.slice(0, colon), itemId: key.slice(colon + 1), coefficient: entry.coefficient, savedAt: entry.savedAt });
+  }
+  return found;
+}

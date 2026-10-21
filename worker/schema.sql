@@ -322,3 +322,17 @@ CREATE TABLE IF NOT EXISTS community_price_lots (
   device_id TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (resource_id, server_id, lot_size)
 );
+
+-- specs/069-coefficients-brisage-partages (migrations/0021_add_brisage_coefficients.sql): the breaking
+-- coefficients noted on the Brisage page, shared between players, kept 90 days.
+CREATE TABLE IF NOT EXISTS brisage_coefficients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  coefficient REAL NOT NULL CHECK (coefficient > 0 AND coefficient <= 4000),
+  noted_at TEXT NOT NULL,
+  device_id TEXT NOT NULL DEFAULT '',
+  UNIQUE (server_id, item_id, noted_at, device_id)
+);
+CREATE INDEX IF NOT EXISTS idx_brisage_coefficients_item ON brisage_coefficients (server_id, item_id, noted_at);
+CREATE INDEX IF NOT EXISTS idx_brisage_coefficients_noted_at ON brisage_coefficients (noted_at);

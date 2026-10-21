@@ -14,6 +14,12 @@ vi.mock('../../src/services/community-price-api', () => ({
   submitCommunityPrice: vi.fn().mockResolvedValue(undefined),
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
+vi.mock('../../src/services/brisage-coefficient-api', () => ({
+  MAX_ITEMS_PER_READ: 98,
+  MAX_ENTRIES_PER_SEND: 100,
+  getSharedCoefficients: vi.fn().mockResolvedValue(new Map()),
+  submitCoefficients: vi.fn().mockResolvedValue(true),
+}));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
   getCategories: vi.fn().mockResolvedValue([]),
@@ -160,7 +166,8 @@ describe('Brisage – filtres et cartes (specs/064, specs/065)', () => {
     expect(await screen.findByRole('heading', { name: 'Anneau Costaud' })).toBeInTheDocument();
     expect(getItemEffectRanges).toHaveBeenCalledWith('4');
     expect(window.localStorage.getItem('craftcheck-brisage-session')).toContain('"id":"4"');
-    expect(Object.keys(window.localStorage).filter((key) => key.includes('coefficient'))).toEqual([]);
+    // specs/069: the one-time import flag is not a coefficient.
+    expect(Object.keys(window.localStorage).filter((key) => key.includes('coefficient') && !key.endsWith('-imported'))).toEqual([]);
     // The cards stay there to pick another item, the chosen one marked.
     expect(screen.getByRole('button', { name: /Anneau Costaud/ })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: /Cape du Sage/ }));

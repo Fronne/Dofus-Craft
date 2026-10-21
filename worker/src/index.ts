@@ -4,6 +4,7 @@ import { readPlayerCounters } from './player-counters';
 import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
 import { lotPricesResponse } from './lot-prices';
+import { coefficientsResponse, insertCoefficients, parseCoefficientPayload, purgeExpiredCoefficients } from './brisage-coefficients';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
@@ -154,6 +155,11 @@ export default {
       return cachedJson(url, () => lotPricesResponse(env.DB, url));
     }
 
+    // specs/069-coefficients-brisage-partages: the latest breaking coefficient noted for each item.
+    if (request.method === 'GET' && url.pathname === '/brisage-coefficients') {
+      return cachedJson(url, () => coefficientsResponse(env.DB, url));
+    }
+
     // specs/016-shared-item-prices: an item's shared HDV price — its latest contribution, no median.
     if (request.method === 'GET' && url.pathname === '/latest-price') {
       return cachedJson(url, () => latestPriceResponse(env.DB, url));
@@ -214,6 +220,26 @@ export default {
       return handlePostContribution(request, env);
     }
 
+    // specs/069-coefficients-brisage-partages: any player notes (or imports) breaking coefficients, with the
+    // same app key and per-IP limiter as the price contributions; no player identity is stored.
+    if (request.method === 'POST' && url.pathname === '/brisage-coefficients') {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      if (env.CONTRIBUTION_LIMITER && !(await env.CONTRIBUTION_LIMITER.limit({ key: ip })).success) {
+        return json({ error: 'Too many contributions, try again in a minute' }, 429);
+      }
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON body' }, 400);
+      }
+      const payload = parseCoefficientPayload(body);
+      if (!payload) return json({ error: 'deviceId and 1 to 100 entries (serverId, itemId, coefficient in ]0, 4000], optional notedAt within the last 90 days) are required' }, 400);
+      await insertCoefficients(env.DB, payload);
+      clearReadCache();
+      return json({ stored: payload.entries.length }, 201);
+    }
+
     // specs/045-restore-production-worker: a player asks for a recipe's prices to be read again now.
     if (request.method === 'POST' && url.pathname === '/external-prices/refresh') {
       if (env.HUZOUNET_SYNC !== '1') return json({ error: 'disabled' }, 503);
@@ -256,6 +282,8 @@ export default {
       const removed = await purgeExpiredContributions(env.DB);
       console.log(`Retention: ${removed} contribution(s) older than 90 days removed (latest item prices kept)`);
       await purgeStaleExternalPrices(env.DB, retentionCutoff());
+      // specs/069: the same 90 days for the shared breaking coefficients.
+      console.log(`Retention: ${await purgeExpiredCoefficients(env.DB)} brisage coefficient(s) older than 90 days removed`);
       return;
     }
     if (env.HUZOUNET_SYNC !== '1') return;
