@@ -90,20 +90,27 @@ export function ExoRow({ entry, choices, plain, onPick, onValue, onRemove }: {
         <span className="brisage-line-name" title={chosen?.label}>
           <RunePicker chosen={chosen} choices={choices} onPick={onPick} />
           <span className="brisage-badge brisage-badge--exo">Exo</span>
+          <button type="button" className="brisage-exo-remove" aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} onClick={onRemove} title="Retirer l'exo">×</button>
         </span>
       </th>
       <td role="cell" data-label="Jet de l'exo">
-        <input
-          type="number" inputMode="numeric" min={1} max={chosen?.max} step={1}
-          className="brisage-roll brisage-exo-value"
-          aria-label={`Valeur de l'exo${chosen ? ` ${chosen.label}` : ''}`}
-          aria-invalid={invalid || undefined} disabled={!chosen}
-          value={text} onChange={(event) => type(event.target.value)}
-        />
-        <button type="button" className="brisage-exo-remove" aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} onClick={onRemove}>Retirer</button>
-        <span className="brisage-roll-state fm-note">
-          {!chosen ? "choisissez une rune" : invalid ? `de 1 à ${chosen.max} (poids max 101)` : `max ${chosen.max}`}
+        {/* Same layout as the roll of the other lines: lowest value, the field, highest value. */}
+        <span className="brisage-jet">
+          <span className="brisage-bound">{chosen ? 1 : ''}</span>
+          <input
+            type="number" inputMode="numeric" min={1} max={chosen?.max} step={1}
+            className="brisage-roll brisage-exo-value"
+            aria-label={`Valeur de l'exo${chosen ? ` ${chosen.label}` : ''}`}
+            aria-invalid={invalid || undefined} disabled={!chosen}
+            value={text} onChange={(event) => type(event.target.value)}
+          />
+          <span className="brisage-bound" title="Poids maximal 101">{chosen?.max ?? ''}</span>
         </span>
+        {(!chosen || invalid) && (
+          <span className="brisage-exo-state fm-note" role={invalid ? 'alert' : undefined}>
+            {!chosen ? 'choisissez une rune' : `de 1 à ${chosen.max} (poids max 101)`}
+          </span>
+        )}
       </td>
       <td role="cell" data-label="Prix de la rune">{!chosen ? '—' : plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
       <td role="cell" data-label="Sans focus : runes">{plain ? number.format(Math.round(plain.count)) : '—'}</td>

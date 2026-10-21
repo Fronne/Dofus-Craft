@@ -589,7 +589,7 @@ describe('Brisage page (specs/061)', () => {
       await ready();
       addExo('Rune Fo Force', 'Force', '5');
       const input = screen.getByLabelText("Valeur de l'exo Force");
-      expect(screen.getByText('max 101')).toBeInTheDocument();
+      expect(screen.getByTitle('Poids maximal 101')).toHaveTextContent('101');
       for (const bad of ['150', '0', '2.5', '']) {
         fireEvent.change(input, { target: { value: bad } });
         expect(input).toHaveAttribute('aria-invalid', 'true');
