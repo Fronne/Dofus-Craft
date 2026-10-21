@@ -2510,7 +2510,9 @@ select:focus {
 .brisage-table tfoot th, .brisage-table tfoot td { font-weight: 700; border-bottom: 0; }
 .brisage-table .kamas-amount { justify-content: flex-end; }
 .brisage-line-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
-.brisage-roll { width: 4.5rem; height: 40px; text-align: right; }
+.brisage-roll { width: 4.5rem; height: 40px; text-align: center; }
+.brisage-table .brisage-total-gain { color: var(--success); }
+.brisage-table .brisage-total-loss { color: var(--danger); }
 .brisage-jet { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); }
 .brisage-bound { min-width: 2rem; font-size: .9rem; color: var(--text-muted); }
 .brisage-table .brisage-jet-head, .brisage-table td:nth-child(2) { text-align: center; }
@@ -2586,9 +2588,6 @@ select:focus {
 .brisage-field .brisage-price-source input { width: 1px; height: 1px; }
 .brisage-price-origin { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--panel-soft); color: var(--text-muted); font-size: .8rem; }
 .brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
-.brisage-gains-now { display: grid; gap: 4px; padding: var(--space-4); border: 2px solid var(--link); border-radius: var(--radius-md); background: color-mix(in srgb, var(--link) 12%, transparent); font-variant-numeric: tabular-nums; }
-.brisage-gains-now .brisage-gain-label { color: var(--link); font-weight: 600; }
-.brisage-gain-coef { font-size: 1.8rem; font-weight: 700; }
 .brisage-gains-next { display: grid; gap: var(--space-2); }
 @media (max-width: 40rem) { .brisage-gains-layout { grid-template-columns: 1fr; } }
 .brisage-gain-label { font-size: .85rem; color: var(--text-muted); }
@@ -2634,9 +2633,7 @@ select:focus {
 .brisage-both-prices { display: block; }
 .brisage-coef input.is-missing { border-style: dashed; border-color: var(--warning, #c77d1a); }
 .brisage-footline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); padding: var(--space-3) var(--space-4); }
-.brisage-footline .brisage-estimate-value { margin: 0; }
 .brisage-footline .brisage-gains-layout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); }
-.brisage-footline .brisage-gains-now { padding: 0; border: 0; background: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
 .brisage-footline .brisage-gains-next { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .brisage-footline .brisage-gains { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .brisage-footline .brisage-gains li { padding: var(--space-1) var(--space-3); }
