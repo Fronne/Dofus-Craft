@@ -88,9 +88,9 @@ export function ExoRow({ entry, choices, plain, onPick, onValue, onRemove }: {
     <tr role="row" className="brisage-line--exo">
       <th scope="row" role="rowheader" data-label="Rune">
         <span className="brisage-line-name" title={chosen?.label}>
+          <button type="button" className="brisage-exo-remove" aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} onClick={onRemove} title="Retirer l'exo">×</button>
           <RunePicker chosen={chosen} choices={choices} onPick={onPick} />
           <span className="brisage-badge brisage-badge--exo">Exo</span>
-          <button type="button" className="brisage-exo-remove" aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} onClick={onRemove} title="Retirer l'exo">×</button>
         </span>
       </th>
       <td role="cell" data-label="Jet de l'exo">
