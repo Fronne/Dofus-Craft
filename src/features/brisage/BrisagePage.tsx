@@ -224,7 +224,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     : undefined;
   // specs/063: without a coefficient the table and a focus advice are still shown (normal breaking at 100 %).
   const advice = ready && !(coefficient > 0)
-    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs }, RUNES, fetched.prices, SETTINGS)
+    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, fetched.prices, SETTINGS)
     : undefined;
   const adviceOk = advice?.status === 'ok' ? advice : undefined;
   // specs/063: the value of the runes of one breaking, known before breaking anything: the lines (with the
@@ -251,7 +251,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     if (option.missingRuneIds.length > 0) return undefined;
     return costKnown ? option.valueKamas - cost : option.valueKamas;
   };
-  const highlightedEffectId = noCoefficient ? bestFocus?.focusEffectId : focusWins ? best?.focusEffectId : undefined;
+  const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : focusWins ? best?.focusEffectId : undefined;
   const currentGain = ok ? normal?.gainKamas : undefined;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
@@ -264,13 +264,14 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
   const invalidReason = analysis?.status === 'invalid' ? analysis.reason : advice?.status === 'invalid' ? advice.reason : undefined;
   // specs/063: the advice shown while the coefficient is unknown.
-  const switchCoefficient = adviceOk?.switchCoefficient;
-  const adviceTitle = adviceOk?.bestFocus && switchCoefficient !== undefined
-    ? `Focus ${shortRune(adviceOk.bestFocus)} sous ${number.format(switchCoefficient)} %`
-    : adviceOk?.bestFocus ? `Focus ${shortRune(adviceOk.bestFocus)}` : 'Prix manquants';
-  const adviceHint = adviceOk?.bestFocus && switchCoefficient !== undefined
-    ? `Au-dessus de ce coefficient, brisez sans focus.${switchCoefficient > 100 ? ' Le focus reste conseillé sur les coefficients courants.' : ''}`
-    : adviceOk?.bestFocus ? 'Le brisage normal ne vaut rien à 100 % : pas de coefficient de bascule.' : 'Notez les prix des runes pour obtenir un conseil.';
+  // DoFocus model: focus and normal breaking both scale with the coefficient, so the better one does not depend on it.
+  const adviceKnown = adviceOk?.bestFocus !== undefined && adviceOk.focusBeatsNormal !== undefined;
+  const adviceTitle = !adviceKnown ? 'Prix manquants' : adviceOk.focusBeatsNormal ? `Focus ${shortRune(adviceOk.bestFocus!)}` : 'Brisez sans focus';
+  const adviceHint = !adviceKnown
+    ? 'Notez les prix des runes pour obtenir un conseil.'
+    : adviceOk.focusBeatsNormal ? 'Le focus rapporte plus que le brisage normal, quel que soit le coefficient.' : 'Aucun focus ne rapporte plus que le brisage normal, quel que soit le coefficient.';
+  const breakEvenValue = adviceKnown ? (adviceOk.focusBeatsNormal ? adviceOk.focusBreakEven : adviceOk.normalBreakEven) : undefined;
+  const adviceBreakEven = breakEvenValue !== undefined && breakEvenValue > 0 ? breakEvenValue : undefined;
 
   return (
     <>
@@ -321,9 +322,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               {adviceOk && (
                 <section className="brisage-part market-price-panel item-verdict-panel" aria-live="polite">
                   <div className="market-price-summary">
-                    <div className={`verdict brisage-verdict verdict--${adviceOk.bestFocus && switchCoefficient !== undefined ? 'craft' : 'insufficient-data'}`}>
+                    <div className={`verdict brisage-verdict verdict--${adviceKnown ? 'craft' : 'insufficient-data'}`}>
                       <div className="verdict-head">
-                        <span className="verdict-icon" aria-hidden="true"><Icon name={adviceOk.bestFocus && switchCoefficient !== undefined ? 'check' : 'info'} size={22} /></span>
+                        <span className="verdict-icon" aria-hidden="true"><Icon name={adviceKnown ? 'check' : 'info'} size={22} /></span>
                         <div className="verdict-text">
                           <span className="brisage-verdict-label">Conseil</span>
                           <p className="verdict-title">{adviceTitle}</p>
@@ -331,6 +332,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <p className="verdict-subtitle">Coefficient inconnu : indiquez-le (relevé en jeu) pour un verdict précis.</p>
                         </div>
                       </div>
+                      {adviceBreakEven !== undefined && (
+                        <dl className="brisage-facts">
+                          <div><dt>Rentable tant que le coefficient reste au-dessus de</dt><dd>{number.format(adviceBreakEven)} %</dd></div>
+                        </dl>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -356,10 +362,17 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         {verdict.hint && <p className="verdict-subtitle">{verdict.hint}</p>}
                       </div>
                     </div>
-                    {ok.thresholdCoefficient !== undefined && (
+                    {(ok.thresholdCoefficient !== undefined || ok.focusThresholdCoefficient !== undefined) && (
                       <dl className="brisage-facts">
-                        <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(ok.thresholdCoefficient)} %</dd></div>
-                        <div><dt>Brisages possibles avant ce seuil</dt><dd>{ok.itemsCount}</dd></div>
+                        {ok.thresholdCoefficient !== undefined && (
+                          <div><dt>Sans focus, rentable jusqu'à</dt><dd>{number.format(ok.thresholdCoefficient)} %</dd></div>
+                        )}
+                        {ok.focusThresholdCoefficient !== undefined && bestFocus && (
+                          <div><dt>Focus {shortRune(bestFocus)}, rentable jusqu'à</dt><dd>{number.format(ok.focusThresholdCoefficient)} %</dd></div>
+                        )}
+                        {ok.thresholdCoefficient !== undefined && (
+                          <div><dt>Brisages possibles avant ce seuil</dt><dd>{ok.itemsCount}</dd></div>
+                        )}
                       </dl>
                     )}
                   </div>

@@ -134,7 +134,7 @@ export type BrisageSettings = {
   lineBonus: number;
   /** H3 – share of the focused line's weight that is kept (100 %). */
   focusTargetShare: number;
-  /** H3 – share of the other lines' weight that is kept while focusing (50 %). */
+  /** H3 – share of the other lines' weight that goes into the focused rune (50 %); those lines give no rune. */
   focusOtherShare: number;
   /** Weight of a Ba / Pa / Ra rune relative to the simple rune. */
   sizeMultipliers: Record<RuneSize, number>;
@@ -291,6 +291,8 @@ export type BrisageAnalysis =
     options: BrisageOption[];
     best?: BrisageOption;
     thresholdCoefficient?: number;
+    /** Same threshold for the best focus. */
+    focusThresholdCoefficient?: number;
     itemsCount?: number;
     descent: DescentStep[];
     /** Effects the item has that the table does not know (or without a rune): not counted. */
@@ -321,7 +323,8 @@ function buildOption(
   kind: BrisageOption['kind'],
   focusEffectId: number | undefined,
   lines: BrisageLine[],
-  shareOf: (effectId: number) => number,
+  /** Share of the coefficient that applies (1 = 100 %). */
+  scale: number,
   input: BrisageInput,
   runes: RuneItem[],
   prices: Record<string, number | undefined>,
@@ -330,16 +333,23 @@ function buildOption(
   const yields: RuneYield[] = [];
   const missing: string[] = [];
   let value = 0;
+  // DoFocus model (docs/dofocus-brisage.md): a focus puts the target's whole weight plus a share of the other lines' weight
+  // into the target rune; the other lines give nothing. Everything is scaled by the coefficient.
+  const weightOf = (line: BrisageLine) => lineWeight(line.value, statSetting(settings, line.effectId)!.weight, input.level, settings);
+  const focusWeight = focusEffectId === undefined ? 0 : lines.reduce(
+    (sum, line) => sum + weightOf(line) * (line.effectId === focusEffectId ? settings.focusTargetShare : settings.focusOtherShare), 0,
+  );
   for (const line of lines) {
     const setting = statSetting(settings, line.effectId)!;
     const { rune, size } = runeForStat(runes, line.effectId, settings.runeSize)!;
     const runeWeight = setting.weight * setting.runePoints * settings.sizeMultipliers[size];
-    const weight = lineWeight(line.value, setting.weight, input.level, settings);
-    const count = runesForLine(weight, shareOf(line.effectId), runeWeight);
+    const count = focusEffectId === undefined
+      ? runesForLine(weightOf(line), scale, runeWeight)
+      : line.effectId === focusEffectId ? runesForLine(focusWeight, scale, runeWeight) : 0;
     const unit = prices[rune.id];
     const priced = typeof unit === 'number' && unit > 0;
-    if (!priced) missing.push(rune.id);
-    else value += count * unit;
+    if (count > 0 && !priced) missing.push(rune.id);
+    else if (count > 0 && priced) value += count * unit;
     yields.push({
       effectId: line.effectId, runeId: rune.id, runeName: rune.name, runeSize: size, count,
       unitPriceKamas: priced ? unit : undefined, valueKamas: priced ? count * unit : undefined,
@@ -365,20 +375,20 @@ export function analyzeBrisage(
   if (!(input.itemCostKamas >= 0)) return { status: 'invalid', reason: "Saisissez le coût de l'objet (0 s'il ne coûte rien)." };
   if (!(input.level >= 1)) return { status: 'invalid', reason: "Le niveau de l'objet doit être au moins 1." };
 
-  const normal = buildOption('normal', undefined, lines, () => input.coefficient / 100, input, runes, prices, settings);
-  const focuses = lines.filter((line) => !line.exo).map((line) => buildOption(
-    'focus', line.effectId, lines,
-    (effectId) => (effectId === line.effectId ? settings.focusTargetShare : settings.focusOtherShare),
-    input, runes, prices, settings,
-  ));
+  const scale = input.coefficient / 100;
+  const normal = buildOption('normal', undefined, lines, scale, input, runes, prices, settings);
+  const focuses = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, scale, input, runes, prices, settings));
   const all = [normal, ...focuses];
   const complete = all.filter((o) => o.gainKamas !== undefined).sort((a, b) => b.gainKamas! - a.gainKamas!);
   const incomplete = all.filter((o) => o.gainKamas === undefined);
   const options = [...complete, ...incomplete];
 
   let thresholdCoefficient: number | undefined;
+  let focusThresholdCoefficient: number | undefined;
   let itemsCount: number | undefined;
   let descent: DescentStep[] = [];
+  const bestFocus = complete.find((option) => option.kind === 'focus');
+  if (bestFocus) focusThresholdCoefficient = minimumProfitableCoefficient(input.coefficient, input.itemCostKamas, bestFocus.valueKamas);
   if (normal.gainKamas !== undefined) {
     thresholdCoefficient = minimumProfitableCoefficient(input.coefficient, input.itemCostKamas, normal.valueKamas);
     if (thresholdCoefficient !== undefined) {
@@ -390,14 +400,14 @@ export function analyzeBrisage(
       itemsCount = steps.length;
     }
   }
-  return { status: 'ok', options, best: complete[0], thresholdCoefficient, itemsCount, descent, ignoredEffectIds: ignored };
+  return { status: 'ok', options, best: complete[0], thresholdCoefficient, focusThresholdCoefficient, itemsCount, descent, ignoredEffectIds: ignored };
 }
 
-// specs/063-brisage-sans-coefficient: advice when the coefficient is unknown. The normal breaking
-// is proportional to the coefficient, a focus is not, so the two meet at a switch coefficient.
-// The price of the item cancels out of that comparison.
+// specs/063-brisage-sans-coefficient, corrected by the DoFocus focus model (docs/dofocus-brisage.md): advice when the coefficient is unknown.
+// Normal breaking and focus are both proportional to the coefficient, so which of the two pays more does
+// not depend on it. The price of the item only moves the coefficient below which breaking stops paying.
 
-export type FocusAdviceInput = { level: number; lines: BrisageLine[] };
+export type FocusAdviceInput = { level: number; lines: BrisageLine[]; itemCostKamas?: number };
 
 export type FocusAdvice =
   | { status: 'invalid'; reason: string }
@@ -408,8 +418,12 @@ export type FocusAdvice =
     focusOptions: BrisageOption[];
     /** The priced focus worth the most (first line wins a tie); absent while a rune has no price. */
     bestFocus?: BrisageOption;
-    /** Below this coefficient (%) the best focus pays more than breaking normally. */
-    switchCoefficient?: number;
+    /** Whether the best focus is worth more than breaking normally (at any coefficient). */
+    focusBeatsNormal?: boolean;
+    /** Coefficient (%) under which breaking normally no longer covers the item price; needs `itemCostKamas`. */
+    normalBreakEven?: number;
+    /** Same for the best focus. */
+    focusBreakEven?: number;
     missingRuneIds: string[];
   };
 
@@ -424,17 +438,24 @@ export function analyzeFocusAdvice(
   if (!(input.level >= 1)) return { status: 'invalid', reason: "Le niveau de l'objet doit être au moins 1." };
 
   const base: BrisageInput = { level: input.level, lines, coefficient: 100, itemCostKamas: 0 };
-  const reference = buildOption('normal', undefined, lines, () => 1, base, runes, prices, settings);
-  const focusOptions = lines.filter((line) => !line.exo).map((line) => buildOption(
-    'focus', line.effectId, lines,
-    (effectId) => (effectId === line.effectId ? settings.focusTargetShare : settings.focusOtherShare),
-    base, runes, prices, settings,
-  ));
+  const reference = buildOption('normal', undefined, lines, 1, base, runes, prices, settings);
+  const focusOptions = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, 1, base, runes, prices, settings));
   const priced = focusOptions.filter((option) => option.missingRuneIds.length === 0);
   const bestFocus = priced.reduce<BrisageOption | undefined>((best, option) => (!best || option.valueKamas > best.valueKamas ? option : best), undefined);
-  const switchCoefficient = bestFocus && reference.missingRuneIds.length === 0 && reference.valueKamas > 0
-    ? (100 * bestFocus.valueKamas) / reference.valueKamas
+  const referenceKnown = reference.missingRuneIds.length === 0;
+  // Undefined (no advice) while the runes are worth nothing: neither choice pays.
+  const focusBeatsNormal = bestFocus && referenceKnown && Math.max(bestFocus.valueKamas, reference.valueKamas) > 0
+    ? bestFocus.valueKamas > reference.valueKamas
     : undefined;
+  const cost = input.itemCostKamas;
+  const breakEven = (option: BrisageOption | undefined) => (
+    option && option.missingRuneIds.length === 0 && option.valueKamas > 0 && typeof cost === 'number' && cost >= 0
+      ? (100 * cost) / option.valueKamas
+      : undefined
+  );
   const missingRuneIds = [...new Set([...reference.missingRuneIds, ...focusOptions.flatMap((o) => o.missingRuneIds)])];
-  return { status: 'ok', reference, focusOptions, bestFocus, switchCoefficient, missingRuneIds };
+  return {
+    status: 'ok', reference, focusOptions, bestFocus, focusBeatsNormal,
+    normalBreakEven: breakEven(reference), focusBreakEven: breakEven(bestFocus), missingRuneIds,
+  };
 }

@@ -93,4 +93,11 @@ Sans focus : runes(stat) = Ml(jet) × coef/100 / poids      (arrondi à 2 décim
 - **Over** : une stat déjà présente sur l'objet ne s'ajoute pas en exo ; on tape un jet au-dessus du maximum de la ligne. Même plafond de 101, mais le maximum naturel de la ligne n'est jamais refusé.
 - **Affichage** : les exos sont en tête du tableau, en bleu (`--exo`), le dernier ajouté en premier. Conservés par serveur et par objet (`craftcheck-brisage-exos`).
 
+## Modèle de focus corrigé
+
+- **Avant** : le focus ne dépendait pas du coefficient, et les autres lignes gardaient 50 % de leurs runes.
+- **Maintenant (modèle DoFocus)** : `runes(F) = (poids(F) + 50 % × Σ poids des autres lignes, exos compris) × coef/100 / poids de la rune`. Les autres lignes ne donnent aucune rune. Raison : l'utilisateur a observé en jeu qu'un focus rend moins de runes quand le coefficient baisse.
+- **Conséquence** : le sans-focus et le focus sont tous deux proportionnels au coefficient. Le meilleur des deux ne dépend donc plus du coefficient (il se décide aux prix des runes), et il n'y a plus de « coefficient de bascule ». Le prix de l'objet fixe seulement le coefficient en dessous duquel briser ne couvre plus l'objet : `100 × prix de l'objet ÷ valeur des runes à 100 %`.
+- **Relevé de référence** (Cape du Chef Bwork, focus Dommages, coef 50 %) : 6 runes Do observées, le modèle en donne 4,9 en espérance (l'ancien modèle donnait 6,05). Une seule mesure, tirage aléatoire : à reconfirmer par d'autres relevés.
+
 Sources : <https://dofocus.fr/guide/>, <https://dofocus.fr/faq/>.

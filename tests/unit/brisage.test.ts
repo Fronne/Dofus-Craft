@@ -112,15 +112,15 @@ describe('analyzeBrisage', () => {
     return { ...base, ...overrides };
   };
 
-  it('H3 – a focus on Dommages gives about 6 Do runes (6 observed)', () => {
+  it('H3 – a focus on Dommages gives about 5 Do runes at coef 50 % (6 observed, a random roll)', () => {
     const result = analyzeBrisage(cape, RUNES, prices(), settings);
     if (result.status !== 'ok') throw new Error('invalid');
     const focus = result.options.find((o) => o.focusEffectId === DO)!;
     const dommages = focus.yields.find((y) => y.effectId === DO)!;
-    expect(dommages.count).toBeCloseTo(6.05, 2);
-    // the other lines keep 50 % of their weight, the same as the normal breaking at coef 50 %
-    const normal = result.options.find((o) => o.kind === 'normal')!;
-    expect(focus.yields.find((y) => y.effectId === VI)!.count).toBeCloseTo(normal.yields.find((y) => y.effectId === VI)!.count, 6);
+    // DoFocus model: the target's weight plus half of the others', times the coefficient (DoFocus model)
+    expect(dommages.count).toBeCloseTo(4.93, 2);
+    // the other lines give nothing in a focus
+    expect(focus.yields.find((y) => y.effectId === VI)!.count).toBe(0);
   });
 
   it('ranks the focus on an expensive rune first and names it', () => {
@@ -142,11 +142,14 @@ describe('analyzeBrisage', () => {
   it('puts options missing a rune price after the priced ones, without a gain', () => {
     const result = analyzeBrisage(cape, RUNES, { [runeId(VI)]: 5, [runeId(CHA)]: 5, [runeId(AGI)]: 5, [runeId(PRO)]: 5 }, settings);
     if (result.status !== 'ok') throw new Error('invalid');
-    expect(result.options.every((o) => o.gainKamas === undefined)).toBe(true);
-    expect(result.best).toBeUndefined();
+    // The normal breaking and the focus on Dommages need the Do rune; a focus on another line does not.
+    const normal = result.options.find((o) => o.kind === 'normal')!;
+    expect(normal.gainKamas).toBeUndefined();
+    expect(normal.missingRuneIds).toContain(runeId(DO));
+    expect(result.options.find((o) => o.focusEffectId === DO)!.gainKamas).toBeUndefined();
+    expect(result.options.at(-1)!.gainKamas).toBeUndefined();
     expect(result.thresholdCoefficient).toBeUndefined();
     expect(result.itemsCount).toBeUndefined();
-    expect(result.options[0].missingRuneIds).toContain(runeId(DO));
   });
 
   it('gives the threshold, the number of items and a descent consistent with them', () => {

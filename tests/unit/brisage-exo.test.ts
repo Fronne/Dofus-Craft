@@ -42,13 +42,13 @@ describe('exo in the analysis', () => {
     expect(focuses.map((o) => o.focusEffectId).sort()).toEqual([VI, CHA].sort());
   });
 
-  it('counts the exo at the share of the other lines when another line is focused', () => {
-    const settings = defaultBrisageSettings();
-    const analysis = ok(analyzeBrisage(input([{ exo: true, effectId: FO, value: 5 }, ...base]), RUNES, prices, settings));
-    const normal = analysis.options.find((o) => o.kind === 'normal')!;
-    const focus = analysis.options.find((o) => o.kind === 'focus' && o.focusEffectId === VI)!;
-    const full = normal.yields.find((y) => y.effectId === FO)!.count / 0.8;
-    expect(focus.yields.find((y) => y.effectId === FO)!.count).toBeCloseTo(full * settings.focusOtherShare, 6);
+  it('gives no rune for the exo when another line is focused, but adds its weight to the focused rune', () => {
+    const withExo = ok(analyzeBrisage(input([{ exo: true, effectId: FO, value: 5 }, ...base]), RUNES, prices));
+    const without = ok(analyzeBrisage(input(base), RUNES, prices));
+    const focusWith = withExo.options.find((o) => o.kind === 'focus' && o.focusEffectId === VI)!;
+    const focusWithout = without.options.find((o) => o.kind === 'focus' && o.focusEffectId === VI)!;
+    expect(focusWith.yields.find((y) => y.effectId === FO)!.count).toBe(0);
+    expect(focusWith.yields.find((y) => y.effectId === VI)!.count).toBeGreaterThan(focusWithout.yields.find((y) => y.effectId === VI)!.count);
   });
 
   it('keeps the threshold and the descent consistent with the exo value', () => {
@@ -79,13 +79,13 @@ describe('exo in the focus advice', () => {
     return result;
   };
 
-  it('offers no focus on the exo but counts it in the reference and in the switch coefficient', () => {
+  it('offers no focus on the exo but counts it in the reference and in the focus', () => {
     const lines = [{ exo: true, effectId: SA, value: 10 }, ...base];
     const withExo = advice(lines);
     const without = advice(base);
     expect(withExo.focusOptions.map((o) => o.focusEffectId)).not.toContain(SA);
     expect(withExo.reference.valueKamas).toBeGreaterThan(without.reference.valueKamas);
-    expect(withExo.switchCoefficient).not.toBeCloseTo(without.switchCoefficient!, 6);
+    expect(withExo.bestFocus!.valueKamas).toBeGreaterThan(without.bestFocus!.valueKamas);
   });
 });
 

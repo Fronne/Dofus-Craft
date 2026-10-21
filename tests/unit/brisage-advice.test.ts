@@ -15,26 +15,25 @@ const ok = (advice: ReturnType<typeof analyzeFocusAdvice>) => {
 };
 
 describe('analyzeFocusAdvice', () => {
-  it('picks the priced focus worth the most and gives the switch coefficient', () => {
+  it('picks the priced focus worth the most and says it beats the normal breaking', () => {
     const advice = ok(analyzeFocusAdvice({ level: 100, lines }, RUNES, prices));
     const best = Math.max(...advice.focusOptions.map((o) => o.valueKamas));
     expect(advice.bestFocus?.valueKamas).toBe(best);
     expect(advice.bestFocus?.focusEffectId).toBe(DO);
-    expect(advice.switchCoefficient).toBeCloseTo((100 * best) / advice.reference.valueKamas, 6);
+    expect(advice.focusBeatsNormal).toBe(best > advice.reference.valueKamas);
   });
 
   it('gives no advice while a rune has no price', () => {
-    const advice = ok(analyzeFocusAdvice({ level: 100, lines }, RUNES, { ...prices, [runeId(DO)]: undefined }));
-    expect(advice.bestFocus).toBeUndefined();
-    expect(advice.switchCoefficient).toBeUndefined();
+    const advice = ok(analyzeFocusAdvice({ level: 100, lines, itemCostKamas: 1000 }, RUNES, { ...prices, [runeId(DO)]: undefined }));
+    expect(advice.focusBeatsNormal).toBeUndefined();
+    expect(advice.normalBreakEven).toBeUndefined();
     expect(advice.missingRuneIds).toEqual([runeId(DO)]);
   });
 
-  it('works with a single line', () => {
+  it('works with a single line: the focus is the normal breaking', () => {
     const advice = ok(analyzeFocusAdvice({ level: 100, lines: [{ effectId: DO, value: 5 }] }, RUNES, prices));
     expect(advice.bestFocus?.focusEffectId).toBe(DO);
-    // The only line gets 100 % in a focus and 100 % in the reference: they meet at 100 %.
-    expect(advice.switchCoefficient).toBeCloseTo(100, 6);
+    expect(advice.focusBeatsNormal).toBe(false);
   });
 
   it('keeps the first line on a tie', () => {
@@ -44,9 +43,10 @@ describe('analyzeFocusAdvice', () => {
     expect(advice.bestFocus?.focusEffectId).toBe(CHA);
   });
 
-  it('gives no switch coefficient when the reference is worth nothing', () => {
-    const advice = ok(analyzeFocusAdvice({ level: 100, lines }, RUNES, { [runeId(VI)]: 0, [runeId(CHA)]: 0, [runeId(DO)]: 0 }));
-    expect(advice.switchCoefficient).toBeUndefined();
+  it('gives no break-even when the item price is unknown or the runes are worth nothing', () => {
+    expect(ok(analyzeFocusAdvice({ level: 100, lines }, RUNES, prices)).normalBreakEven).toBeUndefined();
+    const free = ok(analyzeFocusAdvice({ level: 100, lines, itemCostKamas: 1000 }, RUNES, { [runeId(VI)]: 0, [runeId(CHA)]: 0, [runeId(DO)]: 0 }));
+    expect(free.normalBreakEven).toBeUndefined();
   });
 
   it('is invalid without usable line or level', () => {
@@ -54,14 +54,37 @@ describe('analyzeFocusAdvice', () => {
     expect(analyzeFocusAdvice({ level: NaN, lines }, RUNES, prices).status).toBe('invalid');
   });
 
-  it('agrees with the full analysis on both sides of the switch coefficient', () => {
-    const advice = ok(analyzeFocusAdvice({ level: 100, lines }, RUNES, prices));
-    const at = (coefficient: number) => analyzeBrisage({ level: 100, lines, coefficient, itemCostKamas: 1000 }, RUNES, prices);
-    const switchAt = advice.switchCoefficient!;
-    const below = at(switchAt - 1);
-    const above = at(switchAt + 1);
+  it('gives the coefficient under which breaking no longer covers the item price', () => {
+    const cost = 20000;
+    const advice = ok(analyzeFocusAdvice({ level: 100, lines, itemCostKamas: cost }, RUNES, prices));
+    expect(advice.normalBreakEven).toBeCloseTo((100 * cost) / advice.reference.valueKamas, 6);
+    expect(advice.focusBreakEven).toBeCloseTo((100 * cost) / advice.bestFocus!.valueKamas, 6);
+  });
+
+  it('agrees with the full analysis at every coefficient: the better option and the break-even do not move', () => {
+    const cost = 20000;
+    const advice = ok(analyzeFocusAdvice({ level: 100, lines, itemCostKamas: cost }, RUNES, prices));
+    const at = (coefficient: number) => analyzeBrisage({ level: 100, lines, coefficient, itemCostKamas: cost }, RUNES, prices);
+    for (const coefficient of [20, 60, 100, 180]) {
+      const result = at(coefficient);
+      if (result.status !== 'ok') throw new Error('invalid');
+      expect(result.best?.kind).toBe(advice.focusBeatsNormal ? 'focus' : 'normal');
+    }
+    const edge = advice.normalBreakEven!;
+    const below = at(edge - 1), above = at(edge + 1);
     if (below.status !== 'ok' || above.status !== 'ok') throw new Error('invalid');
-    expect(below.best?.kind).toBe('focus');
-    expect(above.best?.kind).toBe('normal');
+    expect(below.options.find((o) => o.kind === 'normal')!.gainKamas!).toBeLessThan(0);
+    expect(above.options.find((o) => o.kind === 'normal')!.gainKamas!).toBeGreaterThan(0);
+  });
+});
+
+describe('focus scales with the coefficient (DoFocus model)', () => {
+  it('halves the runes of a focus when the coefficient halves', () => {
+    const run = (coefficient: number) => {
+      const r = analyzeBrisage({ level: 100, lines, coefficient, itemCostKamas: 0 }, RUNES, prices);
+      if (r.status !== 'ok') throw new Error('invalid');
+      return r.options.find((o) => o.kind === 'focus' && o.focusEffectId === DO)!.valueKamas;
+    };
+    expect(run(50)).toBeCloseTo(run(100) / 2, 6);
   });
 });

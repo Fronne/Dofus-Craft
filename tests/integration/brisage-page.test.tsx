@@ -207,15 +207,17 @@ describe('Brisage page (specs/061)', () => {
   });
 
   describe('without a known coefficient (specs/063)', () => {
-    it('shows the table, the best focus line and the switch coefficient, but no verdict', async () => {
+    it('shows the table, the best focus line and the break-even coefficient, but no verdict', async () => {
       await pinnedItemPrices.save('mikhal', '777', 1000);
       await pricesKnown();
       await openBrisage();
       await pickCape();
       expect(await screen.findByLabelText(/Coefficient de brisage/)).toBeInTheDocument();
       expect(await screen.findByText('Conseil')).toBeInTheDocument();
-      expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
-      expect(screen.getByText(/Au-dessus de ce coefficient, brisez sans focus/)).toBeInTheDocument();
+      expect(await screen.findByText('Focus Do')).toBeInTheDocument();
+      expect(screen.getByText(/quel que soit le coefficient/)).toBeInTheDocument();
+      // DoFocus focus model: with the price of the item known, the coefficient under which breaking stops paying.
+      expect(screen.getByText(/Rentable tant que le coefficient reste au-dessus de/).nextElementSibling).toHaveTextContent('%');
       expect(screen.getByText('Meilleur focus').closest('tr')).toHaveTextContent('Dommages');
       expect(screen.getByText(/Sans focus \(à 100 %/)).toBeInTheDocument();
       expect(screen.queryByText('Verdict')).not.toBeInTheDocument();
@@ -226,7 +228,8 @@ describe('Brisage page (specs/061)', () => {
       await pricesKnown();
       await openBrisage();
       await pickCape();
-      expect(await screen.findByText(/^Focus Do sous \d/)).toBeInTheDocument();
+      expect(await screen.findByText('Focus Do')).toBeInTheDocument();
+      expect(screen.queryByText(/Rentable tant que le coefficient/)).not.toBeInTheDocument();
       expect(screen.getAllByText('Valeur des runes')).toHaveLength(2);
     });
 
@@ -321,11 +324,12 @@ describe('Brisage page (specs/061)', () => {
   });
 
   it('says to break normally, with no highlighted line, when no focus pays more', async () => {
-    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pinnedItemPrices.save('mikhal', '777', 10);
     await pricesKnown();
+    // Runes priced the same per point of weight (Do weighs 20): a focus only loses the other lines' half.
+    await resourcePricesFor('personal').save('mikhal', '7435', 100);
     await openBrisage();
     await pickCape();
-    // At 100 % the normal breaking keeps every line whole: a focus cannot beat it.
     fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();

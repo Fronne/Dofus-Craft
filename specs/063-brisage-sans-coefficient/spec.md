@@ -1,3 +1,5 @@
+> **Révision** : le focus dépend du coefficient (voir `docs/dofocus-brisage.md`, « Modèle de focus corrigé »). Le « coefficient de bascule » décrit plus bas est remplacé par un conseil focus / sans focus indépendant du coefficient, plus le coefficient de rentabilité quand le prix de l'objet est connu.
+
 # Spécification : Brisage sans coefficient connu (focus conseillé)
 
 **Branche**: `063-brisage-sans-coefficient`
@@ -104,7 +106,7 @@ Tant que le coefficient est inconnu, la colonne « Sans focus » ne présente pa
 
 ## Hypothèses
 
-- Le modèle actuel est conservé : brisage normal proportionnel au coefficient, focus indépendant du coefficient (100 % de la ligne visée, 50 % des autres). Si ce modèle change, le coefficient de bascule suit.
+- **Révisé par `docs/dofocus-brisage.md` (« Modèle de focus corrigé »)** : le focus dépend lui aussi du coefficient (observé en jeu). Il n'y a donc plus de coefficient de bascule : le meilleur choix focus / sans focus ne dépend que des prix des runes, et le conseil ajoute, quand le prix de l'objet est connu, le coefficient sous lequel briser ne couvre plus l'objet.
 - La valeur de référence « à 100 % » est le brisage normal calculé comme si le coefficient valait 100 %.
 - Le meilleur focus se détermine sur la valeur en kamas des runes obtenues ; il ne dépend que des prix des runes et des jets.
 - Le seuil est affiché arrondi à l'unité ou à une décimale, comme les autres coefficients de la page.
