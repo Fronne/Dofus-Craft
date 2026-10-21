@@ -20,7 +20,7 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 ## Phase 1 : Préparation
 
-- [ ] T001 Vérifier que `npm run test`, `npm run lint` et `npm run build` passent avant toute modification (base propre), depuis le worktree `.claude/worktrees/brisage-lignes-negatives`.
+- [X] T001 Vérifier que `npm run test`, `npm run lint` et `npm run build` passent avant toute modification (base propre), depuis le worktree `.claude/worktrees/brisage-lignes-negatives`.
 
 ---
 
@@ -28,8 +28,8 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 **Objectif** : règle de poids et lecture des données, sans interface.
 
-- [ ] T002 [P] Ajouter `negativeRangesOf(effects)` et `getItemNegativeRanges(id)` dans `src/data/catalogue-repository.ts` : plages `{ effectId, from, to }` des effets (hors catégorie 2) dont les bornes sont toutes deux ≤ 0 et au moins une < 0, `from` ≤ `to`, un effet fixe écrit `to: 0` donne `from = to`. Ne pas modifier `effectRangesOf` ni `scripts/build-brisage-items.mjs`.
-- [ ] T003 [P] Ajouter dans `src/domain/brisage.ts` le type `NegativeLine = { effectId: number; value: number }` et `negativeLineWeight(value, statWeight, level, settings)` = `Math.max(0, lineWeight(value, statWeight, level, settings))`, avec un commentaire qui cite Kama Master et marque la règle comme estimation.
+- [X] T002 [P] Ajouter `negativeRangesOf(effects)` et `getItemNegativeRanges(id)` dans `src/data/catalogue-repository.ts` : plages `{ effectId, from, to }` des effets (hors catégorie 2) dont les bornes sont toutes deux ≤ 0 et au moins une < 0, `from` ≤ `to`, un effet fixe écrit `to: 0` donne `from = to`. Ne pas modifier `effectRangesOf` ni `scripts/build-brisage-items.mjs`.
+- [X] T003 [P] Ajouter dans `src/domain/brisage.ts` le type `NegativeLine = { effectId: number; value: number }` et `negativeLineWeight(value, statWeight, level, settings)` = `Math.max(0, lineWeight(value, statWeight, level, settings))`, avec un commentaire qui cite Kama Master et marque la règle comme estimation.
 
 **Point de contrôle** : la règle de poids existe et se teste seule.
 
@@ -41,11 +41,11 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 **Test indépendant** : niveau 200, Force −10 → poids 0, résultats inchangés ; niveau 20, Force −1 → poids 0,7, le focus ailleurs gagne 0,35.
 
-- [ ] T004 [US2] Écrire `tests/unit/brisage-negative.test.ts` : (a) `negativeLineWeight` niveau 200 Force −10 vaut 0 ; (b) niveau 20 Force −1 vaut 0,7 ; (c) un focus avec une ligne négative de poids 0,7 reçoit +0,35 de poids de focus par rapport à l'objet sans elle ; (d) le brisage normal est identique avec et sans ligne négative ; (e) un objet avec seulement des lignes négatives donne `status: 'invalid'` ; (f) une ligne négative n'apparaît jamais dans `yields` ni comme `focusEffectId` ; (g) une ligne négative dont la stat n'a pas de rune est ignorée ; (h) mêmes résultats via `analyzeFocusAdvice` (coefficient inconnu).
-- [ ] T005 [US2] Dans `src/domain/brisage.ts`, ajouter `negatives?: NegativeLine[]` à `BrisageInput` et à `FocusAdviceInput`. Écarter une ligne négative sans poids de stat ou sans rune. Dans `buildOption`, ajouter à `focusWeight` la somme de `negativeLineWeight × settings.focusOtherShare` de chaque ligne négative utilisable ; ne créer aucun `RuneYield`. Aucun changement sans focus.
-- [ ] T006 [US2] Dans `analyzeBrisage` et `analyzeFocusAdvice`, passer les lignes négatives utilisables à `buildOption` ; garder le message « L'objet n'a aucune ligne exploitable. » quand il n'y a aucune ligne positive utilisable (FR-009).
-- [ ] T007 [US2] Ajouter à `tests/unit/catalogue-item-effect-lines.test.ts` des cas pour `negativeRangesOf` : plage −15 à −10, effet fixe `to: 0`, positif ignoré, catégorie 2 ignorée, et `effectRangesOf` inchangée (SC-002).
-- [ ] T008 [US2] Lancer `npm run test` : T004 et T007 doivent passer, rien d'autre ne casse.
+- [X] T004 [US2] Écrire `tests/unit/brisage-negative.test.ts` : (a) `negativeLineWeight` niveau 200 Force −10 vaut 0 ; (b) niveau 20 Force −1 vaut 0,7 ; (c) un focus avec une ligne négative de poids 0,7 reçoit +0,35 de poids de focus par rapport à l'objet sans elle ; (d) le brisage normal est identique avec et sans ligne négative ; (e) un objet avec seulement des lignes négatives donne `status: 'invalid'` ; (f) une ligne négative n'apparaît jamais dans `yields` ni comme `focusEffectId` ; (g) une ligne négative dont la stat n'a pas de rune est ignorée ; (h) mêmes résultats via `analyzeFocusAdvice` (coefficient inconnu) ; (i) le total d'un focus avec une ligne négative est supérieur ou égal à celui sans elle (SC-003).
+- [X] T005 [US2] Dans `src/domain/brisage.ts`, ajouter `negatives?: NegativeLine[]` à `BrisageInput` et à `FocusAdviceInput`. Écarter une ligne négative sans poids de stat ou sans rune. Dans `buildOption`, ajouter à `focusWeight` la somme de `negativeLineWeight × settings.focusOtherShare` de chaque ligne négative utilisable ; ne créer aucun `RuneYield`. Aucun changement sans focus.
+- [X] T006 [US2] Dans `analyzeBrisage` et `analyzeFocusAdvice`, passer les lignes négatives utilisables à `buildOption` ; garder le message « L'objet n'a aucune ligne exploitable. » quand il n'y a aucune ligne positive utilisable (FR-009).
+- [X] T007 [US2] Ajouter à `tests/unit/catalogue-item-effect-lines.test.ts` des cas pour `negativeRangesOf` : plage −15 à −10, effet fixe `to: 0`, positif ignoré, catégorie 2 ignorée, et `effectRangesOf` inchangée (SC-002).
+- [X] T008 [US2] Lancer `npm run test` : T004 et T007 doivent passer, rien d'autre ne casse.
 
 **Point de contrôle** : le domaine répond à FR-003 à FR-006, FR-008 et FR-009.
 
@@ -57,12 +57,13 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 **Test indépendant** : choisir un objet qui a un malus, vérifier la ligne rouge sans focus.
 
-- [ ] T009 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter l'état `negativeRanges`, rempli par `getItemNegativeRanges(picked.id)` en même temps que `ranges` (même jeton `pickToken`) et remis à `[]` à l'ouverture d'un objet.
-- [ ] T010 [US1] Construire `negativeLines` : seules les plages dont la stat a un poids connu et une rune ; `index = breakable.length + position` ; jet par défaut `averageRoll(from, to)` ; passer `negatives: [{ effectId, value }]` à `analyzeBrisage` et `analyzeFocusAdvice`. Compter à part les négatives ignorées (stat sans rune) dans `ignoredCount`.
-- [ ] T011 [US1] Afficher les lignes négatives après les lignes positives dans le tableau : classe `brisage-negative`, nom de la stat avec l'icône de sa rune, jet signé, colonnes de prix, de runes et de focus à « — », mention « aucune rune » dans la cellule du jet, aucun badge « Meilleur focus ». Garder le rendu actuel quand l'objet n'a pas de ligne négative.
-- [ ] T012 [P] [US1] Ajouter dans `src/styles/global.css` le style `.brisage-negative` (texte et jet en rouge selon la variable d'erreur du projet, lisible à 390 px).
-- [ ] T013 [US1] Ajouter à `tests/integration/brisage-page.test.tsx` un cas : un objet avec une ligne négative la montre avec son jet signé, sans action de focus ; un objet sans ligne négative garde le même rendu. Étendre le mock de `getItemNegativeRanges` si besoin.
-- [ ] T014 [US1] Lancer `npm run test` et `npm run lint`.
+- [X] T009 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter l'état `negativeRanges`, rempli par `getItemNegativeRanges(picked.id)` en même temps que `ranges` (même jeton `pickToken`) et remis à `[]` à l'ouverture d'un objet. Dans la même tâche, ajouter `getItemNegativeRanges` (résolue à `[]` par défaut) aux mocks du module catalogue de `tests/integration/*` (brisage-page, brisage-search, app-nav, etc.), sans quoi ces tests cassent.
+- [X] T010 [US1] Construire `negativeLines` : seules les plages dont la stat a un poids connu et une rune ; `index = breakable.length + position` ; jet par défaut `averageRoll(from, to)` ; passer `negatives: [{ effectId, value }]` à `analyzeBrisage` et `analyzeFocusAdvice`. Compter à part les négatives ignorées (stat sans rune) dans `ignoredCount`.
+- [X] T011 [US1] Afficher les lignes négatives après les lignes positives dans le tableau : classe `brisage-negative`, nom de la stat avec l'icône de sa rune, jet signé, colonnes de prix, de runes et de focus à « — », mention « aucune rune » dans la cellule du jet, aucun badge « Meilleur focus ». Garder le rendu actuel quand l'objet n'a pas de ligne négative.
+- [X] T012 [P] [US1] Ajouter dans `src/styles/global.css` le style `.brisage-negative` (texte et jet en rouge selon la variable d'erreur du projet, lisible à 390 px).
+- [X] T013 [US1] Ajouter à `tests/integration/brisage-page.test.tsx` les cas : (a) un objet avec une ligne négative la montre avec son jet signé, sans action de focus ; (b) un objet sans ligne négative garde le même rendu ; (c) un objet qui a la même stat en positif et en négatif montre deux lignes distinctes (FR-007) ; (d) une session mémorisée avant la fonction (`rolls` seuls) s'ouvre sans erreur (FR-010).
+- [X] T013b [US1] Dans `BrisagePage.tsx`, quand l'objet n'a aucune ligne positive exploitable mais au moins une ligne négative, afficher une note qui nomme les lignes négatives et dit « L'objet n'a aucune ligne exploitable » au lieu de l'analyse (`ready` exige aujourd'hui `ranges.length > 0`). Ajouter le cas d'intégration correspondant dans `tests/integration/brisage-page.test.tsx` (FR-009).
+- [X] T014 [US1] Lancer `npm run test` et `npm run lint`.
 
 **Point de contrôle** : la page répond à FR-001, FR-002, FR-005 et FR-007.
 
@@ -74,16 +75,16 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 **Test indépendant** : régler une ligne négative sur sa borne basse puis haute, le tableau suit.
 
-- [ ] T015 [US3] Dans `BrisagePage.tsx`, ajouter pour chaque ligne négative un champ numérique signé (`max={0}`, `aria-label` « Jet de … ») qui lit et écrit `rolls[index]` ; une saisie positive ou hors étendue est signalée (`aria-invalid`) et le jet par défaut est utilisé.
-- [ ] T016 [US3] Ajouter à `tests/integration/brisage-page.test.tsx` un cas : saisir −1 sur une ligne d'étendue −15 à −10 est refusé et le jet par défaut (−13) reste utilisé ; saisir −12 est pris en compte.
-- [ ] T017 [US3] Lancer `npm run test`.
+- [X] T015 [US3] Dans `BrisagePage.tsx`, ajouter pour chaque ligne négative un champ numérique signé (`max={0}`, `aria-label` « Jet de … ») qui lit et écrit `rolls[index]` ; une saisie positive ou hors étendue est signalée (`aria-invalid`) et le jet par défaut est utilisé.
+- [X] T016 [US3] Ajouter à `tests/integration/brisage-page.test.tsx` un cas : saisir −1 sur une ligne d'étendue −15 à −10 est refusé et le jet par défaut (−13) reste utilisé ; saisir −12 est pris en compte.
+- [X] T017 [US3] Lancer `npm run test`.
 
 ---
 
 ## Phase 6 : Finitions
 
-- [ ] T018 [P] Ajouter à `docs/dofocus-brisage.md` une section « Lignes négatives (specs/067) » : règle retenue (Kama Master), DoFocus écarté, ta règle de forgemagie non reprise, exemple chiffré, mention « estimation, à confirmer par un relevé ».
-- [ ] T019 Lancer `npm run test`, `npm run lint` et `npm run build`, puis suivre `quickstart.md` à la main (objet avec malus, objet sans malus, comparaison avec `master`).
+- [X] T018 [P] Ajouter à `docs/dofocus-brisage.md` une section « Lignes négatives (specs/067) » : règle retenue (Kama Master), DoFocus écarté, ta règle de forgemagie non reprise, exemple chiffré, mention « estimation, à confirmer par un relevé ».
+- [X] T019 Lancer `npm run test`, `npm run lint` et `npm run build`, puis suivre `quickstart.md` à la main (objet avec malus, objet sans malus, comparaison avec `master`).
 
 ---
 

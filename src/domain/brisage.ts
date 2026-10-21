@@ -214,6 +214,15 @@ export function lineWeight(value: number, statWeight: number, level: number, set
   return value * statWeight * level * settings.levelFactor + settings.lineBonus;
 }
 
+/**
+ * specs/067 – weight of a negative line (a malus): the same formula as a positive line applied to the negative roll,
+ * never below 0 (Kama Master, kamamaster.fr: a negative result is brought back to 0). An ESTIMATE: it gives no rune
+ * and is never a focus target; in a focus it only adds to the weight put on the focused rune.
+ */
+export function negativeLineWeight(value: number, statWeight: number, level: number, settings: Pick<BrisageSettings, 'levelFactor' | 'lineBonus'>): number {
+  return Math.max(0, lineWeight(value, statWeight, level, settings));
+}
+
 /** H2 – runes given by a line of weight `weight` when `share` of it is kept, for a rune weighing `runeWeight`. */
 export function runesForLine(weight: number, share: number, runeWeight: number): number {
   return runeWeight > 0 ? (weight * share) / runeWeight : 0;
@@ -250,9 +259,14 @@ export function isRollAllowed(value: number, limit: number, options: { exo?: boo
 /** specs/066: `exo` marks a line the item does not have by default; it counts like any line but is never a focus target. */
 export type BrisageLine = { effectId: number; value: number; exo?: boolean };
 
+/** specs/067: a line with a negative roll (a malus). It gives no rune; it only weighs a little in a focus. */
+export type NegativeLine = { effectId: number; value: number };
+
 export type BrisageInput = {
   level: number;
   lines: BrisageLine[];
+  /** Negative lines of the item; see negativeLineWeight. */
+  negatives?: NegativeLine[];
   /** Current coefficient of the item, in %. */
   coefficient: number;
   itemCostKamas: number;
@@ -319,6 +333,13 @@ function usableLines(lines: BrisageLine[], runes: RuneItem[], settings: BrisageS
   return { lines: [...merged.values()], ignored };
 }
 
+/** specs/067: the negative lines whose stat has a weight and a rune, like a positive line; the others are left out. */
+function usableNegatives(negatives: NegativeLine[] | undefined, runes: RuneItem[], settings: BrisageSettings): NegativeLine[] {
+  return (negatives ?? []).filter((line) => line.value < 0
+    && statSetting(settings, line.effectId) !== undefined
+    && runeForStat(runes, line.effectId, settings.runeSize) !== undefined);
+}
+
 function buildOption(
   kind: BrisageOption['kind'],
   focusEffectId: number | undefined,
@@ -329,6 +350,7 @@ function buildOption(
   runes: RuneItem[],
   prices: Record<string, number | undefined>,
   settings: BrisageSettings,
+  negatives: NegativeLine[] = [],
 ): BrisageOption {
   const yields: RuneYield[] = [];
   const missing: string[] = [];
@@ -336,8 +358,12 @@ function buildOption(
   // DoFocus model (docs/dofocus-brisage.md): a focus puts the target's whole weight plus a share of the other lines' weight
   // into the target rune; the other lines give nothing. Everything is scaled by the coefficient.
   const weightOf = (line: BrisageLine) => lineWeight(line.value, statSetting(settings, line.effectId)!.weight, input.level, settings);
+  // specs/067: a negative line adds its bounded weight (often 0) at the "other lines" share; it never gives a rune.
+  const negativeWeight = negatives.reduce(
+    (sum, line) => sum + negativeLineWeight(line.value, statSetting(settings, line.effectId)!.weight, input.level, settings) * settings.focusOtherShare, 0,
+  );
   const focusWeight = focusEffectId === undefined ? 0 : lines.reduce(
-    (sum, line) => sum + weightOf(line) * (line.effectId === focusEffectId ? settings.focusTargetShare : settings.focusOtherShare), 0,
+    (sum, line) => sum + weightOf(line) * (line.effectId === focusEffectId ? settings.focusTargetShare : settings.focusOtherShare), negativeWeight,
   );
   for (const line of lines) {
     const setting = statSetting(settings, line.effectId)!;
@@ -377,7 +403,8 @@ export function analyzeBrisage(
 
   const scale = input.coefficient / 100;
   const normal = buildOption('normal', undefined, lines, scale, input, runes, prices, settings);
-  const focuses = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, scale, input, runes, prices, settings));
+  const negatives = usableNegatives(input.negatives, runes, settings);
+  const focuses = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, scale, input, runes, prices, settings, negatives));
   const all = [normal, ...focuses];
   const complete = all.filter((o) => o.gainKamas !== undefined).sort((a, b) => b.gainKamas! - a.gainKamas!);
   const incomplete = all.filter((o) => o.gainKamas === undefined);
@@ -407,7 +434,7 @@ export function analyzeBrisage(
 // Normal breaking and focus are both proportional to the coefficient, so which of the two pays more does
 // not depend on it. The price of the item only moves the coefficient below which breaking stops paying.
 
-export type FocusAdviceInput = { level: number; lines: BrisageLine[]; itemCostKamas?: number };
+export type FocusAdviceInput = { level: number; lines: BrisageLine[]; negatives?: NegativeLine[]; itemCostKamas?: number };
 
 export type FocusAdvice =
   | { status: 'invalid'; reason: string }
@@ -439,7 +466,8 @@ export function analyzeFocusAdvice(
 
   const base: BrisageInput = { level: input.level, lines, coefficient: 100, itemCostKamas: 0 };
   const reference = buildOption('normal', undefined, lines, 1, base, runes, prices, settings);
-  const focusOptions = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, 1, base, runes, prices, settings));
+  const negatives = usableNegatives(input.negatives, runes, settings);
+  const focusOptions = lines.filter((line) => !line.exo).map((line) => buildOption('focus', line.effectId, lines, 1, base, runes, prices, settings, negatives));
   const priced = focusOptions.filter((option) => option.missingRuneIds.length === 0);
   const bestFocus = priced.reduce<BrisageOption | undefined>((best, option) => (!best || option.valueKamas > best.valueKamas ? option : best), undefined);
   const referenceKnown = reference.missingRuneIds.length === 0;

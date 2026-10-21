@@ -2572,6 +2572,13 @@ select:focus {
 .brisage-line--exo th:first-child { box-shadow: inset 4px 0 0 var(--exo); }
 .brisage-line--exo .brisage-badge--exo { background: var(--exo); color: var(--bg, #08181c); }
 :root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
+/* specs/067: a malus (negative line) is red, gives no rune and has no focus. */
+.brisage-negative th, .brisage-negative th *, .brisage-negative input.brisage-roll, .brisage-negative .brisage-bound { color: var(--danger); }
+.brisage-negative th:first-child { box-shadow: inset 4px 0 0 var(--danger); }
+.brisage-negative .brisage-badge--negative { background: var(--danger); color: var(--bg, #10200a); }
+:root[data-theme="light"] .brisage-negative .brisage-badge--negative { color: #ffffff; }
+.brisage-negative .brisage-roll-state { display: block; color: var(--text-muted); }
+.brisage-negative-only { color: var(--danger); }
 .brisage-exo-value { font-weight: 700; }
 .brisage-exo-add { margin-left: auto; min-height: 36px; }
 .brisage-exo-picker { position: relative; display: inline-block; }

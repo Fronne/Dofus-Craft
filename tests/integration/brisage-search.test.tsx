@@ -20,6 +20,7 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   searchItems: vi.fn().mockResolvedValue({ data: [], total: 0 }),
   getItemDetail: vi.fn().mockResolvedValue({ recipe: undefined, resources: [] }),
   getItemEffectRanges: (id: string) => getItemEffectRanges(id),
+  getItemNegativeRanges: vi.fn().mockResolvedValue([]),
   getResourceRecipe: vi.fn().mockResolvedValue(null),
   getResourceDetails: vi.fn().mockResolvedValue([]),
   preloadCatalogueIndexes: vi.fn(),

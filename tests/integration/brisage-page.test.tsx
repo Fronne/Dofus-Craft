@@ -4,6 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 
 // specs/061-simplification-page-brisage. Real rune data: Rune Vi 1523, Rune Cha 1525, Rune Do 7435.
 const getItemEffectRanges = vi.fn();
+const getItemNegativeRanges = vi.fn();
 const getItemDetail = vi.fn();
 
 vi.mock('../../src/services/community-price-api', () => ({
@@ -19,6 +20,7 @@ vi.mock('../../src/data/catalogue-repository', () => ({
   searchItems: vi.fn().mockResolvedValue({ data: [{ id: '777', name: 'Cape du Chef Bwork', level: 100, kind: 'Equipment', categoryId: 'c' }], total: 1 }),
   getItemDetail: (id: string) => getItemDetail(id),
   getItemEffectRanges: (id: string) => getItemEffectRanges(id),
+  getItemNegativeRanges: (id: string) => getItemNegativeRanges(id),
   getResourceRecipe: vi.fn().mockResolvedValue(null),
   getResourceDetails: vi.fn().mockResolvedValue([]),
   preloadCatalogueIndexes: vi.fn(),
@@ -76,6 +78,8 @@ describe('Brisage page (specs/061)', () => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
     getItemEffectRanges.mockReset();
+    getItemNegativeRanges.mockReset();
+    getItemNegativeRanges.mockResolvedValue([]);
     getItemDetail.mockReset();
     // The cape is crafted from 3 Laine (100 each) and 2 Cuir (250 each): 800 kamas when both are priced.
     getItemDetail.mockResolvedValue({
@@ -690,6 +694,73 @@ describe('Brisage page (specs/061)', () => {
       await screen.findByLabelText('Jet de Sagesse');
       type('Jet de Sagesse', '60');
       expect(field('Jet de Sagesse')).not.toHaveAttribute('aria-invalid');
+    });
+  });
+
+  // specs/067-brisage-lignes-negatives: a malus is shown in red, gives no rune and has no focus; its roll stays negative.
+  describe('negative lines (specs/067)', () => {
+    const FORCE_MALUS = { effectId: 118, from: -15, to: -10 };
+    const openWithMalus = async (negatives: unknown[] = [FORCE_MALUS]) => {
+      getItemNegativeRanges.mockResolvedValue(negatives);
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await pricesKnown();
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
+    };
+
+    it('shows a malus in red with its signed roll, no rune and no focus', async () => {
+      await openWithMalus();
+      const roll = await screen.findByLabelText('Jet de Force (malus)');
+      expect((roll as HTMLInputElement).placeholder).toBe('-13');
+      const row = roll.closest('tr')!;
+      expect(row).toHaveClass('brisage-negative');
+      expect(within(row).getByText('Malus')).toBeInTheDocument();
+      expect(within(row).getByText('aucune rune')).toBeInTheDocument();
+      expect(within(row).queryByText('Meilleur focus')).not.toBeInTheDocument();
+      expect(row.querySelectorAll('td[data-label^="Focus"]')).toHaveLength(2);
+      row.querySelectorAll('td[data-label^="Focus"], td[data-label^="Sans focus"]').forEach((cell) => expect(cell).toHaveTextContent('—'));
+    });
+
+    it('keeps the page as it was for an item without malus', async () => {
+      await openWithMalus([]);
+      await screen.findByLabelText('Jet de Vitalité');
+      expect(screen.queryByLabelText(/\(malus\)/)).not.toBeInTheDocument();
+      expect(document.querySelector('.brisage-negative')).toBeNull();
+    });
+
+    it('keeps a positive and a negative line of the same stat apart', async () => {
+      await openWithMalus([{ effectId: 125, from: -5, to: -5 }]);
+      expect(await screen.findByLabelText('Jet de Vitalité')).toBeInTheDocument();
+      expect(screen.getByLabelText('Jet de Vitalité (malus)')).toBeInTheDocument();
+    });
+
+    it('refuses a roll outside the range of the malus and uses the average', async () => {
+      await openWithMalus();
+      await screen.findByLabelText('Jet de Force (malus)');
+      type('Jet de Force (malus)', '-1');
+      expect(field('Jet de Force (malus)')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText(/jet invalide/)).toBeInTheDocument();
+      type('Jet de Force (malus)', '-12');
+      expect(field('Jet de Force (malus)')).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('says the item has no usable line when it only has maluses', async () => {
+      getItemEffectRanges.mockResolvedValue([]);
+      await openWithMalus();
+      expect(await screen.findByText(/n'a aucune ligne exploitable/)).toHaveTextContent('Force -13');
+    });
+
+    it('brings back the rolls of a session saved before, with the malus listed after the positive lines', async () => {
+      await openWithMalus();
+      await screen.findByLabelText('Jet de Vitalité');
+      type('Jet de Vitalité', '44');
+      type('Jet de Force (malus)', '-11');
+      cleanup();
+      render(<App />);
+      await screen.findByRole('heading', { name: 'Brisage' });
+      expect(await screen.findByLabelText('Jet de Vitalité')).toHaveValue(44);
+      expect(await screen.findByLabelText('Jet de Force (malus)')).toHaveValue(-11);
     });
   });
 

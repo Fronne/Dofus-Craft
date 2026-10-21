@@ -341,3 +341,23 @@ export async function getItemEffectRanges(id: string): Promise<EffectRange[]> {
   const item = await cached(`item:${id}`, () => getDofusDbItem(id));
   return effectRangesOf(item.effects);
 }
+
+// specs/067-brisage-lignes-negatives: the negative lines (maluses) of an item, kept apart from effectRangesOf so the
+// search index (spec 064) and scripts/build-brisage-items.mjs still see positive rolls only.
+export function negativeRangesOf(effects: DofusDbItemEffect[] | undefined): EffectRange[] {
+  const ranges: EffectRange[] = [];
+  for (const effect of effects ?? []) {
+    if (typeof effect.effectId !== 'number' || typeof effect.from !== 'number' || typeof effect.to !== 'number') continue;
+    if (effect.category === 2) continue;
+    if (!(Math.min(effect.from, effect.to) < 0 && effect.from <= 0 && effect.to <= 0)) continue;
+    ranges.push(effect.to === 0
+      ? { effectId: effect.effectId, from: effect.from, to: effect.from }
+      : { effectId: effect.effectId, from: Math.min(effect.from, effect.to), to: Math.max(effect.from, effect.to) });
+  }
+  return ranges;
+}
+
+export async function getItemNegativeRanges(id: string): Promise<EffectRange[]> {
+  const item = await cached(`item:${id}`, () => getDofusDbItem(id));
+  return negativeRangesOf(item.effects);
+}

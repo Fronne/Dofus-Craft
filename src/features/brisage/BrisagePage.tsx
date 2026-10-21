@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { useActiveServer } from '../../app/ServerContext';
 import { Icon } from '../../components/Icon';
-import { getItemEffectRanges } from '../../data/catalogue-repository';
+import { getItemEffectRanges, getItemNegativeRanges } from '../../data/catalogue-repository';
 import {
   analyzeBrisage,
   analyzeFocusAdvice,
@@ -77,6 +77,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   const [item, setItem] = useState<PickedItem>();
   const [ranges, setRanges] = useState<Range[]>([]);
+  // specs/067: the negative lines (maluses) of the item, read apart from the positive ones.
+  const [negativeRanges, setNegativeRanges] = useState<Range[]>([]);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
   const [rolls, setRolls] = useState<Record<number, string>>({});
   // specs/066: the exos put on this item, the last added first (as in the game); kept per item.
@@ -84,7 +86,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const newExoCount = useRef(0);
   // A restored exo only counts while its stat is still absent from the item and still has a rune; a new one has no rune yet.
   const exoEntries = storedExos.filter((exo) => exo.effectId === undefined
-    || (runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && !ranges.some((range) => range.effectId === exo.effectId)));
+    || (runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && ![...ranges, ...negativeRanges].some((range) => range.effectId === exo.effectId)));
   const exos = exoEntries.filter((exo): exo is ExoEntry & { effectId: number } => exo.effectId !== undefined);
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
@@ -100,6 +102,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     const token = ++pickToken.current;
     setItem(picked);
     setRanges([]);
+    setNegativeRanges([]);
     setExos(serverId ? getBrisageExos(serverId, picked.id).map((exo) => ({ ...exo, id: `exo-${exo.effectId}` })) : []);
     setRolls(restore?.rolls ?? {});
     setCoefficientText(restore?.coefficientText ?? '');
@@ -108,10 +111,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setPriceSource(restore?.priceSource ?? 'auto');
     setStored(serverId ? getStoredCoefficient(serverId, picked.id) : undefined);
     setLoadState('loading');
-    getItemEffectRanges(picked.id)
-      .then((result) => {
+    Promise.all([getItemEffectRanges(picked.id), getItemNegativeRanges(picked.id)])
+      .then(([result, negatives]) => {
         if (pickToken.current !== token) return;
         setRanges(result);
+        setNegativeRanges(negatives);
         setLoadState('idle');
       })
       .catch(() => {
@@ -188,8 +192,22 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     const over = usable && typed > range.to;
     return { index, range, average, fixed, value: usable ? typed : average, modified, invalid, tooHigh, over, limit };
   });
+  // specs/067: a malus is listed after the positive lines (its roll index follows theirs). Its roll must stay inside its
+  // own range; anything else is refused and the average is used. It gives no rune, so it needs no price.
+  const negativeLines = negativeRanges
+    .filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize))
+    .map((range, position) => {
+      const index = breakable.length + position;
+      const average = averageRoll(range.from, range.to);
+      const parsed = parse(rolls[index] ?? '');
+      const usable = Number.isFinite(parsed) && parsed >= range.from && parsed <= range.to;
+      return {
+        index, range, average, fixed: range.from === range.to, value: usable ? parsed : average,
+        modified: usable && parsed !== average, invalid: Number.isFinite(parsed) && !usable,
+      };
+    });
   // The Min / Moyen / Max switch of the Jet column: which one all the free lines are set to, if any.
-  const freeLines = lines.filter((line) => !line.fixed);
+  const freeLines = [...lines, ...negativeLines].filter((line) => !line.fixed);
   const rollMode: 'min' | 'average' | 'max' | undefined = freeLines.length === 0 ? undefined
     : freeLines.every((line) => (rolls[line.index] ?? '') === '') ? 'average'
       : freeLines.every((line) => parse(rolls[line.index] ?? '') === line.range.from) ? 'min'
@@ -198,7 +216,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const setAllRolls = (mode: 'min' | 'average' | 'max') => setRolls(
     mode === 'average' ? {} : Object.fromEntries(freeLines.map((line) => [line.index, String(mode === 'min' ? line.range.from : line.range.to)])),
   );
-  const ignoredCount = ranges.length - ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)).length;
+  const ignoredCount = ranges.length - ranges.filter((range) => brisageStat(range.effectId) && runeForStat(RUNES, range.effectId, SETTINGS.runeSize)).length
+    + negativeRanges.length - negativeLines.length;
   const runeIds = useMemo(() => {
     const ids = new Set<string>();
     for (const range of ranges) {
@@ -218,18 +237,19 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     ...exos.map((exo) => ({ effectId: exo.effectId, value: exo.value, exo: true })),
     ...lines.map((line) => ({ effectId: line.range.effectId, value: line.value })),
   ];
+  const negativeInputs = negativeLines.map((line) => ({ effectId: line.range.effectId, value: line.value }));
   // specs/066: the runes offered as exo are those of the stats the item does not have; each one is taken once.
   const exoRunes: ExoRuneChoice[] = BRISAGE_STATS.flatMap((stat) => {
-    const found = ranges.some((range) => range.effectId === stat.effectId) ? undefined : runeForStat(RUNES, stat.effectId, SETTINGS.runeSize);
+    const found = [...ranges, ...negativeRanges].some((range) => range.effectId === stat.effectId) ? undefined : runeForStat(RUNES, stat.effectId, SETTINGS.runeSize);
     return found ? [{ effectId: stat.effectId, label: stat.label, runeName: found.rune.name, imageUrl: found.rune.imageUrl, max: lineValueLimit(stat.effectId, SETTINGS) }] : [];
   });
   const hasNewExo = exoEntries.some((exo) => exo.effectId === undefined);
   const analysis = ready && coefficient > 0
-    ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
+    ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
     : undefined;
   // specs/063: without a coefficient the table and a focus advice are still shown (normal breaking at 100 %).
   const advice = ready && !(coefficient > 0)
-    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, fetched.prices, SETTINGS)
+    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, fetched.prices, SETTINGS)
     : undefined;
   const adviceOk = advice?.status === 'ok' ? advice : undefined;
   const ok = analysis?.status === 'ok' ? analysis : undefined;
@@ -317,7 +337,12 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
           />
           {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
           {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
-          {loadState === 'idle' && ranges.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
+          {loadState === 'idle' && ranges.length === 0 && negativeLines.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}
+          {loadState === 'idle' && ranges.length === 0 && negativeLines.length > 0 && (
+            <p className="fm-note brisage-negative-only">
+              L'objet n'a aucune ligne exploitable : il n'a que des lignes négatives ({negativeLines.map((line) => `${statLabel(line.range.effectId)} ${line.value}`).join(', ')}), qui ne donnent aucune rune.
+            </p>
+          )}
         </div>
 
       {(analysis || advice) && (
@@ -479,6 +504,42 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
                             <td role="cell" data-label="Focus : valeur des runes">{focusValue !== undefined ? <Kamas value={Math.round(focusValue)} /> : <span className="fm-note">—</span>}</td>
+                          </tr>
+                        );
+                      })}
+                      {negativeLines.map((line) => {
+                        const found = runeForStat(RUNES, line.range.effectId, SETTINGS.runeSize)!;
+                        const label = statLabel(line.range.effectId);
+                        return (
+                          <tr role="row" key={`negative-${line.index}`} className="brisage-negative">
+                            <th scope="row" role="rowheader" data-label="Rune">
+                              <span className="brisage-line-name" title={label}>
+                                <ResourceDisplay resource={{ id: found.rune.id, name: found.rune.name, imageUrl: found.rune.imageUrl }} />
+                                <span className="brisage-stat-name">{label}</span>
+                                <span className="brisage-badge brisage-badge--negative">Malus</span>
+                              </span>
+                            </th>
+                            <td role="cell" data-label={line.modified ? 'Jet modifié' : 'Jet'}>
+                              <span className="brisage-jet">
+                                {!line.fixed && <span className="brisage-bound">{line.range.from}</span>}
+                                <input
+                                  type="number" inputMode="decimal" max={0}
+                                  className={line.modified ? 'brisage-roll is-modified' : 'brisage-roll'}
+                                  aria-label={`Jet de ${label} (malus)`}
+                                  aria-invalid={line.invalid || undefined}
+                                  placeholder={String(line.average)}
+                                  value={rolls[line.index] ?? ''}
+                                  onChange={(event) => setRolls({ ...rolls, [line.index]: event.target.value })}
+                                />
+                                {!line.fixed && <span className="brisage-bound">{line.range.to}</span>}
+                              </span>
+                              <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : 'aucune rune'}</span>
+                            </td>
+                            <td role="cell" data-label="Prix de la rune">—</td>
+                            <td role="cell" data-label="Sans focus : runes">—</td>
+                            <td role="cell" data-label="Sans focus : valeur des runes">—</td>
+                            <td role="cell" data-label="Focus : runes">—</td>
+                            <td role="cell" data-label="Focus : valeur des runes">—</td>
                           </tr>
                         );
                       })}

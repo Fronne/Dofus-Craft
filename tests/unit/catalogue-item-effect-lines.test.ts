@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { getItemEffectLines, getItemEffectRanges } from '../../src/data/catalogue-repository';
+import { effectRangesOf, getItemEffectLines, getItemEffectRanges, getItemNegativeRanges, negativeRangesOf } from '../../src/data/catalogue-repository';
 import { clearCache, setPersistentStore } from '../../src/data/catalogue-cache';
 
 // specs/060-page-brisage (FR-002, FR-008): numeric lines of an item; weapon effects, negative lines
@@ -36,4 +36,26 @@ it('keeps the roll range of positive non-weapon lines', async () => {
     { effectId: 123, from: 38, to: 38 },
     { effectId: 112, from: 4, to: 4 },
   ]);
+});
+
+// specs/067-brisage-lignes-negatives: the negative lines are read apart; effectRangesOf (search index) still ignores them.
+it('keeps the negative non-weapon lines apart, a range ordered from the lowest', async () => {
+  expect(await getItemNegativeRanges('777')).toEqual([{ effectId: 118, from: -5, to: -5 }]);
+});
+
+it('reads a negative range written from the highest to the lowest, and a fixed malus written with to: 0', () => {
+  expect(negativeRangesOf([
+    { effectId: 118, from: -10, to: -15, category: 1 },
+    { effectId: 126, from: -3, to: 0, category: 1 },
+    { effectId: 123, from: 0, to: 0 },
+    { effectId: 125, from: 5, to: 9 },
+    { effectId: 112, from: -4, to: -4, category: 2 },
+  ])).toEqual([
+    { effectId: 118, from: -15, to: -10 },
+    { effectId: 126, from: -3, to: -3 },
+  ]);
+});
+
+it('does not let a negative line into the positive ranges', () => {
+  expect(effectRangesOf([{ effectId: 118, from: -5, to: -5, category: 1 }])).toEqual([]);
 });

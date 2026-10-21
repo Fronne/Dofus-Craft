@@ -93,6 +93,16 @@ Sans focus : runes(stat) = Ml(jet) × coef/100 / poids      (arrondi à 2 décim
 - **Over** : une stat déjà présente sur l'objet ne s'ajoute pas en exo ; on tape un jet au-dessus du maximum de la ligne. Même plafond de 101, mais le maximum naturel de la ligne n'est jamais refusé.
 - **Affichage** : les exos sont en tête du tableau, en bleu (`--exo`), le dernier ajouté en premier. Conservés par serveur et par objet (`craftcheck-brisage-exos`).
 
+## Lignes négatives dans Dofus Craft (specs/067-brisage-lignes-negatives)
+
+- **Règle retenue (Kama Master, kamamaster.fr)** : le poids d'une ligne négative suit la formule des lignes positives appliquée au jet négatif, `0,015 × niveau × poids de la stat × jet + 1`, ramené à 0 s'il est négatif. Le code de Kama Master calcule `3 × poids × jet × niveau / 200 + 1` pour tout jet et borne le résultat à 0.
+- **Effets** : une ligne négative ne donne aucune rune, n'est jamais cible d'un focus et compte à `focusOtherShare` (50 %) dans le poids reporté sur la rune ciblée. Un objet qui n'a que des lignes négatives n'a aucune ligne exploitable.
+- **Exemples** : niveau 200, Force −10 : `0,015×200×1×(−10)+1 = −29`, donc 0, aucun effet. Niveau 20, Force −1 : `0,7`, soit +0,35 au poids d'un focus ailleurs.
+- **Écartée, DoFocus** : `3 × jet / (200 × valeur) + 1` pour un jet négatif (sans niveau ni poids de stat). La constante `valeur` vient d'une API non lisible, et la formule donne un poids positif à un malus.
+- **Écartée, forgemagie** : en forgemagie, le poids d'un malus est divisé par 2. Kama Master ne reprend pas cette règle au brisage, et nous non plus.
+- **Estimation, à confirmer par un relevé en jeu** : un focus sur un objet avec un malus, à coefficient connu, comparé au nombre de runes prévu. La règle est isolée dans `negativeLineWeight` (`src/domain/brisage.ts`).
+- **Affichage** : les malus sont en rouge après les lignes positives, avec le badge « Malus » et la mention « aucune rune ». Leur jet reste modifiable dans l'étendue de la ligne. Les données viennent de `negativeRangesOf` (`src/data/catalogue-repository.ts`), à part de `effectRangesOf` que l'index de recherche utilise.
+
 ## Modèle de focus corrigé
 
 - **Avant** : le focus ne dépendait pas du coefficient, et les autres lignes gardaient 50 % de leurs runes.
