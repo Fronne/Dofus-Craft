@@ -67,12 +67,15 @@ export function markCoefficientsImported(): void {
   }
 }
 
-export function listImportableCoefficients(): ImportableCoefficient[] {
-  const limit = Date.parse(IMPORT_NOT_BEFORE);
+// The server refuses a note older than 90 days or dated in the future (a wrong clock): one such note would block the whole
+// send at every visit, so they are left out here too.
+export function listImportableCoefficients(now: Date = new Date()): ImportableCoefficient[] {
+  const limit = Math.max(Date.parse(IMPORT_NOT_BEFORE), now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  const latest = now.getTime() + 4 * 60 * 1000;
   const found: ImportableCoefficient[] = [];
   for (const [key, entry] of Object.entries(readAll())) {
     const colon = key.lastIndexOf(':');
-    if (colon <= 0 || colon === key.length - 1 || !isValid(entry) || Date.parse(entry.savedAt) < limit) continue;
+    if (colon <= 0 || colon === key.length - 1 || !isValid(entry) || Date.parse(entry.savedAt) < limit || Date.parse(entry.savedAt) > latest) continue;
     found.push({ serverId: key.slice(0, colon), itemId: key.slice(colon + 1), coefficient: entry.coefficient, savedAt: entry.savedAt });
   }
   return found;

@@ -73,10 +73,20 @@ describe('shared coefficients (specs/069)', () => {
       'mikhal:bad': { coefficient: 0, savedAt: '2026-10-22T08:00:00.000Z' },
       nocolon: { coefficient: 5, savedAt: '2026-10-22T08:00:00.000Z' },
     }));
-    expect(listImportableCoefficients()).toEqual([
+    expect(listImportableCoefficients(new Date('2026-10-23T00:00:00.000Z'))).toEqual([
       { serverId: 'mikhal', itemId: '777', coefficient: 44, savedAt: '2026-10-21T15:30:00.000Z' },
       { serverId: 'dakal', itemId: '999', coefficient: 12.5, savedAt: '2026-10-22T08:00:00.000Z' },
     ]);
+  });
+
+  it('leaves out notes the server would refuse: older than 90 days or dated in the future', () => {
+    window.localStorage.setItem(KEY, JSON.stringify({
+      'mikhal:1': { coefficient: 44, savedAt: '2026-11-01T10:00:00.000Z' },
+      'mikhal:2': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' },
+      'mikhal:3': { coefficient: 44, savedAt: '2027-03-01T10:00:00.000Z' },
+    }));
+    expect(listImportableCoefficients(new Date('2027-01-25T00:00:00.000Z')).map((note) => note.itemId)).toEqual(['1']);
+    expect(listImportableCoefficients(new Date('2026-11-05T00:00:00.000Z')).map((note) => note.itemId)).toEqual(['1', '2']);
   });
 
   it('remembers that the import is done', () => {

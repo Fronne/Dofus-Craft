@@ -168,7 +168,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     const saved = saveCoefficient(serverId, item.id, value);
     setStored(saved);
     // specs/069: shared with the players; if the server doesn't answer, the note stays on this device.
-    if (saved) void submitCoefficients([{ serverId, itemId: item.id, coefficient: value }]);
+    if (saved) void submitCoefficients([{ serverId, itemId: item.id, coefficient: value, savedAt: saved.savedAt }]);
     setCoefficientText('');
   };
 

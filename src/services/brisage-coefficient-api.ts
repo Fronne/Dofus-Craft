@@ -7,7 +7,7 @@ import { getOrCreateDeviceId } from '../persistence/community-device-id';
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
 const API_KEY = import.meta.env.VITE_COMMUNITY_API_KEY;
 /** The Worker refuses more than this many items per read. */
-export const MAX_ITEMS_PER_READ = 98;
+export const MAX_ITEMS_PER_READ = 96;
 /** The Worker refuses more than this many notes per send. */
 export const MAX_ENTRIES_PER_SEND = 100;
 

@@ -1,4 +1,3 @@
-import { MAX_BATCH_RESOURCE_IDS } from './contribution';
 import { retentionCutoff } from './retention';
 
 // specs/069-coefficients-brisage-partages: the breaking coefficients noted on the Brisage page, shared by
@@ -7,6 +6,8 @@ import { retentionCutoff } from './retention';
 // Same bound as the page (src/domain/brisage.ts MAX_COEFFICIENT), repeated: the Worker doesn't import the app.
 export const MAX_COEFFICIENT = 4000;
 export const MAX_ENTRIES_PER_REQUEST = 100;
+// D1 allows 100 bound parameters a query; a read binds the items plus 3 more.
+export const MAX_ITEMS_PER_READ = 96;
 // A device clock a little ahead is tolerated; further ahead the note is refused.
 const FUTURE_TOLERANCE_MS = 5 * 60 * 1000;
 
@@ -61,8 +62,8 @@ type CoefficientRow = { item_id: string; coefficient: number; noted_at: string }
 export async function coefficientsResponse<S, B>(db: CoefficientDb<S, B>, url: URL, now: Date = new Date()): Promise<{ status: number; body: unknown }> {
   const serverId = url.searchParams.get('serverId');
   const itemIds = [...new Set((url.searchParams.get('itemIds') ?? '').split(',').map((id) => id.trim()).filter(Boolean))];
-  if (!serverId || itemIds.length === 0 || itemIds.length > MAX_BATCH_RESOURCE_IDS) {
-    return { status: 400, body: { error: `serverId and 1 to ${MAX_BATCH_RESOURCE_IDS} itemIds are required` } };
+  if (!serverId || itemIds.length === 0 || itemIds.length > MAX_ITEMS_PER_READ) {
+    return { status: 400, body: { error: `serverId and 1 to ${MAX_ITEMS_PER_READ} itemIds are required` } };
   }
   const { results } = await db.prepare(
     `SELECT c.item_id, c.coefficient, c.noted_at FROM brisage_coefficients c

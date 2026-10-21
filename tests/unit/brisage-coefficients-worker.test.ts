@@ -90,8 +90,14 @@ describe('storing and reading coefficients', () => {
     const { d1 } = await seed();
     expect((await coefficientsResponse(d1, url('itemIds=1'), NOW)).status).toBe(400);
     expect((await coefficientsResponse(d1, url('serverId=mikhal'), NOW)).status).toBe(400);
-    const many = Array.from({ length: 99 }, (_, i) => i + 1).join(',');
+    const many = Array.from({ length: 97 }, (_, i) => i + 1).join(',');
     expect((await coefficientsResponse(d1, url(`serverId=mikhal&itemIds=${many}`), NOW)).status).toBe(400);
+  });
+
+  it('reads a full batch of items in one query (D1 allows 100 parameters)', async () => {
+    const { d1 } = await seed();
+    const ids = Array.from({ length: 96 }, (_, i) => String(700 + i)).join(',');
+    expect((await coefficientsResponse(d1, url(`serverId=mikhal&itemIds=${ids}`), NOW)).status).toBe(200);
   });
 
   it('purges only the notes older than 90 days', async () => {

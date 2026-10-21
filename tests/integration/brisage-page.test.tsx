@@ -18,7 +18,7 @@ vi.mock('../../src/services/community-price-api', () => ({
 const getSharedCoefficients = vi.fn();
 const submitCoefficients = vi.fn();
 vi.mock('../../src/services/brisage-coefficient-api', () => ({
-  MAX_ITEMS_PER_READ: 98,
+  MAX_ITEMS_PER_READ: 96,
   MAX_ENTRIES_PER_SEND: 100,
   getSharedCoefficients: (...args: unknown[]) => getSharedCoefficients(...args),
   submitCoefficients: (...args: unknown[]) => submitCoefficients(...args),
@@ -472,6 +472,8 @@ describe('Brisage page (specs/061)', () => {
   // specs/069-coefficients-brisage-partages
   describe('shared coefficients (specs/069)', () => {
     const LOCAL = 'craftcheck-brisage-coefficients';
+    // Notes are refused by the server (and not imported) when dated in the future: stay behind the real clock.
+    const RECENT = new Date(Date.now() - 60_000).toISOString();
 
     it('shows the coefficient noted by another player, with its date', async () => {
       getSharedCoefficients.mockResolvedValue(new Map([['777', { coefficient: 52, savedAt: '2026-10-22T09:00:00.000Z' }]]));
@@ -499,12 +501,12 @@ describe('Brisage page (specs/061)', () => {
       fireEvent.change(input, { target: { value: '38' } });
       fireEvent.blur(input);
       await screen.findByText(/Dernier coefficient/);
-      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 38 }]);
+      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 38, savedAt: expect.any(String) }]);
       expect(JSON.parse(window.localStorage.getItem(LOCAL)!)['mikhal:777'].coefficient).toBe(38);
     });
 
     it('falls back on the local coefficient when the server does not answer', async () => {
-      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' } }));
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: RECENT } }));
       getSharedCoefficients.mockResolvedValue(undefined);
       submitCoefficients.mockResolvedValue(false);
       await openBrisage();
@@ -515,12 +517,12 @@ describe('Brisage page (specs/061)', () => {
 
     it('imports the coefficients of the device once, with their date, and not those before the limit', async () => {
       window.localStorage.setItem(LOCAL, JSON.stringify({
-        'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' },
+        'mikhal:777': { coefficient: 44, savedAt: RECENT },
         'mikhal:888': { coefficient: 20, savedAt: '2026-10-12T10:00:00.000Z' },
       }));
       await openBrisage();
       await waitFor(() => expect(submitCoefficients).toHaveBeenCalledTimes(1));
-      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' }]);
+      expect(submitCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777', coefficient: 44, savedAt: RECENT }]);
       await waitFor(() => expect(window.localStorage.getItem('craftcheck-brisage-coefficients-imported')).toBe('1'));
       cleanup();
       await reopenBrisage();
@@ -528,7 +530,7 @@ describe('Brisage page (specs/061)', () => {
     });
 
     it('tries the import again at the next visit when the server did not answer', async () => {
-      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-22T10:00:00.000Z' } }));
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: RECENT } }));
       submitCoefficients.mockResolvedValue(false);
       await openBrisage();
       await waitFor(() => expect(submitCoefficients).toHaveBeenCalledTimes(1));
