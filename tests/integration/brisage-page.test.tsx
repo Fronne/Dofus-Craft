@@ -272,6 +272,39 @@ describe('Brisage page (specs/061)', () => {
     expect(document.querySelector('img.kamas-amount-icon')).not.toBeNull();
   });
 
+  it('shows the value of the runes apart from the total with the item price deducted', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
+    const runes = (await screen.findByText('Total des runes')).closest('tr')!;
+    const deducted = screen.getByText("Total de l'objet, prix déduit").closest('tr')!;
+    // the prices load after the table appears
+    await waitFor(() => expect(runes.querySelector('td[data-label="Meilleur focus : total des runes"]')).not.toHaveTextContent('—'));
+    const amount = (row: HTMLElement, label: string) => Number((row.querySelector(`td[data-label="${label}"]`)!.textContent ?? '').replace(/[^\d-]/g, ''));
+    // the gain is the value of the runes minus the 1 000 k of the item, for both columns
+    expect(amount(runes, 'Sans focus : total des runes') - 1000).toBe(amount(deducted, 'Sans focus : total'));
+    expect(amount(runes, 'Meilleur focus : total des runes') - 1000).toBe(amount(deducted, 'Meilleur focus : total'));
+  });
+
+  it('shows a dash instead of a total of the runes while a rune has no price', async () => {
+    await pinnedItemPrices.save('mikhal', '777', 1000);
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
+    const runes = (await screen.findByText('Total des runes')).closest('tr')!;
+    expect(runes.querySelector('td[data-label="Sans focus : total des runes"]')).toHaveTextContent('—');
+  });
+
+  it('keeps a single "Total des runes" line when neither the coefficient nor the item price is known', async () => {
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    await screen.findByText('Conseil');
+    expect(screen.getAllByText('Total des runes')).toHaveLength(1);
+  });
+
   describe('estimated value of the runes (specs/063)', () => {
     it('is shown at 100 % before any coefficient is known, even without a price for the item', async () => {
       await pricesKnown();

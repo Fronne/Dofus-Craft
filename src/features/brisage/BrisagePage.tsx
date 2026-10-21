@@ -251,6 +251,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     if (option.missingRuneIds.length > 0) return undefined;
     return costKnown ? option.valueKamas - cost : option.valueKamas;
   };
+  /** Value of the runes of an option, without the price of the item; unknown while a rune has no price. */
+  const runesTotal = (option: BrisageOption | undefined): number | undefined => (
+    option && option.missingRuneIds.length === 0 ? option.valueKamas : undefined
+  );
   const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : focusWins ? best?.focusEffectId : undefined;
   const currentGain = ok ? normal?.gainKamas : undefined;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
@@ -476,6 +480,15 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                       })}
                     </tbody>
                     <tfoot>
+                      {costKnown && (
+                        <tr role="row">
+                          <th scope="row" role="rowheader" colSpan={3}>Total des runes</th>
+                          <td />
+                          <td role="cell" data-label="Sans focus : total des runes">{runesTotal(normal) !== undefined ? <Kamas value={Math.round(runesTotal(normal)!)} /> : '—'}</td>
+                          <td />
+                          <td role="cell" data-label="Meilleur focus : total des runes">{runesTotal(bestFocus) !== undefined ? <Kamas value={Math.round(runesTotal(bestFocus)!)} /> : '—'}</td>
+                        </tr>
+                      )}
                       <tr role="row">
                         <th scope="row" role="rowheader" colSpan={3}>{noCoefficient && !costKnown ? 'Total des runes' : "Total de l'objet, prix déduit"}</th>
                         <td />
