@@ -31,6 +31,7 @@ import { ItemFinder } from './ItemFinder';
 import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
 import { useItemCraftCost } from './useItemCraftCost';
+import { RunePriceInput } from './RunePriceInput';
 import { useRunePrices } from './useRunePrices';
 
 // specs/065-refonte-page-brisage: the page opens on the item search (ItemFinder: name, filters, cards), then the item
@@ -242,6 +243,23 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     return [...ids].sort();
   }, [ranges, negativeRanges, storedExos]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
+  // specs/067: a price typed in the table is used at once, before the carnet is read again; one entry per server and mode.
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const overrideKey = (runeId: string) => `${serverId}:${priceMode}:${runeId}`;
+  const prices: Record<string, number | undefined> = { ...fetched.prices };
+  for (const runeId of runeIds) {
+    const typedPrice = priceOverrides[overrideKey(runeId)];
+    if (typedPrice !== undefined) prices[runeId] = typedPrice;
+  }
+  /** The price of a rune: typed in the table when a server is chosen, else only shown. */
+  const runePriceCell = (runeId: string, runeName: string) => (serverId
+    ? (
+      <RunePriceInput
+        key={runeId} runeId={runeId} runeName={runeName} serverId={serverId} priceMode={priceMode} price={prices[runeId]}
+        onSaved={(id, amount) => setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }))}
+      />
+    )
+    : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">prix manquant</span>);
 
   const ready = item && (ranges.length > 0 || flippedLines.length > 0) && !priceLoading;
   const lineInputs = [
@@ -258,11 +276,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   });
   const hasNewExo = exoEntries.some((exo) => exo.effectId === undefined);
   const analysis = ready && coefficient > 0
-    ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
+    ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, coefficient, itemCostKamas: cost }, RUNES, prices, SETTINGS)
     : undefined;
   // specs/063: without a coefficient the table and a focus advice are still shown (normal breaking at 100 %).
   const advice = ready && !(coefficient > 0)
-    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, fetched.prices, SETTINGS)
+    ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, negatives: negativeInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, prices, SETTINGS)
     : undefined;
   const adviceOk = advice?.status === 'ok' ? advice : undefined;
   const ok = analysis?.status === 'ok' ? analysis : undefined;
@@ -451,7 +469,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           </span>
                         </th>
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
-                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">{noCoefficient ? 'Sans focus (à 100 % : référence)' : 'Sans focus'}</span></th>
+                        <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
                       </tr>
                       <tr role="row">
@@ -468,6 +486,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             entry={entry}
                             choices={exoRunes.filter((choice) => !taken(choice.effectId))}
                             plain={plain}
+                            priceCell={(() => {
+                              const exoRune = entry.effectId === undefined ? undefined : runeForStat(RUNES, entry.effectId, SETTINGS.runeSize);
+                              return exoRune ? runePriceCell(exoRune.rune.id, exoRune.rune.name) : undefined;
+                            })()}
                             onPick={(effectId) => {
                               const max = exoRunes.find((choice) => choice.effectId === effectId)?.max ?? 1;
                               changeExos(exoEntries.map((other) => (other === entry ? { id: entry.id, effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
@@ -512,7 +534,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                                   <span className="brisage-roll-state fm-note">{line.tooHigh ? `jet maximal ${line.limit} : moyen utilisé` : line.invalid ? 'jet invalide : moyen utilisé' : line.over ? 'over' : line.modified ? 'modifié' : line.fixed ? '' : 'moyen'}</span>
                               </>
                             </td>
-                            <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
+                            <td role="cell" data-label="Prix de la rune">{runePriceCell(found.rune.id, found.rune.name)}</td>
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(wholeRunes(plain.count)) : '—'}</td>
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
@@ -525,7 +547,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         const label = statLabel(line.range.effectId);
                         // A malus turned positive by forgemagie counts like an exo: it gives runes, with no focus on it.
                         const plain = line.flipped ? normal?.yields.find((y) => y.effectId === line.range.effectId) : undefined;
-                        const unitPrice = fetched.prices[found.rune.id];
                         return (
                           <tr role="row" key={`negative-${line.index}`} className={line.flipped ? 'brisage-line--exo' : 'brisage-negative'}>
                             <th scope="row" role="rowheader" data-label="Rune">
@@ -553,7 +574,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                               </span>
                               <span className="brisage-roll-state fm-note">{line.tooHigh ? `jet maximal ${line.limit} : moyen utilisé` : line.invalid ? 'jet invalide : moyen utilisé' : ''}</span>
                             </td>
-                            <td role="cell" data-label="Prix de la rune">{typeof unitPrice === 'number' && unitPrice > 0 ? <Kamas value={unitPrice} /> : <span className="fm-note">prix manquant</span>}</td>
+                            <td role="cell" data-label="Prix de la rune">{runePriceCell(found.rune.id, found.rune.name)}</td>
                             <td role="cell" data-label="Sans focus : runes">{plain ? number.format(wholeRunes(plain.count)) : '—'}</td>
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un malus">—</td>

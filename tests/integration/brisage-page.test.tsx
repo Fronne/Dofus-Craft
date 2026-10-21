@@ -44,6 +44,7 @@ vi.mock('../../src/data/servers-repository', () => ({
 
 import runeItems from '../../src/data/rune-items.json';
 import App from '../../src/app/App';
+import { getCommunityPrice, submitCommunityPrice } from '../../src/services/community-price-api';
 import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
 
@@ -51,8 +52,8 @@ const field = (label: string) => screen.getByLabelText(label) as HTMLInputElemen
 const cost = () => document.querySelector('.brisage-cost')?.textContent ?? undefined;
 const type = (label: string, value: string) => fireEvent.change(field(label), { target: { value } });
 
-async function openBrisage() {
-  window.localStorage.setItem('craftcheck-price-mode-choice', 'personal');
+async function openBrisage(mode = 'personal') {
+  window.localStorage.setItem('craftcheck-price-mode-choice', mode);
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   window.history.pushState({}, '', '/brisage');
   render(<App />);
@@ -226,7 +227,7 @@ describe('Brisage page (specs/061)', () => {
       // DoFocus focus model: with the price of the item known, the coefficient under which breaking stops paying.
       expect(screen.getByText(/Rentable tant que le coefficient reste au-dessus de/).nextElementSibling).toHaveTextContent('%');
       expect(screen.getByText('Meilleur focus').closest('tr')).toHaveTextContent('Dommages');
-      expect(screen.getByText(/Sans focus \(à 100 %/)).toBeInTheDocument();
+      expect(screen.getByText('Sans focus')).toBeInTheDocument();
       expect(screen.queryByText('Verdict')).not.toBeInTheDocument();
       expect(screen.queryByText('Gain selon le coefficient')).not.toBeInTheDocument();
     });
@@ -257,7 +258,6 @@ describe('Brisage page (specs/061)', () => {
       fireEvent.change(input, { target: { value: '50' } });
       expect(await screen.findByText('Verdict')).toBeInTheDocument();
       expect(screen.queryByText('Conseil')).not.toBeInTheDocument();
-      expect(screen.queryByText(/Sans focus \(à 100 %/)).not.toBeInTheDocument();
       fireEvent.change(screen.getByLabelText(/Coefficient/), { target: { value: '' } });
       expect(await screen.findByText('Conseil')).toBeInTheDocument();
     });
@@ -701,11 +701,11 @@ describe('Brisage page (specs/061)', () => {
   // specs/067-brisage-lignes-negatives: a malus is shown in red, gives no rune and has no focus; its roll stays negative.
   describe('negative lines (specs/067)', () => {
     const FORCE_MALUS = { effectId: 118, from: -15, to: -10 };
-    const openWithMalus = async (negatives: unknown[] = [FORCE_MALUS]) => {
+    const openWithMalus = async (negatives: unknown[] = [FORCE_MALUS], mode = 'personal') => {
       getItemNegativeRanges.mockResolvedValue(negatives);
       await pinnedItemPrices.save('mikhal', '777', 1000);
       await pricesKnown();
-      await openBrisage();
+      await openBrisage(mode);
       await pickCape();
       fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
     };
@@ -738,9 +738,11 @@ describe('Brisage page (specs/061)', () => {
     });
 
     it('counts a malus turned positive like an exo: runes, no focus, back to a malus when the roll is negative again', async () => {
+      await pricesKnown();
       await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
       await openWithMalus([SAGESSE_MALUS]);
       await screen.findByLabelText('Jet de Sagesse (malus)');
+      await waitFor(() => expect(total()).toMatch(/[0-9]/));
       const before = total();
       type('Jet de Sagesse (malus)', '10');
       const row = field('Jet de Sagesse (malus)').closest('tr')!;
@@ -748,10 +750,94 @@ describe('Brisage page (specs/061)', () => {
       expect(within(row).getByText('Malus corrigé')).toBeInTheDocument();
       expect(row.querySelector('[data-label="Sans focus : runes"]')).not.toHaveTextContent('—');
       expect(row.querySelector('[data-label="Focus : runes"]')).toHaveTextContent('—');
-      expect(total()).not.toBe(before);
+      await waitFor(() => expect(total()).not.toBe(before));
       type('Jet de Sagesse (malus)', '-30');
       await waitFor(() => expect(row).toHaveClass('brisage-negative'));
-      expect(total()).toBe(before);
+      await waitFor(() => expect(total()).toBe(before));
+    });
+
+    // Histoire 5: the unit price of a rune is typed in the table.
+    it('saves a price typed in the table in the carnet and recomputes the total', async () => {
+      await pricesKnown();
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
+      await openWithMalus([SAGESSE_MALUS]);
+      await screen.findByLabelText('Jet de Sagesse (malus)');
+      type('Jet de Sagesse (malus)', '10');
+      await waitFor(() => expect(field('Jet de Sagesse (malus)').closest('tr')).toHaveClass('brisage-line--exo'));
+      await waitFor(() => expect(total()).not.toBe(''));
+      const before = total();
+      const input = screen.getByLabelText('Prix de Rune Sa');
+      fireEvent.change(input, { target: { value: '5000' } });
+      fireEvent.blur(input);
+      await waitFor(() => expect(total()).not.toBe(before));
+      expect(screen.getByLabelText('Prix de Rune Sa')).toHaveValue('5 000');
+      expect((await resourcePricesFor('personal').get('mikhal', saRuneId))?.unitPriceKamas).toBe(5000);
+      expect(submitCommunityPrice).not.toHaveBeenCalled();
+    });
+
+    describe('in Mode communautaire', () => {
+      const median = (amount: number) => vi.mocked(getCommunityPrice).mockResolvedValue({
+        status: 'found',
+        price: { resourceId: saRuneId, serverId: 'mikhal', medianAmountKamas: amount, sampleSize: 3, latestAmountKamas: amount, latestContributionAt: '2026-10-01T12:00:00.000Z' },
+      });
+      const typePrice = async (value: string) => {
+        fireEvent.change(await screen.findByLabelText("Prix de l'objet (kamas)"), { target: { value: '1000' } });
+        await screen.findByLabelText('Jet de Sagesse (malus)');
+        const input = await screen.findByLabelText('Prix de Rune Sa');
+        fireEvent.change(input, { target: { value } });
+        fireEvent.blur(input);
+      };
+      beforeEach(async () => {
+        vi.mocked(submitCommunityPrice).mockClear();
+        // The community carnet starts empty: give the runes of the cape a price so the table shows.
+        const carnet = resourcePricesFor('community');
+        await carnet.save('mikhal', '1523', 5);
+        await carnet.save('mikhal', '1525', 5);
+        await carnet.save('mikhal', '7435', 3000);
+        await carnet.save('mikhal', saRuneId, 10);
+      });
+      afterEach(() => { vi.mocked(getCommunityPrice).mockResolvedValue({ status: 'not-found' }); });
+
+      it('shares a price close to the median without asking', async () => {
+        median(5000);
+        await openWithMalus([SAGESSE_MALUS], 'community');
+        await typePrice('5100');
+        await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith(saRuneId, 'mikhal', 5100));
+        expect(screen.queryByRole('button', { name: 'Enregistrer quand même' })).not.toBeInTheDocument();
+      });
+
+      it('asks before sharing a price far from the median, and shares nothing when refused', async () => {
+        median(5000);
+        await openWithMalus([SAGESSE_MALUS], 'community');
+        await typePrice('9000');
+        fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }));
+        await waitFor(() => expect(screen.queryByRole('button', { name: 'Annuler' })).not.toBeInTheDocument());
+        expect(submitCommunityPrice).not.toHaveBeenCalled();
+        expect((await resourcePricesFor('community').get('mikhal', saRuneId))?.unitPriceKamas).toBe(10);
+      });
+
+      it('shares a far price once confirmed', async () => {
+        median(5000);
+        await openWithMalus([SAGESSE_MALUS], 'community');
+        await typePrice('9000');
+        fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer quand même' }));
+        await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith(saRuneId, 'mikhal', 9000));
+        expect((await resourcePricesFor('community').get('mikhal', saRuneId))?.unitPriceKamas).toBe(9000);
+      });
+    });
+
+    it('brings the price in use back when the field is emptied or set to 0', async () => {
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
+      await openWithMalus([SAGESSE_MALUS]);
+      await screen.findByLabelText('Jet de Sagesse (malus)');
+      const input = await screen.findByLabelText('Prix de Rune Sa');
+      await waitFor(() => expect(input).toHaveValue('10'));
+      for (const typed of ['', '0']) {
+        fireEvent.change(input, { target: { value: typed } });
+        fireEvent.blur(input);
+        await waitFor(() => expect(input).toHaveValue('10'));
+      }
+      expect((await resourcePricesFor('personal').get('mikhal', saRuneId))?.unitPriceKamas).toBe(10);
     });
 
     it('refuses a positive roll above the weight limit of an exo, and a roll of 0', async () => {

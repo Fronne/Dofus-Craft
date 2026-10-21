@@ -91,6 +91,18 @@ Un malus peut avoir été retourné en positif par forgemagie (ex. −30 Sagesse
 
 ---
 
+### User Story 5 - Modifier le prix d'une rune depuis le tableau (Priorité : P2)
+
+Le joueur corrige le prix unitaire d'une rune directement dans la colonne « Prix unitaire », sans quitter la page Brisage.
+
+**Scénarios d'acceptation** :
+
+1. **Étant donné** un tableau avec un prix de rune, **quand** le joueur saisit un nouveau prix et valide (sortie du champ ou Entrée), **alors** le prix est enregistré dans le carnet du mode actif et les totaux sont recalculés aussitôt.
+2. **Étant donné** le mode communautaire, **quand** le joueur valide un prix, **alors** il est aussi partagé avec le groupe, après la confirmation habituelle si l'écart avec le prix du groupe dépasse le seuil.
+3. **Étant donné** un champ vidé ou à 0, **quand** le joueur valide, **alors** le prix en vigueur revient.
+
+---
+
 ### Cas limites
 
 - Stat négative sans rune connue : ignorée comme une stat positive sans rune, et signalée de la même façon.
@@ -115,6 +127,8 @@ Un malus peut avoir été retourné en positif par forgemagie (ex. −30 Sagesse
 - **FR-012** : Le jet d'une ligne de malus DOIT pouvoir être un entier positif ; la ligne est alors une ligne positive comptée comme un exo (runes au coefficient de l'objet, 50 % dans un focus, jamais cible de focus).
 - **FR-013** : Le poids d'une ligne de malus passée en positif DOIT respecter le plafond de 101 d'un exo.
 - **FR-014** : Le prix de la rune de chaque ligne de malus DOIT être affiché, sans jamais bloquer le calcul quand il manque.
+- **FR-015** : Le prix unitaire d'une rune DOIT être modifiable dans le tableau ; il est enregistré dans le carnet du mode actif et les totaux sont recalculés.
+- **FR-016** : En mode communautaire, le prix saisi DOIT aussi être partagé avec le groupe, après la confirmation de valeur aberrante des autres pages. Un champ vide ou à 0 n'est pas un prix.
 - **FR-011** : La règle DOIT être présentée comme une estimation, avec ses sources (Kama Master retenu, DoFocus écarté), dans la documentation du projet.
 
 ### Entités clés

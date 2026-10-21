@@ -103,7 +103,9 @@ Sans focus : runes(stat) = Ml(jet) × coef/100 / poids      (arrondi à 2 décim
 - **Malus retourné par forgemagie** : le jet d'un malus accepte un entier positif (de 1 au plafond de poids de 101, comme un exo). La ligne est alors comptée comme un exo : runes au coefficient de l'objet, 50 % dans un focus, jamais cible de focus. Le prix de la rune s'affiche sur tous les malus, même négatifs, pour être connu au moment de la bascule.
 - **Estimation, à confirmer par un relevé en jeu** : un focus sur un objet avec un malus, à coefficient connu, comparé au nombre de runes prévu. La règle est isolée dans `negativeLineWeight` (`src/domain/brisage.ts`).
 - **Identifiants DofusDB** : un malus a son propre identifiant d'effet (« −Force » est 157, « −PA » 168, « −Initiative » 175…), avec une valeur négative. Le tableau `NEGATIVE_EFFECT_STAT` de `src/domain/brisage.ts` donne pour chacun la stat qu'il retire (157 → 118). Il couvre les 48 malus relevés sur les ~24 000 objets de DofusDB (octobre 2026) ; un malus absent de la table est ignoré et compté avec les lignes sans rune connue.
-- **Affichage** : les malus sont en rouge après les lignes positives, avec le badge « Malus », sans prix ni rune. Leur jet reste modifiable dans l'étendue de la ligne. Les données viennent de `negativeRangesOf` (`src/data/catalogue-repository.ts`), à part de `effectRangesOf` que l'index de recherche utilise.
+- **Affichage** : les malus sont en rouge après les lignes positives, avec le badge « Malus » et le prix de la rune (aucune rune n'est donnée). Leur jet reste modifiable dans l'étendue de la ligne. Les données viennent de `negativeRangesOf` (`src/data/catalogue-repository.ts`), à part de `effectRangesOf` que l'index de recherche utilise.
+
+- **Prix modifiable dans le tableau** : la colonne « Prix unitaire » est un champ. Le prix saisi va dans le carnet du mode actif ; en mode communautaire il est aussi partagé avec le groupe, après la confirmation de valeur aberrante (`RunePriceInput`). Un champ vide ou à 0 rétablit le prix en vigueur.
 
 ## Modèle de focus corrigé
 

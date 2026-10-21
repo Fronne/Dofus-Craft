@@ -96,6 +96,14 @@ description: "Liste de tâches : lignes à jet négatif, page Brisage"
 
 ---
 
+## Phase 5c : Histoire 5 — Modifier le prix d'une rune depuis le tableau (P2)
+
+- [X] T026 [US5] Créer `src/features/brisage/RunePriceInput.tsx` : champ de prix, enregistrement dans le carnet du mode, partage et confirmation de valeur aberrante en mode communautaire.
+- [X] T027 [US5] Brancher le champ dans `BrisagePage.tsx` (prix saisis pris en compte aussitôt) et `ExoRow.tsx` (`priceCell`) ; styles dans `src/styles/global.css`.
+- [X] T028 [US5] Tests dans `tests/integration/brisage-page.test.tsx` : prix saisi enregistré et total recalculé, champ vide ou 0 sans effet.
+
+---
+
 ## Phase 6 : Finitions
 
 - [X] T018 [P] Ajouter à `docs/dofocus-brisage.md` une section « Lignes négatives (specs/067) » : règle retenue (Kama Master), DoFocus écarté, ta règle de forgemagie non reprise, exemple chiffré, mention « estimation, à confirmer par un relevé ».

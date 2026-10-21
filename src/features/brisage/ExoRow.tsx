@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { isRollAllowed } from '../../domain/brisage';
 import type { RuneYield } from '../../domain/brisage';
 import { Kamas } from '../prices/PricesPage';
@@ -71,12 +71,14 @@ function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choic
   );
 }
 
-export function ExoRow({ entry, choices, plain, onPick, onValue, onRemove }: {
+export function ExoRow({ entry, choices, plain, priceCell, onPick, onValue, onRemove }: {
   entry: ExoEntry;
   /** The runes this line may take: its own and the ones not used yet. */
   choices: ExoRuneChoice[];
   /** What the normal breaking gives for this line, once its rune is picked. */
   plain: RuneYield | undefined;
+  /** specs/067: the price field of the rune, when the page lets the price be typed in the table. */
+  priceCell?: ReactNode;
   onPick: (effectId: number) => void;
   onValue: (value: number) => void;
   onRemove: () => void;
@@ -131,7 +133,7 @@ export function ExoRow({ entry, choices, plain, onPick, onValue, onRemove }: {
           </span>
         )}
       </td>
-      <td role="cell" data-label="Prix de la rune">{!chosen ? '—' : plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
+      <td role="cell" data-label="Prix de la rune">{!chosen ? '—' : priceCell ?? (plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>)}</td>
       <td role="cell" data-label="Sans focus : runes">{plain ? number.format(Math.round(plain.count)) : '—'}</td>
       <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
       <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un exo">—</td>
