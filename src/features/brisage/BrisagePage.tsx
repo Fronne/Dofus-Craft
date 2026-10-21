@@ -227,14 +227,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs, itemCostKamas: Number.isFinite(cost) ? cost : undefined }, RUNES, fetched.prices, SETTINGS)
     : undefined;
   const adviceOk = advice?.status === 'ok' ? advice : undefined;
-  // specs/063: the value of the runes of one breaking, known before breaking anything: the lines (with the
-  // rolls typed) and the rune prices are enough, the price of the item is not needed. Without a coefficient
-  // it is the value at 100 %, the most the item can give.
-  const estimateSource = advice ?? (ready ? analyzeFocusAdvice({ level: item.level ?? NaN, lines: lineInputs }, RUNES, fetched.prices, SETTINGS) : undefined);
-  const estimateRef = estimateSource?.status === 'ok' && estimateSource.reference.missingRuneIds.length === 0 && !(coefficient > MAX_COEFFICIENT)
-    ? estimateSource.reference
-    : undefined;
-  const runesValue = estimateRef ? estimateRef.valueKamas * (coefficient > 0 ? coefficient / 100 : 1) : undefined;
   const ok = analysis?.status === 'ok' ? analysis : undefined;
   const best = ok?.best;
   const normal = ok ? ok.options.find((option) => option.kind === 'normal') : adviceOk?.reference;
@@ -255,8 +247,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const runesTotal = (option: BrisageOption | undefined): number | undefined => (
     option && option.missingRuneIds.length === 0 ? option.valueKamas : undefined
   );
+  /** Green for a positive total, red for a negative one; nothing while the total is unknown or zero. */
+  const totalTone = (amount: number | undefined) => (
+    amount === undefined || Math.round(amount) === 0 ? undefined : amount > 0 ? 'brisage-total-gain' : 'brisage-total-loss'
+  );
   const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : focusWins ? best?.focusEffectId : undefined;
-  const currentGain = ok ? normal?.gainKamas : undefined;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
     : [];
@@ -484,17 +479,17 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         <tr role="row">
                           <th scope="row" role="rowheader" colSpan={3}>Total des runes</th>
                           <td />
-                          <td role="cell" data-label="Sans focus : total des runes">{runesTotal(normal) !== undefined ? <Kamas value={Math.round(runesTotal(normal)!)} /> : '—'}</td>
+                          <td role="cell" data-label="Sans focus : total des runes" className={totalTone(runesTotal(normal))}>{runesTotal(normal) !== undefined ? <Kamas value={Math.round(runesTotal(normal)!)} /> : '—'}</td>
                           <td />
-                          <td role="cell" data-label="Meilleur focus : total des runes">{runesTotal(bestFocus) !== undefined ? <Kamas value={Math.round(runesTotal(bestFocus)!)} /> : '—'}</td>
+                          <td role="cell" data-label="Meilleur focus : total des runes" className={totalTone(runesTotal(bestFocus))}>{runesTotal(bestFocus) !== undefined ? <Kamas value={Math.round(runesTotal(bestFocus)!)} /> : '—'}</td>
                         </tr>
                       )}
                       <tr role="row">
                         <th scope="row" role="rowheader" colSpan={3}>{noCoefficient && !costKnown ? 'Total des runes' : "Total de l'objet, prix déduit"}</th>
                         <td />
-                        <td role="cell" data-label="Sans focus : total">{gainOf(normal) !== undefined ? <Kamas value={Math.round(gainOf(normal)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
+                        <td role="cell" data-label="Sans focus : total" className={totalTone(gainOf(normal))}>{gainOf(normal) !== undefined ? <Kamas value={Math.round(gainOf(normal)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
                         <td />
-                        <td role="cell" data-label="Meilleur focus : total">{gainOf(bestFocus) !== undefined ? <Kamas value={Math.round(gainOf(bestFocus)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
+                        <td role="cell" data-label="Meilleur focus : total" className={totalTone(gainOf(bestFocus))}>{gainOf(bestFocus) !== undefined ? <Kamas value={Math.round(gainOf(bestFocus)!)} signed={!noCoefficient || costKnown} /> : '—'}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -506,51 +501,24 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
             </>
           )}
-          {(runesValue !== undefined || nextGains.length > 0) && (
+          {nextGains.length > 0 && (
             <section className="brisage-part brisage-footline" aria-label="Informations annexes">
-              {runesValue !== undefined && (
-                <section className="brisage-estimate" aria-labelledby="brisage-estimate-title">
-                  <h2 id="brisage-estimate-title" className="brisage-gain-label">Valeur estimée des runes</h2>
-                  <p className="brisage-estimate-value">
-                    <Kamas value={Math.round(runesValue)} />{' '}
-                    <span className="fm-note">
-                      {coefficient > 0 ? `par brisage à ${displayedCoefficient(coefficient)} %` : 'par brisage à 100 % (maximum : le coefficient est inconnu)'}
-                    </span>
-                  </p>
-                </section>
-              )}
-              {nextGains.length > 0 && (
-                <section className="brisage-gains-layout" aria-labelledby="brisage-gains-title">
-                  <h2 id="brisage-gains-title" className="visually-hidden">Gain selon le coefficient</h2>
-                  <div className="brisage-gains-now">
-                    <span className="brisage-gain-label">Coefficient actuel</span>
-                    <span className="brisage-gain-coef">{number.format(coefficient)} %</span>
-                    {currentGain !== undefined && currentGain > 0.5 && (
-                      <span className="brisage-gain-value">
-                        <Kamas value={Math.round(currentGain)} signed /> <span className="fm-note">sans focus</span>
-                      </span>
-                    )}
-                    {focusWins && (
-                      <span className="brisage-gain-value">
-                        <Kamas value={Math.round(best!.gainKamas!)} signed /> <span className="fm-note">avec un focus {shortRune(best!)}</span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="brisage-gains-next">
-                    <span className="brisage-gain-label">Après 1, 2, 3 brisages (sans focus, estimation)</span>
-                    <ul className="brisage-gains">
-                      {nextGains.map((point, index) => (
-                        <li key={index}>
-                          <span className="brisage-gain-label">à {displayedCoefficient(point.coefficient)} %</span>
-                          <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
-                            <Kamas value={Math.round(point.gain)} signed />
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </section>
-              )}
+              <section className="brisage-gains-layout" aria-labelledby="brisage-gains-title">
+                <h2 id="brisage-gains-title" className="visually-hidden">Gain selon le coefficient</h2>
+                <div className="brisage-gains-next">
+                  <span className="brisage-gain-label">Après 1, 2, 3 brisages (sans focus, estimation)</span>
+                  <ul className="brisage-gains">
+                    {nextGains.map((point, index) => (
+                      <li key={index}>
+                        <span className="brisage-gain-label">à {displayedCoefficient(point.coefficient)} %</span>
+                        <span className={`brisage-gain-value${point.gain < -0.5 ? ' is-loss' : ''}`}>
+                          <Kamas value={Math.round(point.gain)} signed />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
             </section>
           )}
         </div>

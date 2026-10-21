@@ -305,36 +305,12 @@ describe('Brisage page (specs/061)', () => {
     expect(screen.getAllByText('Total des runes')).toHaveLength(1);
   });
 
-  describe('estimated value of the runes (specs/063)', () => {
-    it('is shown at 100 % before any coefficient is known, even without a price for the item', async () => {
-      await pricesKnown();
-      await openBrisage();
-      await pickCape();
-      expect(await screen.findByText('Valeur estimée des runes')).toBeInTheDocument();
-      expect(screen.getByText(/par brisage à 100 % \(maximum/)).toBeInTheDocument();
-    });
-
-    it('follows the coefficient and the rolls, still without a price for the item', async () => {
-      await pricesKnown();
-      await openBrisage();
-      await pickCape();
-      const value = () => screen.getByText('Valeur estimée des runes').closest('section')!.querySelector('.brisage-estimate-value')!.textContent;
-      await screen.findByText('Valeur estimée des runes');
-      const at100 = value();
-      // A roll typed in the table changes the value.
-      fireEvent.change(screen.getByLabelText('Jet de Dommages'), { target: { value: '9' } });
-      await waitFor(() => expect(value()).not.toBe(at100));
-      // The coefficient scales it, and the page keeps showing it with the coefficient but no price for the item.
-      fireEvent.change(screen.getByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
-      await waitFor(() => expect(screen.getByText('Valeur estimée des runes').closest('section')).toHaveTextContent('par brisage à 50 %'));
-    });
-
-    it('is not shown while a rune has no price', async () => {
-      await openBrisage();
-      await pickCape();
-      await screen.findAllByText(/Prix manquants?/);
-      expect(screen.queryByText('Valeur estimée des runes')).not.toBeInTheDocument();
-    });
+  it('no longer shows a separate estimated value of the runes (the totals row has it)', async () => {
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    await screen.findByText('Conseil');
+    expect(screen.queryByText('Valeur estimée des runes')).not.toBeInTheDocument();
   });
 
   it('shows whole numbers of runes only, and the next breaks at whole coefficients that can repeat', async () => {
@@ -367,8 +343,8 @@ describe('Brisage page (specs/061)', () => {
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
     expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
-    // The gain block shows the current coefficient on the left, the next three breaks on the right.
-    expect(screen.getByText('Coefficient actuel')).toBeInTheDocument();
+    // The gain block only shows the next three breaks.
+    expect(screen.queryByText('Coefficient actuel')).not.toBeInTheDocument();
     expect(screen.getAllByText(/^à [\d,]+ %$/)).toHaveLength(3);
   });
 
@@ -382,7 +358,20 @@ describe('Brisage page (specs/061)', () => {
     fireEvent.blur(input);
     expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('150 %');
     expect(await screen.findByText(/Rentable/)).toBeInTheDocument();
-    expect(screen.getByText('Coefficient actuel')).toBeInTheDocument();
+    expect(screen.queryByText('Coefficient actuel')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['green when the item pays', 1000, 'brisage-total-gain'],
+    ['red when the item loses', 1000000000, 'brisage-total-loss'],
+  ])('colours the totals %s', async (_label, price, tone) => {
+    await pinnedItemPrices.save('mikhal', '777', price);
+    await pricesKnown();
+    await openBrisage();
+    await pickCape();
+    fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '150' } });
+    const cell = (await screen.findByText("Total de l'objet, prix déduit")).closest('tr')!.querySelector('[data-label="Sans focus : total"]')!;
+    await waitFor(() => expect(cell).toHaveClass(tone));
   });
 
   it('brings back the item, the typed coefficient and the typed rolls after a reload', async () => {
