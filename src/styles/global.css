@@ -2554,12 +2554,17 @@ select:focus {
   .brisage-table tbody td:nth-child(7) { border-right: 2px solid var(--accent); }
   .brisage-table tbody .brisage-best td:nth-child(4), .brisage-table tbody .brisage-best td:nth-child(5) { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
   .brisage-table tbody .brisage-best td:nth-child(6), .brisage-table tbody .brisage-best td:nth-child(7) { background-color: color-mix(in srgb, var(--accent) 34%, transparent); }
-  .brisage-table tfoot td:nth-child(2), .brisage-table tfoot td:nth-child(3) { background-color: rgba(150, 120, 255, .1); border-bottom: 2px solid #b99cff; }
-  .brisage-table tfoot td:nth-child(4), .brisage-table tfoot td:nth-child(5) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); border-bottom: 2px solid var(--accent); }
-  .brisage-table tfoot td:nth-child(2) { border-left: 2px solid #b99cff; border-bottom-left-radius: 12px; }
-  .brisage-table tfoot td:nth-child(3) { border-right: 2px solid #b99cff; border-bottom-right-radius: 12px; }
-  .brisage-table tfoot td:nth-child(4) { border-left: 2px solid var(--accent); border-bottom-left-radius: 12px; }
-  .brisage-table tfoot td:nth-child(5) { border-right: 2px solid var(--accent); border-bottom-right-radius: 12px; }
+  /* Several total rows stay in one box: a thin line between them, the thick border and the rounded corners only on the last one. */
+  .brisage-table tfoot td:nth-child(2), .brisage-table tfoot td:nth-child(3) { background-color: rgba(150, 120, 255, .1); border-bottom: 1px solid var(--border); }
+  .brisage-table tfoot td:nth-child(4), .brisage-table tfoot td:nth-child(5) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); border-bottom: 1px solid var(--border); }
+  .brisage-table tfoot tr:last-child td:nth-child(2), .brisage-table tfoot tr:last-child td:nth-child(3) { border-bottom: 2px solid #b99cff; }
+  .brisage-table tfoot tr:last-child td:nth-child(4), .brisage-table tfoot tr:last-child td:nth-child(5) { border-bottom: 2px solid var(--accent); }
+  .brisage-table tfoot td:nth-child(2) { border-left: 2px solid #b99cff; }
+  .brisage-table tfoot td:nth-child(3) { border-right: 2px solid #b99cff; }
+  .brisage-table tfoot td:nth-child(4) { border-left: 2px solid var(--accent); }
+  .brisage-table tfoot td:nth-child(5) { border-right: 2px solid var(--accent); }
+  .brisage-table tfoot tr:last-child td:nth-child(2), .brisage-table tfoot tr:last-child td:nth-child(4) { border-bottom-left-radius: 12px; }
+  .brisage-table tfoot tr:last-child td:nth-child(3), .brisage-table tfoot tr:last-child td:nth-child(5) { border-bottom-right-radius: 12px; }
 }
 .brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
 /* specs/066: an exo line sits first in the table and is blue, as in the game; the exo form sits under the table. */
