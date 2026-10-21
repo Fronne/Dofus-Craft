@@ -20,7 +20,6 @@ import { useRunePrices } from './useRunePrices';
 // is an ESTIMATE (specs/064): normal breaking at a reference coefficient of 100 %, from the average roll.
 
 const PAGE_SIZE = 6;
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 export type FoundItem = { id: string; name: string; level: number; imageUrl?: string };
 
@@ -180,7 +179,6 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
           )}
         </>
       )}
-      {index && <p className="fm-note brisage-search-source">Objets relevés sur DofusDB le {dateFormat.format(new Date(index.retrievedAt))}.</p>}
     </div>
   );
 }

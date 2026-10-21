@@ -2564,7 +2564,6 @@ select:focus {
 :root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
 .brisage-exo-value { font-weight: 700; }
 .brisage-exo-add { margin-left: auto; min-height: 36px; }
-.brisage-exo-note { margin-top: var(--space-3); }
 .brisage-exo-picker { position: relative; display: inline-block; }
 .brisage-exo-pick { white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: 1px solid var(--exo); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--exo); font: inherit; font-weight: 600; cursor: pointer; }
 .brisage-exo-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; flex: none; }

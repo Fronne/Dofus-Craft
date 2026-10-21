@@ -473,7 +473,6 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     </tfoot>
                   </table>
                 </div>
-                <p className="fm-note brisage-exo-note">Exo : calcul estimé, repris de DoFocus. Une ligne exo compte comme une ligne de plus, sans focus possible ; poids maximal 101.</p>
                 {ignoredCount > 0 && (
                   <p className="fm-note">{ignoredCount} ligne(s) sans poids ni rune connus ne sont pas comptées.</p>
                 )}
