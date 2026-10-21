@@ -2719,7 +2719,8 @@ select:focus {
 
 /* specs/066: the "Exo" badge is also the button that removes the line. */
 button.brisage-badge--exo { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 1.3rem; padding: 0 .5rem 0 .6rem; border: 0; font: inherit; font-size: .75rem; font-weight: 700; line-height: 1; cursor: pointer; }
-button.brisage-badge--exo:hover, button.brisage-badge--exo:focus-visible { filter: brightness(1.15); outline: 2px solid var(--exo); outline-offset: 2px; }
+button.brisage-badge--exo { transition: transform .12s ease; }
+button.brisage-badge--exo:hover, button.brisage-badge--exo:focus-visible { transform: scale(1.12); filter: brightness(1.15); outline: 2px solid var(--exo); outline-offset: 2px; }
 button.brisage-badge--exo svg, button.brisage-badge--exo svg * { color: inherit; }
 button.brisage-badge--exo svg { display: block; flex: none; opacity: .8; }
 button.brisage-badge--exo:hover svg { opacity: 1; }
