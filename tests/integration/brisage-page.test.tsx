@@ -441,10 +441,10 @@ describe('Brisage page (specs/061)', () => {
     // Vitalité 40–44 and Dommages 1–9 are free; Chance (38) is fixed: a field, but the switch skips it.
     expect(field('Jet de Chance').placeholder).toBe('38');
     type('Jet de Chance', '45');
-    expect(screen.getByText('modifié')).toBeInTheDocument();
+    expect(screen.getByText('over')).toBeInTheDocument();
     type('Jet de Chance', '');
     type('Jet de Vitalité', '60');
-    expect(screen.getByText('modifié')).toBeInTheDocument();
+    expect(screen.getByText('over')).toBeInTheDocument();
     type('Jet de Vitalité', '');
     expect(screen.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Min' }));
@@ -510,6 +510,109 @@ describe('Brisage page (specs/061)', () => {
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
       expect(await screen.findByLabelText('Auto')).toBeChecked();
+    });
+  });
+
+  describe('exos and overs (specs/066)', () => {
+    const FO = '118', PA = '111';
+    const total = () => document.querySelector('tfoot td[data-label="Sans focus : total"]')?.textContent ?? '';
+    const exoRows = () => [...document.querySelectorAll('tr.brisage-line--exo')];
+    const exoSelect = () => document.querySelector('.brisage-exo-form select') as HTMLSelectElement;
+    const addExo = (effectId: string, value: string) => {
+      fireEvent.change(exoSelect(), { target: { value: effectId } });
+      fireEvent.change(screen.getByLabelText("Valeur de l'exo"), { target: { value } });
+      fireEvent.click(screen.getByRole('button', { name: 'Ajouter un exo' }));
+    };
+    const ready = async () => {
+      await pinnedItemPrices.save('mikhal', '777', 1000);
+      await pricesKnown();
+      await resourcePricesFor('personal').save('mikhal', '1519', 10);
+      await resourcePricesFor('personal').save('mikhal', '1557', 9000);
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '50' } });
+      await screen.findByText('Verdict');
+      await waitFor(() => expect(total()).not.toBe('—'));
+    };
+
+    it('adds an exo as the first line, in blue, counted in the total, without a focus, and removes it', async () => {
+      await ready();
+      const before = total();
+      addExo(FO, '5');
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      const row = exoRows()[0];
+      expect(row).toHaveTextContent('Exo');
+      expect(row.closest('tbody')!.firstElementChild).toBe(row);
+      expect(row.querySelector('[data-label="Focus : runes"]')).toHaveTextContent('—');
+      expect(row).not.toHaveTextContent('Meilleur focus');
+      await waitFor(() => expect(total()).not.toBe(before));
+      expect(total()).not.toBe('—');
+      fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo Force" }));
+      await waitFor(() => expect(exoRows()).toHaveLength(0));
+      await waitFor(() => expect(total()).toBe(before));
+    });
+
+    it('puts the last exo added first and offers neither a stat the item has nor one already in exo', async () => {
+      await ready();
+      expect([...exoSelect().options].map((option) => option.textContent)).not.toContain('Vitalité');
+      addExo(FO, '5');
+      addExo(PA, '1');
+      await waitFor(() => expect(exoRows()).toHaveLength(2));
+      expect(exoRows()[0]).toHaveTextContent('Rune Ga Pa');
+      expect([...exoSelect().options].map((option) => option.textContent)).not.toContain('Force');
+    });
+
+    it('refuses an exo above the weight limit, a zero, a decimal and shows the maximum', async () => {
+      await ready();
+      fireEvent.change(exoSelect(), { target: { value: FO } });
+      expect(screen.getByText(/Maximum 101 pour Force/)).toBeInTheDocument();
+      addExo(FO, '150');
+      expect(screen.getByLabelText("Valeur de l'exo")).toHaveAttribute('aria-invalid', 'true');
+      expect(exoRows()).toHaveLength(0);
+      addExo(FO, '0');
+      addExo(FO, '2.5');
+      expect(exoRows()).toHaveLength(0);
+      addExo(PA, '2');
+      expect(screen.getByText(/de 1 à 1/)).toBeInTheDocument();
+      expect(exoRows()).toHaveLength(0);
+      addExo(PA, '1');
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+    });
+
+    it('keeps the exos of each item after a reload', async () => {
+      await ready();
+      addExo(FO, '5');
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      cleanup();
+      render(<App />);
+      await screen.findByRole('heading', { name: 'Brisage' });
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      expect(exoRows()[0]).toHaveTextContent('Exo');
+      expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-exos')!)['mikhal:777']).toEqual([{ effectId: 118, value: 5 }]);
+    });
+
+    it('accepts a roll above the maximum of a line as an over, and refuses it above the weight limit', async () => {
+      await ready();
+      // Do (weight 20) goes from 1 to 9 on this item: 10 weighs 200, above 101, and is refused.
+      type('Jet de Dommages', '10');
+      expect(field('Jet de Dommages')).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText(/jet maximal 9 : moyen utilisé/)).toBeInTheDocument();
+      // Vi (weight 0.2) goes up to 44: 60 weighs 12 and is an over.
+      type('Jet de Vitalité', '60');
+      expect(field('Jet de Vitalité')).not.toHaveAttribute('aria-invalid');
+      expect(screen.getByText('over')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+      expect(field('Jet de Vitalité')).toHaveValue(44);
+      expect(screen.queryByText('over')).not.toBeInTheDocument();
+    });
+
+    it('does not refuse a natural roll above the weight limit', async () => {
+      getItemEffectRanges.mockResolvedValue([{ effectId: 124, from: 40, to: 60 }, { effectId: 125, from: 40, to: 44 }]);
+      await openBrisage();
+      await pickCape();
+      await screen.findByLabelText('Jet de Sagesse');
+      type('Jet de Sagesse', '60');
+      expect(field('Jet de Sagesse')).not.toHaveAttribute('aria-invalid');
     });
   });
 

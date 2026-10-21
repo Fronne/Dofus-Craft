@@ -85,4 +85,12 @@ Sans focus : runes(stat) = Ml(jet) × coef/100 / poids      (arrondi à 2 décim
 5. Un historique des coefficients et un journal personnel de brisages. Le partage communautaire demanderait un backend, hors périmètre.
 6. Vérifier nos poids `confirmed: false` (Force, Chance, PA, etc.) avec la table du guide.
 
+## Exos et over dans Dofus Craft (specs/066-exo-brisage)
+
+- **Exo** : ligne de stat que l'objet n'a pas de base. Ligne séparée, même formule de poids que les autres lignes. Sans focus, ses runes comptent au coefficient de l'objet ; en focus sur une autre ligne, il compte à `focusOtherShare` (50 %). Règle reprise de DoFocus : **estimation**, aucune source officielle.
+- **Pas de focus sur un exo** : aucune option de focus n'est construite pour une ligne exo.
+- **Plafond** : un exo pèse au plus 101 (valeur × poids de la stat, soit `floor(101 / poids)` : 101 pour un poids de 1, 1 pour PA).
+- **Over** : une stat déjà présente sur l'objet ne s'ajoute pas en exo ; on tape un jet au-dessus du maximum de la ligne. Même plafond de 101, mais le maximum naturel de la ligne n'est jamais refusé.
+- **Affichage** : les exos sont en tête du tableau, en bleu (`--exo`), le dernier ajouté en premier. Conservés par serveur et par objet (`craftcheck-brisage-exos`).
+
 Sources : <https://dofocus.fr/guide/>, <https://dofocus.fr/faq/>.

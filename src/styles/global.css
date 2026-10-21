@@ -2557,6 +2557,19 @@ select:focus {
   .brisage-table tfoot td:nth-child(5) { border-right: 2px solid var(--accent); border-bottom-right-radius: 12px; }
 }
 .brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: .75rem; font-weight: 700; }
+/* specs/066: an exo line sits first in the table and is blue, as in the game; the exo form sits under the table. */
+.brisage-line--exo th, .brisage-line--exo th *, .brisage-line--exo .brisage-exo-value { color: var(--exo); }
+.brisage-line--exo th:first-child { box-shadow: inset 4px 0 0 var(--exo); }
+.brisage-line--exo .brisage-badge--exo { background: var(--exo); color: var(--bg, #08181c); }
+:root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
+.brisage-exo-value { font-weight: 700; }
+.brisage-exo-remove { margin-left: var(--space-2); padding: 0 var(--space-2); min-height: 28px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-size: .8rem; cursor: pointer; }
+.brisage-exo-remove:hover { border-color: var(--exo); color: var(--exo); }
+.brisage-exo-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
+.brisage-exo-form label { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
+.brisage-exo-form select, .brisage-exo-form input { min-height: 40px; }
+.brisage-exo-form input { width: 6rem; }
+.brisage-exo-hint { margin: 0; flex-basis: 100%; }
 .brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
 /* Price source: a two-segment switch, the chosen segment filled. The radios stay in the page (keyboard,

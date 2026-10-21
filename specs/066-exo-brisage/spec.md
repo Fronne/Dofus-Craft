@@ -100,7 +100,7 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 **Scénarios d'acceptation** :
 
 1. **Étant donné** une ligne d'origine de maximum 30, **quand** le joueur saisit 33, **alors** le jet 33 est accepté, indiqué comme over, et utilisé dans tous les calculs.
-2. **Étant donné** une ligne d'origine, **quand** le joueur saisit un jet dont le poids (jet × poids de la stat) dépasse 101, **alors** il est refusé et le jet maximal possible pour cette stat est indiqué.
+2. **Étant donné** une ligne d'origine, **quand** le joueur saisit un jet dont le poids (jet × poids de la stat) dépasse 101, **alors** il est refusé et le jet maximal possible pour cette stat est indiqué, sauf si ce jet reste dans le maximum naturel de la ligne.
 3. **Étant donné** un jet en over, **quand** le joueur repasse sur Min / Moyen / Max, **alors** le jet revient dans la plage normale.
 
 ## Cas limites
@@ -108,7 +108,6 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 - Stat sans rune connue : l'exo est refusé ou signalé comme non comptable, comme les effets ignorés des lignes d'origine.
 - Valeur décimale : refusée, les jets sont entiers.
 - Stat à valeur négative (ex. malus) : hors périmètre, seules les valeurs positives sont acceptées.
-- Changement de niveau de l'objet ou de taille de rune dans les réglages : les poids se recalculent, la limite de 101 est revérifiée.
 - Même stat en exo plusieurs fois : refusé, une stat n'a qu'un exo ; une fois ajoutée, elle disparaît de la liste.
 - Stat ajoutée en exo puis présente sur un autre objet choisi : les exos sont propres à chaque objet.
 
@@ -122,7 +121,7 @@ Une stat que l'objet a déjà ne s'ajoute pas en exo : c'est un **over**. Le jou
 - **FR-006** : Sans focus, un exo produit des runes comme une ligne normale, au coefficient de l'objet.
 - **FR-007** : En focus sur une ligne d'origine, un exo compte à la même part que les autres lignes non ciblées (50 % par défaut, réglable dans les réglages existants).
 - **FR-008** : Un exo ne peut pas être focalisé : aucune option de focus n'est proposée ni calculée pour une ligne exo.
-- **FR-013** : Le jet d'une ligne d'origine peut être réglé au-delà de son maximum (over) en tapant la valeur, tant que le poids de la ligne (jet × poids de la stat) ne dépasse pas 101 ; ce jet est utilisé dans tous les calculs et se réinitialise avec Min / Moyen / Max.
+- **FR-013** : Le jet d'une ligne d'origine peut être réglé au-delà de son maximum (over) en tapant la valeur, tant que le poids de la ligne (jet × poids de la stat) ne dépasse pas 101, ou, si c'est plus haut, le maximum naturel de la ligne (un jet que l'objet peut avoir naturellement n'est jamais refusé) ; ce jet est utilisé dans tous les calculs et se réinitialise avec Min / Moyen / Max.
 - **FR-009** : Les exos entrent dans les runes obtenues, la valeur en kamas, le gain, la meilleure option, le coefficient minimal rentable, la descente d'objets et le conseil de focus sans coefficient.
 - **FR-010** : Un prix de rune manquant pour un exo est signalé, jamais traité comme 0.
 - **FR-011** : Les exos d'un objet sont conservés avec la saisie de la page, par objet, et restaurés à la reprise de l'objet.

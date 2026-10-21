@@ -33,6 +33,8 @@
 
   /* Money: the kamas symbol and the amounts put forward (the savings of a verdict). */
   --kamas: #ffc94d;
+  /* specs/066: the blue of an exo line, as in the game. */
+  --exo: #5ab4ff;
   --kamas-edge: #c98f1f;
   --kamas-soft: color-mix(in srgb, var(--kamas) 16%, transparent);
   /* Links, link-like buttons and the share bars. */
@@ -126,6 +128,7 @@
   --accent-gradient-from: #3f7d0c;
   --accent-gradient-to: #33690a;
   --kamas: #8a5a00;
+  --exo: #1d5fb8;
   --kamas-edge: #b97f12;
   --kamas-soft: color-mix(in srgb, var(--kamas) 12%, transparent);
   --link: #0b6f68;

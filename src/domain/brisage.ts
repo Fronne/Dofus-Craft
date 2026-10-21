@@ -219,9 +219,36 @@ export function runesForLine(weight: number, share: number, runeWeight: number):
   return runeWeight > 0 ? (weight * share) / runeWeight : 0;
 }
 
+// --- Weight limit (specs/066) ---
+
+/** An exo, and an over (a roll above the line's maximum), cannot weigh more than this. */
+export const MAX_LINE_WEIGHT = 101;
+
+/** The biggest whole value a line of that stat weight can have under MAX_LINE_WEIGHT (0 without a usable weight). */
+export function maxValueForWeight(weight: number): number {
+  return weight > 0 ? Math.floor(MAX_LINE_WEIGHT / weight + 1e-9) : 0;
+}
+
+/**
+ * The biggest value a line of `effectId` accepts: for an exo, what the weight limit allows; for a line the item
+ * already has (an over), that or the line's own natural maximum when it is higher — a roll the item can have
+ * naturally is never refused.
+ */
+export function lineValueLimit(effectId: number, settings: Pick<BrisageSettings, 'stats'>, naturalMax?: number): number {
+  const weight = (settings.stats[effectId] ?? brisageStat(effectId))?.weight ?? 0;
+  return Math.max(maxValueForWeight(weight), naturalMax ?? 0);
+}
+
+/** Whether `value` fits `limit`: a whole number from 1 for an exo, any number from 0 for an over. */
+export function isRollAllowed(value: number, limit: number, options: { exo?: boolean } = {}): boolean {
+  if (!Number.isFinite(value) || value > limit) return false;
+  return options.exo ? Number.isInteger(value) && value >= 1 : value >= 0;
+}
+
 // --- Analysis ---
 
-export type BrisageLine = { effectId: number; value: number };
+/** specs/066: `exo` marks a line the item does not have by default; it counts like any line but is never a focus target. */
+export type BrisageLine = { effectId: number; value: number; exo?: boolean };
 
 export type BrisageInput = {
   level: number;
@@ -276,7 +303,7 @@ function statSetting(settings: BrisageSettings, effectId: number) {
 
 /** Merges lines of the same stat and drops the ones that cannot be broken into a known rune. */
 function usableLines(lines: BrisageLine[], runes: RuneItem[], settings: BrisageSettings) {
-  const merged = new Map<number, number>();
+  const merged = new Map<number, BrisageLine>();
   const ignored: number[] = [];
   for (const line of lines) {
     if (!(line.value > 0)) continue;
@@ -284,9 +311,10 @@ function usableLines(lines: BrisageLine[], runes: RuneItem[], settings: BrisageS
       if (!ignored.includes(line.effectId)) ignored.push(line.effectId);
       continue;
     }
-    merged.set(line.effectId, (merged.get(line.effectId) ?? 0) + line.value);
+    const known = merged.get(line.effectId);
+    merged.set(line.effectId, { effectId: line.effectId, value: (known?.value ?? 0) + line.value, exo: known?.exo || line.exo || undefined });
   }
-  return { lines: [...merged].map(([effectId, value]) => ({ effectId, value })), ignored };
+  return { lines: [...merged.values()], ignored };
 }
 
 function buildOption(
@@ -338,7 +366,7 @@ export function analyzeBrisage(
   if (!(input.level >= 1)) return { status: 'invalid', reason: "Le niveau de l'objet doit être au moins 1." };
 
   const normal = buildOption('normal', undefined, lines, () => input.coefficient / 100, input, runes, prices, settings);
-  const focuses = lines.map((line) => buildOption(
+  const focuses = lines.filter((line) => !line.exo).map((line) => buildOption(
     'focus', line.effectId, lines,
     (effectId) => (effectId === line.effectId ? settings.focusTargetShare : settings.focusOtherShare),
     input, runes, prices, settings,
@@ -397,7 +425,7 @@ export function analyzeFocusAdvice(
 
   const base: BrisageInput = { level: input.level, lines, coefficient: 100, itemCostKamas: 0 };
   const reference = buildOption('normal', undefined, lines, () => 1, base, runes, prices, settings);
-  const focusOptions = lines.map((line) => buildOption(
+  const focusOptions = lines.filter((line) => !line.exo).map((line) => buildOption(
     'focus', line.effectId, lines,
     (effectId) => (effectId === line.effectId ? settings.focusTargetShare : settings.focusOtherShare),
     base, runes, prices, settings,
