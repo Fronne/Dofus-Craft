@@ -548,13 +548,13 @@ describe('Brisage page (specs/061)', () => {
       expect(screen.getByRole('button', { name: '+ Exo' })).toBeDisabled();
       expect(total()).toBe(before);
       openPicker();
-      const options = within(screen.getByRole('listbox')).getAllByRole('button');
+      const options = within(screen.getByRole('list', { name: "Runes disponibles pour l'exo" })).getAllByRole('button');
       expect(options.length).toBeGreaterThan(10);
       expect(options.every((option) => option.querySelector('img, .result-image-fallback'))).toBe(true);
       // Vitalité is a line of the item, not an exo: its rune is not offered.
       expect(screen.queryByRole('button', { name: /^Rune Vi / })).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole('button', { name: 'Rune Fo Force' }));
-      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: "Runes disponibles pour l'exo" })).not.toBeInTheDocument();
       expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(1);
       expect(screen.getByRole('button', { name: '+ Exo' })).toBeEnabled();
     });

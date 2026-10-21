@@ -81,10 +81,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [rolls, setRolls] = useState<Record<number, string>>({});
   // specs/066: the exos put on this item, the last added first (as in the game); kept per item.
   const [storedExos, setExos] = useState<ExoEntry[]>([]);
+  const newExoCount = useRef(0);
   // A restored exo only counts while its stat is still absent from the item and still has a rune; a new one has no rune yet.
   const exoEntries = storedExos.filter((exo) => exo.effectId === undefined
     || (runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && !ranges.some((range) => range.effectId === exo.effectId)));
-  const exos = exoEntries.filter((exo): exo is { effectId: number; value: number } => exo.effectId !== undefined);
+  const exos = exoEntries.filter((exo): exo is ExoEntry & { effectId: number } => exo.effectId !== undefined);
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
@@ -99,7 +100,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     const token = ++pickToken.current;
     setItem(picked);
     setRanges([]);
-    setExos(serverId ? getBrisageExos(serverId, picked.id) : []);
+    setExos(serverId ? getBrisageExos(serverId, picked.id).map((exo) => ({ ...exo, id: `exo-${exo.effectId}` })) : []);
     setRolls(restore?.rolls ?? {});
     setCoefficientText(restore?.coefficientText ?? '');
     setManualCost(restore?.manualCost ?? '');
@@ -134,7 +135,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
   const changeExos = (next: ExoEntry[]) => {
     setExos(next);
-    if (serverId && item) setBrisageExos(serverId, item.id, next.filter((exo): exo is { effectId: number; value: number } => exo.effectId !== undefined));
+    if (serverId && item) setBrisageExos(serverId, item.id, next.flatMap((exo) => (exo.effectId === undefined ? [] : [{ effectId: exo.effectId, value: exo.value }])));
   };
 
   const rememberCoefficient = () => {
@@ -371,8 +372,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                   <h2 id="brisage-lines-title">Lignes de l'objet</h2>
                   {ranges.length > 0 && (
                     <button
-                      type="button" className="btn btn-secondary brisage-exo-add" disabled={hasNewExo || exoRunes.length === 0}
-                      onClick={() => changeExos([{ value: 1 }, ...exoEntries])}
+                      type="button" className="btn btn-secondary brisage-exo-add" disabled={hasNewExo || exoRunes.length <= exos.length}
+                      onClick={() => { newExoCount.current += 1; changeExos([{ id: `new-${newExoCount.current}`, value: 1 }, ...exoEntries]); }}
                     >+ Exo</button>
                   )}
                 </div>
@@ -404,13 +405,13 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         const taken = (effectId: number) => exos.some((other) => other.effectId === effectId && other.effectId !== entry.effectId);
                         return (
                           <ExoRow
-                            key={`exo-${entry.effectId ?? 'new'}`}
+                            key={entry.id}
                             entry={entry}
                             choices={exoRunes.filter((choice) => !taken(choice.effectId))}
                             plain={plain}
                             onPick={(effectId) => {
                               const max = exoRunes.find((choice) => choice.effectId === effectId)?.max ?? 1;
-                              changeExos(exoEntries.map((other) => (other === entry ? { effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
+                              changeExos(exoEntries.map((other) => (other === entry ? { id: entry.id, effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
                             }}
                             onValue={(value) => changeExos(exoEntries.map((other) => (other === entry ? { ...entry, value } : other)))}
                             onRemove={() => changeExos(exoEntries.filter((other) => other !== entry))}

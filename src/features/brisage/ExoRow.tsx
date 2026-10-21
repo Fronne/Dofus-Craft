@@ -7,7 +7,8 @@ import { Kamas } from '../prices/PricesPage';
 // it in a list that shows each rune's icon, then types the value. The page owns the data and the weight limit.
 
 export type ExoRuneChoice = { effectId: number; label: string; runeName: string; imageUrl?: string; max: number };
-export type ExoEntry = { effectId?: number; value: number };
+/** `id` is local and stable (the row keeps its identity, and its focus, when its rune is picked); it is not stored. */
+export type ExoEntry = { id: string; effectId?: number; value: number };
 
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 
@@ -21,27 +22,29 @@ function RuneIcon({ choice }: { choice: ExoRuneChoice }) {
 function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choices: ExoRuneChoice[]; onPick: (effectId: number) => void }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const close = () => { setOpen(false); trigger.current?.focus(); };
   useEffect(() => {
     if (!open) return;
-    const close = (event: MouseEvent) => { if (!box.current?.contains(event.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    const outside = (event: MouseEvent) => { if (!box.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', outside);
+    return () => document.removeEventListener('mousedown', outside);
   }, [open]);
 
   return (
-    <span className="brisage-exo-picker" ref={box} onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false); }}>
+    <span className="brisage-exo-picker" ref={box} onKeyDown={(event) => { if (event.key === 'Escape' && open) close(); }}>
       <button
-        type="button" className="brisage-exo-pick" aria-haspopup="listbox" aria-expanded={open}
+        ref={trigger} type="button" className="brisage-exo-pick" aria-expanded={open}
         aria-label={chosen ? `Rune de l'exo : ${chosen.runeName}` : "Choisir la rune de l'exo"}
         onClick={() => setOpen(!open)}
       >
         {chosen ? <><RuneIcon choice={chosen} /><span>{chosen.runeName}</span></> : <span>Choisir une rune</span>}
       </button>
       {open && (
-        <ul className="brisage-exo-options" role="listbox" aria-label="Runes disponibles pour l'exo">
+        <ul className="brisage-exo-options" aria-label="Runes disponibles pour l'exo">
           {choices.map((choice) => (
-            <li key={choice.effectId} role="option" aria-selected={choice.effectId === chosen?.effectId}>
-              <button type="button" onClick={() => { onPick(choice.effectId); setOpen(false); }}>
+            <li key={choice.effectId} aria-current={choice.effectId === chosen?.effectId || undefined}>
+              <button type="button" onClick={() => { onPick(choice.effectId); close(); }}>
                 <RuneIcon choice={choice} />
                 <span>{choice.runeName}</span>
                 <span className="fm-note">{choice.label}</span>
