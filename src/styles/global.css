@@ -2563,8 +2563,8 @@ select:focus {
 .brisage-line--exo .brisage-badge--exo { background: var(--exo); color: var(--bg, #08181c); }
 :root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
 .brisage-exo-value { font-weight: 700; }
-.brisage-exo-remove { padding: 0 var(--space-2); min-width: 28px; min-height: 28px; line-height: 1; border: 1px solid var(--border); border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-size: .8rem; cursor: pointer; }
-.brisage-exo-remove:hover { border-color: var(--exo); color: var(--exo); }
+.brisage-exo-remove { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 26px; height: 26px; padding: 0; border: 1px solid var(--border-strong); border-radius: 50%; background: var(--panel-soft); color: var(--text-muted); cursor: pointer; }
+.brisage-exo-remove:hover, .brisage-exo-remove:focus-visible { border-color: var(--exo); background: color-mix(in srgb, var(--exo) 18%, transparent); color: var(--exo); }
 .brisage-exo-add { margin-left: auto; min-height: 36px; }
 .brisage-exo-note { margin-top: var(--space-3); }
 .brisage-exo-picker { position: relative; display: inline-block; }
@@ -2723,5 +2723,5 @@ select:focus {
 @media (min-width: 641px) {
   .brisage-table-wrap { margin-left: -2.25rem; padding-left: 2.25rem; }
   .brisage-line--exo th:first-child { position: relative; }
-  .brisage-line--exo .brisage-exo-remove { position: absolute; left: -1.9rem; top: 50%; transform: translateY(-50%); font-size: 1.1rem; }
+  .brisage-line--exo .brisage-exo-remove { position: absolute; left: -2rem; top: 50%; transform: translateY(-50%); }
 }
