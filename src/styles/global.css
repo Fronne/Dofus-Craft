@@ -2501,6 +2501,9 @@ select:focus {
 .brisage-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); margin: var(--space-4) 0 0; padding-top: var(--space-4); border-top: 1px solid var(--border); }
 .brisage-facts dt { font-size: .85rem; color: var(--text-muted); }
 .brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; }
+/* The advice without a coefficient: the text gets most of the width, the figure sits beside it (it used to be squeezed into 340px). */
+.item-verdict-panel .brisage-verdict .verdict-head { flex: 3 1 28rem; }
+.item-verdict-panel .brisage-verdict .brisage-facts { flex: 1 1 15rem; grid-template-columns: minmax(0, 1fr); margin: 0; padding-top: 0; border-top: 0; }
 .brisage-table-wrap { overflow-x: auto; }
 .brisage-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 .brisage-table th, .brisage-table td { padding: .8rem .75rem; text-align: right; border-bottom: 1px solid var(--border); vertical-align: middle; }
