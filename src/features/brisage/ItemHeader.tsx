@@ -6,15 +6,17 @@ import type { PriceSource } from '../../persistence/brisage-session';
 import { Kamas } from '../prices/PricesPage';
 
 // specs/065-refonte-page-brisage (US2, US3): the item picked, and the two settings every figure of the table depends
-// on, within reach: where its price comes from (Achat, Craft, or Auto = the cheaper of the two) and its coefficient.
+// on, within reach: where its price comes from (Achat or Craft — the cheaper one is lit first — or Perso, typed by the player) and its coefficient.
 
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 const date = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-const SOURCES: { id: PriceSource; label: string }[] = [
+type ChosenSource = Exclude<PriceSource, 'auto'>;
+
+const SOURCES: { id: ChosenSource; label: string }[] = [
   { id: 'hdv', label: 'Achat' },
   { id: 'craft', label: 'Craft' },
-  { id: 'auto', label: 'Auto' },
+  { id: 'custom', label: 'Perso' },
 ];
 
 export function ItemHeader({
@@ -22,8 +24,8 @@ export function ItemHeader({
   stored, coefficientText, onCoefficientText, onRememberCoefficient,
 }: {
   item: { name: string; level?: number; imageUrl?: string };
-  priceSource: PriceSource;
-  onPriceSource: (source: PriceSource) => void;
+  priceSource: ChosenSource;
+  onPriceSource: (source: ChosenSource) => void;
   loading: boolean;
   hdvKamas: number | undefined;
   craftKamas: number | undefined;
@@ -64,8 +66,8 @@ export function ItemHeader({
             ))}
           </div>
           {loading && <span className="fm-note">Calcul…</span>}
-          {!loading && resolved && <span className="brisage-cost"><Kamas value={resolved.kamas} /></span>}
-          {!loading && !resolved && (
+          {!loading && resolved && priceSource !== 'custom' && <span className="brisage-cost"><Kamas value={resolved.kamas} /></span>}
+          {!loading && (!resolved || priceSource === 'custom') && (
             <>
               <label className="visually-hidden" htmlFor="brisage-cost-input">Prix de l'objet (kamas)</label>
               <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} placeholder="Prix en kamas" value={manualCost} onChange={(event) => onManualCost(event.target.value)} />
@@ -73,8 +75,8 @@ export function ItemHeader({
           )}
         </div>
         {!loading && (resolved || originText) && <span className="brisage-price-origin">{originText}</span>}
-        {!loading && !resolved && <span className="fm-note">{noPriceReason}</span>}
-        {!loading && priceSource === 'auto' && hdvKamas !== undefined && craftKamas !== undefined && (
+        {!loading && !resolved && !originText && <span className="fm-note">{noPriceReason}</span>}
+        {!loading && hdvKamas !== undefined && craftKamas !== undefined && (
           <span className="fm-note brisage-both-prices">Achat <Kamas value={hdvKamas} /> · Craft <Kamas value={craftKamas} /></span>
         )}
       </div>
