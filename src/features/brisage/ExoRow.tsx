@@ -12,6 +12,9 @@ export type ExoEntry = { id: string; effectId?: number; value: number };
 
 const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 
+/** Case and accents do not matter when searching a rune. */
+const fold = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 function RuneIcon({ choice }: { choice: ExoRuneChoice }) {
   return choice.imageUrl
     ? <img src={choice.imageUrl} alt="" width="28" height="28" className="brisage-exo-icon" />
@@ -21,12 +24,15 @@ function RuneIcon({ choice }: { choice: ExoRuneChoice }) {
 /** The rune of the exo, picked in a list with the icon of every rune. */
 function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choices: ExoRuneChoice[]; onPick: (effectId: number) => void }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const box = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const close = () => { setOpen(false); trigger.current?.focus(); };
+  const close = () => { setOpen(false); setQuery(''); trigger.current?.focus(); };
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  const shown = choices.filter((choice) => words.every((word) => fold(`${choice.runeName} ${choice.label}`).includes(word)));
   useEffect(() => {
     if (!open) return;
-    const outside = (event: MouseEvent) => { if (!box.current?.contains(event.target as Node)) setOpen(false); };
+    const outside = (event: MouseEvent) => { if (!box.current?.contains(event.target as Node)) { setOpen(false); setQuery(''); } };
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
   }, [open]);
@@ -36,22 +42,30 @@ function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choic
       <button
         ref={trigger} type="button" className="brisage-exo-pick" aria-expanded={open}
         aria-label={chosen ? `Rune de l'exo : ${chosen.runeName}` : "Choisir la rune de l'exo"}
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); setQuery(''); }}
       >
         {chosen ? <><RuneIcon choice={chosen} /><span>{chosen.runeName}</span></> : <span>Choisir une rune</span>}
       </button>
       {open && (
-        <ul className="brisage-exo-options" aria-label="Runes disponibles pour l'exo">
-          {choices.map((choice) => (
-            <li key={choice.effectId} aria-current={choice.effectId === chosen?.effectId || undefined}>
-              <button type="button" onClick={() => { onPick(choice.effectId); close(); }}>
-                <RuneIcon choice={choice} />
-                <span>{choice.runeName}</span>
-                <span className="fm-note">{choice.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="brisage-exo-options">
+          <input
+            type="search" className="brisage-exo-search" autoFocus placeholder="Rechercher une rune…" aria-label="Rechercher une rune"
+            value={query} onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => { if (event.key === 'Enter' && shown.length > 0) { event.preventDefault(); onPick(shown[0].effectId); close(); } }}
+          />
+          <ul className="brisage-exo-list" aria-label="Runes disponibles pour l'exo">
+            {shown.map((choice) => (
+              <li key={choice.effectId} aria-current={choice.effectId === chosen?.effectId || undefined}>
+                <button type="button" onClick={() => { onPick(choice.effectId); close(); }}>
+                  <RuneIcon choice={choice} />
+                  <span>{choice.runeName}</span>
+                  <span className="fm-note">{choice.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {shown.length === 0 && <p className="fm-note brisage-exo-empty" role="status">Aucune rune ne correspond.</p>}
+        </div>
       )}
     </span>
   );

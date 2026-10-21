@@ -574,6 +574,27 @@ describe('Brisage page (specs/061)', () => {
       await waitFor(() => expect(total()).toBe(before));
     });
 
+    it('searches the runes of the list by name or stat, ignoring case and accents, and picks the first with Enter', async () => {
+      await ready();
+      fireEvent.click(screen.getByRole('button', { name: '+ Exo' }));
+      openPicker();
+      const search = screen.getByLabelText('Rechercher une rune');
+      expect(search).toHaveFocus();
+      const list = () => within(screen.getByRole('list', { name: "Runes disponibles pour l'exo" }));
+      const all = list().getAllByRole('button').length;
+      fireEvent.change(search, { target: { value: 'FORCE' } });
+      expect(list().getAllByRole('button')).toHaveLength(1);
+      expect(list().getByRole('button', { name: 'Rune Fo Force' })).toBeInTheDocument();
+      fireEvent.change(search, { target: { value: 'crit' } });
+      expect(list().getAllByRole('button').length).toBeGreaterThan(0);
+      expect(list().getAllByRole('button').length).toBeLessThan(all);
+      fireEvent.change(search, { target: { value: 'zzz' } });
+      expect(screen.getByText('Aucune rune ne correspond.')).toBeInTheDocument();
+      fireEvent.change(search, { target: { value: 'force' } });
+      fireEvent.keyDown(search, { key: 'Enter' });
+      expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(1);
+    });
+
     it('puts the last exo first and offers a rune only once', async () => {
       await ready();
       addExo('Rune Fo Force', 'Force', '5');
