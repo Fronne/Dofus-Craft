@@ -45,7 +45,11 @@ const nicomoux: PlayerCounter = {
 };
 const amulet = { itemId: 14094, name: 'Amulette du Strigide', icon: 'https://api.dofusdb.fr/img/items/1235.png' };
 
+// specs/068-admin-dashboard: a section is open on its own, so each group of tests names the one it exercises.
+let openSection = '#compteurs';
+
 async function renderPage() {
+  window.location.hash = openSection;
   render(<AdminPage />);
   await act(async () => {});
 }
@@ -54,6 +58,7 @@ const card = () => screen.getByRole('article', { name: 'Compteur de Nicomoux' })
 
 describe('page d\'administration (specs/014-admin-counters)', () => {
   beforeEach(() => {
+    openSection = '#compteurs';
     for (const fn of Object.values(api)) fn.mockReset();
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
@@ -197,10 +202,12 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
   });
 
   describe('bandeau d\'information (specs/020)', () => {
+    beforeEach(() => { openSection = '#bandeau'; });
     const published = { text: 'Maintenance mardi', tone: 'important', endsAt: null, version: 'v1' };
 
     it('publishes a message with its style, and previews it', async () => {
       api.saveMessage.mockResolvedValue({ status: 'ok', value: published });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
       fireEvent.change(within(section).getByLabelText('Message'), { target: { value: 'Maintenance mardi' } });
@@ -213,6 +220,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     });
 
     it('refuses an empty message without calling the API', async () => {
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
       fireEvent.click(within(section).getByRole('button', { name: 'Publier' }));
@@ -223,6 +231,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     it('removes the published message', async () => {
       api.getMessage.mockResolvedValue({ status: 'ok', value: published });
       api.deleteMessage.mockResolvedValue({ status: 'ok', value: undefined });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = (await screen.findByRole('heading', { name: 'Bandeau d\'information' })).closest('section') as HTMLElement;
       expect(await within(section).findByDisplayValue('Maintenance mardi')).toBeInTheDocument();
@@ -233,17 +242,20 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
     it('says when the published message has expired', async () => {
       api.getMessage.mockResolvedValue({ status: 'ok', value: { ...published, endsAt: '2020-01-01T10:00:00.000Z' } });
+      window.location.hash = openSection;
       render(<AdminPage />);
       expect(await screen.findByText(/^Expiré le 1 janvier 2020/)).toBeInTheDocument();
     });
   });
 
   describe('pages du site (specs/050, specs/053)', () => {
+    beforeEach(() => { openSection = '#pages'; });
     const pages = async () => (await screen.findByRole('heading', { name: 'Pages du site' })).closest('section') as HTMLElement;
     const row = (section: HTMLElement, label: string) => within(section).getByText(label, { exact: false, selector: 'p' }).parentElement as HTMLElement;
 
     it('shows the Forgemagie page as disabled, and enables it in one click', async () => {
       api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
       await within(section).findByText('Désactivée');
@@ -256,6 +268,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
     it('shows the HDV page as enabled, and disables it alone in one click (specs/053, FR-010)', async () => {
       api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: false } });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
       await within(section).findByText('Désactivée');
@@ -270,6 +283,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     it('disables an enabled page', async () => {
       api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
       api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
       fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page Forgemagie' }));
@@ -279,6 +293,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
     it('says when saving failed and keeps the saved state (FR-008)', async () => {
       api.saveSettings.mockResolvedValue({ status: 'unavailable' });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
       fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page HDV' }));
@@ -288,6 +303,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
     it('offers to retry when the state could not be read, without a button that would guess it', async () => {
       api.getSettings.mockResolvedValue({ status: 'unavailable' });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
       expect(await within(section).findByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
@@ -297,6 +313,8 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
   // specs/057-sniffer-admin (contracts/admin-sniffer-api.md « Interface »).
   describe('outil des amis : clés et mapping (specs/057)', () => {
+    // The keys and the mappings are two sections: a test opens the other one by changing the anchor.
+    beforeEach(() => { openSection = '#cles'; });
     const alice = { id: 'key-a', label: 'Alice', createdAt: '2026-10-15T08:00:00.000Z', revokedAt: null, lastSeenAt: null, rowsToday: 0 };
     const keys = async () => (await screen.findByRole('heading', { name: 'Clés sniffer' })).closest('section') as HTMLElement;
     const mappings = async () => (await screen.findByRole('heading', { name: 'Mapping' })).closest('section') as HTMLElement;
@@ -305,6 +323,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     it('shows a new key once, until it is dismissed', async () => {
       api.createSnifferKey.mockResolvedValue({ status: 'ok', value: { key: alice, secret: 'dcp_secret' } });
       api.listSnifferKeys.mockResolvedValueOnce({ status: 'ok', value: [] }).mockResolvedValue({ status: 'ok', value: [alice] });
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await keys();
       fireEvent.change(within(section).getByLabelText("Nom de l'ami"), { target: { value: 'Alice' } });
@@ -321,6 +340,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [alice] });
       api.revokeSnifferKey.mockResolvedValue({ status: 'ok', value: { ...alice, revokedAt: '2026-10-15T09:00:00.000Z' } });
       const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+      window.location.hash = openSection;
       render(<AdminPage />);
       const section = await keys();
       fireEvent.click(await within(section).findByRole('button', { name: 'Révoquer' }));
@@ -333,6 +353,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
     it("sends the files' text and shows the server's refusal", async () => {
       api.uploadSnifferMapping.mockResolvedValue({ status: 'invalid', field: 'keymap', error: "keymap.json n'a pas d'entrée price_list." });
+      window.location.hash = '#correspondances';
       render(<AdminPage />);
       const section = await mappings();
       fireEvent.change(within(section).getByLabelText('Build du client'), { target: { value: '3.7.10.10' } });
@@ -351,6 +372,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
         .mockResolvedValue({ status: 'ok', value: [mapping(2, false), mapping(1, true)] });
       api.activateSnifferMapping.mockResolvedValue({ status: 'ok', value: mapping(1, true) });
       vi.spyOn(window, 'confirm').mockReturnValue(true);
+      window.location.hash = '#correspondances';
       render(<AdminPage />);
       const section = await mappings();
       expect(await within(section).findByText('Build 3.7.10.10')).toBeInTheDocument();
@@ -363,6 +385,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
 
 // specs/058-admin-cloudflare-usage: the "Utilisation Cloudflare" section.
 describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', () => {
+  beforeEach(() => { openSection = '#cloudflare'; });
   const day = (date: string, workersRequests: number, d1RowsRead = 0, d1RowsWritten = 0) => ({ date, workersRequests, d1RowsRead, d1RowsWritten });
   const history = (days: number, last = day('2026-10-19', 50_000, 4_000_000, 112_000)) =>
     [...Array.from({ length: days - 1 }, (_, index) => day(`2026-09-${String(index + 1).padStart(2, '0')}`, 0)), last];
@@ -448,7 +471,6 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     expect(section()).toHaveTextContent('CLOUDFLARE_API_TOKEN');
     expect(section()).toHaveTextContent('wrangler secret put CLOUDFLARE_API_TOKEN');
     expect(within(section()).queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Compteurs' })).toBeInTheDocument();
   });
 
   it.each([
@@ -459,7 +481,6 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     api.getUsage.mockResolvedValueOnce(reply).mockResolvedValue(ok(7));
     await renderPage();
     expect(within(section()).getByRole('alert')).toHaveTextContent(text);
-    expect(screen.getByRole('region', { name: 'Compteurs' })).toBeInTheDocument();
     fireEvent.click(within(section()).getByRole('button', { name: 'Réessayer' }));
     await act(async () => {});
     expect(section()).toHaveTextContent('50 000 / 100 000');
