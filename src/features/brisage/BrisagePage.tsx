@@ -22,11 +22,11 @@ import { resolveItemPrice } from '../../domain/brisage-price';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import { getStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
-import { getBrisageExos, setBrisageExos, type ExoLine } from '../../persistence/brisage-exos';
+import { getBrisageExos, setBrisageExos } from '../../persistence/brisage-exos';
 import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSource } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { Kamas } from '../prices/PricesPage';
-import { ExoAdder } from './ExoAdder';
+import { ExoRow, type ExoEntry, type ExoRuneChoice } from './ExoRow';
 import { ItemFinder } from './ItemFinder';
 import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
@@ -80,9 +80,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
   const [rolls, setRolls] = useState<Record<number, string>>({});
   // specs/066: the exos put on this item, the last added first (as in the game); kept per item.
-  const [storedExos, setExos] = useState<ExoLine[]>([]);
-  // A restored exo only counts while its stat is still absent from the item and still has a rune.
-  const exos = storedExos.filter((exo) => runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && !ranges.some((range) => range.effectId === exo.effectId));
+  const [storedExos, setExos] = useState<ExoEntry[]>([]);
+  // A restored exo only counts while its stat is still absent from the item and still has a rune; a new one has no rune yet.
+  const exoEntries = storedExos.filter((exo) => exo.effectId === undefined
+    || (runeForStat(RUNES, exo.effectId, SETTINGS.runeSize) && !ranges.some((range) => range.effectId === exo.effectId)));
+  const exos = exoEntries.filter((exo): exo is { effectId: number; value: number } => exo.effectId !== undefined);
   const [stored, setStored] = useState<StoredCoefficient>();
   const [coefficientText, setCoefficientText] = useState('');
   const [manualCost, setManualCost] = useState('');
@@ -130,9 +132,9 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setBrisageSession(item ? { serverId, item, rolls, coefficientText, manualCost, priceSource } : undefined);
   }, [restored, serverId, item, rolls, coefficientText, manualCost, priceSource]);
 
-  const changeExos = (next: ExoLine[]) => {
+  const changeExos = (next: ExoEntry[]) => {
     setExos(next);
-    if (serverId && item) setBrisageExos(serverId, item.id, next);
+    if (serverId && item) setBrisageExos(serverId, item.id, next.filter((exo): exo is { effectId: number; value: number } => exo.effectId !== undefined));
   };
 
   const rememberCoefficient = () => {
@@ -197,12 +199,12 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       const found = runeForStat(RUNES, range.effectId, SETTINGS.runeSize);
       if (found) ids.add(found.rune.id);
     }
-    for (const exo of exos) {
-      const found = runeForStat(RUNES, exo.effectId, SETTINGS.runeSize);
+    for (const exo of storedExos) {
+      const found = exo.effectId === undefined ? undefined : runeForStat(RUNES, exo.effectId, SETTINGS.runeSize);
       if (found) ids.add(found.rune.id);
     }
     return [...ids].sort();
-  }, [ranges, exos]);
+  }, [ranges, storedExos]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
 
   const ready = item && ranges.length > 0 && priceReady;
@@ -210,12 +212,12 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     ...exos.map((exo) => ({ effectId: exo.effectId, value: exo.value, exo: true })),
     ...lines.map((line) => ({ effectId: line.range.effectId, value: line.value })),
   ];
-  // specs/066: the stats offered as exo are those the item does not have, nor already in exo.
-  const exoChoices = BRISAGE_STATS
-    .filter((stat) => runeForStat(RUNES, stat.effectId, SETTINGS.runeSize)
-      && !ranges.some((range) => range.effectId === stat.effectId)
-      && !exos.some((exo) => exo.effectId === stat.effectId))
-    .map((stat) => ({ effectId: stat.effectId, label: stat.label, max: lineValueLimit(stat.effectId, SETTINGS) }));
+  // specs/066: the runes offered as exo are those of the stats the item does not have; each one is taken once.
+  const exoRunes: ExoRuneChoice[] = BRISAGE_STATS.flatMap((stat) => {
+    const found = ranges.some((range) => range.effectId === stat.effectId) ? undefined : runeForStat(RUNES, stat.effectId, SETTINGS.runeSize);
+    return found ? [{ effectId: stat.effectId, label: stat.label, runeName: found.rune.name, imageUrl: found.rune.imageUrl, max: lineValueLimit(stat.effectId, SETTINGS) }] : [];
+  });
+  const hasNewExo = exoEntries.some((exo) => exo.effectId === undefined);
   const analysis = ready && coefficient > 0
     ? analyzeBrisage({ level: item.level ?? NaN, lines: lineInputs, coefficient, itemCostKamas: cost }, RUNES, fetched.prices, SETTINGS)
     : undefined;
@@ -367,6 +369,12 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
                   <h2 id="brisage-lines-title">Lignes de l'objet</h2>
+                  {ranges.length > 0 && (
+                    <button
+                      type="button" className="btn btn-secondary brisage-exo-add" disabled={hasNewExo || exoRunes.length === 0}
+                      onClick={() => changeExos([{ value: 1 }, ...exoEntries])}
+                    >+ Exo</button>
+                  )}
                 </div>
                 <div className="brisage-table-wrap">
                   <table className="brisage-table" role="table">
@@ -391,33 +399,22 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {exos.map((exo) => {
-                        const found = runeForStat(RUNES, exo.effectId, SETTINGS.runeSize)!;
-                        const plain = normal?.yields.find((y) => y.effectId === exo.effectId);
-                        const label = statLabel(exo.effectId);
+                      {exoEntries.map((entry) => {
+                        const plain = entry.effectId === undefined ? undefined : normal?.yields.find((y) => y.effectId === entry.effectId);
+                        const taken = (effectId: number) => exos.some((other) => other.effectId === effectId && other.effectId !== entry.effectId);
                         return (
-                          <tr role="row" key={`exo-${exo.effectId}`} className="brisage-line--exo">
-                            <th scope="row" role="rowheader" data-label="Rune">
-                              <span className="brisage-line-name" title={label}>
-                                <ResourceDisplay resource={{ id: found.rune.id, name: found.rune.name, imageUrl: found.rune.imageUrl }} />
-                                <span className="brisage-stat-name">{label}</span>
-                                <span className="brisage-badge brisage-badge--exo">Exo</span>
-                              </span>
-                            </th>
-                            <td role="cell" data-label="Jet de l'exo">
-                              <span className="brisage-exo-value">{exo.value}</span>
-                              <button
-                                type="button" className="brisage-exo-remove"
-                                aria-label={`Retirer l'exo ${label}`}
-                                onClick={() => changeExos(exos.filter((other) => other.effectId !== exo.effectId))}
-                              >Retirer</button>
-                            </td>
-                            <td role="cell" data-label="Prix de la rune">{plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>}</td>
-                            <td role="cell" data-label="Sans focus : runes">{plain ? number.format(wholeRunes(plain.count)) : '—'}</td>
-                            <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
-                            <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un exo">—</td>
-                            <td role="cell" data-label="Focus : valeur des runes" title="Pas de focus possible sur un exo">—</td>
-                          </tr>
+                          <ExoRow
+                            key={`exo-${entry.effectId ?? 'new'}`}
+                            entry={entry}
+                            choices={exoRunes.filter((choice) => !taken(choice.effectId))}
+                            plain={plain}
+                            onPick={(effectId) => {
+                              const max = exoRunes.find((choice) => choice.effectId === effectId)?.max ?? 1;
+                              changeExos(exoEntries.map((other) => (other === entry ? { effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
+                            }}
+                            onValue={(value) => changeExos(exoEntries.map((other) => (other === entry ? { ...entry, value } : other)))}
+                            onRemove={() => changeExos(exoEntries.filter((other) => other !== entry))}
+                          />
                         );
                       })}
                       {lines.map((line) => {
@@ -475,13 +472,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     </tfoot>
                   </table>
                 </div>
-                {ranges.length > 0 && (
-                  <ExoAdder
-                    key={exoChoices.map((choice) => choice.effectId).join(',')}
-                    choices={exoChoices}
-                    onAdd={(effectId, value) => changeExos([{ effectId, value }, ...exos])}
-                  />
-                )}
+                <p className="fm-note brisage-exo-note">Exo : calcul estimé, repris de DoFocus. Une ligne exo compte comme une ligne de plus, sans focus possible ; poids maximal 101.</p>
                 {ignoredCount > 0 && (
                   <p className="fm-note">{ignoredCount} ligne(s) sans poids ni rune connus ne sont pas comptées.</p>
                 )}

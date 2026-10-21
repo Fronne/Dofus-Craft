@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
@@ -514,14 +514,17 @@ describe('Brisage page (specs/061)', () => {
   });
 
   describe('exos and overs (specs/066)', () => {
-    const FO = '118', PA = '111';
     const total = () => document.querySelector('tfoot td[data-label="Sans focus : total"]')?.textContent ?? '';
     const exoRows = () => [...document.querySelectorAll('tr.brisage-line--exo')];
-    const exoSelect = () => document.querySelector('.brisage-exo-form select') as HTMLSelectElement;
-    const addExo = (effectId: string, value: string) => {
-      fireEvent.change(exoSelect(), { target: { value: effectId } });
-      fireEvent.change(screen.getByLabelText("Valeur de l'exo"), { target: { value } });
-      fireEvent.click(screen.getByRole('button', { name: 'Ajouter un exo' }));
+    const openPicker = (row?: Element) => fireEvent.click(
+      row ? row.querySelector('.brisage-exo-pick') as HTMLElement : screen.getByRole('button', { name: "Choisir la rune de l'exo" }),
+    );
+    /** "+ Exo", then the rune in the list, then the value. */
+    const addExo = (runeOption: string, label: string, value: string) => {
+      fireEvent.click(screen.getByRole('button', { name: '+ Exo' }));
+      openPicker();
+      fireEvent.click(screen.getByRole('button', { name: runeOption }));
+      fireEvent.change(screen.getByLabelText(`Valeur de l'exo ${label}`), { target: { value } });
     };
     const ready = async () => {
       await pinnedItemPrices.save('mikhal', '777', 1000);
@@ -535,60 +538,80 @@ describe('Brisage page (specs/061)', () => {
       await waitFor(() => expect(total()).not.toBe('—'));
     };
 
-    it('adds an exo as the first line, in blue, counted in the total, without a focus, and removes it', async () => {
+    it('adds a line with the "+ Exo" button, then the rune is picked in a list with the icons', async () => {
       await ready();
       const before = total();
-      addExo(FO, '5');
-      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      fireEvent.click(screen.getByRole('button', { name: '+ Exo' }));
+      expect(exoRows()).toHaveLength(1);
+      expect(exoRows()[0].closest('tbody')!.firstElementChild).toBe(exoRows()[0]);
+      expect(exoRows()[0]).toHaveTextContent('Choisir une rune');
+      expect(screen.getByRole('button', { name: '+ Exo' })).toBeDisabled();
+      expect(total()).toBe(before);
+      openPicker();
+      const options = within(screen.getByRole('listbox')).getAllByRole('button');
+      expect(options.length).toBeGreaterThan(10);
+      expect(options.every((option) => option.querySelector('img, .result-image-fallback'))).toBe(true);
+      // Vitalité is a line of the item, not an exo: its rune is not offered.
+      expect(screen.queryByRole('button', { name: /^Rune Vi / })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Rune Fo Force' }));
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(1);
+      expect(screen.getByRole('button', { name: '+ Exo' })).toBeEnabled();
+    });
+
+    it('counts the exo in the total, in blue, without a focus, and removes it', async () => {
+      await ready();
+      const before = total();
+      addExo('Rune Fo Force', 'Force', '5');
       const row = exoRows()[0];
       expect(row).toHaveTextContent('Exo');
-      expect(row.closest('tbody')!.firstElementChild).toBe(row);
       expect(row.querySelector('[data-label="Focus : runes"]')).toHaveTextContent('—');
       expect(row).not.toHaveTextContent('Meilleur focus');
-      await waitFor(() => expect(total()).not.toBe(before));
-      expect(total()).not.toBe('—');
+      await waitFor(() => expect(total()).not.toBe('—'));
+      expect(total()).not.toBe(before);
       fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo Force" }));
       await waitFor(() => expect(exoRows()).toHaveLength(0));
       await waitFor(() => expect(total()).toBe(before));
     });
 
-    it('puts the last exo added first and offers neither a stat the item has nor one already in exo', async () => {
+    it('puts the last exo first and offers a rune only once', async () => {
       await ready();
-      expect([...exoSelect().options].map((option) => option.textContent)).not.toContain('Vitalité');
-      addExo(FO, '5');
-      addExo(PA, '1');
-      await waitFor(() => expect(exoRows()).toHaveLength(2));
+      addExo('Rune Fo Force', 'Force', '5');
+      addExo('Rune Ga Pa PA', 'PA', '1');
+      expect(exoRows()).toHaveLength(2);
       expect(exoRows()[0]).toHaveTextContent('Rune Ga Pa');
-      expect([...exoSelect().options].map((option) => option.textContent)).not.toContain('Force');
+      expect(exoRows()[1]).toHaveTextContent('Rune Fo');
+      openPicker(exoRows()[0]);
+      expect(screen.queryByRole('button', { name: 'Rune Fo Force' })).not.toBeInTheDocument();
     });
 
-    it('refuses an exo above the weight limit, a zero, a decimal and shows the maximum', async () => {
+    it('refuses a value above the weight limit, zero or a decimal, and shows the maximum', async () => {
       await ready();
-      fireEvent.change(exoSelect(), { target: { value: FO } });
-      expect(screen.getByText(/Maximum 101 pour Force/)).toBeInTheDocument();
-      addExo(FO, '150');
-      expect(screen.getByLabelText("Valeur de l'exo")).toHaveAttribute('aria-invalid', 'true');
-      expect(exoRows()).toHaveLength(0);
-      addExo(FO, '0');
-      addExo(FO, '2.5');
-      expect(exoRows()).toHaveLength(0);
-      addExo(PA, '2');
-      expect(screen.getByText(/de 1 à 1/)).toBeInTheDocument();
-      expect(exoRows()).toHaveLength(0);
-      addExo(PA, '1');
-      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      addExo('Rune Fo Force', 'Force', '5');
+      const input = screen.getByLabelText("Valeur de l'exo Force");
+      expect(screen.getByText('max 101')).toBeInTheDocument();
+      for (const bad of ['150', '0', '2.5', '']) {
+        fireEvent.change(input, { target: { value: bad } });
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+      }
+      fireEvent.change(input, { target: { value: '101' } });
+      expect(input).not.toHaveAttribute('aria-invalid');
+      addExo('Rune Ga Pa PA', 'PA', '2');
+      expect(screen.getByLabelText("Valeur de l'exo PA")).toHaveAttribute('aria-invalid', 'true');
+      fireEvent.change(screen.getByLabelText("Valeur de l'exo PA"), { target: { value: '1' } });
+      expect(screen.getByLabelText("Valeur de l'exo PA")).not.toHaveAttribute('aria-invalid');
     });
 
     it('keeps the exos of each item after a reload', async () => {
       await ready();
-      addExo(FO, '5');
-      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      addExo('Rune Fo Force', 'Force', '5');
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-exos')!)['mikhal:777']).toEqual([{ effectId: 118, value: 5 }]));
       cleanup();
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
       await waitFor(() => expect(exoRows()).toHaveLength(1));
       expect(exoRows()[0]).toHaveTextContent('Exo');
-      expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-exos')!)['mikhal:777']).toEqual([{ effectId: 118, value: 5 }]);
+      expect(await screen.findByLabelText("Valeur de l'exo Force")).toHaveValue(5);
     });
 
     it('accepts a roll above the maximum of a line as an over, and refuses it above the weight limit', async () => {

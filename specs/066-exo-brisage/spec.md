@@ -27,7 +27,7 @@ Cette règle vient d'une lecture du site DoFocus, pas d'une règle officielle : 
 
 ### User Story 1 - Ajouter un exo à l'objet choisi (Priorité : P1)
 
-Sous le tableau des lignes de l'objet choisi, le joueur a une action « Ajouter un exo ». Il choisit la stat parmi toutes celles que le brisage connaît **et que l'objet n'a pas déjà**, et indique sa valeur. Une ligne exo apparaît dans le tableau, repérée comme « exo », avec ses runes, son prix et ses runes obtenues. Il peut ajouter plusieurs exos sur le même objet, et en retirer un.
+Un bouton « + Exo » près du titre du tableau ajoute directement une ligne en tête du tableau. Dans cette ligne, le joueur choisit la rune dans une liste qui montre l'icône de chaque rune, parmi les runes des stats que le brisage connaît **et que l'objet n'a pas déjà**, puis règle la valeur (1 par défaut). La ligne est repérée comme « exo », avec ses runes, son prix et ses runes obtenues. Il peut ajouter plusieurs exos sur le même objet, et en retirer un.
 
 **Pourquoi cette priorité** : sans pouvoir saisir l'exo, rien d'autre n'existe.
 
@@ -35,7 +35,7 @@ Sous le tableau des lignes de l'objet choisi, le joueur a une action « Ajouter 
 
 **Scénarios d'acceptation** :
 
-1. **Étant donné** un objet choisi, **quand** le joueur ajoute un exo de Force à 5, **alors** une ligne exo Force 5 apparaît en première ligne du tableau, en bleu, distincte des lignes d'origine.
+1. **Étant donné** un objet choisi, **quand** le joueur clique « + Exo », choisit la rune de Force dans la liste et règle la valeur à 5, **alors** une ligne exo Force 5 apparaît en première ligne du tableau, en bleu, distincte des lignes d'origine.
 2. **Étant donné** un exo déjà ajouté, **quand** le joueur en ajoute un second sur une autre stat, **alors** les deux lignes coexistent.
 3. **Étant donné** une ligne exo, **quand** le joueur la retire, **alors** elle disparaît et les totaux reviennent à ce qu'ils étaient sans elle.
 4. **Étant donné** un objet qui a déjà la stat (ex. Force) en ligne d'origine, **quand** le joueur ouvre la liste des stats d'un exo, **alors** cette stat n'y figure pas : pour la dépasser, il règle le jet de la ligne d'origine (over).

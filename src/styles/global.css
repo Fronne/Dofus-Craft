@@ -2565,11 +2565,19 @@ select:focus {
 .brisage-exo-value { font-weight: 700; }
 .brisage-exo-remove { margin-left: var(--space-2); padding: 0 var(--space-2); min-height: 28px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-size: .8rem; cursor: pointer; }
 .brisage-exo-remove:hover { border-color: var(--exo); color: var(--exo); }
-.brisage-exo-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
-.brisage-exo-form label { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
-.brisage-exo-form select, .brisage-exo-form input { min-height: 40px; }
-.brisage-exo-form input { width: 6rem; }
-.brisage-exo-hint { margin: 0; flex-basis: 100%; }
+.brisage-exo-add { margin-left: auto; min-height: 36px; }
+.brisage-exo-note { margin-top: var(--space-3); }
+.brisage-exo-picker { position: relative; display: inline-block; }
+.brisage-exo-pick { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: 1px solid var(--exo); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--exo); font: inherit; font-weight: 600; cursor: pointer; }
+.brisage-exo-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; flex: none; }
+.brisage-exo-options { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: grid; gap: 2px; width: max-content; max-width: min(22rem, 80vw); max-height: 20rem; overflow-y: auto; margin: 0; padding: var(--space-1); list-style: none; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.brisage-exo-options button { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 2px var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.brisage-exo-options button:hover, .brisage-exo-options li[aria-selected="true"] button { background: var(--accent-soft); }
+.brisage-exo-options .fm-note { margin-left: auto; }
+.brisage-line--exo .brisage-exo-options, .brisage-line--exo .brisage-exo-options * { color: var(--text); }
+.brisage-line--exo .brisage-exo-options .fm-note { color: var(--text-muted); }
+.brisage-line--exo .brisage-roll-state { display: inline; margin-left: var(--space-2); }
+.brisage-line--exo input.brisage-exo-value { color: var(--exo); font-weight: 700; }
 .brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
 .brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
 /* Price source: a two-segment switch, the chosen segment filled. The radios stay in the page (keyboard,
