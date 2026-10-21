@@ -716,7 +716,7 @@ describe('Brisage page (specs/061)', () => {
       const row = roll.closest('tr')!;
       expect(row).toHaveClass('brisage-negative');
       expect(within(row).getByText('Malus')).toBeInTheDocument();
-      expect(within(row).getByText('aucune rune')).toBeInTheDocument();
+      expect(within(row).queryByText('aucune rune')).not.toBeInTheDocument();
       expect(within(row).queryByText('Meilleur focus')).not.toBeInTheDocument();
       expect(row.querySelectorAll('td[data-label^="Focus"]')).toHaveLength(2);
       row.querySelectorAll('td[data-label^="Focus"], td[data-label^="Sans focus"]').forEach((cell) => expect(cell).toHaveTextContent('—'));

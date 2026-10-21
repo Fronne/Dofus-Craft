@@ -4,7 +4,7 @@
 
 - Les lignes négatives sont listées dans le tableau après les lignes positives, en rouge (`--error` ou équivalent du projet).
 - Colonnes : nom de la stat avec l'icône de sa rune ; Jet (champ numérique signé) ; les colonnes de prix, de runes et de focus affichent « — ».
-- Une mention « aucune rune » ou équivalent explique la ligne.
+- Le badge « Malus » repère la ligne ; aucune mention supplémentaire sous le jet.
 - Pas de badge « Meilleur focus », pas de focus calculé pour la ligne.
 
 ## Saisie

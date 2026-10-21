@@ -533,7 +533,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                                 />
                                 {!line.fixed && <span className="brisage-bound">{line.range.to}</span>}
                               </span>
-                              <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : 'aucune rune'}</span>
+                              <span className="brisage-roll-state fm-note">{line.invalid ? 'jet invalide : moyen utilisé' : ''}</span>
                             </td>
                             <td role="cell" data-label="Prix de la rune">—</td>
                             <td role="cell" data-label="Sans focus : runes">—</td>
