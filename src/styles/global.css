@@ -2718,3 +2718,10 @@ select:focus {
 .brisage-price-source label:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
 .brisage-price-source label.is-selected { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
 .brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
+
+/* specs/066: on a wide screen the button that removes an exo sits in the left margin of the table, so the runes stay aligned. */
+@media (min-width: 641px) {
+  .brisage-table-wrap { margin-left: -2.25rem; padding-left: 2.25rem; }
+  .brisage-line--exo th:first-child { position: relative; }
+  .brisage-line--exo .brisage-exo-remove { position: absolute; left: -1.9rem; top: 50%; transform: translateY(-50%); font-size: 1.1rem; }
+}
