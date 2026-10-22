@@ -45,6 +45,10 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   L'onglet Runes filtre par stat et indique l'origine du dernier prix partagé (« Bot Discord »,
   « Capture », « Saisie manuelle »). Un prix lu sur Huzounet porte la mention « Huzounet », avec
   « peu de relevés » ou « relevé ancien » quand sa source le signale.
+- **Page Brisage** : les runes qu'un objet donne en le brisant et le verdict de rentabilité, selon
+  le prix de l'objet (HDV ou chaîne de craft). Le bouton « Modifier le prix des ressources » ouvre un atelier qui
+  liste les ressources de la recette, sous-recettes comprises, pour corriger leurs prix sans quitter
+  la page ; ce sont les mêmes prix que sur Recherche.
 - **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
   leur compte Discord (le reste du site reste sans compte).
   - Chaque joueur y retrouve ses **séances de FM** : un salon Discord privé créé par le bot (bouton
