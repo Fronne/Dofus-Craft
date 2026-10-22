@@ -63,8 +63,10 @@ async function loadCraftCost(
   if (!isCancelled()) publish(craftCostOf(detail.recipe, tree, prices, choices));
 }
 
-export function useItemCraftCost(serverId: string | undefined, itemId: string | undefined, priceMode: PriceMode): ItemCraftCostState {
-  const key = serverId && itemId ? `${serverId}:${itemId}:${priceMode}` : undefined;
+// specs/070-atelier-prix-craft-brisage: `reloadKey` is bumped when the craft prices window closes, so the
+// carnets are read again and the prices typed there are counted.
+export function useItemCraftCost(serverId: string | undefined, itemId: string | undefined, priceMode: PriceMode, reloadKey = 0): ItemCraftCostState {
+  const key = serverId && itemId ? `${serverId}:${itemId}:${priceMode}:${reloadKey}` : undefined;
   const [loaded, setLoaded] = useState<{ key: string; state: ItemCraftCostState }>();
   useEffect(() => {
     if (!serverId || !itemId || !key) return;

@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { Icon } from '../../components/Icon';
 import { MAX_COEFFICIENT } from '../../domain/brisage';
 import type { ResolvedPrice } from '../../domain/brisage-price';
@@ -21,7 +22,7 @@ const SOURCES: { id: ChosenSource; label: string }[] = [
 
 export function ItemHeader({
   item, priceSource, onPriceSource, loading, hdvKamas, craftKamas, resolved, originText, manualCost, onManualCost, noPriceReason,
-  stored, coefficientText, onCoefficientText, onRememberCoefficient,
+  stored, coefficientText, onCoefficientText, onRememberCoefficient, canEditCraftPrices, onOpenCraftPrices, craftPricesButtonRef,
 }: {
   item: { name: string; level?: number; imageUrl?: string };
   priceSource: ChosenSource;
@@ -39,6 +40,10 @@ export function ItemHeader({
   coefficientText: string;
   onCoefficientText: (text: string) => void;
   onRememberCoefficient: () => void;
+  /** specs/070-atelier-prix-craft-brisage: the item has a recipe, so its resource prices can be edited here. */
+  canEditCraftPrices: boolean;
+  onOpenCraftPrices: () => void;
+  craftPricesButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <div className="brisage-item-head">
@@ -74,8 +79,17 @@ export function ItemHeader({
             </>
           )}
         </div>
-        {!loading && (resolved || originText) && <span className="brisage-price-origin">{originText}</span>}
-        {!loading && !resolved && !originText && <span className="fm-note">{noPriceReason}</span>}
+        {/* The link sits with the note that says where the craft price comes from: it opens the prices behind it. */}
+        <div className="brisage-price-notes">
+          {!loading && (resolved || originText) && <span className="brisage-price-origin">{originText}</span>}
+          {!loading && !resolved && !originText && <span className="fm-note">{noPriceReason}</span>}
+          {canEditCraftPrices && (
+            <button ref={craftPricesButtonRef} type="button" className="brisage-craft-prices-button" onClick={onOpenCraftPrices}>
+              <Icon name="edit" size={14} />
+              <span>Modifier le prix des ressources</span>
+            </button>
+          )}
+        </div>
         {!loading && hdvKamas !== undefined && craftKamas !== undefined && (
           <span className="fm-note brisage-both-prices">Achat <Kamas value={hdvKamas} /> · Craft <Kamas value={craftKamas} /></span>
         )}
