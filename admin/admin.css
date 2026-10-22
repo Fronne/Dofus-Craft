@@ -82,6 +82,34 @@
 .admin-message-preview { display: grid; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
 .admin-message-preview .info-banner { margin: 0; }
 
+/* specs/068-admin-dashboard: the dashboard's cards and the way back from a section. */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.dashboard-card {
+  display: grid;
+  gap: .35rem;
+  height: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+  color: var(--text);
+  text-decoration: none;
+}
+.dashboard-card:hover { border-color: var(--accent-bright); }
+.dashboard-card:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.dashboard-card h2 { margin: 0; font-size: 1.05rem; }
+.dashboard-card-summary { margin: 0; color: var(--text-muted); font-size: .9rem; font-weight: 650; }
+.dashboard-card--good { border-left-color: var(--success); }
+.dashboard-card--warning { border-left-color: var(--warning); }
+.dashboard-card--warning .dashboard-card-summary { color: var(--warning); }
+.dashboard-card--over { border-left-color: var(--danger); }
+.dashboard-card--over .dashboard-card-summary { color: var(--danger); }
+.admin-back { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.admin-back .btn { text-decoration: none; }
+.admin-back-current { color: var(--text-muted); font-weight: 700; }
+@media (max-width: 480px) { .dashboard-card { padding: var(--space-3); } }
+
 /* specs/057-sniffer-admin: the friends' HDV price tool — keys and mappings. */
 .admin-sniffer-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
 .admin-sniffer-form label { display: grid; flex: 1 1 220px; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--text-muted); }
