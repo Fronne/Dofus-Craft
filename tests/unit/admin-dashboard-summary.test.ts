@@ -12,6 +12,7 @@ import {
   summarizeUsage,
   summarizeVisits,
 } from '../../admin/dashboard-summary';
+import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
 import type { Activity, SnifferKeyJson, SnifferMappingJson } from '../../admin/admin-api';
 import type { PlayerCounter } from '../../src/domain/player-counter';
 import type { UsageDay, UsageResponse } from '../../src/domain/cloudflare-usage';
@@ -35,9 +36,10 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
   });
 
   it('résume les pages actives', () => {
-    expect(summarizePages({ forgemagiePage: false, hdvPage: true }).text).toBe('1 page active sur 2');
-    expect(summarizePages({ forgemagiePage: true, hdvPage: true }).text).toBe('2 pages actives sur 2');
-    expect(summarizePages({ forgemagiePage: false, hdvPage: false }).text).toBe('0 page active sur 2');
+    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true }).text).toBe('6 pages actives sur 7');
+    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true }).text).toBe('7 pages actives sur 7');
+    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false }).text).toBe('1 page active sur 7');
+    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false, brisagePage: false }).text).toBe('0 page active sur 7');
   });
 
   it('résume le bandeau', () => {

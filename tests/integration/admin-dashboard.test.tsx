@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
 
 const api = vi.hoisted(() => ({
   me: vi.fn(),
@@ -43,7 +44,9 @@ async function goTo(hash: string) {
   });
 }
 
-const cardNames = () => screen.getAllByRole('link').map((link) => within(link).getByRole('heading').textContent);
+// The cards that open a section; the key figures of specs/071 are links too, but they are not cards of a section.
+const sectionLinks = () => screen.getAllByRole('link').filter((link) => !link.closest('.dashboard-figures'));
+const cardNames = () => sectionLinks().map((link) => within(link).getByRole('heading').textContent);
 
 describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () => {
   beforeEach(() => {
@@ -51,7 +54,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
-    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'ok', days: 7, readAt: '2026-10-21T10:00:00Z', history: [today] } });
@@ -67,15 +70,16 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     it('affiche six cartes avec leur résumé et l\'e-mail connecté', async () => {
       await renderPage();
       expect(screen.getByText('Connecté : owner@example.com')).toBeInTheDocument();
+      // specs/071: the big chart cards first, then the smaller ones.
       expect(cardNames()).toEqual([
+        'Utilisation Cloudflare',
+        'Clés sniffer',
         'Pages du site',
         "Bandeau d'information",
         'Compteurs',
-        'Clés sniffer',
         'Mapping',
-        'Utilisation Cloudflare',
       ]);
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('1 page active sur 2');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
       expect(screen.getByRole('link', { name: /Bandeau/ })).toHaveTextContent('Aucun bandeau');
       expect(screen.getByRole('link', { name: /Compteurs/ })).toHaveTextContent('Aucun compteur');
       expect(screen.getByRole('link', { name: /Clés/ })).toHaveTextContent('Aucune clé active');
@@ -107,7 +111,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(screen.queryByRole('heading', { name: "Bandeau d'information" })).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Retour au tableau de bord/ })).toHaveAttribute('href', '#');
       await goTo('');
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(6);
     });
 
     it.each([
@@ -128,14 +132,14 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     });
 
     it('la carte reflète une modification faite dans la section', async () => {
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
       await renderPage('#pages');
       await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Activer la page Forgemagie' }));
       });
-      api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
+      api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
       await goTo('');
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('2 pages actives sur 2');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('7 pages actives sur 7');
     });
   });
 
@@ -145,7 +149,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await goTo('#cloudflare');
       expect(screen.getByRole('heading', { level: 2, name: 'Utilisation Cloudflare' })).toBeInTheDocument();
       await goTo('');
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(6);
     });
 
     it('ne prend pas le focus au premier rendu, puis le donne au titre à chaque changement de vue', async () => {
@@ -170,7 +174,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
 
     it('une ancre inconnue affiche le tableau de bord', async () => {
       await renderPage('#nimporte');
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(6);
     });
   });
 
@@ -224,8 +228,8 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await renderPage();
       expect(cardOf(/Cloudflare/).getByText('Indisponible')).toBeInTheDocument();
       expect(cardOf(/Cloudflare/).queryByRole('img')).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('1 page active sur 2');
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
+      expect(sectionLinks()).toHaveLength(6);
     });
   });
 
@@ -280,7 +284,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await renderPage();
       expect(cardOf(/Clés/).getByText('Indisponible')).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Clés/ })).toHaveTextContent('Aucune clé active');
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(6);
     });
   });
 
@@ -383,14 +387,14 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(visits.getByRole('img', { name: /Visiteurs par jour/ })).toBeInTheDocument();
       // Nothing to open: these two are not links, and the six sections still are.
       expect(screen.queryByRole('link', { name: /Prix communautaires|Visites/ })).not.toBeInTheDocument();
-      expect(screen.getAllByRole('link')).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(6);
     });
 
     it('un historique indisponible rend seulement ces deux cartes indisponibles', async () => {
       await renderPage();
       expect(itemOf('Prix communautaires').getAllByText('Indisponible')).toHaveLength(2);
       expect(itemOf('Visites').getAllByText('Indisponible')).toHaveLength(2);
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('1 page active sur 2');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
     });
 
     it('sans prix ni visiteur, le dit au lieu de montrer un graphique vide', async () => {
@@ -506,6 +510,88 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(row).toHaveTextContent(/^Un ami au pseudonyme\s*…/);
       expect(row).toHaveAttribute('title', `${label} : 5`);
       expect(card.getByRole('rowheader', { name: label, hidden: true })).toBeInTheDocument();
+    });
+  });
+
+  describe('chiffres clés (specs/071)', () => {
+    const figures = () => within(screen.getByRole('list', { name: 'Chiffres clés' }));
+    const figure = (title: string) => figures().getByText(title).closest('li') as HTMLElement;
+
+    it('met une rangée de quatre chiffres clés au-dessus des cartes, dans l\'ordre', async () => {
+      await renderPage();
+      const row = screen.getByRole('list', { name: 'Chiffres clés' });
+      expect(within(row).getAllByRole('listitem').map((item) => item.querySelector('.dashboard-figure-title')?.textContent)).toEqual([
+        'Pages actives', 'Lignes ce mois-ci', 'Visiteurs du jour', 'Limite du jour',
+      ]);
+      // Before the chart cards in the page.
+      const firstChartCard = screen.getByRole('heading', { level: 2, name: 'Utilisation Cloudflare' });
+      expect(row.compareDocumentPosition(firstChartCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('montre les valeurs lues : pages actives, lignes du mois, visiteurs du jour et niveau Cloudflare en texte', async () => {
+      api.getKeyContributions.mockResolvedValue(contributions({ total: 1250 }));
+      api.getActivity.mockResolvedValue({ status: 'ok', value: { pricesTotal: 5, visitorsToday: 22, days: [] } });
+      await renderPage();
+      expect(figure('Pages actives')).toHaveTextContent('6 sur 7');
+      expect(figure('Lignes ce mois-ci')).toHaveTextContent(/1\s250/);
+      expect(figure('Visiteurs du jour')).toHaveTextContent('22');
+      expect(figure('Limite du jour')).toHaveTextContent('85 %');
+      expect(figure('Limite du jour')).toHaveTextContent('Requêtes Workers · Proche de la limite');
+    });
+
+    it('chaque chiffre mène à sa section, sauf les visiteurs qui n\'en ont pas', async () => {
+      await renderPage();
+      expect(within(figure('Pages actives')).getByRole('link')).toHaveAttribute('href', '#pages');
+      expect(within(figure('Lignes ce mois-ci')).getByRole('link')).toHaveAttribute('href', '#cles');
+      expect(within(figure('Limite du jour')).getByRole('link')).toHaveAttribute('href', '#cloudflare');
+      expect(within(figure('Visiteurs du jour')).queryByRole('link')).not.toBeInTheDocument();
+    });
+
+    it('dit « Indisponible » pour un chiffre dont la source échoue, sans bloquer les autres ni inventer de valeur', async () => {
+      api.getSettings.mockResolvedValue({ status: 'unavailable' });
+      await renderPage();
+      expect(figure('Pages actives')).toHaveTextContent('Indisponible');
+      expect(figure('Lignes ce mois-ci')).toHaveTextContent('Indisponible');
+      expect(figure('Visiteurs du jour')).toHaveTextContent('Indisponible');
+      expect(figure('Limite du jour')).toHaveTextContent('85 %');
+      // A figure that failed is still a link, so the section can be opened anyway.
+      expect(within(figure('Pages actives')).getByRole('link')).toHaveAttribute('href', '#pages');
+    });
+
+    it('affiche « 0 » pour une vraie valeur nulle, sans la masquer', async () => {
+      api.getKeyContributions.mockResolvedValue(contributions({ total: 0, keys: [], days: [] }));
+      api.getActivity.mockResolvedValue({ status: 'ok', value: { pricesTotal: 0, visitorsToday: 0, days: [] } });
+      await renderPage();
+      expect(figure('Lignes ce mois-ci')).toHaveTextContent('0');
+      expect(figure('Lignes ce mois-ci')).toHaveTextContent('aucun prix ajouté ce mois-ci');
+      expect(figure('Visiteurs du jour')).toHaveTextContent("aucun visiteur aujourd'hui");
+    });
+
+    it('signale le niveau en texte quand la limite est dépassée, et la teinte en plus', async () => {
+      api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'ok', days: 7, readAt: 'x', history: [{ ...today, workersRequests: 100_000 }] } });
+      await renderPage();
+      expect(figure('Limite du jour')).toHaveTextContent('Limite dépassée');
+      expect(figure('Limite du jour').querySelector('.dashboard-figure--over')).not.toBeNull();
+    });
+
+    it('dit « Jeton non configuré » quand Cloudflare n\'est pas configuré', async () => {
+      api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN'] } });
+      await renderPage();
+      expect(figure('Limite du jour')).toHaveTextContent('Jeton non configuré');
+    });
+
+    it('prévient quand aucune page n\'est active', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: Object.fromEntries(Object.keys(ALL_PAGES).map((field) => [field, false])) });
+      await renderPage();
+      expect(figure('Pages actives')).toHaveTextContent('0 sur 7');
+      expect(figure('Pages actives')).toHaveTextContent('Aucune page disponible');
+    });
+
+    it('ne change pas le nom accessible des cartes de section (aucun nom en double)', async () => {
+      await renderPage();
+      for (const name of [/Pages du site/, /Compteurs/, /Clés/, /Cloudflare/, /Mapping/, /Bandeau/]) {
+        expect(screen.getAllByRole('link', { name })).toHaveLength(1);
+      }
     });
   });
 });

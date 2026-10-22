@@ -148,4 +148,37 @@ describe('worker/migrations', () => {
     for (const statement of statements.slice(-2)) dropped.exec(statement);
     expect(dropped.prepare('SELECT id FROM community_price_contributions').all()).toEqual([{ id: 'a' }]);
   });
+
+  // specs/071-admin-dashboard-moderne: the key list of site_settings is widened by a rebuild of the table.
+  it('widens the site settings keys (0023) keeping the saved settings, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('forgemagie_page', '1', '2026-10-01T00:00:00.000Z'), ('hdv_page', '0', '2026-10-02T00:00:00.000Z')");
+    // The table as it was before 0023: only the two keys of 0017.
+    db.exec('DROP TABLE site_settings');
+    db.exec(`CREATE TABLE site_settings (key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page')),
+      value TEXT NOT NULL CHECK (value IN ('0', '1')), updated_at TEXT NOT NULL)`);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('forgemagie_page', '1', '2026-10-01T00:00:00.000Z'), ('hdv_page', '0', '2026-10-02T00:00:00.000Z')");
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('brisage_page', '0', 'x')")).toThrow();
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0023_widen_site_settings_keys.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(db.prepare('SELECT key, value, updated_at FROM site_settings ORDER BY key').all()).toEqual([
+      { key: 'forgemagie_page', value: '1', updated_at: '2026-10-01T00:00:00.000Z' },
+      { key: 'hdv_page', value: '0', updated_at: '2026-10-02T00:00:00.000Z' },
+    ]);
+    for (const key of ['search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page']) {
+      db.exec(`INSERT INTO site_settings (key, value, updated_at) VALUES ('${key}', '0', 'x')`);
+    }
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('autre_page', '0', 'x')")).toThrow();
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('search_page', '2', 'x')")).toThrow();
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
+  });
+
+  it('has the same site_settings table in schema.sql as after the migrations', () => {
+    const fresh = freshDatabase();
+    const sql = (fresh.prepare("SELECT sql FROM sqlite_master WHERE name = 'site_settings'").get() as { sql: string }).sql;
+    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page']) {
+      expect(sql).toContain(`'${key}'`);
+    }
+  });
 });

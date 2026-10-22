@@ -1,9 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ROUTES } from './router';
+import { NoPageAvailable, PageUnavailable, type PageEntry } from './PageUnavailable';
+import { firstEnabledPage, type SiteSettingField } from '../domain/site-settings';
 import { Icon } from '../components/Icon';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
 import { PriceModeSwitch } from '../features/settings/PriceModeSwitch';
@@ -30,13 +32,13 @@ import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
 const NAV_ITEMS = [
-  { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true },
-  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false },
-  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false },
-  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false },
-  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false },
-  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false },
-  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false },
+  { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true, page: 'searchPage' as const },
+  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false, page: 'pinnedPage' as const },
+  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false, page: 'pricesPage' as const },
+  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false, page: 'hdvPage' as const },
+  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false, page: 'petsPage' as const },
+  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false, page: 'forgemagiePage' as const },
+  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false, page: 'brisagePage' as const },
 ];
 
 const SITE_NAME = 'Dofus Craft';
@@ -52,46 +54,20 @@ const PAGE_TITLES: Record<string, string> = {
   [ROUTES.settings]: `Paramètres — ${SITE_NAME}`,
 };
 
-function NotFoundPage() {
+function NotFoundPage({ entry }: { entry: PageEntry | undefined }) {
+  if (!entry) return <NoPageAvailable />;
   return (
     <>
       <header className="page-header">
         <h1>Page introuvable</h1>
       </header>
       <EmptyState icon="search" title="Cette adresse n'existe pas" description="Le lien est peut-être incomplet, ou la page a changé d'adresse.">
-        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
+        <Link to={entry.to} className="btn btn-primary">Aller à {entry.linkName}</Link>
       </EmptyState>
     </>
   );
 }
 
-// specs/050-forgemagie-page-toggle (FR-004): what the Forgemagie address shows while the page is off.
-function ForgemagieUnavailablePage() {
-  return (
-    <>
-      <header className="page-header">
-        <h1>Forgemagie</h1>
-      </header>
-      <EmptyState icon="anvil" title="Forgemagie est momentanément indisponible" description="La page reviendra bientôt. Vos séances et vos données sont conservées.">
-        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
-      </EmptyState>
-    </>
-  );
-}
-
-// specs/053-hdv-page-toggle (FR-004): what the HDV address shows while the page is off.
-function HdvUnavailablePage() {
-  return (
-    <>
-      <header className="page-header">
-        <h1>HDV</h1>
-      </header>
-      <EmptyState icon="store" title="HDV est momentanément indisponible" description="La page reviendra bientôt. Vos prix sont conservés.">
-        <Link to={ROUTES.search} className="btn btn-primary">Aller à la recherche</Link>
-      </EmptyState>
-    </>
-  );
-}
 
 export function AppShell() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -143,8 +119,23 @@ export function AppShell() {
   // specs/050-forgemagie-page-toggle, specs/053-hdv-page-toggle: the owner turns the Forgemagie and
   // HDV pages on or off; off, a page's link is gone and its address says so (FR-003, FR-004).
   const { settings: siteSettings, reading: readingSiteSettings } = useSiteSettings();
-  const forgemagieEnabled = siteSettings.forgemagiePage;
   const hdvEnabled = siteSettings.hdvPage;
+  // specs/071 (seven pages): every page of the navigation can be turned off. The entry points of the site
+  // (home, logo, « back » links) lead to the first page still on; none left, to a message (FR-007, FR-006).
+  const entryPage = firstEnabledPage(siteSettings);
+  const linkName = entryPage?.route === 'search' ? 'la recherche' : entryPage?.label;
+  const entry = entryPage ? { label: entryPage.label, to: ROUTES[entryPage.route], linkName: linkName ?? entryPage.label } : undefined;
+  const entryTo = entry?.to ?? ROUTES.settings;
+  const entryName = entryPage?.route === 'search' ? 'la recherche' : (entryPage?.label ?? 'les paramètres');
+  const navItems = NAV_ITEMS.filter((item) => siteSettings[item.page]);
+  // A page's address: the page when it is on, « Chargement… » while the settings are first read (so an enabled page
+  // is never said unavailable), the unavailable page when it is off.
+  const guarded = (field: SiteSettingField, element: ReactElement) => {
+    if (siteSettings[field]) return element;
+    if (readingSiteSettings) return <p className="empty" role="status">Chargement…</p>;
+    const item = NAV_ITEMS.find((candidate) => candidate.page === field)!;
+    return <PageUnavailable label={item.label} icon={item.icon} entry={entry} />;
+  };
   // specs/021-background-data-loading (FR-006, FR-009): the Prix list is prepared in the background
   // for the active server and price mode, so it's already there when the player opens the page.
   useEffect(() => preloadCraftProfits(serverId, priceMode), [serverId, priceMode]);
@@ -188,20 +179,20 @@ export function AppShell() {
       cancelAnimationFrame(ready);
       observer?.disconnect();
     };
-  }, [pathname, forgemagieEnabled, hdvEnabled]);
+  }, [pathname, navItems.length, siteSettings]);
 
   return (
     <div className="app-shell">
       <a className="skip-link" href="#contenu">Aller au contenu</a>
       <nav className="app-nav" aria-label="Navigation principale">
-        <Link className="app-nav-brand" to={ROUTES.search} aria-label="DofusCraft, aller à la recherche">
+        <Link className="app-nav-brand" to={entryTo} aria-label={`DofusCraft, aller à ${entryName}`}>
           <img className="app-nav-brand-mark" src="/dofus-emeraude.png" alt="" width="44" height="44" />
           <span className="app-nav-brand-name">
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
         </Link>
         <ul className="app-nav-list" ref={navListRef}>
-          {NAV_ITEMS.filter((item) => (forgemagieEnabled || item.to !== ROUTES.forgemagie) && (hdvEnabled || item.to !== ROUTES.hdv)).map((item) => (
+          {navItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
@@ -248,36 +239,24 @@ export function AppShell() {
           <div className="page-enter">
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
-            <Route path={ROUTES.home} element={<Navigate to={ROUTES.search} replace />} />
             <Route
-              path={ROUTES.search}
-              element={<RecherchePage priceMode={priceMode} />}
+              path={ROUTES.home}
+              element={readingSiteSettings
+                ? <p className="empty" role="status">Chargement…</p>
+                : entry ? <Navigate to={entry.to} replace /> : <NoPageAvailable />}
             />
-            <Route path={ROUTES.pinned} element={<EpinglesPage priceMode={priceMode} />} />
+            <Route path={ROUTES.search} element={guarded('searchPage', <RecherchePage priceMode={priceMode} />)} />
+            <Route path={ROUTES.pinned} element={guarded('pinnedPage', <EpinglesPage priceMode={priceMode} />)} />
             {/* Former address of the Suivis page, kept so existing bookmarks still land on it. */}
             <Route path={ROUTES.legacyPinned} element={<Navigate to={ROUTES.pinned} replace />} />
-            <Route path={ROUTES.prices} element={<PricesPage priceMode={priceMode} />} />
+            <Route path={ROUTES.prices} element={guarded('pricesPage', <PricesPage priceMode={priceMode} />)} />
             {/* Former address of the Rentabilité page (named « Prix » until 2026-09-28). */}
             <Route path={ROUTES.legacyPrices} element={<Navigate to={ROUTES.prices} replace />} />
-            <Route
-              path={ROUTES.hdv}
-              element={hdvEnabled
-                ? <HdvPage priceMode={priceMode} />
-                : readingSiteSettings
-                  ? <p className="empty" role="status">Chargement…</p>
-                  : <HdvUnavailablePage />}
-            />
+            <Route path={ROUTES.hdv} element={guarded('hdvPage', <HdvPage priceMode={priceMode} />)} />
             {/* specs/060-page-brisage (FR-001): reachable from the Brisage link of the menu. */}
-            <Route path={ROUTES.brisage} element={<BrisagePage priceMode={priceMode} />} />
-            <Route path={ROUTES.pets} element={<FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />} />
-            <Route
-              path={ROUTES.forgemagie}
-              element={forgemagieEnabled
-                ? <ForgemagiePage priceMode={priceMode} />
-                : readingSiteSettings
-                  ? <p className="empty" role="status">Chargement…</p>
-                  : <ForgemagieUnavailablePage />}
-            />
+            <Route path={ROUTES.brisage} element={guarded('brisagePage', <BrisagePage priceMode={priceMode} />)} />
+            <Route path={ROUTES.pets} element={guarded('petsPage', <FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />)} />
+            <Route path={ROUTES.forgemagie} element={guarded('forgemagiePage', <ForgemagiePage priceMode={priceMode} />)} />
             <Route
               path={ROUTES.settings}
               element={
@@ -289,7 +268,7 @@ export function AppShell() {
                 />
               }
             />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="*" element={<NotFoundPage entry={entry} />} />
           </Routes>
           </div>
           </ErrorBoundary>

@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { cumulativeHours } from '../src/domain/cloudflare-usage';
 import type { InfoMessage } from '../src/domain/info-message';
 import type { PlayerCounter } from '../src/domain/player-counter';
+import type { SiteSettings } from '../src/domain/site-settings';
+import type { UsageResponse } from '../src/domain/cloudflare-usage';
 import { adminApi, type Activity, type AdminResult, type SnifferKeyJson, type SnifferMappingJson } from './admin-api';
 import { BarList } from './BarList';
 import { DailyColumns } from './DailyColumns';
@@ -9,6 +11,12 @@ import { bannerRemaining, counterBars, keyActivity, mappingAge } from './dashboa
 import {
   LOADING,
   READ_ONLY_CARDS,
+  figureLimit,
+  figureLines,
+  figureLoading,
+  figurePages,
+  figureUnavailable,
+  figureVisitors,
   SECTIONS,
   UNAVAILABLE,
   summarizeBanner,
@@ -20,12 +28,14 @@ import {
   summarizeUsage,
   summarizeVisits,
   type CardSummary,
+  type KeyFigure,
   type ReadOnlyCardId,
   type SectionId,
 } from './dashboard-summary';
 import { DashboardVisual, type VisualState } from './DashboardVisual';
 import { DayUsageChart } from './DayUsageChart';
 import { KeyContributions } from './KeyContributions';
+import { KeyFigures } from './KeyFigures';
 
 type Summaries = Record<SectionId, CardSummary>;
 
@@ -40,6 +50,8 @@ const INITIAL: Summaries = {
 
 // What the cards' own reads brought back, kept so a visual can use it too without reading it a second time.
 type Raw = {
+  settings?: SiteSettings;
+  usage?: UsageResponse;
   message?: InfoMessage | null;
   counters?: PlayerCounter[];
   keys?: SnifferKeyJson[];
@@ -104,16 +116,30 @@ export function Dashboard() {
         if (result.status === 'ok' && keep) setRaw((current) => ({ ...current, ...keep(result.value) }));
       });
     }
-    fill('pages', adminApi.getSettings(), summarizePages);
+    fill('pages', adminApi.getSettings(), summarizePages, (settings) => ({ settings }));
     fill('bandeau', adminApi.getMessage(), summarizeBanner, (message) => ({ message }));
     fill('compteurs', adminApi.list(), summarizeCounters, (counters) => ({ counters }));
     fill('cles', adminApi.listSnifferKeys(), summarizeKeys, (keys) => ({ keys }));
     fill('correspondances', adminApi.listSnifferMappings(), summarizeMappings, (mappings) => ({ mappings }));
-    fill('cloudflare', adminApi.getUsage(7), summarizeUsage);
+    fill('cloudflare', adminApi.getUsage(7), summarizeUsage, (usage) => ({ usage }));
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // specs/071-admin-dashboard-moderne: the row of key figures, each from a read the cards make anyway.
+  function figureFor<T>(read: Read<T>, id: KeyFigure['id'], title: string, href: KeyFigure['href'], make: (value: T) => KeyFigure): KeyFigure {
+    if (read.state === 'ok') return make(read.value);
+    return read.state === 'unavailable' ? figureUnavailable(id, title, href) : figureLoading(id, title, href);
+  }
+  const sourceFigure = (summary: CardSummary, id: KeyFigure['id'], title: string, href: KeyFigure['href'], make: () => KeyFigure | undefined) =>
+    make() ?? (summary.state === 'unavailable' ? figureUnavailable(id, title, href) : figureLoading(id, title, href));
+  const figures: KeyFigure[] = [
+    sourceFigure(summaries.pages, 'pages', 'Pages actives', 'pages', () => (raw.settings ? figurePages(raw.settings) : undefined)),
+    figureFor(contributions, 'lignes', 'Lignes ce mois-ci', 'cles', (value) => figureLines(value.total)),
+    figureFor(activity, 'visiteurs', 'Visiteurs du jour', undefined, (value) => figureVisitors(value.visitorsToday)),
+    sourceFigure(summaries.cloudflare, 'limite', 'Limite du jour', 'cloudflare', () => (raw.usage ? figureLimit(raw.usage) : undefined)),
+  ];
 
   const visuals: Partial<Record<SectionId, ReactNode>> = {};
 
@@ -196,31 +222,49 @@ export function Dashboard() {
     },
   };
 
+  const sectionCard = (id: SectionId) => {
+    const { title } = SECTIONS.find((section) => section.id === id)!;
+    const summary = summaries[id];
+    const visual = visuals[id];
+    return (
+      <li key={id} className={`dashboard-item${visual ? ' dashboard-item--visual' : ''}`}>
+        <a href={`#${id}`} className={`dashboard-card dashboard-card--${summary.tone}`}>
+          <h2>{title}</h2>
+          <p className="dashboard-card-summary">{summary.text}</p>
+        </a>
+        {visual}
+      </li>
+    );
+  };
+  const readOnlyCard = (id: ReadOnlyCardId) => {
+    const { title } = READ_ONLY_CARDS.find((card) => card.id === id)!;
+    return (
+      <li key={id} className="dashboard-item dashboard-item--visual">
+        <div className={`dashboard-card dashboard-card--${readOnly[id].summary.tone} dashboard-card--static`}>
+          <h2>{title}</h2>
+          <p className="dashboard-card-summary">{readOnly[id].summary.text}</p>
+        </div>
+        {readOnly[id].visual}
+      </li>
+    );
+  };
+
+  // Three tiers (contracts/admin-dashboard-ui.md): the key figures, the big chart cards, then the smaller cards.
   return (
-    <ul className="dashboard-grid">
-      {SECTIONS.map(({ id, title }) => {
-        const summary = summaries[id];
-        const visual = visuals[id];
-        const wide = id === 'cloudflare' || id === 'cles';
-        return (
-          <li key={id} className={`dashboard-item${visual ? ' dashboard-item--visual' : ''}${wide ? ' dashboard-item--wide' : ''}`}>
-            <a href={`#${id}`} className={`dashboard-card dashboard-card--${summary.tone}`}>
-              <h2>{title}</h2>
-              <p className="dashboard-card-summary">{summary.text}</p>
-            </a>
-            {visual}
-          </li>
-        );
-      })}
-      {READ_ONLY_CARDS.map(({ id, title }) => (
-        <li key={id} className="dashboard-item dashboard-item--visual dashboard-item--wide">
-          <div className={`dashboard-card dashboard-card--${readOnly[id].summary.tone} dashboard-card--static`}>
-            <h2>{title}</h2>
-            <p className="dashboard-card-summary">{readOnly[id].summary.text}</p>
-          </div>
-          {readOnly[id].visual}
-        </li>
-      ))}
-    </ul>
+    <div className="dashboard">
+      <KeyFigures figures={figures} />
+      <ul className="dashboard-grid dashboard-grid--charts">
+        {sectionCard('cloudflare')}
+        {sectionCard('cles')}
+        {readOnlyCard('prix')}
+        {readOnlyCard('visites')}
+      </ul>
+      <ul className="dashboard-grid dashboard-grid--small">
+        {sectionCard('pages')}
+        {sectionCard('bandeau')}
+        {sectionCard('compteurs')}
+        {sectionCard('correspondances')}
+      </ul>
+    </div>
   );
 }

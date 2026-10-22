@@ -1,5 +1,7 @@
 # Contrat d'interface : cartes et graphiques du tableau de bord
 
+> Mise en page revue par la spec 071 : rangée de chiffres clés, grandes cartes de graphiques puis cartes secondaires, voir [`specs/071-admin-dashboard-moderne/contracts/admin-dashboard-ui.md`](../../071-admin-dashboard-moderne/contracts/admin-dashboard-ui.md). Les visuels décrits ci-dessous sont conservés.
+
 Complète [le contrat de la spec 068](../../068-admin-dashboard/contracts/admin-dashboard-ui.md) : adresses,
 navigation, retour et focus sont inchangés.
 

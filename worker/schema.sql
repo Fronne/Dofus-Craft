@@ -88,9 +88,10 @@ CREATE TABLE IF NOT EXISTS info_message (
 
 -- specs/050-forgemagie-page-toggle: the owner's site settings (see
 -- migrations/0016_add_site_settings.sql, keys widened by 0017_add_hdv_page_setting.sql for
--- specs/053-hdv-page-toggle). Written only by the dofus-craft-admin Worker.
+-- specs/053-hdv-page-toggle, widened again by 0023_widen_site_settings_keys.sql for specs/071). Written only by the
+-- dofus-craft-admin Worker.
 CREATE TABLE IF NOT EXISTS site_settings (
-  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page')),
+  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page')),
   value TEXT NOT NULL CHECK (value IN ('0', '1')),
   updated_at TEXT NOT NULL
 );
