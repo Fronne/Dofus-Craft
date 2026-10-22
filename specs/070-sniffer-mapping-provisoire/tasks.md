@@ -10,4 +10,4 @@
 - [x] T002 [US1] Dans `worker/src/sniffer.ts`, ajouter `readExpectedMapping(db, build, provisional)` et l'utiliser dans `snifferConfigResponse` (paramètre `provisional=1`, champ `provisional` dans `mapping`)
 - [x] T003 [US2] Dans `snifferBatchResponse`, lire `provisional === true` et comparer `mappingId` au mapping attendu de `readExpectedMapping`
 - [x] T004 Mettre à jour `specs/056-sniffer-batch-prices/contracts/sniffer-api.md`
-- [ ] T005 Tests, typecheck et lint verts ; relecteur
+- [x] T005 Tests, typecheck et lint verts ; relecteur

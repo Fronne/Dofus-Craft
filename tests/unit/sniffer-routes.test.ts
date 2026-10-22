@@ -306,6 +306,11 @@ describe('provisional mapping after a client update (specs/070-sniffer-mapping-p
     await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toBeNull();
   });
 
+  it('serves an unreadable fallback as no mapping', async () => {
+    test.sqlite.prepare("UPDATE sniffer_mappings SET keymap_json = '{nope' WHERE id = 7").run();
+    await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toBeNull();
+  });
+
   it('prefers the mapping of the build over the fallback', async () => {
     upload(11, NEW_BUILD, '2026-10-01T00:00:00.000Z');
     await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toEqual(
