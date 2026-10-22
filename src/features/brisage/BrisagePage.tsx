@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { useActiveServer } from '../../app/ServerContext';
 import { Icon } from '../../components/Icon';
@@ -54,6 +54,23 @@ const parse = (text: string): number => (text.trim() === '' ? NaN : Number(text.
 
 const statLabel = (effectId: number) => brisageStat(effectId)?.label ?? `Effet ${effectId}`;
 const shortRune = (option: BrisageOption) => (option.focusRuneName ?? '').replace('Rune ', '').trim();
+
+/**
+ * Enter goes down the column it was pressed in: from the price of a rune to the price of the one below, from a roll to the
+ * roll below. A price field has already been left by then (RunePriceInput), which is what saves it; on the last line the
+ * focus comes back to the field instead of being lost.
+ */
+function enterToNextInColumn(event: KeyboardEvent<HTMLTableSectionElement>) {
+  if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+  const column = event.target.classList.contains('brisage-price-input') ? 'input.brisage-price-input'
+    : event.target.classList.contains('brisage-roll') ? 'input.brisage-roll' : undefined;
+  if (!column) return;
+  event.preventDefault();
+  const fields = [...event.currentTarget.querySelectorAll<HTMLInputElement>(column)];
+  const next = fields[fields.indexOf(event.target) + 1] ?? event.target;
+  next.focus();
+  next.select();
+}
 
 /** The coefficients of the next breaks: each item broken lowers the coefficient (see nextCoefficient). */
 function nextCoefficients(current: number, count: number): number[] {
@@ -519,7 +536,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         <th scope="col">Runes</th><th scope="col">Valeur des runes</th><th scope="col">Runes</th><th scope="col">Valeur des runes</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody onKeyDown={enterToNextInColumn}>
                       {exoEntries.map((entry) => {
                         const plain = entry.effectId === undefined ? undefined : normal?.yields.find((y) => y.effectId === entry.effectId);
                         const taken = (effectId: number) => exos.some((other) => other.effectId === effectId && other.effectId !== entry.effectId);

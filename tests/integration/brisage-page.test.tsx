@@ -645,6 +645,48 @@ describe('Brisage page (specs/061)', () => {
     });
   });
 
+  describe('Enter goes down the column', () => {
+    it('moves from a rune price to the price of the rune below, and stays on the last one', async () => {
+      await openBrisage();
+      await pickCape();
+      const prices = (await screen.findAllByLabelText(/^Prix de Rune /)) as HTMLInputElement[];
+      expect(prices.length).toBeGreaterThan(2);
+      prices[0].focus();
+      fireEvent.change(prices[0], { target: { value: '5' } });
+      fireEvent.keyDown(prices[0], { key: 'Enter' });
+      expect(document.activeElement).toBe(prices[1]);
+      fireEvent.keyDown(prices[1], { key: 'Enter' });
+      expect(document.activeElement).toBe(prices[2]);
+      const last = prices[prices.length - 1];
+      last.focus();
+      fireEvent.keyDown(last, { key: 'Enter' });
+      expect(document.activeElement).toBe(last);
+    });
+
+    it('moves from a roll to the roll below, and stays on the last one', async () => {
+      await openBrisage();
+      await pickCape();
+      const rolls = (await screen.findAllByLabelText(/^Jet de /)) as HTMLInputElement[];
+      expect(rolls.length).toBeGreaterThan(2);
+      rolls[0].focus();
+      fireEvent.keyDown(rolls[0], { key: 'Enter' });
+      expect(document.activeElement).toBe(rolls[1]);
+      const last = rolls[rolls.length - 1];
+      last.focus();
+      fireEvent.keyDown(last, { key: 'Enter' });
+      expect(document.activeElement).toBe(last);
+    });
+
+    it('keeps the two columns apart: a roll goes to a roll, never to a price', async () => {
+      await openBrisage();
+      await pickCape();
+      const rolls = (await screen.findAllByLabelText(/^Jet de /)) as HTMLInputElement[];
+      rolls[0].focus();
+      fireEvent.keyDown(rolls[0], { key: 'Enter' });
+      expect((document.activeElement as HTMLElement).getAttribute('aria-label')).toMatch(/^Jet de /);
+    });
+  });
+
   describe('exos and overs (specs/066)', () => {
     const total = () => document.querySelector('tfoot td[data-label="Sans focus : total"]')?.textContent ?? '';
     const exoRows = () => [...document.querySelectorAll('tr.brisage-line--exo')];
