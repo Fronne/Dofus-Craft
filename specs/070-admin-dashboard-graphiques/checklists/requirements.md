@@ -36,5 +36,7 @@
 - Les mentions « 057 », « 058 » et « 068 » renvoient à des specs existantes du projet (dépendances),
   pas à des choix techniques.
 - Le « etc. » de la demande est borné par le Parcours 4 et les Hypothèses (pas de nouvelle collecte).
-- Point à confirmer avec le propriétaire si besoin lors de `/speckit-clarify` : graphique des clés en
-  barres par clé (choix par défaut) ou autre forme ; mois civil UTC.
+- Révision du 2026-10-22 : le graphe Cloudflare de l'accueil montre la journée UTC en cours, heure par
+  heure (plafonds journaliers), et le Parcours 4 liste les visuels retenus pour les autres cartes.
+- Points à vérifier au plan : découpage horaire disponible côté Cloudflare ; durée de conservation des
+  visites et des prix communautaires.

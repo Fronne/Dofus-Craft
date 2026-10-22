@@ -21,36 +21,47 @@ ouvrir une section, voire ne le voit nulle part.
 
 Deux données existent déjà et ne sont pas exploitées sur l'accueil :
 
-- la consommation Cloudflare jour par jour (historique 7 / 30 jours de la spec 058, visible
-  seulement dans sa section) ;
+- la consommation Cloudflare (spec 058), visible seulement dans sa section, alors que les plafonds du
+  plan gratuit sont journaliers et repartent de zéro à minuit UTC : c'est donc la journée en cours
+  qui compte, pas une moyenne sur plusieurs jours ;
 - le nombre de lignes de prix enregistrées chaque jour par chacune des clés données aux amis (spec
   057, aujourd'hui seulement « aujourd'hui » et « dernier envoi » dans la liste des clés).
 
 ## Scénarios utilisateur et tests *(obligatoire)*
 
-### Parcours 1 - Voir la tendance de consommation Cloudflare depuis l'accueil (Priorité : P1)
+### Parcours 1 - Voir la courbe de la journée Cloudflare depuis l'accueil (Priorité : P1)
 
 Sur le tableau de bord, la carte « Consommation Cloudflare » affiche, en plus du pourcentage actuel,
-un petit graphique de l'évolution jour par jour des trois métriques suivies (requêtes Workers,
-lectures D1, écritures D1) en pourcentage de leur limite quotidienne. L'administrateur repère un pic
-ou une pente dangereuse sans ouvrir la section.
+un graphique de la **journée UTC en cours** : l'évolution heure par heure, depuis minuit UTC, du
+cumul consommé pour chacune des trois métriques (requêtes Workers, lectures D1, écritures D1), en
+pourcentage de leur limite quotidienne. La ligne des 100 % est visible. L'administrateur voit si la
+journée monte vite, et à quelle heure un pic a eu lieu, sans ouvrir la section.
 
-**Pourquoi cette priorité** : une coupure de l'API des prix à cause d'un plafond atteint est le
-risque le plus concret ; voir la tendance permet de l'anticiper.
+**Pourquoi cette priorité** : le plafond est journalier et sa remise à zéro est à minuit UTC. Une
+coupure de l'API des prix survient si la limite est atteinte avant la fin de la journée : seule la
+courbe du jour permet de l'anticiper.
 
-**Test indépendant** : ouvrir l'accueil de l'administration et vérifier que la carte Cloudflare
-contient un graphique de 7 jours, un point par jour UTC, aujourd'hui compris.
+**Test indépendant** : ouvrir l'accueil de l'administration à un moment de la journée et vérifier que
+la carte Cloudflare contient un graphique allant de 00:00 UTC à l'heure actuelle, dont le dernier
+point correspond au pourcentage affiché sur la carte.
 
 **Scénarios d'acceptation** :
 
-1. **Étant donné** un historique Cloudflare disponible, **quand** le tableau de bord s'affiche,
-   **alors** la carte Cloudflare montre un graphique des 7 derniers jours pour les trois métriques.
-2. **Étant donné** un jour sans consommation, **alors** il apparaît à 0 et non comme un trou.
-3. **Étant donné** une métrique au-dessus de 80 % ou de 100 % un jour donné, **alors** ce jour est
-   repérable dans le graphique (marque ou ligne de seuil) et la valeur est aussi lisible en texte.
-4. **Étant donné** que l'administrateur survole ou sélectionne un jour, **alors** la date et les
-   valeurs exactes de ce jour s'affichent.
-5. **Étant donné** que Cloudflare n'est pas configuré ou ne répond pas, **alors** la carte indique
+1. **Étant donné** des données horaires disponibles, **quand** le tableau de bord s'affiche, **alors**
+   la carte Cloudflare montre le cumul de la journée UTC en cours, heure par heure, pour les trois
+   métriques, avec la ligne des 100 %.
+2. **Étant donné** une heure sans consommation, **alors** le cumul reste à son niveau précédent (ou à 0
+   en début de journée) et n'apparaît pas comme un trou.
+3. **Étant donné** que le dernier point du graphique est l'heure en cours, **alors** il est identifié
+   comme partiel, avec l'heure de lecture.
+4. **Étant donné** qu'une métrique atteint 80 % puis 100 % dans la journée, **alors** le moment où
+   chaque seuil est franchi est repérable (repère visuel ET texte, par exemple « 80 % franchi à 14 h
+   UTC »).
+5. **Étant donné** que l'administrateur survole ou sélectionne une heure, **alors** l'heure et les
+   valeurs exactes de cette heure s'affichent.
+6. **Étant donné** qu'il est peu après minuit UTC, **alors** le graphique repart de zéro (journée
+   nouvelle) sans reprendre les valeurs de la veille.
+7. **Étant donné** que Cloudflare n'est pas configuré ou ne répond pas, **alors** la carte indique
    « indisponible » à la place du graphique, sans valeur inventée et sans bloquer les autres cartes.
 
 ---
@@ -106,25 +117,44 @@ total et la répartition par clé du Parcours 2 suffisent déjà à répondre à
 
 ---
 
-### Parcours 4 - Un visuel pour chaque domaine qui s'y prête (Priorité : P3)
+### Parcours 4 - Un visuel utile sur les autres cartes (Priorité : P3)
 
-Les autres cartes du tableau de bord (compteurs, pages du site, bandeau d'information, correspondances
-de l'outil de prix HDV) restent lisibles en texte. Seules celles dont l'historique existe déjà et dont
-un visuel apporte quelque chose reçoivent un petit graphique, sur le même modèle que les deux
-premiers parcours (« etc. » de la demande).
+Les autres cartes reçoivent un visuel quand une donnée historique existe déjà et qu'elle répond à une
+vraie question de l'administrateur. Chaque visuel complète le résumé en texte, sans le remplacer.
 
-**Pourquoi cette priorité** : la demande cite des exemples ; les deux parcours précédents en sont le
-cœur. Cette étape étend le même principe sans créer de nouvelle collecte de données.
+| Carte | Visuel | Question à laquelle il répond |
+|---|---|---|
+| Clés de l'outil de prix HDV | Nombre de lignes par jour sur le mois (Parcours 3) et ancienneté du dernier envoi de chaque clé | Quelle clé est active, laquelle est endormie ? |
+| Correspondances de l'outil de prix HDV | « Dernière publication il y a N jours », version du jeu de la correspondance active, historique des dernières publications | Les correspondances sont-elles à jour après une mise à jour du jeu ? |
+| Prix communautaires (nouvelle carte) | Lignes de prix ajoutées par jour sur 30 jours, ventilées par origine (manuel, capture, bot, outil des amis) | D'où viennent les prix ? La communauté contribue-t-elle encore ? |
+| Visites (nouvelle carte) | Visiteurs anonymes par jour sur 30 jours | Le site est-il fréquenté, et à quel rythme ? |
+| Compteurs | Barres comparant la valeur des compteurs entre joueurs | Quels sont les compteurs les plus élevés ? |
+| Bandeau d'information | Compte à rebours avant sa fin programmée, s'il en a une | Dans combien de temps sera-t-il retiré ? |
+| Pages du site | Aucun graphique (état actif / masqué conservé) | Pas d'historique : le résumé texte suffit |
 
-**Test indépendant** : vérifier que chaque carte conserve son résumé en texte, et que toute carte
-dotée d'un graphique l'accompagne des mêmes valeurs en texte.
+**Pourquoi cette priorité** : la demande cite des exemples (« etc. ») ; Cloudflare et les clés en sont
+le cœur. Ces visuels étendent le même principe en n'utilisant que des données déjà enregistrées.
+
+**Test indépendant** : vérifier, carte par carte, que le visuel du tableau ci-dessus s'affiche avec
+les mêmes valeurs que le texte, et que la carte « Pages du site » reste inchangée.
 
 **Scénarios d'acceptation** :
 
-1. **Étant donné** une carte dont les données historiques n'existent pas aujourd'hui, **alors** elle
-   garde son résumé actuel, sans graphique ni valeur fabriquée.
-2. **Étant donné** une carte qui reçoit un graphique, **alors** ce graphique suit les mêmes règles
-   d'accessibilité et d'indisponibilité que les Parcours 1 et 2.
+1. **Étant donné** des lignes de prix ajoutées sur les 30 derniers jours, **quand** le tableau de bord
+   s'affiche, **alors** la carte « Prix communautaires » montre un graphique par jour et par origine,
+   avec le total sur la période.
+2. **Étant donné** des visites anonymes enregistrées, **alors** la carte « Visites » montre le nombre de
+   visiteurs uniques par jour sur 30 jours, et la valeur d'aujourd'hui.
+3. **Étant donné** une correspondance active, **alors** la carte correspondante indique la date et
+   l'ancienneté de sa publication ; si elle a plus de 30 jours, ce retard est signalé en texte (pas
+   seulement par la couleur).
+4. **Étant donné** des clés dont certaines n'ont rien envoyé depuis longtemps, **alors** la carte des
+   clés distingue les clés actives récemment des clés endormies (jamais utilisée, ou aucun envoi depuis
+   plus de 30 jours).
+5. **Étant donné** un bandeau affiché avec une date de fin, **alors** la carte indique le temps restant ;
+   sans date de fin, elle l'indique (« sans fin programmée »).
+6. **Étant donné** une carte dont la donnée est indisponible ou vide, **alors** elle suit les mêmes règles
+   que les Parcours 1 et 2 (« indisponible » ou « aucune donnée », rien d'inventé).
 
 ---
 
@@ -153,11 +183,13 @@ dotée d'un graphique l'accompagne des mêmes valeurs en texte.
 
 ### Exigences fonctionnelles
 
-- **FR-001** : La carte « Consommation Cloudflare » du tableau de bord DOIT afficher un graphique de
-  l'évolution jour par jour (7 derniers jours, aujourd'hui compris, un point par jour UTC) des trois
-  métriques suivies, exprimées en pourcentage de leur limite quotidienne.
-- **FR-002** : Ce graphique DOIT rendre repérables les jours où une métrique atteint le seuil
-  d'avertissement (80 %) ou la limite (100 %), par un repère visuel ET par un texte.
+- **FR-001** : La carte « Consommation Cloudflare » du tableau de bord DOIT afficher un graphique de la
+  journée UTC en cours : le cumul heure par heure depuis 00:00 UTC des trois métriques suivies,
+  exprimé en pourcentage de leur limite quotidienne, avec la ligne des 100 %. Il NE DOIT PAS montrer
+  les jours précédents.
+- **FR-002** : Ce graphique DOIT rendre repérable le moment où une métrique franchit le seuil
+  d'avertissement (80 %) puis la limite (100 %), par un repère visuel ET par un texte ; l'heure en
+  cours DOIT être identifiée comme partielle, avec l'heure de lecture.
 - **FR-003** : La carte des clés de l'outil de prix HDV DOIT afficher le total de lignes de prix
   ajoutées sur le mois en cours (mois civil, jours UTC) et un graphique de la répartition de ces
   lignes par clé, avec le libellé de chaque clé.
@@ -185,13 +217,25 @@ dotée d'un graphique l'accompagne des mêmes valeurs en texte.
   construire les graphiques ; seuls libellés, états (active / révoquée) et nombres de lignes le sont.
 - **FR-013** : L'ouverture du tableau de bord NE DOIT PAS devenir sensiblement plus lente à cause des
   graphiques : les cartes déjà prêtes s'affichent sans attendre celles dont la source est lente.
-- **FR-014** : Les cartes qui n'ont pas d'historique exploitable (voir Hypothèses) DOIVENT garder leur
-  résumé texte actuel, sans graphique fabriqué.
+- **FR-014** : Les cartes décrites au Parcours 4 DOIVENT recevoir le visuel indiqué dans son tableau :
+  prix communautaires par jour et par origine, visites par jour, ancienneté des correspondances,
+  envois récents par clé, comparaison des compteurs, temps restant du bandeau. La carte « Pages du
+  site » et toute carte sans historique exploitable DOIVENT garder leur résumé texte actuel, sans
+  graphique fabriqué.
+- **FR-015** : Les cartes « Prix communautaires » et « Visites » sont ajoutées au tableau de bord ;
+  elles DOIVENT être en lecture seule (pas de nouvelle section d'édition) et ne collecter aucune
+  nouvelle donnée.
+- **FR-016** : Les visites et les contributions de prix DOIVENT rester anonymes dans l'affichage :
+  seuls des totaux par jour (et par origine pour les prix) sont montrés, jamais d'identifiant
+  d'appareil.
 
 ### Entités clés
 
-- **Point d'historique Cloudflare** : un jour UTC ; attributs : date, consommation de chaque métrique
-  en pourcentage de sa limite (déjà fournis par la section Cloudflare existante).
+- **Point horaire Cloudflare** : une heure de la journée UTC en cours ; attributs : heure, cumul de
+  chaque métrique depuis minuit en pourcentage de sa limite, indicateur « partiel » pour l'heure en
+  cours.
+- **Série journalière** : pour une carte (prix communautaires, visites), une valeur par jour UTC sur
+  30 jours ; les prix sont ventilés par origine.
 - **Apport d'une clé sur un mois** : pour une clé (libellé, état actif / révoqué) et un mois, le
   nombre de lignes de prix ajoutées, ventilé par jour UTC.
 - **Mois consulté** : le mois civil dont les graphiques des clés affichent les données (mois en cours
@@ -201,14 +245,14 @@ dotée d'un graphique l'accompagne des mêmes valeurs en texte.
 
 ### Résultats mesurables
 
-- **SC-001** : Depuis l'accueil de l'administration, sans ouvrir de section, l'administrateur voit
-  l'évolution Cloudflare des 7 derniers jours et le total de lignes ajoutées sur le mois.
+- **SC-001** : Depuis l'accueil de l'administration, sans ouvrir de section, l'administrateur voit la
+  courbe Cloudflare de la journée en cours et le total de lignes ajoutées sur le mois.
 - **SC-002** : L'administrateur identifie en moins de 10 secondes la clé qui a ajouté le plus de
   lignes ce mois-ci.
 - **SC-003** : Les totaux affichés (lignes du mois par clé, total du mois) correspondent à 100 % aux
   nombres de lignes réellement enregistrés pour ces clés et ce mois.
-- **SC-004** : Un jour de dépassement ou d'approche de limite Cloudflare est repérable dans le
-  graphique, y compris sans percevoir les couleurs.
+- **SC-004** : Le franchissement de 80 % ou de 100 % d'une limite Cloudflare dans la journée est
+  repérable dans le graphique, avec son heure, y compris sans percevoir les couleurs.
 - **SC-005** : Une source indisponible n'empêche jamais l'affichage des autres cartes : 100 % des
   cartes dont la source répond restent affichées.
 - **SC-006** : 100 % des fonctions d'édition des sections restent utilisables comme avant (aucune
@@ -226,13 +270,18 @@ dotée d'un graphique l'accompagne des mêmes valeurs en texte.
   n'y a pas d'autre notion de compte.
 - Les nombres de lignes par clé et par jour déjà enregistrés servent de source : aucun historique
   antérieur à ces données n'est reconstitué, et les mois sans donnée apparaissent vides.
-- L'historique Cloudflare vient de la source déjà utilisée par la section Cloudflare existante, avec
-  le même fonctionnement quand le jeton n'est pas configuré ou refusé.
-- Le graphique Cloudflare de l'accueil montre 7 jours (comme la vue par défaut de la section) ; la
-  bascule 7 / 30 jours reste dans la section.
-- « Etc. » de la demande est couvert par le Parcours 4 : seules les cartes disposant déjà d'un
-  historique exploitable reçoivent un graphique ; aucune nouvelle collecte de données (visites,
-  compteurs, etc.) n'est ajoutée par cette fonctionnalité.
+- Les données Cloudflare viennent de la même source que la section Cloudflare existante, avec le même
+  fonctionnement quand le jeton n'est pas configuré ou refusé. On suppose que cette source permet un
+  découpage par heure pour la journée en cours ; si ce n'était pas possible, la carte montrerait
+  seulement le pourcentage actuel (à vérifier lors de la planification).
+- La section Cloudflare existante garde son historique 7 / 30 jours ; l'accueil ne montre que la
+  journée en cours.
+- « Etc. » de la demande est couvert par le Parcours 4, qui s'appuie sur des données déjà enregistrées
+  (prix communautaires datés avec leur origine, visites anonymes par jour, date de publication des
+  correspondances, dernier envoi de chaque clé, valeurs des compteurs, date de fin du bandeau).
+  Aucune nouvelle collecte de données n'est ajoutée.
+- Les visites et les contributions plus anciennes que ce que la base conserve ne sont pas
+  reconstituées ; les jours sans donnée apparaissent vides.
 - Le mois est le mois civil en UTC (cohérent avec les compteurs journaliers des clés).
-- Hors périmètre : modifier les limites, les clés ou les sections elles-mêmes ; exporter les
+- Hors périmètre : projections (« limite atteinte à telle heure »), modifier les limites, les clés ou les sections elles-mêmes ; exporter les
   données ; alertes par e-mail ou notification ; graphiques pour la partie publique du site.
