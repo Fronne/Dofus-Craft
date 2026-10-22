@@ -27,6 +27,26 @@ export async function readLatestContribution(
   return row ? { amountKamas: row.amount_kamas, contributedAt: row.created_at } : undefined;
 }
 
+// specs/071-sniffer-tous-hdv: readLatestContribution's price for several items of one server at once —
+// the reference of the equipment prices of a sniffer batch. At most MAX_BATCH_RESOURCE_IDS ids a call
+// (D1 binds at most 100 parameters). Items with no price are left out.
+export async function readLatestItemContributions(
+  db: LatestListDb,
+  itemIds: string[],
+  serverId: string,
+): Promise<Map<string, number>> {
+  const latest = new Map<string, number>();
+  if (itemIds.length === 0) return latest;
+  const { results } = await db.prepare(
+    `SELECT resource_id, amount_kamas FROM community_price_contributions
+     WHERE resource_id IN (${itemIds.map(() => '?').join(', ')}) AND server_id = ? AND kind = 'item'
+     ORDER BY created_at, rowid`,
+  ).bind(...itemIds, serverId).all<{ resource_id: string; amount_kamas: number }>();
+  // Rows come oldest first: the last one read for an item is its latest, as ORDER BY created_at DESC LIMIT 1.
+  for (const row of results) latest.set(row.resource_id, row.amount_kamas);
+  return latest;
+}
+
 // GET /latest-price (contracts/community-api.md), as a status + body pair so index.ts only wraps it
 // in a JSON response — and so it can be tested without the Workers runtime types.
 export async function latestPriceResponse(db: LatestDb, url: URL): Promise<{ status: number; body: unknown }> {

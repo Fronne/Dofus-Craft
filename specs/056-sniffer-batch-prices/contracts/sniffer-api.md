@@ -45,7 +45,10 @@ seul l'admin publie un mapping.
   "serverId": "mikhal",
   "observations": [
     { "itemId": "12738", "seenAt": "2026-10-15T20:01:02Z",
-      "lots": { "1": 24000, "10": 231000, "100": 2290000, "1000": 0 } }
+      "lots": { "1": 24000, "10": 231000, "100": 2290000, "1000": 0 } },
+    { "itemId": "746", "seenAt": "2026-10-22T20:01:02Z", "category": 40,
+      "lots": { "1": 5257, "10": 52991, "100": 529995, "1000": 0 } },
+    { "itemId": "8872", "seenAt": "2026-10-22T20:01:02Z", "category": 9, "lots": { "1": 30000 } }
   ],
   "provisional": false
 }
@@ -70,12 +73,32 @@ Contrôles, dans cet ordre (le premier qui échoue répond, rien n'est écrit) :
 | 429 | `{"error":"daily_limit","limit":5000,"used":4990}` | lignes déjà écrites aujourd'hui (UTC) + lignes acceptables du lot > 5000 |
 | 200 | `{"accepted":41,"rejected":[{"index":3,"reason":"not_an_ingredient"}]}` | sinon |
 
+### `category` (specs/071-sniffer-tous-hdv, outil ≥ 0.4.0)
+
+`category` est facultatif : c'est le typeId DofusDB que l'HDV donne pour l'objet. Sa nature vient de
+`worker/src/item-types.json` (généré par `scripts/build-item-types.mjs`) :
+
+| nature | types | enregistré comme |
+|---|---|---|
+| `equipment` | super-types 1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 22, 23, 25, 69 | `kind = 'item'`, prix = `lots["1"]` (l'exemplaire le moins cher), référence = dernier prix d'objet, pas de prix par lot |
+| `resource` | super-type 9 sauf le type 78 | `kind = 'resource'`, `unitPrice` + prix par lot, comme sans catégorie |
+| `rune` | type 78 | idem |
+| `consumable` | super-types 6, 16, 70 | idem |
+
+L'étiquette va dans la colonne `item_type`. Avec une catégorie, le catalogue de ressources du site
+ne s'applique pas. Un équipement n'a que la clé `"1"`. Sans `category` (outil < 0.4.0) : ressources
+du catalogue seulement, `item_type` NULL, comme avant. Chaque observation acceptée, équipement
+compris, compte pour une ligne du plafond journalier.
+
 Raisons de refus par observation (`index` = rang dans `observations`, à partir de 0) :
 
-- `invalid` — observation mal formée (voir data-model.md) ;
-- `not_an_ingredient` — `itemId` hors du catalogue de ressources du site ;
+- `invalid` — observation mal formée (voir data-model.md), `category` qui n'est pas un entier
+  positif, ou équipement portant une autre clé que `"1"` ;
+- `not_an_ingredient` — sans `category`, `itemId` hors du catalogue de ressources du site ;
+- `unknown_category` — `category` sans nature (type inconnu, objet de quête, mutation…) ;
 - `no_price` — aucun lot en vente.
 
-Chaque observation acceptée devient une contribution `kind = 'resource'`, `origin = 'sniffer'`,
-`device_id` = id de la clé, prix = `unitPrice(lots, médiane communautaire)` arrondi. Un écart à la
-médiane n'est jamais un motif de refus. Un lot de 0 observation répond `200 {"accepted":0,"rejected":[]}`.
+Chaque observation acceptée devient une contribution `origin = 'sniffer'`, `device_id` = id de la
+clé ; une ressource (sans catégorie, ou ressource / rune / consommable) a `kind = 'resource'` et le
+prix `unitPrice(lots, médiane communautaire)` arrondi. Un écart à la référence n'est jamais un motif
+de refus. Un lot de 0 observation répond `200 {"accepted":0,"rejected":[]}`.

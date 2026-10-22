@@ -3,6 +3,7 @@ import { retentionCutoff } from './retention';
 import { resolveOutlierFields } from './outlier';
 import { readLatestContribution } from './latest';
 import { readExternalPrices, withExternalPrice } from './external-price';
+import type { ItemType } from './item-types';
 
 // Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
 // or an abusive request, and would never be a real price.
@@ -13,7 +14,9 @@ export const MAX_AMOUNT_KAMAS = 2_000_000_000;
 export type ContributionKind = 'resource' | 'item';
 // specs/025-rune-purchase-import: `origin` is 'manual' for everything posted by the site's public route
 // (the client can't claim another one); only the Forgemagie routes record 'capture' or 'bot'.
-export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind; origin: PriceOrigin };
+// specs/071-sniffer-tous-hdv: `itemType`, the nature the friends' tool 0.4.0+ gives a price; absent (NULL)
+// everywhere else.
+export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind; origin: PriceOrigin; itemType?: ItemType };
 
 // The D1 calls these need, typed structurally (like retention.ts) so the module also compiles in
 // the app's test setup, which doesn't load the Workers types. D1Database is assignable to it.
@@ -148,11 +151,11 @@ export function contributionInsert<S>(
   contribution: Contribution,
   reference: { medianAmountKamas: number } | undefined,
 ): { id: string; statement: S } {
-  const { resourceId, serverId, amountKamas, deviceId, kind, origin } = contribution;
+  const { resourceId, serverId, amountKamas, deviceId, kind, origin, itemType } = contribution;
   const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, reference);
   const id = crypto.randomUUID();
   const statement = db.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin);
+    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin, item_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin, itemType ?? null);
   return { id, statement };
 }

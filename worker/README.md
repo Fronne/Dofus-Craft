@@ -88,6 +88,10 @@ triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
 - Each friend has a key in `sniffer_keys`, stored as its SHA-256 only; the public
   `COMMUNITY_API_KEY` is never accepted there. Keys and decoding mappings (`sniffer_mappings`, one
   active per game build) are created from the admin (phase 3); until then, by hand in SQL.
+- specs/071: from tool 0.4.0, an observation may carry `category` (the DofusDB item type): prices of
+  every HDV are accepted and tagged in `item_type` (equipment / resource / rune / consumable, from
+  `src/item-types.json`, built by `scripts/build-item-types.mjs`). Equipments are item prices
+  (`kind = 'item'`). Migration: `npm run worker:db:migrate-item-type` (0022, adds a column, rewrites no row).
 - Every price is recorded with `origin = 'sniffer'` and the key's id as `device_id`, at most
   `DAILY_ROW_LIMIT` (5000) a key and UTC day (`sniffer_daily_usage`).
 - The minimum tool version and its download link are `SNIFFER_MIN_VERSION` /

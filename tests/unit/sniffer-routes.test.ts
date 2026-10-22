@@ -356,3 +356,87 @@ describe('provisional mapping after a client update (specs/070-sniffer-mapping-p
     expect(test.sqlite.prepare('SELECT * FROM sniffer_mappings ORDER BY id').all()).toEqual(before);
   });
 });
+
+describe('every HDV, tagged by nature (specs/071-sniffer-tous-hdv)', () => {
+  const OUTSIDE_CATALOGUE = '999001'; // in no catalogue of the site
+  const tagged = () => test.sqlite.prepare(
+    'SELECT resource_id, amount_kamas, kind, origin, item_type, median_at_submission_kamas FROM community_price_contributions ORDER BY rowid',
+  ).all();
+  const lotRows = (itemId: string) => test.sqlite.prepare('SELECT lot_size FROM community_price_lots WHERE resource_id = ?').all(itemId);
+  const categorized = (itemId: string, category: unknown, lots: Record<string, unknown>) => ({ ...observation(itemId, lots), category });
+
+  it('records an equipment as the item price of its cheapest copy, outside any catalogue, without lot prices', async () => {
+    test.insert({ resourceId: '8872', amountKamas: 25_000, createdAt: new Date(Date.now() - 7_200_000).toISOString(), kind: 'item' });
+    test.insert({ resourceId: '8872', amountKamas: 24_000, createdAt: new Date(Date.now() - 3_600_000).toISOString(), kind: 'item' });
+    const response = await call('POST', '/community-price/batch', batch([categorized('8872', 9, { 1: 30_000 }), categorized(OUTSIDE_CATALOGUE, 82, { 1: 1_000_000 })]));
+    await expect(response.json()).resolves.toEqual({ accepted: 2, rejected: [] });
+    expect(tagged().slice(-2)).toEqual([
+      // The reference is the item's latest shared price, as for a manual item entry (specs/016).
+      { resource_id: '8872', amount_kamas: 30_000, kind: 'item', origin: 'sniffer', item_type: 'equipment', median_at_submission_kamas: 24_000 },
+      { resource_id: OUTSIDE_CATALOGUE, amount_kamas: 1_000_000, kind: 'item', origin: 'sniffer', item_type: 'equipment', median_at_submission_kamas: null },
+    ]);
+    expect(lotRows('8872')).toEqual([]);
+    expect(usage()).toEqual([{ key_id: KEY_ID, day: new Date().toISOString().slice(0, 10), rows_written: 2 }]);
+  });
+
+  it('tags runes, consumables and resources, a consumable outside the catalogue included', async () => {
+    const response = await call('POST', '/community-price/batch', batch([
+      categorized(RESOURCE, 78, { 1: 500, 10: 4_900 }),
+      categorized(OUTSIDE_CATALOGUE, 12, { 1: 300, 10: 2_900, 100: 28_000 }),
+      categorized('746', 40, { 1: 5_257, 10: 52_991, 100: 529_995, 1000: 0 }),
+    ]));
+    await expect(response.json()).resolves.toEqual({ accepted: 3, rejected: [] });
+    expect(tagged()).toEqual([
+      { resource_id: RESOURCE, amount_kamas: 490, kind: 'resource', origin: 'sniffer', item_type: 'rune', median_at_submission_kamas: null },
+      { resource_id: OUTSIDE_CATALOGUE, amount_kamas: 280, kind: 'resource', origin: 'sniffer', item_type: 'consumable', median_at_submission_kamas: null },
+      { resource_id: '746', amount_kamas: 5_300, kind: 'resource', origin: 'sniffer', item_type: 'resource', median_at_submission_kamas: null },
+    ]);
+    expect(lotRows(OUTSIDE_CATALOGUE)).toHaveLength(3);
+  });
+
+  it('refuses an unknown category, a malformed one, an equipment with other lots, and an equipment not on sale', async () => {
+    const response = await call('POST', '/community-price/batch', batch([
+      categorized(RESOURCE, 126, { 1: 10 }), // a quest item type: no nature
+      categorized(RESOURCE, 99_999, { 1: 10 }),
+      categorized(RESOURCE, '40', { 1: 10 }),
+      categorized(RESOURCE, 0, { 1: 10 }),
+      categorized(RESOURCE, 4.5, { 1: 10 }),
+      categorized('8872', 9, { 1: 30_000, 10: 0 }),
+      categorized('8872', 9, { 1: 0 }),
+      categorized(RESOURCE, 40, { 1: 0, 10: 0 }),
+    ]));
+    await expect(response.json()).resolves.toEqual({
+      accepted: 0,
+      rejected: [
+        { index: 0, reason: 'unknown_category' },
+        { index: 1, reason: 'unknown_category' },
+        { index: 2, reason: 'invalid' },
+        { index: 3, reason: 'invalid' },
+        { index: 4, reason: 'invalid' },
+        { index: 5, reason: 'invalid' },
+        { index: 6, reason: 'no_price' },
+        { index: 7, reason: 'no_price' },
+      ],
+    });
+    expect(tagged()).toEqual([]);
+  });
+
+  it('keeps the 056 behaviour for an observation without a category, in the same batch as tagged ones', async () => {
+    const response = await call('POST', '/community-price/batch', batch([
+      observation(RESOURCE),
+      observation(OUTSIDE_CATALOGUE, { 1: 10 }),
+      categorized(OUTSIDE_CATALOGUE, 12, { 1: 10 }),
+    ]));
+    await expect(response.json()).resolves.toEqual({ accepted: 2, rejected: [{ index: 1, reason: 'not_an_ingredient' }] });
+    expect(tagged()).toEqual([
+      { resource_id: RESOURCE, amount_kamas: 22_900, kind: 'resource', origin: 'sniffer', item_type: null, median_at_submission_kamas: null },
+      { resource_id: OUTSIDE_CATALOGUE, amount_kamas: 10, kind: 'resource', origin: 'sniffer', item_type: 'consumable', median_at_submission_kamas: null },
+    ]);
+  });
+
+  it('leaves the tag empty on a manual entry', async () => {
+    const { insertContribution } = await import('../../worker/src/contribution');
+    await insertContribution(test.d1, { resourceId: RESOURCE, serverId: 'mikhal', amountKamas: 100, deviceId: 'd', kind: 'resource', origin: 'manual' });
+    expect(tagged()).toEqual([{ resource_id: RESOURCE, amount_kamas: 100, kind: 'resource', origin: 'manual', item_type: null, median_at_submission_kamas: null }]);
+  });
+});

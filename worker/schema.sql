@@ -34,7 +34,11 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- capture imported on the site, or a purchase sent by the Discord bot. specs/056: or a price sent by
   -- the friends' HDV tool ('sniffer', see migrations/0019_add_sniffer_origin.sql).
   origin TEXT NOT NULL DEFAULT 'manual' CHECK (origin IN ('manual', 'capture', 'bot', 'sniffer')),
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  -- specs/071-sniffer-tous-hdv (migrations/0022_add_contribution_item_type.sql, so last, as ADD COLUMN
+  -- puts it): the nature of a price sent by the friends' tool 0.4.0+, from the HDV's item type; NULL
+  -- otherwise.
+  item_type TEXT CHECK (item_type IN ('equipment', 'resource', 'rune', 'consumable'))
 );
 
 -- Every read is scoped to a single (resource_id, server_id) pair (FR-001/FR-003).

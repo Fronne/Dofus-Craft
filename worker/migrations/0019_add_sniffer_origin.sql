@@ -6,6 +6,7 @@
 -- BEFORE: export a backup (wrangler d1 export --remote) and apply outside the Huzounet runs (02:00-05:00
 -- UTC): a contribution written between the copy and the DROP below would not be in the new table.
 -- Apply with: npm run worker:db:migrate-sniffer-origin
+-- specs/071: never run it again once 0022 is applied — its copy would drop the item_type column.
 -- A copy left by a run stopped before its end is never thrown away (it may hold the only copy of the
 -- rows): it is completed. If a run stopped after the DROP, community_price_contributions no longer
 -- exists and the copy below fails — then run only the last two statements (RENAME and CREATE INDEX).

@@ -1,6 +1,8 @@
 import { contributionInsert, fetchCurrentMedians, MAX_AMOUNT_KAMAS, MAX_BATCH_RESOURCE_IDS } from './contribution';
 import { sha256Hex } from './fm/http';
 import type { ContributionsSummary } from './median';
+import { itemTypeOf, type ItemType } from './item-types';
+import { readLatestItemContributions } from './latest';
 import { lotPriceStatements } from './lot-prices';
 import { isKnownResource } from './resource-catalogue';
 import { isKnownServer, SERVERS } from './servers';
@@ -36,7 +38,8 @@ export type SnifferEnv = {
 
 export type SnifferResult = { status: number; body: unknown; wrote?: boolean };
 
-export type RejectReason = 'invalid' | 'not_an_ingredient' | 'no_price';
+// specs/071: 'unknown_category', a category with no nature in item-types.json.
+export type RejectReason = 'invalid' | 'not_an_ingredient' | 'no_price' | 'unknown_category';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -118,12 +121,13 @@ export async function snifferConfigResponse(env: SnifferEnv, url: URL): Promise<
   };
 }
 
-type Observation = { itemId: string; ladder: Ladder };
+// specs/071-sniffer-tous-hdv: `itemType` only when the tool (0.4.0+) sent a category.
+type Observation = { itemId: string; ladder: Ladder; itemType?: ItemType };
 
 // One observation of a batch, or the reason it is refused (data-model.md « Observation »).
 export function parseObservation(value: unknown): Observation | RejectReason {
   if (!isRecord(value) || !isRecord(value.lots)) return 'invalid';
-  const { itemId, seenAt, lots } = value;
+  const { itemId, seenAt, lots, category } = value;
   if (typeof itemId !== 'string' || !/^\d+$/.test(itemId)) return 'invalid';
   if (typeof seenAt !== 'string' || Number.isNaN(Date.parse(seenAt))) return 'invalid';
   const ladder: Ladder = {};
@@ -132,9 +136,19 @@ export function parseObservation(value: unknown): Observation | RejectReason {
     if (typeof price !== 'number' || !Number.isInteger(price) || price < 0 || price > MAX_AMOUNT_KAMAS) return 'invalid';
     ladder[Number(size) as LotSize] = price;
   }
-  if (!isKnownResource(itemId)) return 'not_an_ingredient';
-  if (!LOT_SIZES.some((size) => (ladder[size] ?? 0) > 0)) return 'no_price';
-  return { itemId, ladder };
+  const onSale = LOT_SIZES.some((size) => (ladder[size] ?? 0) > 0);
+  // A tool older than 0.4.0 sends no category: resources of the site's catalogue only, as in specs/056.
+  if (category === undefined) {
+    if (!isKnownResource(itemId)) return 'not_an_ingredient';
+    return onSale ? { itemId, ladder } : 'no_price';
+  }
+  // specs/071: the HDV's item type (DofusDB typeId) decides the nature, the catalogue no longer applies.
+  if (typeof category !== 'number' || !Number.isInteger(category) || category <= 0) return 'invalid';
+  const itemType = itemTypeOf(category);
+  if (!itemType) return 'unknown_category';
+  // An equipment is one copy: the cheapest one on sale, as lot 1 and nothing else.
+  if (itemType === 'equipment' && Object.keys(lots).some((size) => size !== '1')) return 'invalid';
+  return onSale ? { itemId, ladder, itemType } : 'no_price';
 }
 
 async function readMedians(db: SnifferDb, itemIds: string[], serverId: string): Promise<Map<string, ContributionsSummary>> {
@@ -145,6 +159,16 @@ async function readMedians(db: SnifferDb, itemIds: string[], serverId: string): 
     for (const [id, median] of chunk) medians.set(id, median);
   }
   return medians;
+}
+
+async function readLatestItems(db: SnifferDb, itemIds: string[], serverId: string): Promise<Map<string, number>> {
+  const unique = [...new Set(itemIds)];
+  const latest = new Map<string, number>();
+  for (let start = 0; start < unique.length; start += MAX_BATCH_RESOURCE_IDS) {
+    const chunk = await readLatestItemContributions(db, unique.slice(start, start + MAX_BATCH_RESOURCE_IDS), serverId);
+    for (const [id, price] of chunk) latest.set(id, price);
+  }
+  return latest;
 }
 
 // POST /community-price/batch, the key already authenticated. The checks run in the contract's order;
@@ -180,9 +204,13 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
     else kept.push(observation);
   });
 
-  // specs/059: each ladder also writes the price of every lot on sale. The daily cap counts resources
-  // (5000 a day), not these extra rows.
-  const lotWrites = kept.map(({ itemId, ladder }) => lotPriceStatements(env.DB, serverId, itemId, ladder, keyId, now));
+  // specs/071: an equipment is an item's shared price (kind 'item', specs/016); every other nature is a
+  // resource price, as before.
+  const equipment = kept.filter((observation) => observation.itemType === 'equipment');
+  const resources = kept.filter((observation) => observation.itemType !== 'equipment');
+  // specs/059: each resource ladder also writes the price of every lot on sale. The daily cap counts
+  // prices (5000 a day, an equipment counting as one), not these extra rows.
+  const lotWrites = resources.map(({ itemId, ladder }) => lotPriceStatements(env.DB, serverId, itemId, ladder, keyId, now));
   const day = now.toISOString().slice(0, 10);
   const usage = await env.DB.prepare(`SELECT rows_written FROM sniffer_daily_usage WHERE key_id = ? AND day = ?`)
     .bind(keyId, day).first<{ rows_written: number }>();
@@ -197,8 +225,8 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
 
   // The same reference as a manual entry (fetchCurrentMedian's query and aggregation), read once for
   // the whole batch: two observations of one item share the median known before the batch (research R3).
-  const medians = await readMedians(env.DB, kept.map((observation) => observation.itemId), serverId);
-  const statements = kept.map(({ itemId, ladder }) => {
+  const medians = await readMedians(env.DB, resources.map((observation) => observation.itemId), serverId);
+  const statements = resources.map(({ itemId, ladder, itemType }) => {
     const median = medians.get(itemId);
     // parseObservation kept only ladders with a lot on sale, so a price always exists.
     const price = unitPrice(ladder, median?.medianAmountKamas) as NonNullable<ReturnType<typeof unitPrice>>;
@@ -210,8 +238,23 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
       deviceId: keyId,
       kind: 'resource',
       origin: 'sniffer',
+      itemType,
     }, median).statement;
   });
+  // An equipment's reference is the item's latest shared price, as insertContribution does for an item.
+  const latestItems = await readLatestItems(env.DB, equipment.map((observation) => observation.itemId), serverId);
+  for (const { itemId, ladder } of equipment) {
+    const latest = latestItems.get(itemId);
+    statements.push(contributionInsert(env.DB, {
+      resourceId: itemId,
+      serverId,
+      amountKamas: ladder[1] as number,
+      deviceId: keyId,
+      kind: 'item',
+      origin: 'sniffer',
+      itemType: 'equipment',
+    }, latest === undefined ? undefined : { medianAmountKamas: latest }).statement);
+  }
   for (const write of lotWrites) statements.push(...write.statements);
   statements.push(env.DB.prepare(
     `INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)
