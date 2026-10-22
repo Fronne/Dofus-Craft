@@ -95,6 +95,19 @@ describe('worker/migrations', () => {
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 4001, 'x')")).toThrow();
   });
 
+  it('adds item_type (0022) without touching existing rows, and refuses an unknown nature', () => {
+    const db = new DatabaseSync(':memory:');
+    db.exec(readFileSync(resolve(process.cwd(), 'worker/schema.sql'), 'utf8').replace(/,\s*-- specs\/071[\s\S]*?item_type TEXT CHECK \([^)]*\)\)/, ''));
+    expect(columns(db, 'community_price_contributions')).not.toContain('item_type');
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('old', '1', 'mikhal', 10)");
+    db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_contribution_item_type.sql'), 'utf8'));
+    expect(db.prepare('SELECT id, amount_kamas, item_type FROM community_price_contributions').all()).toEqual([{ id: 'old', amount_kamas: 10, item_type: null }]);
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, item_type) VALUES ('e', '1', 'mikhal', 10, 'equipment')");
+    expect(() => db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, item_type) VALUES ('x', '1', 'mikhal', 10, 'robot')")).toThrow();
+    // Once only: a second run fails and changes nothing.
+    expect(() => db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_contribution_item_type.sql'), 'utf8'))).toThrow(/duplicate column/);
+  });
+
   it('can run the origin rebuild (0019) again', () => {
     const db = freshDatabase();
     db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, origin) VALUES ('a', '1', 'mikhal', 10, 'sniffer')");

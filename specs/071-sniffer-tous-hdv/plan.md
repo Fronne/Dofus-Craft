@@ -24,6 +24,8 @@ requête par 98 ids), pas de prix par lot. Autres natures : chemin actuel (`unit
 
 **Testing**: Vitest, D1 simulée (`tests/support/sqlite-d1.ts`) sur `worker/schema.sql`
 
+**Déploiement** : appliquer 0022 en remote AVANT `wrangler deploy` (chaque INSERT écrit `item_type`).
+
 **Constraints**: plan gratuit (≤ 1000 appels par invocation) : lots de 200 observations, références lues
 par paquets de 98 ids ; `SNIFFER_MIN_VERSION` inchangé ; rien en remote
 

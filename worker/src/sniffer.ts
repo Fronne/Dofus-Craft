@@ -137,8 +137,9 @@ export function parseObservation(value: unknown): Observation | RejectReason {
     ladder[Number(size) as LotSize] = price;
   }
   const onSale = LOT_SIZES.some((size) => (ladder[size] ?? 0) > 0);
-  // A tool older than 0.4.0 sends no category: resources of the site's catalogue only, as in specs/056.
-  if (category === undefined) {
+  // A tool older than 0.4.0 sends no category (null counts as none): resources of the site's catalogue
+  // only, as in specs/056.
+  if (category === undefined || category === null) {
     if (!isKnownResource(itemId)) return 'not_an_ingredient';
     return onSale ? { itemId, ladder } : 'no_price';
   }

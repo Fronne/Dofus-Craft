@@ -29,7 +29,7 @@ export async function readLatestContribution(
 
 // specs/071-sniffer-tous-hdv: readLatestContribution's price for several items of one server at once —
 // the reference of the equipment prices of a sniffer batch. At most MAX_BATCH_RESOURCE_IDS ids a call
-// (D1 binds at most 100 parameters). Items with no price are left out.
+// (D1 binds at most 100 parameters, here the ids plus the server twice). Items with no price are left out.
 export async function readLatestItemContributions(
   db: LatestListDb,
   itemIds: string[],
@@ -37,12 +37,17 @@ export async function readLatestItemContributions(
 ): Promise<Map<string, number>> {
   const latest = new Map<string, number>();
   if (itemIds.length === 0) return latest;
+  const placeholders = itemIds.map(() => '?').join(', ');
+  // Only each item's latest row is read (like LATEST_ITEM_PRICES_SQL), never its whole history. On equal
+  // dates the last inserted row wins.
   const { results } = await db.prepare(
-    `SELECT resource_id, amount_kamas FROM community_price_contributions
-     WHERE resource_id IN (${itemIds.map(() => '?').join(', ')}) AND server_id = ? AND kind = 'item'
-     ORDER BY created_at, rowid`,
-  ).bind(...itemIds, serverId).all<{ resource_id: string; amount_kamas: number }>();
-  // Rows come oldest first: the last one read for an item is its latest, as ORDER BY created_at DESC LIMIT 1.
+    `SELECT c.resource_id, c.amount_kamas FROM community_price_contributions c
+     JOIN (SELECT resource_id, MAX(created_at) AS latest FROM community_price_contributions
+           WHERE resource_id IN (${placeholders}) AND server_id = ? AND kind = 'item' GROUP BY resource_id) l
+       ON c.resource_id = l.resource_id AND c.created_at = l.latest
+     WHERE c.server_id = ? AND c.kind = 'item'
+     ORDER BY c.rowid`,
+  ).bind(...itemIds, serverId, serverId).all<{ resource_id: string; amount_kamas: number }>();
   for (const row of results) latest.set(row.resource_id, row.amount_kamas);
   return latest;
 }

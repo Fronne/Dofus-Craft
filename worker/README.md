@@ -92,6 +92,9 @@ triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
   every HDV are accepted and tagged in `item_type` (equipment / resource / rune / consumable, from
   `src/item-types.json`, built by `scripts/build-item-types.mjs`). Equipments are item prices
   (`kind = 'item'`). Migration: `npm run worker:db:migrate-item-type` (0022, adds a column, rewrites no row).
+  **Apply 0022 BEFORE deploying this Worker**: every insert writes `item_type`, so without the column
+  every contribution (manual, Forgemagie, bot, sniffer) fails. Run it once only (a second ADD COLUMN
+  fails with "duplicate column"), and never run 0019 again after it (its copy would drop the column).
 - Every price is recorded with `origin = 'sniffer'` and the key's id as `device_id`, at most
   `DAILY_ROW_LIMIT` (5000) a key and UTC day (`sniffer_daily_usage`).
 - The minimum tool version and its download link are `SNIFFER_MIN_VERSION` /

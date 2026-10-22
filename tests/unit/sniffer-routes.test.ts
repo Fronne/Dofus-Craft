@@ -434,6 +434,32 @@ describe('every HDV, tagged by nature (specs/071-sniffer-tous-hdv)', () => {
     ]);
   });
 
+  it('treats a null category as none', async () => {
+    const response = await call('POST', '/community-price/batch', batch([categorized(RESOURCE, null, { 1: 10 }), categorized(OUTSIDE_CATALOGUE, null, { 1: 10 })]));
+    await expect(response.json()).resolves.toEqual({ accepted: 1, rejected: [{ index: 1, reason: 'not_an_ingredient' }] });
+    expect(tagged()).toMatchObject([{ resource_id: RESOURCE, item_type: null }]);
+  });
+
+  it('reads only each equipment\'s latest price, for more than one D1 chunk of items', async () => {
+    const ids = Array.from({ length: 120 }, (_, i) => String(500_000 + i));
+    for (const id of ids) {
+      test.insert({ resourceId: id, amountKamas: 1, createdAt: new Date(Date.now() - 7_200_000).toISOString(), kind: 'item' });
+      test.insert({ resourceId: id, amountKamas: 100, createdAt: new Date(Date.now() - 3_600_000).toISOString(), kind: 'item' });
+    }
+    const response = await call('POST', '/community-price/batch', batch(ids.map((id) => categorized(id, 9, { 1: 200 }))));
+    await expect(response.json()).resolves.toEqual({ accepted: 120, rejected: [] });
+    const sent = (tagged() as { item_type: string | null; median_at_submission_kamas: number | null }[]).filter((row) => row.item_type === 'equipment');
+    expect(sent).toHaveLength(120);
+    expect(sent.every((row) => row.median_at_submission_kamas === 100)).toBe(true);
+  });
+
+  it('counts an equipment as one row of the daily cap', async () => {
+    test.sqlite.prepare('INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)').run(KEY_ID, new Date().toISOString().slice(0, 10), DAILY_ROW_LIMIT - 1);
+    const response = await call('POST', '/community-price/batch', batch([categorized('8872', 9, { 1: 30_000 }), categorized(RESOURCE, 78, { 1: 10 })]));
+    expect(response.status).toBe(429);
+    expect(tagged()).toEqual([]);
+  });
+
   it('leaves the tag empty on a manual entry', async () => {
     const { insertContribution } = await import('../../worker/src/contribution');
     await insertContribution(test.d1, { resourceId: RESOURCE, serverId: 'mikhal', amountKamas: 100, deviceId: 'd', kind: 'resource', origin: 'manual' });
