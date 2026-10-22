@@ -1,11 +1,13 @@
 import { isUsageWindow } from '../../src/domain/cloudflare-usage';
-import { readCloudflareUsage, type FetchLike, type UsageEnv } from './cloudflare-usage';
+import { readCloudflareUsage, readTodayUsage, type FetchLike, type UsageEnv } from './cloudflare-usage';
 import { validateCounterInput } from '../../src/domain/player-counter';
 import { verifyAccessToken, verifyOwner, type AccessEnv, type TokenVerifier } from './access';
 import { createCounter, deleteCounter, listCounters, updateCounter, type CountersDb } from './counters';
 import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
 import { validateInfoMessageInput } from '../../src/domain/info-message';
 import { getSettings, saveSettings, type SettingsDb } from './settings';
+import { readActivity, type ActivityDb } from './activity';
+import { readKeyContributions, validateMonth } from './sniffer-contributions';
 import { createKey, listKeys, revokeKey, validateKeyLabel, type SnifferKeysDb } from './sniffer-keys';
 import { activateMapping, listMappings, uploadMapping, validateMappingUpload, type SnifferMappingsDb } from './sniffer-mappings';
 import { validateSiteSettingsChange } from '../../src/domain/site-settings';
@@ -13,7 +15,7 @@ import { validateSiteSettingsChange } from '../../src/domain/site-settings';
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
 export interface Env extends AccessEnv, UsageEnv {
-  DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb;
+  DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb & ActivityDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -47,6 +49,8 @@ export async function handleApi(
   if (request.method === 'GET' && pathname === '/api/me') return json({ email: owner.email });
   // specs/058-admin-cloudflare-usage (contracts/admin-usage-api.md): today's consumption and history.
   // Always 200 with a `state`, so a missing token is a normal case for the page, not a failed call.
+  // specs/070-admin-dashboard-graphiques (contracts/admin-dashboard-api.md): today's consumption, hour by hour.
+  if (request.method === 'GET' && pathname === '/api/usage/today') return json(await readTodayUsage(env, new Date(), fetchFn));
   if (request.method === 'GET' && pathname === '/api/usage') {
     const raw = new URL(request.url).searchParams.get('days');
     const days = raw === null ? 7 : Number(raw);
@@ -88,6 +92,15 @@ export async function handleApi(
       // The key itself is in this answer only: never stored, never readable again.
       return json(await createKey(env.DB, validation.value), 201);
     }
+  }
+  // specs/070-admin-dashboard-graphiques: community prices (per day and origin) and visitors (per day), last 30 days.
+  if (request.method === 'GET' && pathname === '/api/activity') return json(await readActivity(env.DB));
+  // specs/070-admin-dashboard-graphiques: the price rows each key added over a month (UTC), for the dashboard.
+  if (request.method === 'GET' && pathname === '/api/sniffer/contributions') {
+    const now = new Date();
+    const month = validateMonth(new URL(request.url).searchParams.get('month'), now);
+    if (!month.ok) return json({ error: month.error, field: month.field }, 400);
+    return json(await readKeyContributions(env.DB, month.value, now));
   }
   const revokedKeyId = pathname.match(/^\/api\/sniffer\/keys\/([^/]+)\/revoke$/)?.[1];
   if (request.method === 'POST' && revokedKeyId) {

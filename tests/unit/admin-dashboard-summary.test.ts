@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  READ_ONLY_CARDS,
+  SECTIONS,
   parseSection,
   summarizeBanner,
   summarizeCounters,
   summarizeKeys,
   summarizeMappings,
   summarizePages,
+  summarizePrices,
   summarizeUsage,
+  summarizeVisits,
 } from '../../admin/dashboard-summary';
-import type { SnifferKeyJson, SnifferMappingJson } from '../../admin/admin-api';
+import type { Activity, SnifferKeyJson, SnifferMappingJson } from '../../admin/admin-api';
 import type { PlayerCounter } from '../../src/domain/player-counter';
 import type { UsageDay, UsageResponse } from '../../src/domain/cloudflare-usage';
 
@@ -79,6 +83,30 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(summarizeUsage({ state: 'denied' }).state).toBe('unavailable');
       expect(summarizeUsage({ state: 'unavailable' }).state).toBe('unavailable');
       expect(summarizeUsage({ state: 'ok', days: 7, readAt: 'x', history: [] }).state).toBe('unavailable');
+    });
+  });
+
+  // specs/070-admin-dashboard-graphiques
+  describe('cartes en lecture seule', () => {
+    const activity = (pricesTotal: number, visitorsToday: number): Activity => ({ days: [], pricesTotal, visitorsToday });
+
+    it("ne sont pas des sections : leur ancre est inconnue, donc le tableau de bord s'affiche", () => {
+      expect(READ_ONLY_CARDS.map((card) => card.id)).toEqual(['prix', 'visites']);
+      expect(SECTIONS.map((section) => section.id)).not.toContain('prix');
+      expect(parseSection('#prix')).toBeUndefined();
+      expect(parseSection('#visites')).toBeUndefined();
+    });
+
+    it('résume les prix des 30 derniers jours', () => {
+      expect(summarizePrices(activity(5120, 0))).toMatchObject({ state: 'ok', text: expect.stringMatching(/^5\s120 lignes sur 30 jours$/) });
+      expect(summarizePrices(activity(1, 0)).text).toBe('1 ligne sur 30 jours');
+      expect(summarizePrices(activity(0, 3)).text).toBe('Aucun prix ajouté sur 30 jours');
+    });
+
+    it('résume les visiteurs du jour', () => {
+      expect(summarizeVisits(activity(0, 22)).text).toBe("22 visiteurs aujourd'hui");
+      expect(summarizeVisits(activity(0, 1)).text).toBe("1 visiteur aujourd'hui");
+      expect(summarizeVisits(activity(9, 0)).text).toBe("Aucun visiteur aujourd'hui");
     });
   });
 });

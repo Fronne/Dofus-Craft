@@ -1,15 +1,9 @@
-import { USAGE_LABELS, USAGE_LIMITS, USAGE_METRICS, usagePercent, type UsageDay, type UsageMetric } from '../src/domain/cloudflare-usage';
+import { USAGE_LABELS, USAGE_LIMITS, USAGE_METRICS, usagePercent, type UsageDay } from '../src/domain/cloudflare-usage';
+import { USAGE_STYLE } from './usage-style';
 
 const WIDTH = 600;
 const HEIGHT = 160;
 const PAD = { left: 36, right: 8, top: 8, bottom: 20 };
-
-// Distinct by dash pattern as well as by colour, so the chart never relies on colour alone.
-const STYLE: Record<UsageMetric, { stroke: string; dash?: string }> = {
-  workersRequests: { stroke: 'var(--accent-bright)' },
-  d1RowsRead: { stroke: 'var(--warning)', dash: '6 3' },
-  d1RowsWritten: { stroke: 'var(--danger)', dash: '2 3' },
-};
 
 const dayLabel = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
 const group = new Intl.NumberFormat('fr-FR');
@@ -37,12 +31,12 @@ export function UsageChart({ history }: { history: UsageDay[] }) {
             <polyline
               fill="none"
               strokeWidth="2"
-              stroke={STYLE[metric].stroke}
-              strokeDasharray={STYLE[metric].dash}
+              stroke={USAGE_STYLE[metric].stroke}
+              strokeDasharray={USAGE_STYLE[metric].dash}
               points={percents.map((row, index) => `${x(index)},${y(row[metricIndex])}`).join(' ')}
             />
             {history.map((day, index) => (
-              <circle key={day.date} cx={x(index)} cy={y(percents[index][metricIndex])} r="3" fill={STYLE[metric].stroke}>
+              <circle key={day.date} cx={x(index)} cy={y(percents[index][metricIndex])} r="3" fill={USAGE_STYLE[metric].stroke}>
                 <title>{`${USAGE_LABELS[metric]} · ${day.date} : ${group.format(day[metric])} (${percents[index][metricIndex]} %)`}</title>
               </circle>
             ))}
@@ -53,7 +47,7 @@ export function UsageChart({ history }: { history: UsageDay[] }) {
         {USAGE_METRICS.map((metric) => (
           <li key={metric}>
             <svg width="28" height="8" aria-hidden="true">
-              <line x1="0" x2="28" y1="4" y2="4" strokeWidth="2" stroke={STYLE[metric].stroke} strokeDasharray={STYLE[metric].dash} />
+              <line x1="0" x2="28" y1="4" y2="4" strokeWidth="2" stroke={USAGE_STYLE[metric].stroke} strokeDasharray={USAGE_STYLE[metric].dash} />
             </svg>
             {USAGE_LABELS[metric]}
           </li>

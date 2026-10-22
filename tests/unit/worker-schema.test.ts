@@ -57,6 +57,8 @@ describe('worker/migrations', () => {
       median_at_submission_kamas INTEGER, deviation_percent REAL, kind TEXT NOT NULL DEFAULT 'resource',
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')))`);
     migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    // And the visits table (0002), which 0022 puts an index on.
+    migrated.exec('CREATE TABLE app_visits (device_id TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY (device_id, day))');
     const directory = resolve(process.cwd(), 'worker/migrations');
     for (const file of readdirSync(directory).filter((name) => name >= '0007').sort()) {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
@@ -65,7 +67,7 @@ describe('worker/migrations', () => {
     // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     // specs/069-coefficients-brisage-partages: and the shared breaking coefficients (0021).
     const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients');
-    expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
+    expect(tables(migrated).filter((name) => name !== 'community_price_contributions' && name !== 'app_visits')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
     expect(columns(migrated, 'community_price_contributions')).toEqual(columns(fresh, 'community_price_contributions'));
@@ -93,6 +95,24 @@ describe('worker/migrations', () => {
     expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 0, 'x')")).toThrow();
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 4001, 'x')")).toThrow();
+  });
+
+  // specs/070-admin-dashboard-graphiques: the two indexes the dashboard's reads go through.
+  it('adds the dashboard indexes (0022) without touching a row, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    db.exec("INSERT INTO app_visits (device_id, day) VALUES ('a', '2026-10-22')");
+    db.exec('DROP INDEX idx_community_price_contributions_created_at');
+    db.exec('DROP INDEX idx_app_visits_day');
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_dashboard_indexes.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    const indexes = (table: string) =>
+      (db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name NOT LIKE 'sqlite_%' ORDER BY name").all(table) as { name: string }[]).map((row) => row.name);
+    expect(indexes('community_price_contributions')).toEqual(['idx_community_price_contributions_created_at', 'idx_community_price_contributions_lookup']);
+    expect(indexes('app_visits')).toEqual(['idx_app_visits_day']);
+    expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
+    expect(db.prepare('SELECT device_id, day FROM app_visits').all()).toEqual([{ device_id: 'a', day: '2026-10-22' }]);
   });
 
   it('can run the origin rebuild (0019) again', () => {

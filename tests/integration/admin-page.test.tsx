@@ -20,6 +20,9 @@ const api = vi.hoisted(() => ({
   uploadSnifferMapping: vi.fn(),
   activateSnifferMapping: vi.fn(),
   getUsage: vi.fn(),
+  getTodayUsage: vi.fn(),
+  getKeyContributions: vi.fn(),
+  getActivity: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -67,6 +70,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'] } });
+    for (const name of ['getTodayUsage', 'getKeyContributions', 'getActivity'] as const) api[name].mockResolvedValue({ status: 'unavailable' });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {

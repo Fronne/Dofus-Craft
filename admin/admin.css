@@ -155,3 +155,52 @@
 .usage-chart-table { font-size: .82rem; }
 .usage-chart-table table { width: 100%; margin-top: var(--space-2); border-collapse: collapse; }
 .usage-chart-table th, .usage-chart-table td { padding: .2rem .4rem; text-align: left; border-bottom: 1px solid var(--border); }
+
+/* specs/070-admin-dashboard-graphiques: the charts on the dashboard's cards. A card is the link (title and
+   summary) followed by its visual, which is never inside the link. */
+.dashboard-item { display: grid; align-content: start; min-width: 0; }
+.dashboard-item .dashboard-card { height: auto; }
+.dashboard-item--visual .dashboard-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.dashboard-item--wide { grid-column: 1 / -1; }
+.dashboard-card--static:hover { border-color: var(--border); }
+.dashboard-visual {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: var(--inner-bg);
+}
+.dashboard-item > .dashboard-visual:only-child { border-top: 1px solid var(--border); border-radius: var(--radius-md); }
+.dashboard-visual p { margin: 0; }
+.dashboard-visual-state { color: var(--text-muted); font-size: .85rem; font-weight: 650; }
+.dashboard-visual-note { color: var(--text-muted); font-size: .82rem; }
+.dashboard-visual-warning { color: var(--warning); font-size: .85rem; font-weight: 700; }
+.dashboard-visual-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: .85rem; font-weight: 700; color: var(--text-muted); }
+.dashboard-visual-controls select { min-width: 0; }
+.chart-figure { display: grid; gap: var(--space-2); min-width: 0; margin: 0; }
+.chart-figure svg { width: 100%; height: auto; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; padding: 0; list-style: none; font-size: .82rem; }
+.chart-legend li { display: inline-flex; align-items: center; gap: .4rem; }
+.chart-notes { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; font-size: .85rem; font-weight: 650; }
+.chart-table { font-size: .82rem; }
+.chart-table summary { cursor: pointer; }
+.chart-table summary:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.chart-table table { width: 100%; margin-top: var(--space-2); border-collapse: collapse; }
+.chart-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.chart-table th, .chart-table td { padding: .2rem .4rem; text-align: left; border-bottom: 1px solid var(--border); }
+.bar-list-rows { display: grid; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.bar-list-row { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); font-size: .85rem; }
+.bar-list-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+.bar-list-label small { color: var(--text-muted); font-weight: 600; }
+.bar-list-track { height: .6rem; overflow: hidden; border-radius: 999px; background: var(--border); }
+.bar-list-fill { display: block; height: 100%; background: var(--accent-bright); }
+.bar-list-value { font-variant-numeric: tabular-nums; font-weight: 700; }
+@media (max-width: 480px) {
+  .dashboard-visual { padding: var(--space-3); }
+  .bar-list-row { grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) auto; }
+}
+/* The legend's little swatches keep their own size (the charts' width: 100% is for the plots only). */
+.chart-figure .chart-legend svg { flex: none; width: auto; height: auto; }

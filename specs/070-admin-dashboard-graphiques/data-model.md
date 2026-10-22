@@ -26,8 +26,8 @@ Source : `sniffer_daily_usage (key_id, day, rows_written)` ⋈ `sniffer_keys (id
 | `KeyMonthRow` | `keyId`, `label`, `revoked` (booléen), `rows` | somme de `rows_written` sur le mois ; jamais `key_hash` |
 | `KeyContributions` | `month` (`AAAA-MM`), `months` (mois ayant des données, du plus récent), `total`, `keys: KeyMonthRow[]`, `days: { date, rows }[]` | `total` = somme des `rows` ; `days` : un point par jour du mois jusqu'à aujourd'hui (mois en cours) ou jusqu'à la fin (mois passé), jours sans ajout à 0 |
 
-Règles : toutes les clés actives sont présentes (à 0 si rien) ; une clé révoquée seulement si elle a des
-lignes ce mois-là ; tri par `rows` décroissant puis libellé ; mois invalide ou postérieur à
+Règles : toutes les clés actives créées avant la fin du mois sont présentes (à 0 si rien) ; une clé
+révoquée seulement si elle a des lignes ce mois-là ; tri par `rows` décroissant puis libellé ; mois invalide ou postérieur à
 aujourd'hui : refusé (400).
 
 ## Activité (`admin-worker/src/activity.ts`)

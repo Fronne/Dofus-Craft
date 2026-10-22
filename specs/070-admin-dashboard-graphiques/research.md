@@ -17,6 +17,11 @@ heure** ; le cumul et les franchissements de seuils sont calculés par des fonct
 pour ce jeu (les jeux « adaptive » exposent en général les dimensions `datetime*`). Elle se vérifie par
 introspection avec le jeton réel (étape 1 de [quickstart.md](quickstart.md)).
 
+**Statut au 2026-10-22 (implémentation)** : non vérifié, la session n'avait pas de jeton Cloudflare. La
+requête (`TODAY_QUERY` dans `admin-worker/src/cloudflare-usage.ts`) utilise `datetimeHour` pour les deux jeux.
+Si Cloudflare la refuse, la carte affiche « Indisponible » à la place de la courbe (comportement testé) et
+la section Cloudflare existante n'est pas touchée. Tâche T007 du plan : à faire avec le jeton réel.
+
 **Repli** : si la dimension n'existe pas, essayer `datetimeFiveMinutes` ou `datetime` et regrouper par
 heure dans le code. Si aucune ne convient, la route répond `unavailable` pour la courbe : la carte garde
 son pourcentage actuel (déjà lu par `/api/usage`) et l'indique. Rien n'est fabriqué (FR-008).

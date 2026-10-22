@@ -1,7 +1,9 @@
-import { parseUsageResponse, type UsageWindow } from '../src/domain/cloudflare-usage';
+import { parseTodayUsageResponse, parseUsageResponse, type UsageWindow } from '../src/domain/cloudflare-usage';
 import { isInfoMessage, type InfoMessage, type InfoMessageInput } from '../src/domain/info-message';
 import { parseSiteSettings, type SiteSettingsChange } from '../src/domain/site-settings';
 import { isPlayerCounter, type PlayerCounter, type PlayerCounterInput } from '../src/domain/player-counter';
+import { PRICE_ORIGINS, type Activity } from '../admin-worker/src/activity';
+import type { KeyContributions } from '../admin-worker/src/sniffer-contributions';
 import type { SnifferKeyJson } from '../admin-worker/src/sniffer-keys';
 import type { MappingUpload, SnifferMappingJson } from '../admin-worker/src/sniffer-mappings';
 
@@ -60,6 +62,24 @@ export function isSnifferMapping(value: unknown): value is SnifferMappingJson {
     typeof value.active === 'boolean' && typeof value.keymapBytes === 'number' && typeof value.schemaBytes === 'number';
 }
 
+// specs/070-admin-dashboard-graphiques: the price rows each key added over a month (contracts/admin-dashboard-api.md).
+const isCount = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+
+export function isKeyContributions(value: unknown): value is KeyContributions {
+  return isRecord(value) && typeof value.month === 'string' && isCount(value.total) &&
+    Array.isArray(value.months) && value.months.every((month) => typeof month === 'string') &&
+    Array.isArray(value.keys) && value.keys.every((key) =>
+      isRecord(key) && typeof key.keyId === 'string' && typeof key.label === 'string' && typeof key.revoked === 'boolean' && isCount(key.rows)) &&
+    Array.isArray(value.days) && value.days.every((day) => isRecord(day) && typeof day.date === 'string' && isCount(day.rows));
+}
+
+export function isActivity(value: unknown): value is Activity {
+  return isRecord(value) && isCount(value.pricesTotal) && isCount(value.visitorsToday) && Array.isArray(value.days) &&
+    value.days.every((day) =>
+      isRecord(day) && typeof day.date === 'string' && isCount(day.visitors) && isRecord(day.prices) &&
+      PRICE_ORIGINS.every((origin) => isCount((day.prices as Record<string, unknown>)[origin])));
+}
+
 const asSnifferKey = (payload: unknown) => (isSnifferKey(payload) ? payload : undefined);
 const asSnifferMapping = (payload: unknown) => (isSnifferMapping(payload) ? payload : undefined);
 
@@ -84,6 +104,12 @@ export const adminApi = {
   saveSettings: (change: SiteSettingsChange) => call('PUT', '/settings', change, parseSiteSettings),
   // specs/058-admin-cloudflare-usage: always answers 200 with a `state`, so "not configured" is a value, not a failure.
   getUsage: (days: UsageWindow) => call('GET', `/usage?days=${days}`, undefined, parseUsageResponse),
+  // specs/070-admin-dashboard-graphiques: today's consumption hour by hour (same states as above).
+  getTodayUsage: () => call('GET', '/usage/today', undefined, parseTodayUsageResponse),
+  getKeyContributions: (month?: string) =>
+    call('GET', month === undefined ? '/sniffer/contributions' : `/sniffer/contributions?month=${encodeURIComponent(month)}`, undefined,
+      (payload) => (isKeyContributions(payload) ? payload : undefined)),
+  getActivity: () => call('GET', '/activity', undefined, (payload) => (isActivity(payload) ? payload : undefined)),
   remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
   // specs/057-sniffer-admin: the key itself (secret) is only in the creation's answer.
   listSnifferKeys: () => call('GET', '/sniffer/keys', undefined, (payload) =>
@@ -99,4 +125,4 @@ export const adminApi = {
   activateSnifferMapping: (id: number) => call('POST', `/sniffer/mappings/${id}/activate`, undefined, asSnifferMapping),
 };
 
-export type { PlayerCounter, SnifferKeyJson, SnifferMappingJson };
+export type { Activity, KeyContributions, PlayerCounter, SnifferKeyJson, SnifferMappingJson };

@@ -12,7 +12,7 @@ import {
 import type { InfoMessage } from '../src/domain/info-message';
 import type { PlayerCounter } from '../src/domain/player-counter';
 import type { SiteSettings } from '../src/domain/site-settings';
-import type { SnifferKeyJson, SnifferMappingJson } from './admin-api';
+import type { Activity, SnifferKeyJson, SnifferMappingJson } from './admin-api';
 
 // specs/068-admin-dashboard (data-model.md): the dashboard's cards and the pure rules that turn what the
 // administration already reads into a one-line summary.
@@ -85,4 +85,27 @@ export function summarizeUsage(usage: UsageResponse): CardSummary {
   }
   const percent = usagePercent(today[top], USAGE_LIMITS[top]);
   return ok(`${USAGE_LABELS[top]} : ${percent} % · ${USAGE_LEVEL_TEXT[worst]}`, LEVEL_TONE[worst]);
+}
+
+// specs/070-admin-dashboard-graphiques: two cards with no section behind them, only to read (FR-015). They are not in
+// SECTIONS, so an address anchored on them is still "unknown" and shows the dashboard.
+export type ReadOnlyCardId = 'prix' | 'visites';
+
+export const READ_ONLY_CARDS: { id: ReadOnlyCardId; title: string }[] = [
+  { id: 'prix', title: 'Prix communautaires' },
+  { id: 'visites', title: 'Visites' },
+];
+
+const group = new Intl.NumberFormat('fr-FR');
+
+export function summarizePrices(activity: Activity): CardSummary {
+  return activity.pricesTotal === 0
+    ? ok('Aucun prix ajouté sur 30 jours')
+    : ok(`${group.format(activity.pricesTotal)} ${activity.pricesTotal > 1 ? 'lignes' : 'ligne'} sur 30 jours`);
+}
+
+export function summarizeVisits(activity: Activity): CardSummary {
+  return activity.visitorsToday === 0
+    ? ok("Aucun visiteur aujourd'hui")
+    : ok(`${plural(activity.visitorsToday, 'visiteur', 'visiteurs')} aujourd'hui`);
 }

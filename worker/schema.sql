@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
 CREATE INDEX IF NOT EXISTS idx_community_price_contributions_lookup
   ON community_price_contributions (resource_id, server_id, created_at);
 
+-- specs/070-admin-dashboard-graphiques (migrations/0022_add_dashboard_indexes.sql): the dashboard's prices per day and origin.
+CREATE INDEX IF NOT EXISTS idx_community_price_contributions_created_at ON community_price_contributions (created_at, origin);
+
 -- specs/006-anonymous-visit-count: anonymous daily presence signal, one row per device per day.
 -- The composite primary key is the only deduplication mechanism (no application-level logic).
 CREATE TABLE IF NOT EXISTS app_visits (
@@ -48,6 +51,9 @@ CREATE TABLE IF NOT EXISTS app_visits (
   day TEXT NOT NULL,
   PRIMARY KEY (device_id, day)
 );
+
+-- specs/070-admin-dashboard-graphiques (migrations/0022_add_dashboard_indexes.sql): the dashboard's visitors per day.
+CREATE INDEX IF NOT EXISTS idx_app_visits_day ON app_visits (day);
 
 -- specs/014-admin-counters: humorous per-player counters (see migrations/0004_add_player_counters.sql
 -- for the initial rows). Read publicly by GET /player-counters, edited only by the dofus-craft-admin
