@@ -163,7 +163,7 @@ describe('GET /sniffer/config (specs/056, US3)', () => {
       minVersion: '0.2.0',
       downloadUrl: 'https://example.test/releases/latest',
       servers: SERVERS,
-      mapping: { id: 7, build: '3.7.10.10', keymap: { price_list: 'abc' }, schema: { fields: [1] } },
+      mapping: { id: 7, build: '3.7.10.10', keymap: { price_list: 'abc' }, schema: { fields: [1] }, provisional: false },
     });
     expect(SERVERS).toHaveLength(13);
     expect(SERVERS).toContain('mikhal');
@@ -269,5 +269,85 @@ describe('lot prices of a batch (specs/059-prix-par-lot, H1)', () => {
     await call('POST', '/community-price/batch', batch([observation(RESOURCE, { 1: 999 })], { serverId: 'dakal' }));
     expect(lots(EQUIPMENT)).toEqual([]);
     expect(lots()).toEqual([{ lot_size: 1, lot_price_kamas: 100, device_id: KEY_ID }]);
+  });
+});
+
+describe('provisional mapping after a client update (specs/070-sniffer-mapping-provisoire)', () => {
+  const NEW_BUILD = '3.7.12.12';
+  const upload = (id: number, build: string, uploadedAt: string, active = 1) => test.sqlite.prepare(
+    'INSERT INTO sniffer_mappings (id, build, keymap_json, schema_json, uploaded_at, active) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(id, build, `{"price_list":"m${id}"}`, '{}', uploadedAt, active);
+  const config = async (query: string) => ((await (await call('GET', `/sniffer/config?${query}`)).json()) as { mapping: unknown }).mapping;
+
+  beforeEach(() => {
+    test.sqlite.prepare("UPDATE sniffer_mappings SET uploaded_at = '2026-10-12T00:00:00.000Z'").run();
+    upload(8, '3.7.9.9', '2026-10-01T00:00:00.000Z'); // active, but older than 7
+    upload(9, '3.7.11.0', '2026-10-20T00:00:00.000Z', 0); // newest, but retired
+  });
+
+  it('serves the newest active mapping, with its own build, to a tool that asks for it', async () => {
+    await expect(config(`build=${NEW_BUILD}&tool=0.4.0&provisional=1`)).resolves.toEqual(
+      { id: 7, build: '3.7.10.10', keymap: { price_list: 'abc' }, schema: { fields: [1] }, provisional: true },
+    );
+  });
+
+  it('breaks a tie on the upload time with the highest id', async () => {
+    upload(10, '3.7.9.9b', '2026-10-12T00:00:00.000Z');
+    await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toMatchObject({ id: 10, provisional: true });
+  });
+
+  it('serves no mapping to a tool that does not ask for one', async () => {
+    await expect(config(`build=${NEW_BUILD}`)).resolves.toBeNull();
+    await expect(config(`build=${NEW_BUILD}&provisional=true`)).resolves.toBeNull();
+  });
+
+  it('serves no mapping when none is active anywhere', async () => {
+    test.sqlite.prepare('UPDATE sniffer_mappings SET active = 0').run();
+    await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toBeNull();
+  });
+
+  it('prefers the mapping of the build over the fallback', async () => {
+    upload(11, NEW_BUILD, '2026-10-01T00:00:00.000Z');
+    await expect(config(`build=${NEW_BUILD}&provisional=1`)).resolves.toEqual(
+      { id: 11, build: NEW_BUILD, keymap: { price_list: 'm11' }, schema: {}, provisional: false },
+    );
+  });
+
+  it('accepts a provisional batch decoded with the fallback', async () => {
+    const response = await call('POST', '/community-price/batch', batch([observation(RESOURCE)], { build: NEW_BUILD, mappingId: 7, provisional: true }));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ accepted: 1, rejected: [] });
+    expect(contributions()).toHaveLength(1);
+  });
+
+  it('refuses a provisional batch once the build has its own mapping (409), and the stale fallback id', async () => {
+    upload(11, NEW_BUILD, '2026-10-22T00:00:00.000Z');
+    const published = await call('POST', '/community-price/batch', batch([observation(RESOURCE)], { build: NEW_BUILD, mappingId: 7, provisional: true }));
+    expect(published.status).toBe(409);
+    await expect(published.json()).resolves.toEqual({ error: 'mapping_not_active', activeMappingId: 11 });
+
+    test.sqlite.prepare('UPDATE sniffer_mappings SET active = 0 WHERE id = 11').run();
+    upload(12, '3.7.11.5', '2026-10-22T01:00:00.000Z'); // a newer fallback replaces 7
+    const stale = await call('POST', '/community-price/batch', batch([observation(RESOURCE)], { build: NEW_BUILD, mappingId: 7, provisional: true }));
+    expect(stale.status).toBe(409);
+    await expect(stale.json()).resolves.toEqual({ error: 'mapping_not_active', activeMappingId: 12 });
+    expect(contributions()).toEqual([]);
+  });
+
+  it.each([
+    ['without the flag', {}],
+    ['with a flag that is not true', { provisional: 'true' }],
+  ])('refuses a batch for a build without a mapping %s (409)', async (_, fields) => {
+    const response = await call('POST', '/community-price/batch', batch([observation(RESOURCE)], { build: NEW_BUILD, mappingId: 7, ...fields }));
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: 'mapping_not_active', activeMappingId: null });
+    expect(contributions()).toEqual([]);
+  });
+
+  it('never writes a mapping from the public routes', async () => {
+    const before = test.sqlite.prepare('SELECT * FROM sniffer_mappings ORDER BY id').all();
+    await call('GET', `/sniffer/config?build=${NEW_BUILD}&provisional=1`);
+    await call('POST', '/community-price/batch', batch([observation(RESOURCE)], { build: NEW_BUILD, mappingId: 7, provisional: true }));
+    expect(test.sqlite.prepare('SELECT * FROM sniffer_mappings ORDER BY id').all()).toEqual(before);
   });
 });

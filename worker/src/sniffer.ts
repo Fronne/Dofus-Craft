@@ -81,15 +81,32 @@ async function readActiveMapping(db: SnifferDb, build: string): Promise<MappingR
     .bind(build).first<MappingRow>()) ?? undefined;
 }
 
+// specs/070-sniffer-mapping-provisoire: the mapping a tool of this build must decode with — the build's
+// own active one, else, only for a tool that asked (it checks the decoded prices on the wire before
+// sending), the newest active upload of any build. Config and batch share it, so the mapping served and
+// the mapping a batch must carry never diverge: once the build gets its own, provisional batches get 409.
+// Read only: a friend's key never publishes a mapping.
+async function readExpectedMapping(db: SnifferDb, build: string, provisional: boolean): Promise<(MappingRow & { provisional: boolean }) | undefined> {
+  const own = await readActiveMapping(db, build);
+  if (own) return { ...own, provisional: false };
+  if (!provisional) return undefined;
+  const fallback = await db.prepare(
+    `SELECT id, build, keymap_json, schema_json FROM sniffer_mappings WHERE active = 1 ORDER BY uploaded_at DESC, id DESC LIMIT 1`,
+  ).bind().first<MappingRow>();
+  return fallback ? { ...fallback, provisional: true } : undefined;
+}
+
 // GET /sniffer/config: never a 426 — the tool compares its own version to minVersion, to show the link.
+// Only `provisional=1` opts in to the fallback: an older tool would use it without checking anything.
 export async function snifferConfigResponse(env: SnifferEnv, url: URL): Promise<SnifferResult> {
   const build = url.searchParams.get('build');
   if (!build) return { status: 400, body: { error: 'build_required' } };
-  const row = await readActiveMapping(env.DB, build);
+  const row = await readExpectedMapping(env.DB, build, url.searchParams.get('provisional') === '1');
   let mapping: unknown = null;
   if (row) {
     try {
-      mapping = { id: row.id, build: row.build, keymap: JSON.parse(row.keymap_json), schema: JSON.parse(row.schema_json) };
+      // `build` stays the mapping's own: a provisional one tells the tool which build it was made for.
+      mapping = { id: row.id, build: row.build, keymap: JSON.parse(row.keymap_json), schema: JSON.parse(row.schema_json), provisional: row.provisional };
     } catch {
       // A stored document that doesn't parse is served as no mapping: the tool then pauses (its plan).
       console.error(`Sniffer: mapping ${row.id} for build ${row.build} is not valid JSON`);
@@ -148,10 +165,11 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
     return { status: 400, body: { error: 'too_many_observations', max: MAX_BATCH_OBSERVATIONS } };
   }
   // The tool decoded these prices with mappingId: if it is no longer the active one for its build (a
-  // rollback in the middle of a session), it reloads its config and drops what it had queued.
-  const active = await readActiveMapping(env.DB, build);
-  if (!active || active.id !== mappingId) {
-    return { status: 409, body: { error: 'mapping_not_active', activeMappingId: active?.id ?? null } };
+  // rollback in the middle of a session), it reloads its config and drops what it had queued. A batch
+  // decoded with the fallback says so (`provisional: true`, nothing else counts) and is held to it.
+  const expected = await readExpectedMapping(env.DB, build, body.provisional === true);
+  if (!expected || expected.id !== mappingId) {
+    return { status: 409, body: { error: 'mapping_not_active', activeMappingId: expected?.id ?? null } };
   }
 
   const rejected: { index: number; reason: RejectReason }[] = [];
