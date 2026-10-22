@@ -25,7 +25,7 @@ Résultat attendu : tous passent, sauf le test « prix personnalisé… » de `b
 
 ## Parcours manuel
 
-1. **Ouverture** : choisir l'objet ; le bouton « Prix du craft » est dans l'en-tête, à côté du prix « Craft ». Sur un objet sans recette, il est absent.
+1. **Ouverture** : choisir l'objet ; le bouton « Modifier les prix » est sur la ligne du prix de l'objet, après le montant. Sur un objet sans recette, il est absent.
 2. **Liste** : cliquer ; la fenêtre montre une ligne par ressource, les composants craftables dépliés avec leurs ressources, les quantités cumulées, l'ancienneté de chaque prix.
 3. **Total en direct** : changer le prix d'une ressource ; son sous-total et le total du craft changent pendant la frappe.
 4. **Clavier** : à l'ouverture le premier champ est actif ; saisir un prix puis Entrée passe au champ suivant ; Échap ferme.

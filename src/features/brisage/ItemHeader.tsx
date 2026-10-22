@@ -78,16 +78,18 @@ export function ItemHeader({
               <input id="brisage-cost-input" type="number" inputMode="numeric" min={1} placeholder="Prix en kamas" value={manualCost} onChange={(event) => onManualCost(event.target.value)} />
             </>
           )}
+          {/* On the line of the price it edits, in the shape of the source buttons beside it. */}
+          {canEditCraftPrices && (
+            <button ref={craftPricesButtonRef} type="button" className="brisage-craft-prices-button" onClick={onOpenCraftPrices}>
+              <Icon name="edit" size={15} />
+              <span>Modifier les prix</span>
+            </button>
+          )}
         </div>
         {!loading && (resolved || originText) && <span className="brisage-price-origin">{originText}</span>}
         {!loading && !resolved && !originText && <span className="fm-note">{noPriceReason}</span>}
         {!loading && hdvKamas !== undefined && craftKamas !== undefined && (
           <span className="fm-note brisage-both-prices">Achat <Kamas value={hdvKamas} /> · Craft <Kamas value={craftKamas} /></span>
-        )}
-        {canEditCraftPrices && (
-          <button ref={craftPricesButtonRef} type="button" className="btn btn-small brisage-craft-prices-button" onClick={onOpenCraftPrices}>
-            Prix du craft
-          </button>
         )}
       </div>
         </div>

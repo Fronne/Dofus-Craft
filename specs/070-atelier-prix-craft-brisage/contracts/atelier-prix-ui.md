@@ -5,7 +5,7 @@ les tests interrogent.
 
 ## Bouton d'ouverture
 
-- Nom accessible : **« Prix du craft »**, dans l'en-tête de l'objet, à côté du prix « Craft ».
+- Nom accessible : **« Modifier les prix »** (pastille avec une icône crayon), sur la ligne du prix de l'objet, après le montant.
 - Absent si l'objet n'a pas de recette. Toujours actif sinon, même pendant un recalcul, pour que le focus puisse lui revenir à la fermeture.
 - Au clic : ouvre la fenêtre. À la fermeture, le focus revient sur ce bouton.
 

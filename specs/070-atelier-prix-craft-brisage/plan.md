@@ -9,7 +9,7 @@ refonte), V (aucune donnée nouvelle conservée : les prix vont dans les carnets
 
 ## Résumé
 
-Sur `BrisagePage`, l'en-tête de l'objet (`ItemHeader`) reçoit un bouton **« Prix du craft »**. Il ouvre une
+Sur `BrisagePage`, l'en-tête de l'objet (`ItemHeader`) reçoit un bouton **« Modifier les prix »**, sur la ligne du prix. Il ouvre une
 fenêtre `<dialog>` (`CraftPricesDialog`) qui montre la chaîne de craft de l'objet **entièrement dépliée** :
 une ligne par ressource, sous-recettes comprises, avec la quantité cumulée et le champ de prix.
 
@@ -63,7 +63,7 @@ specs/070-atelier-prix-craft-brisage/
 
 ```text
 src/features/brisage/CraftPricesDialog.tsx   NEW  fenêtre <dialog> : chaîne dépliée, champs de prix, total en direct, clavier
-src/features/brisage/ItemHeader.tsx          + bouton « Prix du craft » (absent sans recette)
+src/features/brisage/ItemHeader.tsx          + bouton « Modifier les prix » (absent sans recette)
 src/features/brisage/BrisagePage.tsx         état d'ouverture, rendu de la fenêtre, bascule du recalcul à la fermeture
 src/features/brisage/useItemCraftCost.ts     + paramètre reloadKey : relit les carnets quand il change
 src/styles/global.css                        style de la fenêtre (liste défilante, total fixe, petit écran)
@@ -77,7 +77,7 @@ sont importés tels quels, sans être modifiés.
 
 ## Parcours de la page
 
-1. Objet choisi, recette connue → le bouton « Prix du craft » apparaît dans l'en-tête, à côté du prix « Craft ». Sans recette, il est absent.
+1. Objet choisi, recette connue → le bouton « Modifier les prix » apparaît dans l'en-tête, à côté du prix « Craft ». Sans recette, il est absent.
 2. Clic → la fenêtre s'ouvre ; le premier champ de prix est actif, son contenu sélectionné.
 3. Chaque ligne : nom, × quantité cumulée, prix unitaire, sous-total ; les composants craftables sont dépliés avec leur choix Auto / Acheter / Crafter.
 4. Saisie : Entrée enregistre et passe au champ suivant ; Tab et clic ailleurs enregistrent aussi ; le total se met à jour pendant la frappe.

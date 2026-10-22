@@ -72,7 +72,7 @@ async function openBrisage() {
 }
 
 async function openWorkshop() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Prix du craft' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Modifier les prix' }));
   const dialog = await screen.findByRole('dialog', { name: /Prix du craft de Cape du Chef Bwork/ });
   await within(dialog).findByLabelText('Prix de Laine');
   return dialog;
@@ -100,13 +100,13 @@ describe('Brisage craft prices window (specs/070)', () => {
 
   it('offers the button when the item has a recipe', async () => {
     await openBrisage();
-    expect(await screen.findByRole('button', { name: 'Prix du craft' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Modifier les prix' })).toBeInTheDocument();
   });
 
   it('does not offer the button when the item has no recipe', async () => {
     getItemDetail.mockResolvedValue({ recipe: undefined, resources: [] });
     await openBrisage();
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Prix du craft' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Modifier les prix' })).not.toBeInTheDocument());
   });
 
   it('lists the resources with their quantities and the price noted for each', async () => {
@@ -148,7 +148,7 @@ describe('Brisage craft prices window (specs/070)', () => {
     await waitFor(() => expect(cost()).toMatch(/1\D?100/));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect((await carnet.getMany('mikhal', ['laine'])).laine.unitPriceKamas).toBe(200);
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Prix du craft' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Modifier les prix' }));
   });
 
   it('takes no price from letters and keeps the one noted', async () => {

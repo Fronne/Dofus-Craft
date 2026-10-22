@@ -46,7 +46,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   « Capture », « Saisie manuelle »). Un prix lu sur Huzounet porte la mention « Huzounet », avec
   « peu de relevés » ou « relevé ancien » quand sa source le signale.
 - **Page Brisage** : les runes qu'un objet donne en le brisant et le verdict de rentabilité, selon
-  le prix de l'objet (HDV ou chaîne de craft). Le bouton « Prix du craft » ouvre un atelier qui
+  le prix de l'objet (HDV ou chaîne de craft). Le bouton « Modifier les prix » ouvre un atelier qui
   liste les ressources de la recette, sous-recettes comprises, pour corriger leurs prix sans quitter
   la page ; ce sont les mêmes prix que sur Recherche.
 - **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
