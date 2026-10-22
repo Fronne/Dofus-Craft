@@ -6,7 +6,7 @@ les tests interrogent.
 ## Bouton d'ouverture
 
 - Nom accessible : **« Prix du craft »**, dans l'en-tête de l'objet, à côté du prix « Craft ».
-- Absent si l'objet n'a pas de recette ; désactivé pendant le calcul du prix de craft.
+- Absent si l'objet n'a pas de recette. Toujours actif sinon, même pendant un recalcul, pour que le focus puisse lui revenir à la fermeture.
 - Au clic : ouvre la fenêtre. À la fermeture, le focus revient sur ce bouton.
 
 ## Fenêtre
@@ -21,7 +21,7 @@ les tests interrogent.
 ## Ligne de ressource
 
 - Nom de la ressource, quantité cumulée (« × 75 »), champ de prix unitaire (nom accessible : « Prix de <ressource> »), sous-total en kamas.
-- Mention d'ancienneté : « Dernière mise à jour : il y a N jours », ou « Prix manquant » quand il n'y a pas de prix.
+- Mention d'ancienneté : « Dernière mise à jour : il y a N jours » quand le prix est daté. Sans prix, le champ est vide et la ligne surlignée ; la ressource est nommée dans « Prix manquant : … » sous le total.
 - Les composants craftables sont dépliés ; leurs lignes enfants sont décalées sous eux, avec le choix **Auto | Acheter | Crafter** et l'indication du coût retenu, comme sur Recherche.
 - Une ressource présente à plusieurs endroits affiche le même prix partout ; la modifier met toutes ses lignes à jour.
 
@@ -38,8 +38,10 @@ Le focus reste dans la fenêtre tant qu'elle est ouverte.
 
 ## Prix invalide
 
-Valeur vide, nulle, négative ou non numérique : rien n'est écrit, l'ancien prix est conservé, le champ le
-signale. Un champ vidé volontairement retire le prix (comme sur Recherche) et la ligne passe à « Prix manquant ».
+Les caractères qui ne sont pas des chiffres ne sont pas pris : rien n'est écrit, l'ancien prix est conservé,
+le champ le signale. Zéro est un prix valide (comme sur Recherche). Un champ vidé volontairement retire le
+prix ; la ressource apparaît alors dans « Prix manquant : … » sous le total, et sa ligne est surlignée.
+Échap pendant une saisie remet le prix d'entrée du champ, puis ferme la fenêtre.
 
 ## Effets sur la page Brisage à la fermeture
 

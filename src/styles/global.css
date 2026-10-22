@@ -1108,6 +1108,33 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 .outlier-confirm-dialog p { margin: 0 0 var(--space-3); }
 .outlier-confirm-dialog-question { color: var(--text-muted); font-size: .9rem; }
+
+/* specs/070-atelier-prix-craft-brisage: the window of the resource prices of an item's craft chain. The header and the
+   total stay in view, only the lines scroll; under 600 px it takes the width of the screen. */
+.craft-prices-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0;
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  background: var(--panel-strong);
+  color: var(--text);
+}
+.craft-prices-panel { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); max-height: calc(100dvh - 2rem); }
+.craft-prices-dialog::backdrop { background: var(--scrim); }
+.craft-prices-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.craft-prices-head h2 { margin: 0; font-size: 1.1rem; }
+.craft-prices-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.craft-prices-list .price-line:has(input:placeholder-shown) { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.craft-prices-list input { min-height: 44px; }
+.craft-prices-total { border-top: 1px solid var(--border); padding-top: var(--space-3); }
+.craft-prices-total p { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); margin: 0; font-size: 1.05rem; }
+.craft-prices-total .craft-prices-missing { justify-content: flex-start; margin-top: var(--space-2); font-size: .9rem; }
+@media (max-width: 600px) {
+  .craft-prices-dialog { width: 100vw; max-width: 100vw; max-height: 100dvh; border-radius: 0; }
+  .craft-prices-panel { max-height: 100dvh; }
+}
 .outlier-confirm-dialog-actions {
   display: flex;
   justify-content: flex-end;

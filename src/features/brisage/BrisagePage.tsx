@@ -33,6 +33,7 @@ import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
 import { useSharedCoefficients } from './use-shared-coefficients';
 import { useItemCraftCost } from './useItemCraftCost';
+import { CraftPricesDialog } from './CraftPricesDialog';
 import { RunePriceInput } from './RunePriceInput';
 import { useRunePrices } from './useRunePrices';
 
@@ -176,7 +177,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   // the cheaper of the two (Auto). Both are read as soon as an item is picked so they can be shown side by side. A
   // typed price fills in when the chosen source has none; a zero or negative price is never accepted.
   const hdvCost = useItemCost(serverId, item?.id, priceMode);
-  const craftCost = useItemCraftCost(serverId, item?.id, priceMode);
+  // specs/070-atelier-prix-craft-brisage: the craft prices window writes to the carnets; closing it reads them again.
+  const [craftPricesOpen, setCraftPricesOpen] = useState(false);
+  const [craftReloadKey, setCraftReloadKey] = useState(0);
+  const craftPricesButton = useRef<HTMLButtonElement>(null);
+  const craftCost = useItemCraftCost(serverId, item?.id, priceMode, craftReloadKey);
   const hdvPending = hdvCost.status === 'loading';
   const craftPending = craftCost.status === 'loading';
   const isKnown = (kamas: number | undefined) => kamas !== undefined && kamas > 0;
@@ -387,7 +392,23 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             coefficientText={coefficientText}
             onCoefficientText={setCoefficientText}
             onRememberCoefficient={rememberCoefficient}
+            canEditCraftPrices={craftCost.reason !== 'no-recipe'}
+            onOpenCraftPrices={() => setCraftPricesOpen(true)}
+            craftPricesButtonRef={craftPricesButton}
           />
+          {craftPricesOpen && serverId && (
+            <CraftPricesDialog
+              itemId={item.id}
+              itemName={item.name}
+              serverId={serverId}
+              priceMode={priceMode}
+              onClose={() => {
+                setCraftPricesOpen(false);
+                setCraftReloadKey((key) => key + 1);
+                craftPricesButton.current?.focus();
+              }}
+            />
+          )}
           {loadState === 'loading' && <p className="fm-note" role="status">Lecture des stats…</p>}
           {loadState === 'failed' && <p className="fm-error" role="alert">Les stats de cet objet n'ont pas pu être lues.</p>}
           {loadState === 'idle' && ranges.length === 0 && negativeLines.length === 0 && <p className="fm-note">Cet objet n'a aucune ligne à briser.</p>}

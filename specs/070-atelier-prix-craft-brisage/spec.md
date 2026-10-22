@@ -85,7 +85,8 @@ Dans la fenêtre, chaque ligne indique, comme sur la page Recherche, si son prix
 
 ### Cas limites
 
-- Prix saisi vide, nul, négatif ou non numérique : il n'est pas enregistré, l'ancien prix reste en place et le champ signale la saisie refusée, sans effacer silencieusement le prix existant.
+- Prix saisi négatif, décimal ou non numérique : il n'est pas enregistré, l'ancien prix reste en place et le champ signale la saisie refusée, sans effacer silencieusement le prix existant. Un champ vidé retire le prix, comme sur Recherche.
+- Échap pendant une saisie : le champ reprend le prix qu'il avait à son entrée (comportement des champs de prix du site), puis la fenêtre se ferme.
 - Prix très élevé : accepté dans les mêmes limites que sur la page Recherche ; au-delà, il est refusé avec un message clair.
 - Enregistrement impossible (hors ligne, partage indisponible) : le prix reste conservé sur l'appareil comme sur la page Recherche, et le joueur est averti si le partage a échoué, sans perdre sa saisie.
 - Mode de prix actif (personnel ou communautaire) : les prix de la fenêtre sont ceux du mode actif, comme partout ailleurs sur le site ; modifier un prix l'enregistre dans ce mode.
@@ -106,7 +107,7 @@ Dans la fenêtre, chaque ligne indique, comme sur la page Recherche, si son prix
 - **FR-005** : la fenêtre MUST afficher le sous-total de chaque ligne et le total du craft, et les mettre à jour pendant la saisie, avant même la fermeture.
 - **FR-006** : à la fermeture de la fenêtre, la page Brisage MUST recalculer le prix « Craft », le verdict, les gains et les cartes avec les prix modifiés, sans rechargement de page.
 - **FR-007** : la saisie MUST pouvoir se faire entièrement au clavier : focus sur le premier champ à l'ouverture, Entrée qui enregistre et passe à la ligne suivante, Échap qui ferme, focus rendu au bouton d'ouverture à la fermeture.
-- **FR-008** : un prix invalide (vide, nul, négatif, non numérique ou hors limite) MUST être refusé avec un message clair, sans remplacer ni effacer le prix déjà en place.
+- **FR-008** : un prix qui n'est pas un nombre entier de kamas (lettres, négatif, décimal) MUST être refusé avec un message clair, sans remplacer ni effacer le prix déjà en place ; comme sur la page Recherche, zéro est un prix valide et un champ vidé volontairement retire le prix.
 - **FR-009** : la fenêtre MUST signaler les ressources dont le prix manque, et le total du craft MUST être présenté comme incomplet tant qu'un prix nécessaire manque ; elle MUST NOT inventer ni estimer un prix.
 - **FR-010** : chaque ligne MUST indiquer l'ancienneté de son prix ou son absence, avec la même formulation que la page Recherche.
 - **FR-011** : la fenêtre MUST distinguer ce que le joueur a saisi de ce qui est calculé (sous-totaux, totaux, prix d'un composant déduit de ses ressources).

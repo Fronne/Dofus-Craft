@@ -1,8 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { compare } from '../../src/domain/craft-comparison';
 import { effectiveIngredientPrices } from '../../src/domain/craft-tree';
 import type { Recipe, RecipeTree, ResourcePrice } from '../../src/domain/types';
-import { craftCostOf } from '../../src/features/brisage/useItemCraftCost';
+
+const getItemDetail = vi.fn();
+const getMany = vi.fn();
+vi.mock('../../src/data/catalogue-repository', () => ({ getItemDetail: (id: string) => getItemDetail(id) }));
+vi.mock('../../src/features/comparison/recipe-tree-loader', () => ({
+  loadRecipeTree: vi.fn().mockResolvedValue({ recipes: {}, resources: {} }),
+}));
+vi.mock('../../src/persistence/resource-prices-for-mode', () => ({
+  resourcePricesFor: () => ({ getMany: (...args: unknown[]) => getMany(...args), save: vi.fn() }),
+}));
+
+import { craftCostOf, useItemCraftCost } from '../../src/features/brisage/useItemCraftCost';
 
 // specs/062-prix-objet-brisage: the craft price is the cost of the whole chain, counted as Épingles counts it.
 const price = (resourceId: string, unitPriceKamas: number): ResourcePrice => ({ resourceId, unitPriceKamas, updatedAt: '2026-10-20T00:00:00Z' });
@@ -40,5 +52,31 @@ describe('craftCostOf', () => {
   it('does not take a zero total as a price', () => {
     const prices = { laine: price('laine', 0), cuir: price('cuir', 0) };
     expect(craftCostOf(cape, emptyTree, prices, {})).toEqual({ status: 'ready', reason: 'incomplete' });
+  });
+});
+
+// specs/070-atelier-prix-craft-brisage (FR-006): the prices typed in the craft prices window are counted
+// once the page asks for a new reading, and only then.
+describe('useItemCraftCost reloadKey', () => {
+  const cape = recipe('cape', [['laine', 3], ['cuir', 2]]);
+  beforeEach(() => {
+    getItemDetail.mockReset();
+    getMany.mockReset();
+    getItemDetail.mockResolvedValue({ recipe: cape, resources: [] });
+  });
+
+  it('reads the carnets again when reloadKey changes, and not otherwise', async () => {
+    getMany.mockResolvedValue({ laine: price('laine', 100), cuir: price('cuir', 250) });
+    const { result, rerender } = renderHook(({ reloadKey }) => useItemCraftCost('mikhal', 'cape', 'personal', reloadKey), { initialProps: { reloadKey: 0 } });
+    await waitFor(() => expect(result.current.costKamas).toBe(800));
+    expect(getMany).toHaveBeenCalledTimes(1);
+
+    getMany.mockResolvedValue({ laine: price('laine', 200), cuir: price('cuir', 250) });
+    rerender({ reloadKey: 0 });
+    expect(getMany).toHaveBeenCalledTimes(1);
+
+    rerender({ reloadKey: 1 });
+    await waitFor(() => expect(result.current.costKamas).toBe(1100));
+    expect(getMany).toHaveBeenCalledTimes(2);
   });
 });
