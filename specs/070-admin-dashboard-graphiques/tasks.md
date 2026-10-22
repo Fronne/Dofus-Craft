@@ -102,7 +102,7 @@
 - [X] T036 [P] Ajouter en tête de `specs/068-admin-dashboard/contracts/admin-dashboard-ui.md` une note « Complété par la spec 070 : visuels sur les cartes » pointant vers `specs/070-admin-dashboard-graphiques/contracts/admin-dashboard-ui.md`
 - [X] T037 Exécuter `npm run typecheck`, `npm run lint` et `npm test` ; corriger tout échec
 - [X] T038 Parcourir le [quickstart.md](quickstart.md) section 3 (essai manuel avec `npm run admin:dev`) : courbe Cloudflare, mois des clés, cartes prix / visites, source coupée, téléphone 375 px, thème sombre, non-régression des six sections ; noter tout écart
-- [ ] T039 Appliquer la migration après relecture (`npm run worker:db:migrate-dashboard-indexes`, `--remote` donc production) et contrôler dans le tableau de bord Cloudflare que les lectures D1 ne bondissent pas à l'ouverture de la page (quickstart section 4) ; à faire avant le déploiement de `npm run admin:deploy`
+- [X] T039 Appliquer la migration après relecture (`npm run worker:db:migrate-dashboard-indexes`, `--remote` donc production) et contrôler dans le tableau de bord Cloudflare que les lectures D1 ne bondissent pas à l'ouverture de la page (quickstart section 4) ; à faire avant le déploiement de `npm run admin:deploy`
 
 ---
 
