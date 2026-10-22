@@ -6,7 +6,7 @@
 
 **Statut**: Brouillon
 
-**Entrée**: « Atelier des prix du craft sur la page Brisage. Un bouton « Modifier les prix » dans l'en-tête de l'objet (à côté du prix « Craft ») ouvre une fenêtre en forme d'atelier : une ligne par ressource avec son nom, sa quantité et son prix unitaire modifiable, y compris les ressources des sous-recettes (composants eux-mêmes craftables). Saisie rapide au clavier (Entrée passe à la ligne suivante), enregistrement de chaque prix comme sur la page Recherche (même mécanisme de prix partagé), total du craft mis à jour en direct, et recalcul automatique du coût de craft sur Brisage à la fermeture, sans passer par la page Recherche. »
+**Entrée**: « Atelier des prix du craft sur la page Brisage. Un bouton « Modifier le prix des ressources » dans l'en-tête de l'objet (à côté du prix « Craft ») ouvre une fenêtre en forme d'atelier : une ligne par ressource avec son nom, sa quantité et son prix unitaire modifiable, y compris les ressources des sous-recettes (composants eux-mêmes craftables). Saisie rapide au clavier (Entrée passe à la ligne suivante), enregistrement de chaque prix comme sur la page Recherche (même mécanisme de prix partagé), total du craft mis à jour en direct, et recalcul automatique du coût de craft sur Brisage à la fermeture, sans passer par la page Recherche. »
 
 Cette spec prolonge `specs/062-prix-objet-brisage` (le prix « Craft » de l'objet vient de la chaîne de craft chiffrée avec les prix de ressources déjà notés) et s'appuie sur le panneau « Prix des ressources » de la page Recherche, seul endroit où ces prix s'éditent aujourd'hui.
 
@@ -14,7 +14,7 @@ Cette spec prolonge `specs/062-prix-objet-brisage` (le prix « Craft » de l'obj
 
 ### User Story 1 - Mettre à jour les prix du craft sans quitter Brisage (Priorité : P1)
 
-Sur la page Brisage, une fois un objet choisi, un bouton « Modifier les prix » est proposé dans l'en-tête de l'objet, à côté du prix « Craft ». Il ouvre une fenêtre qui liste toutes les ressources nécessaires pour fabriquer l'objet, avec pour chacune son nom, la quantité requise et son prix unitaire dans un champ modifiable. Le joueur corrige les prix qui ont changé, ferme la fenêtre, et le prix « Craft » de l'objet ainsi que le verdict de brisage sont immédiatement recalculés. Il n'a plus besoin d'aller sur la page Recherche pour cela.
+Sur la page Brisage, une fois un objet choisi, un bouton « Modifier le prix des ressources » est proposé dans l'en-tête de l'objet, à côté du prix « Craft ». Il ouvre une fenêtre qui liste toutes les ressources nécessaires pour fabriquer l'objet, avec pour chacune son nom, la quantité requise et son prix unitaire dans un champ modifiable. Le joueur corrige les prix qui ont changé, ferme la fenêtre, et le prix « Craft » de l'objet ainsi que le verdict de brisage sont immédiatement recalculés. Il n'a plus besoin d'aller sur la page Recherche pour cela.
 
 **Pourquoi cette priorité** : c'est le cœur de la demande. Aujourd'hui, un joueur qui voit un prix de craft périmé ou incomplet sur Brisage doit changer de page, retrouver l'objet, mettre à jour ses ressources, puis revenir.
 
@@ -22,12 +22,12 @@ Sur la page Brisage, une fois un objet choisi, un bouton « Modifier les prix »
 
 **Scénarios d'acceptation** :
 
-1. **Étant donné** un objet choisi sur Brisage, **quand** la page s'affiche, **alors** un bouton « Modifier les prix » est visible dans l'en-tête de l'objet, à côté du prix « Craft ».
-2. **Étant donné** un objet qui a une recette, **quand** le joueur clique sur « Modifier les prix », **alors** une fenêtre s'ouvre avec une ligne par ressource : son nom, la quantité nécessaire pour un craft de l'objet et son prix unitaire dans un champ modifiable.
+1. **Étant donné** un objet choisi sur Brisage, **quand** la page s'affiche, **alors** un bouton « Modifier le prix des ressources » est visible dans l'en-tête de l'objet, à côté du prix « Craft ».
+2. **Étant donné** un objet qui a une recette, **quand** le joueur clique sur « Modifier le prix des ressources », **alors** une fenêtre s'ouvre avec une ligne par ressource : son nom, la quantité nécessaire pour un craft de l'objet et son prix unitaire dans un champ modifiable.
 3. **Étant donné** la fenêtre ouverte, **quand** le joueur modifie le prix unitaire d'une ressource, **alors** le sous-total de la ligne et le total du craft affichés dans la fenêtre se mettent à jour pendant la saisie.
 4. **Étant donné** que le joueur a modifié un ou plusieurs prix, **quand** il ferme la fenêtre, **alors** le prix « Craft » de l'objet, le verdict, les gains et les cartes de la page Brisage sont recalculés avec les nouveaux prix, sans rechargement de page.
 5. **Étant donné** un prix modifié dans la fenêtre, **quand** le joueur ouvre ensuite la page Recherche sur le même objet, **alors** il y retrouve ce même prix de ressource : c'est la même information, pas une copie séparée.
-6. **Étant donné** un objet sans recette, **quand** la page s'affiche, **alors** le bouton « Modifier les prix » n'est pas proposé (ou est désactivé avec une mention qu'aucun craft n'existe), sans fenêtre vide.
+6. **Étant donné** un objet sans recette, **quand** la page s'affiche, **alors** le bouton « Modifier le prix des ressources » n'est pas proposé (ou est désactivé avec une mention qu'aucun craft n'existe), sans fenêtre vide.
 
 ---
 
@@ -45,7 +45,7 @@ Dans la fenêtre, le joueur enchaîne les prix sans toucher la souris : à l'ouv
 2. **Étant donné** un champ de prix actif, **quand** le joueur tape un montant puis appuie sur Entrée, **alors** le prix est enregistré et le champ de la ligne suivante devient actif.
 3. **Étant donné** la fenêtre ouverte, **quand** le joueur appuie sur Échap, **alors** la fenêtre se ferme et le prix « Craft » de la page est recalculé comme à la fermeture normale.
 4. **Étant donné** un champ de prix actif, **quand** le joueur passe à un autre champ avec la touche Tab ou la souris, **alors** le prix saisi est enregistré, comme avec Entrée.
-5. **Étant donné** que la fenêtre est ouverte, **quand** le joueur navigue au clavier, **alors** le focus reste dans la fenêtre jusqu'à sa fermeture, et revient au bouton « Modifier les prix » à la fermeture.
+5. **Étant donné** que la fenêtre est ouverte, **quand** le joueur navigue au clavier, **alors** le focus reste dans la fenêtre jusqu'à sa fermeture, et revient au bouton « Modifier le prix des ressources » à la fermeture.
 
 ---
 
@@ -100,7 +100,7 @@ Dans la fenêtre, chaque ligne indique, comme sur la page Recherche, si son prix
 
 ### Exigences fonctionnelles
 
-- **FR-001** : la page Brisage MUST proposer, dans l'en-tête de l'objet choisi et à côté du prix « Craft », un bouton « Modifier les prix » qui ouvre la fenêtre de l'atelier.
+- **FR-001** : la page Brisage MUST proposer, dans l'en-tête de l'objet choisi et à côté du prix « Craft », un bouton « Modifier le prix des ressources » qui ouvre la fenêtre de l'atelier.
 - **FR-002** : la fenêtre MUST lister toutes les ressources de la chaîne de craft de l'objet, avec pour chacune son nom, la quantité nécessaire pour un craft de l'objet et son prix unitaire modifiable.
 - **FR-003** : pour chaque ingrédient lui-même craftable, la fenêtre MUST présenter ses ressources regroupées sous lui, avec leurs quantités totales pour un craft de l'objet, et permettre de le chiffrer soit par son prix d'achat, soit par les prix de ses ressources, selon le choix déjà utilisé par les pages Recherche et Épingles.
 - **FR-004** : le prix modifié d'une ressource MUST être enregistré par le même mécanisme et à la même place que sur la page Recherche (y compris le partage avec les autres joueurs selon le mode de prix actif) : une modification faite dans l'atelier MUST se retrouver sur Recherche et Épingles, et inversement.
@@ -111,7 +111,7 @@ Dans la fenêtre, chaque ligne indique, comme sur la page Recherche, si son prix
 - **FR-009** : la fenêtre MUST signaler les ressources dont le prix manque, et le total du craft MUST être présenté comme incomplet tant qu'un prix nécessaire manque ; elle MUST NOT inventer ni estimer un prix.
 - **FR-010** : chaque ligne MUST indiquer l'ancienneté de son prix ou son absence, avec la même formulation que la page Recherche.
 - **FR-011** : la fenêtre MUST distinguer ce que le joueur a saisi de ce qui est calculé (sous-totaux, totaux, prix d'un composant déduit de ses ressources).
-- **FR-012** : si l'objet n'a pas de recette, le bouton « Modifier les prix » MUST NOT ouvrir de fenêtre vide : il est absent ou désactivé avec une explication.
+- **FR-012** : si l'objet n'a pas de recette, le bouton « Modifier le prix des ressources » MUST NOT ouvrir de fenêtre vide : il est absent ou désactivé avec une explication.
 - **FR-013** : la fenêtre MUST rester utilisable sur petit écran et avec de longues recettes, sans masquer le total ni les commandes de fermeture.
 - **FR-014** : la fenêtre MUST respecter les conventions d'accessibilité d'une boîte de dialogue (titre annoncé, focus piégé dans la fenêtre pendant qu'elle est ouverte, fermeture au clavier).
 - **FR-015** : la fenêtre MUST NOT modifier l'objet choisi, le coefficient de brisage ni les autres réglages de la session Brisage : elle ne change que des prix de ressources.

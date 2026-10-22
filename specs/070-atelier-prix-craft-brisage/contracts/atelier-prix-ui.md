@@ -1,19 +1,19 @@
-# Contrat d'interface : fenêtre « Prix du craft » (page Brisage)
+# Contrat d'interface : fenêtre « Prix des ressources » (page Brisage)
 
 Contrat visible par le joueur et par les tests d'intégration. Les noms accessibles ci-dessous sont ceux que
 les tests interrogent.
 
 ## Bouton d'ouverture
 
-- Nom accessible : **« Modifier les prix »** (pastille avec une icône crayon), sur la ligne du prix de l'objet, après le montant.
+- Nom accessible : **« Modifier le prix des ressources »** (lien texte avec une icône crayon), sous le prix de l'objet, sur la même ligne que la note d'origine du prix.
 - Absent si l'objet n'a pas de recette. Toujours actif sinon, même pendant un recalcul, pour que le focus puisse lui revenir à la fermeture.
 - Au clic : ouvre la fenêtre. À la fermeture, le focus revient sur ce bouton.
 
 ## Fenêtre
 
-- Élément `<dialog>` modal, rôle `dialog`, nom accessible **« Prix du craft de <nom de l'objet> »**.
+- Élément `<dialog>` modal, rôle `dialog`, nom accessible **« Prix des ressources de <nom de l'objet> »**.
 - Contenu, de haut en bas :
-  1. Titre avec le nom de l'objet et bouton **« Fermer »**.
+  1. Titre « Prix des ressources · <objet> » et bouton **« Fermer »**.
   2. Liste défilante des lignes de ressources (voir ci-dessous).
   3. Pied fixe : **« Total du craft »** (ou « Total du craft incomplet » avec la mention des prix manquants).
 - Fermeture : bouton « Fermer », touche Échap, ou clic hors de la fenêtre. Les trois enregistrent d'abord le champ en cours, puis déclenchent le recalcul de Brisage.

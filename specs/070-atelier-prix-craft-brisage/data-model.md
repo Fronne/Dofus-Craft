@@ -16,7 +16,7 @@ décrit ce que la fenêtre manipule et son état local, qui disparaît à la fer
 
 | Champ | Type | Règle |
 |---|---|---|
-| `open` | booléen | vrai entre le clic sur « Prix du craft » et la fermeture |
+| `open` | booléen | vrai entre le clic sur « Modifier le prix des ressources » et la fermeture |
 | `inputs` | `Record<resourceId, string>` | texte en cours de frappe, non encore enregistré ; une ressource présente à plusieurs endroits partage une seule entrée |
 | `expandedPaths` | `Set<string>` | tous les composants craftables au départ ; le joueur peut en replier |
 | `reloadKey` | entier, dans `BrisagePage` | augmente à chaque fermeture ; relance la lecture de `useItemCraftCost` |
