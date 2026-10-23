@@ -35,7 +35,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 /* specs/051-site-visual-refresh: on a wide screen the navigation is a bar floating at the top of
    the page, as wide as the content; under 960px it turns into the bottom tab bar (see Responsive). */
 .app-shell {
-  --app-width: 1280px;
+  --app-width: 1440px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -1645,7 +1645,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* specs/013 FR-016 (révisé): the portraits must never hide page content or buttons (e.g. the search
    panel's help button, in its top-right corner). Where the page is wide enough to be centered with
    room to spare, they sit in that margin; below that, the page keeps a right gutter for them. */
-@media (min-width: 961px) and (max-width: 1600px) {
+@media (min-width: 961px) and (max-width: 1640px) {
   .app-shell:has(.player-counters) .app-page { padding-right: 96px; }
 }
 /* On mobile the top of the screen is the server switcher's bar: the portraits line up in a row at
@@ -2462,24 +2462,13 @@ select:focus {
 }
 .prices-total { border-top-width: 2px; border-top-color: var(--border-strong); }
 
-/* ---------- Interface at 90 % (computer screens) ----------
-   The whole interface is drawn at 90 % of its size, as if the browser were zoomed out: more of a
-   craft fits on the screen. Not on phones and tablets, where it would shrink the touch targets.
-   The guided tour places itself from on-screen measurements, so it is put back at full size. */
-@media (min-width: 1024px) {
-  body { --ui-zoom: .9; }
-  .app-shell { zoom: var(--ui-zoom); min-height: calc(100vh / var(--ui-zoom)); min-height: calc(100dvh / var(--ui-zoom)); }
-  .guided-tour { zoom: calc(1 / var(--ui-zoom)); }
-}
-
 /* ---------- Side illustrations (wide screens) ----------
    One Dofus illustration on each side of the content column, so a wide screen is not two empty
    bands. They stay beside the column — never under what the player reads or clicks — and their
    muted colors and fade are baked into the files (scripts/build-side-illustrations.mjs). */
-@media (min-width: 1340px) {
-  /* 1248px: the content column (1232px) plus room for the scrollbar that 100vw counts in — shrunk
-     like the interface itself (--ui-zoom). */
-  body { --side-art: calc((100vw - 1248px * var(--ui-zoom, 1)) / 2); }
+@media (min-width: 1620px) {
+  /* 1392px: the content column (1376px) plus room for the scrollbar that 100vw counts in. */
+  body { --side-art: calc((100vw - 1392px) / 2); }
   body::before, body::after {
     content: '';
     position: fixed;
@@ -2792,12 +2781,7 @@ button.brisage-badge--exo:hover svg { opacity: 1; }
 .brisage-tabs button { min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-weight: 600; cursor: pointer; }
 .brisage-tabs button.is-on { background: var(--link); color: #06201d; }
 .ranking { display: grid; gap: var(--space-4); }
-/* The table has nine columns: on a wide window the tab goes out of the page's 1280px column (the room left to the right
-   is kept for the portraits) instead of hiding the last columns behind a horizontal scroll bar. */
-@media (min-width: 961px) {
-  /* A margin, not a transform: the page's entry animation already uses the transform of the panel. */
-  .ranking { --ranking-width: min(1760px, calc(100vw - 2 * var(--space-6) - 96px)); width: var(--ranking-width); margin-left: calc((100% - var(--ranking-width)) / 2); }
-}
+/* The table has nine columns: it takes the page's own 1440px column, like every other tab. */
 .ranking { padding-inline: var(--space-4); }
 .ranking-table th, .ranking-table td { padding: .6rem .4rem; }
 .ranking-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }

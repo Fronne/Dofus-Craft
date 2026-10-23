@@ -138,7 +138,7 @@ Base de 4 px. Seuls ces pas sont utilisés :
   l'enregistrement (`playOnce`), une carte des Suivis s'efface avant de partir (`leaveThen`), les
   listes arrivent en cascade, le losange du menu glisse d'une page à l'autre, le thème change en
   fondu. Le halo du logo (Dofus Émeraude) est la seule animation continue.
-- Sur ordinateur (≥ 1024 px) toute l'interface est rendue à 90 % (`--ui-zoom`).
+- La page est centrée sur 1440 px au plus (`--app-width`), à taille réelle (100 %).
 
 ## 6. Composants
 
