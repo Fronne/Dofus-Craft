@@ -169,10 +169,14 @@
 * { box-sizing: border-box; }
 body { font-size: 1rem; line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
+button:focus-visible, summary:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent-bright);
   outline-offset: 2px;
 }
+/* Fields take the accent on their border only: no ring, no halo (see global.css). */
+input:where(:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file])):focus-visible,
+select:focus-visible, textarea:focus-visible { outline: none; }
+input:where([type=checkbox], [type=radio], [type=file]):focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
 ::selection { background: var(--accent-soft); color: var(--accent-bright); }
 
 @media (prefers-reduced-motion: reduce) {
