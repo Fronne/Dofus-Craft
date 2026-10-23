@@ -7,6 +7,21 @@
     <meta name="description" content="Calculez en quelques secondes si un craft Dofus est rentable : coût de fabrication contre prix à l'hôtel des ventes, par serveur. Suivis, rentabilité, prix HDV et XP familier." />
     <meta name="theme-color" content="#08181c" />
     <link rel="icon" type="image/png" href="/dofus-emeraude.png" />
+    <!-- specs/074-dofus-color-themes: puts the chosen Dofus's palette, tab icon and address-bar color
+         on the page before it is painted, so there is no flash of the emerald. The same list as
+         src/domain/dofus-themes.ts (tests/unit/dofus-themes.test.ts keeps them in step). -->
+    <script>
+      try {
+        var chosen = localStorage.getItem('craftcheck-dofus');
+        var all = { pourpre: ['/dofus-pourpre.png', '#1a0b14'], turquoise: ['/dofus-turquoise.png', '#071522'], ocre: ['/dofus-ocre.png', '#1b1208'], ebene: ['/dofus-ebene.png', '#0b0d12'], ivoire: ['/dofus-ivoire.png', '#17140f'] };
+        var dofus = Object.prototype.hasOwnProperty.call(all, chosen) ? all[chosen] : null;
+        if (dofus) {
+          document.documentElement.dataset.dofus = chosen;
+          document.querySelector('link[rel="icon"]').setAttribute('href', dofus[0]);
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', dofus[1]);
+        }
+      } catch (error) { /* storage blocked: the emerald stays */ }
+    </script>
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="canonical" href="https://dofus-craft.handy-apps.workers.dev/" />
     <meta property="og:type" content="website" />

@@ -19,10 +19,19 @@ function declarations(selector: string): Tokens {
 }
 
 const dark = declarations(':root');
+const light = declarations(':root[data-theme="light"]');
 const themes: Record<string, Tokens> = {
   sombre: dark,
-  clair: { ...dark, ...declarations(':root[data-theme="light"]') },
+  clair: { ...dark, ...light },
 };
+
+// specs/074-dofus-color-themes (SC-005): the five other primordial Dofus, each in both modes. The
+// cascade is :root, then the light block, then the Dofus block, then the Dofus light block.
+for (const id of ['pourpre', 'turquoise', 'ocre', 'ebene', 'ivoire']) {
+  const own = declarations(`:root[data-dofus="${id}"]`);
+  themes[`${id} sombre`] = { ...dark, ...own };
+  themes[`${id} clair`] = { ...dark, ...light, ...own, ...declarations(`:root[data-dofus="${id}"][data-theme="light"]`) };
+}
 
 function parse(value: string, tokens: Tokens): Rgba {
   const text = value.trim();

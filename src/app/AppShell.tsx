@@ -22,6 +22,8 @@ import { recordVisit } from '../services/visit-api';
 import { prefersReducedMotion } from '../services/motion';
 import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
 import { lazyPage } from './lazy-page';
+import { useDofusTheme } from './useDofusTheme';
+import { DEFAULT_DOFUS, dofusById } from '../domain/dofus-themes';
 
 // Every page but Recherche (the landing route) is fetched when first visited, so the first load
 // doesn't carry the code and data of every page.
@@ -82,6 +84,7 @@ export function AppShell() {
       ? 'light'
       : 'dark';
   });
+  const [dofus, setDofus] = useDofusTheme();
   const [priceMode, setPriceModeState] = useState<PriceMode>(() => getPriceMode());
 
   useEffect(() => {
@@ -190,7 +193,17 @@ export function AppShell() {
       <a className="skip-link" href="#contenu">Aller au contenu</a>
       <nav className="app-nav" aria-label="Navigation principale">
         <Link className="app-nav-brand" to={entryTo} aria-label={`DofusCraft, aller à ${entryName}`}>
-          <img className="app-nav-brand-mark" src="/dofus-emeraude.png" alt="" width="44" height="44" />
+          <img
+            className="app-nav-brand-mark"
+            src={dofusById(dofus).image}
+            alt=""
+            width="44"
+            height="44"
+            onError={(event) => {
+              const fallback = dofusById(DEFAULT_DOFUS).image;
+              if (!event.currentTarget.src.endsWith(fallback)) event.currentTarget.src = fallback;
+            }}
+          />
           <span className="app-nav-brand-name">
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
@@ -268,6 +281,8 @@ export function AppShell() {
                 <ParametresPage
                   theme={theme}
                   setTheme={setTheme}
+                  dofus={dofus}
+                  setDofus={setDofus}
                   priceMode={priceMode}
                   setPriceMode={setPriceModeState}
                 />
