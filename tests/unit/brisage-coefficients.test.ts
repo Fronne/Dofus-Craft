@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getStoredCoefficient, hasImportedCoefficients, latestCoefficient, listImportableCoefficients, markCoefficientsImported, saveCoefficient } from '../../src/persistence/brisage-coefficients';
+import { getStoredCoefficient, hasImportedCoefficients, latestCoefficient, listImportableCoefficients, listStoredCoefficients, markCoefficientsImported, saveCoefficient } from '../../src/persistence/brisage-coefficients';
 
 // specs/061-simplification-page-brisage (FR-004): the last coefficient of an item, kept on the device.
 const KEY = 'craftcheck-brisage-coefficients';
@@ -93,5 +93,36 @@ describe('shared coefficients (specs/069)', () => {
     expect(hasImportedCoefficients()).toBe(false);
     markCoefficientsImported();
     expect(hasImportedCoefficients()).toBe(true);
+  });
+});
+
+// specs/072-classement-brisage (T002): the coefficients kept on the device, listed for one server.
+describe('listStoredCoefficients (specs/072)', () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it('lists the coefficients of the server by item id', () => {
+    saveCoefficient('mikhal', '777', 38);
+    saveCoefficient('mikhal', '888', 50);
+    const list = listStoredCoefficients('mikhal');
+    expect([...list.keys()].sort()).toEqual(['777', '888']);
+    expect(list.get('777')?.coefficient).toBe(38);
+  });
+
+  it('ignores the coefficients of another server', () => {
+    saveCoefficient('mikhal', '777', 38);
+    saveCoefficient('kourial', '777', 90);
+    expect(listStoredCoefficients('mikhal').get('777')?.coefficient).toBe(38);
+    expect(listStoredCoefficients('kourial').get('777')?.coefficient).toBe(90);
+  });
+
+  it('ignores an invalid entry and unreadable storage', () => {
+    window.localStorage.setItem(KEY, JSON.stringify({
+      'mikhal:1': { coefficient: -3, savedAt: '2026-10-20T10:00:00.000Z' },
+      'mikhal:2': { coefficient: 40, savedAt: 'not a date' },
+      'mikhal:3': { coefficient: 41, savedAt: '2026-10-20T10:00:00.000Z' },
+    }));
+    expect([...listStoredCoefficients('mikhal').keys()]).toEqual(['3']);
+    window.localStorage.setItem(KEY, '{not json');
+    expect(listStoredCoefficients('mikhal').size).toBe(0);
   });
 });

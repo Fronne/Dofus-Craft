@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { SITE_PAGES, isLastEnabledPage, type SiteSettingField, type SiteSettings } from '../src/domain/site-settings';
+import { SITE_FEATURES, SITE_PAGES, isLastEnabledPage, type SiteSettingField, type SiteSettings } from '../src/domain/site-settings';
 import { adminApi } from './admin-api';
 import { failureMessage } from './messages';
 
 // The pages the owner can turn on or off: the seven pages of the site's navigation (specs/050, specs/053, specs/071).
 const PAGES = SITE_PAGES.map(({ field, label }) => ({ field, label }));
+// specs/072-classement-brisage: the other settings, listed after the pages.
+const FEATURES = SITE_FEATURES.map(({ field, label }) => ({ field, label }));
 
 // specs/050-forgemagie-page-toggle (contracts/site-settings-api.md « Interface »): turn a page of the
 // site on or off. The state shown is always the one the server answered, never an assumed one (FR-008).
@@ -36,7 +38,8 @@ export function SiteSettingsEditor() {
     setBusy(false);
     if (result.status === 'ok') {
       setSettings(result.value);
-      setFeedback({ text: `Page ${label} ${result.value[field] ? 'activée' : 'désactivée'}.`, error: false });
+      const isFeature = FEATURES.some((feature) => feature.field === field);
+      setFeedback({ text: `${isFeature ? '' : 'Page '}${label} ${result.value[field] ? (isFeature ? 'ouvert à tous' : 'activée') : (isFeature ? 'réservé au propriétaire' : 'désactivée')}.`, error: false });
     } else {
       setFeedback({ text: failureMessage(result), error: true });
     }
@@ -91,6 +94,22 @@ export function SiteSettingsEditor() {
               {settings[field] ? 'Désactiver' : 'Activer'}
             </button>
           )}
+        </div>
+      ))}
+      {settings && FEATURES.map(({ field, label }) => (
+        <div key={field} className="admin-page-toggle">
+          <p>
+            {label} : <strong>{settings[field] ? 'Ouvert à tous' : 'Réservé au propriétaire'}</strong>
+          </p>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            aria-label={`${settings[field] ? 'Réserver au propriétaire' : 'Ouvrir à tous'} : ${label}`}
+            disabled={busy}
+            onClick={() => void toggle(field, label, settings)}
+          >
+            {settings[field] ? 'Réserver au propriétaire' : 'Ouvrir à tous'}
+          </button>
         </div>
       ))}
       {feedback && (

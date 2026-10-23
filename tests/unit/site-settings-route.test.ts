@@ -118,8 +118,15 @@ describe('HDV page setting (specs/053)', () => {
 describe('the seven pages (specs/071)', () => {
   it('reads the six other pages as enabled while nothing is saved', async () => {
     await expect(readSiteSettings(env.DB)).resolves.toEqual({
-      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true,
+      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true, brisageRanking: false,
     });
+  });
+
+  // specs/072-classement-brisage: the ranking setting is saved and read back like a page, without touching the others.
+  it('saves the Brisage ranking setting alone', async () => {
+    await expect((await call('PUT', { brisageRanking: true })).json()).resolves.toMatchObject({ brisageRanking: true, brisagePage: true, searchPage: true });
+    await expect(readSiteSettings(env.DB)).resolves.toMatchObject({ brisageRanking: true });
+    await expect((await call('PUT', { brisageRanking: false })).json()).resolves.toMatchObject({ brisageRanking: false });
   });
 
   it('turns any of the seven pages off and on, one at a time, leaving the others as they are', async () => {

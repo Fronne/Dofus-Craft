@@ -19,6 +19,9 @@ import {
   type BrisageOption,
 } from '../../domain/brisage';
 import { resolveItemPrice } from '../../domain/brisage-price';
+import { DEFAULT_RANKING_VIEW, type RankingView } from '../../domain/brisage-ranking';
+import { useSiteSettings } from '../../app/useSiteSettings';
+import { applyRankingAccessFromSearch,withoutRankingParameter } from '../../persistence/brisage-ranking-access';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import { getStoredCoefficient, hasImportedCoefficients, listImportableCoefficients, markCoefficientsImported, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
@@ -34,6 +37,7 @@ import { useItemCost } from './useItemCost';
 import { useSharedCoefficients } from './use-shared-coefficients';
 import { useItemCraftCost } from './useItemCraftCost';
 import { CraftPricesDialog } from './CraftPricesDialog';
+import { RankingTab } from './RankingTab';
 import { RunePriceInput } from './RunePriceInput';
 import { useRunePrices } from './useRunePrices';
 
@@ -96,6 +100,18 @@ function mergeRanges(ranges: Range[]): Range[] {
 
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
+  // specs/072-classement-brisage (US6): the Classement tab exists only for the owner, who opens it with `?classement=1`.
+  // The owner can also open it to everyone with the shared `brisageRanking` setting (administration page).
+  const [localRankingAccess] = useState(() => {
+    const { access, touched } = applyRankingAccessFromSearch(window.location.search);
+    if (touched) window.history.replaceState(window.history.state, '', withoutRankingParameter(window.location));
+    return access;
+  });
+  const { settings: siteSettings } = useSiteSettings();
+  const rankingAccess = localRankingAccess || siteSettings.brisageRanking;
+  const [tab, setTab] = useState<'sheet' | 'ranking'>('sheet');
+  // The sort and filters of the ranking live here so they survive a trip to the item page (FR-010).
+  const [rankingView, setRankingView] = useState<RankingView>(DEFAULT_RANKING_VIEW);
   const [item, setItem] = useState<PickedItem>();
   const [ranges, setRanges] = useState<Range[]>([]);
   // specs/067: the negative lines (maluses) of the item, read apart from the positive ones.
@@ -376,6 +392,24 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     <>
       <h1 className="visually-hidden">Brisage</h1>
 
+      {rankingAccess && (
+        <div className="brisage-tabs" role="tablist" aria-label="Vue de la page Brisage">
+          {([['sheet', 'Fiche'], ['ranking', 'Classement']] as const).map(([id, text]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'is-on' : undefined} onClick={() => setTab(id)}>{text}</button>
+          ))}
+        </div>
+      )}
+
+      {rankingAccess && tab === 'ranking' ? (
+        <RankingTab
+          serverId={serverId}
+          priceMode={priceMode}
+          view={rankingView}
+          onView={setRankingView}
+          onOpen={(picked) => { openItem(picked); setTab('sheet'); }}
+        />
+      ) : (
+      <>
       <ItemFinder
         runes={RUNES}
         settings={SETTINGS}
@@ -693,6 +727,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         </div>
       )}
         </section>
+      )}
+      </>
       )}
     </>
   );

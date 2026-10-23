@@ -97,10 +97,10 @@ describe('worker/migrations', () => {
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 4001, 'x')")).toThrow();
   });
 
-  it('adds the admin cleanup trace table (0025) without touching a contribution, and can run again', () => {
+  it('adds the admin cleanup trace table (0026) without touching a contribution, and can run again', () => {
     const db = freshDatabase();
     db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
-    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0025_add_admin_cleanup_log.sql'), 'utf8');
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0026_add_admin_cleanup_log.sql'), 'utf8');
     db.exec(migration);
     db.exec(migration);
     expect(columns(db, 'admin_cleanup_log')).toEqual(['deleted_at', 'filter_text', 'id', 'mode', 'row_count', 'table_id']);
@@ -200,10 +200,30 @@ describe('worker/migrations', () => {
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
   });
 
+  // specs/072-classement-brisage: the key list gets 'brisage_ranking' by another rebuild of the table.
+  it('widens the site settings keys again (0025) keeping the saved settings, and can run again', () => {
+    const db = freshDatabase();
+    db.exec('DROP TABLE site_settings');
+    db.exec(`CREATE TABLE site_settings (key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page')),
+      value TEXT NOT NULL CHECK (value IN ('0', '1')), updated_at TEXT NOT NULL)`);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('forgemagie_page', '1', '2026-10-01T00:00:00.000Z'), ('brisage_page', '0', '2026-10-02T00:00:00.000Z')");
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('brisage_ranking', '1', 'x')")).toThrow();
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0025_add_brisage_ranking_setting.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(db.prepare('SELECT key, value, updated_at FROM site_settings ORDER BY key').all()).toEqual([
+      { key: 'brisage_page', value: '0', updated_at: '2026-10-02T00:00:00.000Z' },
+      { key: 'forgemagie_page', value: '1', updated_at: '2026-10-01T00:00:00.000Z' },
+    ]);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('brisage_ranking', '1', 'x')");
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('autre_page', '0', 'x')")).toThrow();
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
+  });
+
   it('has the same site_settings table in schema.sql as after the migrations', () => {
     const fresh = freshDatabase();
     const sql = (fresh.prepare("SELECT sql FROM sqlite_master WHERE name = 'site_settings'").get() as { sql: string }).sql;
-    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page']) {
+    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking']) {
       expect(sql).toContain(`'${key}'`);
     }
   });

@@ -11,7 +11,7 @@ tables (coefficients de brisage, prix de la communauté, prix externes), permet 
 ou tout ce qui est plus récent que 10 min / 1 h / 24 h, avec aperçu du nombre exact, plafond de 500 lignes et
 trace des suppressions. Côté serveur : un module `admin-worker/src/data-cleanup.ts` (registre de tables en
 liste blanche, SQL paramétré uniquement), quatre routes `/api/data/...` derrière la vérification
-propriétaire existante, et une table `admin_cleanup_log` (migration 0025). Côté page : un composant
+propriétaire existante, et une table `admin_cleanup_log` (migration 0026). Côté page : un composant
 `DataCleanupEditor` et une section `donnees` dans le tableau de bord.
 
 ## Contexte technique
@@ -80,7 +80,7 @@ admin/
 
 worker/
 ├── schema.sql                              # table admin_cleanup_log
-└── migrations/0025_add_admin_cleanup_log.sql
+└── migrations/0026_add_admin_cleanup_log.sql
 
 package.json             # script worker:db:migrate-cleanup-log
 

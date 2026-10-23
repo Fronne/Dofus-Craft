@@ -25,7 +25,7 @@ Le registre est la seule source des noms SQL : aucune valeur venant de la requê
 `10m` = 10 minutes, `1h` = 1 heure, `24h` = 24 heures. Limite inférieure = `maintenant − durée`, en ISO UTC ;
 est supprimée toute ligne dont `dateColumn >= limite`.
 
-## Trace de suppression — `admin_cleanup_log` (nouvelle table, migration 0025)
+## Trace de suppression — `admin_cleanup_log` (nouvelle table, migration 0026)
 
 | Colonne | Type | Règle |
 |---------|------|-------|

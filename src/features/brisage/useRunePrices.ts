@@ -12,19 +12,32 @@ export type RunePricesState = { status: 'loading' | 'ready'; prices: Record<stri
 
 const LOADING: RunePricesState = { status: 'loading', prices: {}, communityUnavailable: false };
 
-async function loadPrices(serverId: string, priceMode: PriceMode, ids: string[]): Promise<Omit<RunePricesState, 'status'>> {
+/** A rune price with the date it was noted (specs/072: the ranking shows how fresh the prices it uses are). */
+export type RunePriceDetail = { unitPriceKamas: number; updatedAt?: string };
+
+/** The price of each rune of the active mode, with its date; a rune without a price is absent. */
+export async function loadRunePriceDetails(
+  serverId: string, priceMode: PriceMode, ids: string[],
+): Promise<{ prices: Record<string, RunePriceDetail>; communityUnavailable: boolean }> {
   const repository = resourcePricesFor(priceMode);
   const carnet = await repository.getMany(serverId, ids);
-  const prices: Record<string, number> = {};
-  for (const [id, price] of Object.entries(carnet)) prices[id] = price.unitPriceKamas;
+  const prices: Record<string, RunePriceDetail> = {};
+  for (const [id, price] of Object.entries(carnet)) prices[id] = { unitPriceKamas: price.unitPriceKamas, updatedAt: price.updatedAt };
   if (priceMode !== 'community') return { prices, communityUnavailable: false };
   const lookup = await getCommunityPrices(ids, serverId);
   if (lookup.status === 'unavailable') return { prices, communityUnavailable: true };
   for (const shared of lookup.prices) {
     const choice = pickCommunityPrice(carnet[shared.resourceId], { amountKamas: shared.latestAmountKamas, contributedAt: shared.latestContributionAt });
-    if (choice.price) prices[shared.resourceId] = choice.price.unitPriceKamas;
+    if (choice.price) prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, updatedAt: choice.price.updatedAt };
   }
   return { prices, communityUnavailable: false };
+}
+
+async function loadPrices(serverId: string, priceMode: PriceMode, ids: string[]): Promise<Omit<RunePricesState, 'status'>> {
+  const { prices: detailed, communityUnavailable } = await loadRunePriceDetails(serverId, priceMode, ids);
+  const prices: Record<string, number> = {};
+  for (const [id, detail] of Object.entries(detailed)) prices[id] = detail.unitPriceKamas;
+  return { prices, communityUnavailable };
 }
 
 export function useRunePrices(serverId: string | undefined, priceMode: PriceMode, ids: string[]): RunePricesState {

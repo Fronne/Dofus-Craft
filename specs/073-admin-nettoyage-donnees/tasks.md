@@ -11,10 +11,10 @@ liste blanche, comptage).
 
 ## Phase 1 : Mise en place (base de données)
 
-- [x] T001 Créer `worker/migrations/0025_add_admin_cleanup_log.sql` : table `admin_cleanup_log` (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `deleted_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))`, `table_id TEXT NOT NULL`, `mode TEXT NOT NULL CHECK (mode IN ('selection','duration'))`, `filter_text TEXT NOT NULL DEFAULT ''`, `row_count INTEGER NOT NULL CHECK (row_count > 0)`) et index `idx_admin_cleanup_log_deleted_at (deleted_at)`, avec un en-tête dans le style de `0024_add_contribution_item_type.sql` (ordre : appliquer AVANT de déployer le Worker admin)
+- [x] T001 Créer `worker/migrations/0026_add_admin_cleanup_log.sql` : table `admin_cleanup_log` (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `deleted_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))`, `table_id TEXT NOT NULL`, `mode TEXT NOT NULL CHECK (mode IN ('selection','duration'))`, `filter_text TEXT NOT NULL DEFAULT ''`, `row_count INTEGER NOT NULL CHECK (row_count > 0)`) et index `idx_admin_cleanup_log_deleted_at (deleted_at)`, avec un en-tête dans le style de `0024_add_contribution_item_type.sql` (ordre : appliquer AVANT de déployer le Worker admin)
 - [x] T002 Ajouter la même table et le même index à `worker/schema.sql` (avec un commentaire `specs/073-admin-nettoyage-donnees`)
-- [x] T003 Ajouter le script `worker:db:migrate-cleanup-log` à `package.json` (même forme que `worker:db:migrate-item-type`, fichier `0025_add_admin_cleanup_log.sql`)
-- [x] T004 [P] Étendre `tests/unit/worker-schema.test.ts` : colonnes de `admin_cleanup_log` et refus d'un `mode` inconnu ou d'un `row_count` ≤ 0 ; la migration 0025 rejouée donne la même table que `schema.sql`
+- [x] T003 Ajouter le script `worker:db:migrate-cleanup-log` à `package.json` (même forme que `worker:db:migrate-item-type`, fichier `0026_add_admin_cleanup_log.sql`)
+- [x] T004 [P] Étendre `tests/unit/worker-schema.test.ts` : colonnes de `admin_cleanup_log` et refus d'un `mode` inconnu ou d'un `row_count` ≤ 0 ; la migration 0026 rejouée donne la même table que `schema.sql`
 
 ## Phase 2 : Fondations (bloque toutes les histoires)
 
@@ -83,7 +83,7 @@ liste blanche, comptage).
 
 - [x] T023 Lancer `npm run test`, `npm run typecheck`, `npm run lint` ; corriger les écarts
 - [x] T024 [P] Vérifier à la main le déroulé de `specs/073-admin-nettoyage-donnees/quickstart.md` sur le serveur de dev (admin) et donner l'URL de test à l'utilisateur
-- [x] T025 [P] Documenter dans `admin-worker/` ou `worker/README.md` (section existante des migrations) la migration 0025 et son ordre (avant le déploiement du Worker admin), en cohérence avec `worker/README.md`
+- [x] T025 [P] Documenter dans `admin-worker/` ou `worker/README.md` (section existante des migrations) la migration 0026 et son ordre (avant le déploiement du Worker admin), en cohérence avec `worker/README.md`
 - [x] T026 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves
 
 ## Dépendances et ordre d'exécution

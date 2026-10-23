@@ -5,7 +5,7 @@ Contrats : [admin-data-api.md](contracts/admin-data-api.md). Modèle : [data-mod
 ## Prérequis
 
 - Dépendances installées (`npm install`).
-- Pour l'essai réel : la migration `worker/migrations/0025_add_admin_cleanup_log.sql` appliquée **avant**
+- Pour l'essai réel : la migration `worker/migrations/0026_add_admin_cleanup_log.sql` appliquée **avant**
   de déployer le Worker d'administration (`npm run worker:db:migrate-cleanup-log`), une seule fois.
 
 ## Validation automatique
