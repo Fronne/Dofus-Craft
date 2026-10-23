@@ -23,7 +23,7 @@ Le propriétaire ouvre l'onglet Classement de la page Brisage et obtient la list
 **Scénarios d'acceptation** :
 
 1. **Étant donné** plusieurs objets au prix connu, **quand** j'ouvre le Classement, **alors** ils sont listés du gain le plus élevé au plus faible par défaut.
-2. **Étant donné** un objet du classement, **quand** je compare avec sa fiche (même serveur, même mode de prix, mêmes jets moyens), **alors** le gain, le meilleur choix et le seuil de coefficient sont les mêmes.
+2. **Étant donné** un objet du classement sans ligne négative, **quand** je compare avec sa fiche (même serveur, même mode de prix, prix HDV, mêmes jets moyens), **alors** le gain, le meilleur choix et le seuil de coefficient sont les mêmes.
 3. **Étant donné** un objet qui ne couvre pas son prix même avec le meilleur choix, **quand** il apparaît, **alors** son gain est négatif et affiché comme une perte, en bas du classement par défaut.
 4. **Étant donné** que le serveur de jeu actif change, **quand** le classement se met à jour, **alors** il n'utilise que les prix et coefficients de ce serveur.
 
@@ -193,7 +193,7 @@ Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'
 ### Résultats mesurables
 
 - **SC-001** : Le propriétaire trouve les 10 objets les plus rentables de son serveur en moins de 10 secondes après l'ouverture de l'onglet, sans ouvrir aucune fiche.
-- **SC-002** : Pour 100 % des objets d'un échantillon de contrôle, le gain, le meilleur choix et le seuil de coefficient du classement sont identiques à ceux de la fiche objet de ce même objet.
+- **SC-002** : Pour 100 % des objets sans ligne négative d'un échantillon de contrôle, le gain, le meilleur choix et le seuil de coefficient du classement sont identiques à ceux de la fiche objet de ce même objet.
 - **SC-003** : Le tri par colonne et l'application d'un filtre donnent leur résultat en moins d'une seconde, même avec plusieurs milliers d'objets listés.
 - **SC-004** : 0 objet sans coefficient connu n'est présenté avec un gain en kamas précis : tous portent la mention « coefficient inconnu » et un seuil de coefficient.
 - **SC-007** : Pour 100 % des objets d'un échantillon de contrôle, le gain avec exo est égal à celui de la fiche objet avec cet exo, diminué du prix d'une rune de l'exo.
@@ -202,8 +202,9 @@ Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'
 
 ## Hypothèses
 
-- Le classement ne couvre que les objets dont le prix est connu (prix noté sur la page Recherche ou coût de craft calculable), car sans prix aucun gain ne peut être calculé ; ceux sans prix ne sont listés que si l'option de masquage est décochée.
-- Les gains sont calculés avec les jets moyens des lignes et sans exo ni jet saisi à la main : le classement sert à repérer, la fiche à affiner.
+- Le classement ne couvre que les objets dont le prix en HDV est connu (prix noté sur la page Recherche, personnel ou communautaire selon le mode actif), car sans prix aucun gain ne peut être calculé. Le coût de la chaîne de craft n'est pas utilisé dans cette première version (il demande de lire les recettes de chaque objet) ; la fiche, elle, continue de le proposer.
+- Les objets sans prix ne sont listés que si l'option de masquage est décochée, et sans gain.
+- Les gains sont calculés avec les jets moyens des lignes positives et sans jet saisi à la main : le classement sert à repérer, la fiche à affiner. Les lignes négatives (malus) ne sont pas lues par le classement ; elles ne changent que très peu un focus, donc un écart minime avec la fiche est attendu et signalé.
 - Pour un objet sans coefficient connu, le seuil de coefficient requis vient du calcul déjà présent dans la fiche sans coefficient (`specs/063-brisage-sans-coefficient`). Ce classement mesure la résistance à un mauvais coefficient, pas le gain réel.
 - Un exo vaut une unité de la stat par défaut (une rune de base) ; ce réglage pourra évoluer plus tard. Le coût de pose retenu est le prix d'une rune de cette stat, au minimum.
 - Le seuil de péremption d'une donnée « ancienne » est de 7 jours, valeur modifiable plus tard.
