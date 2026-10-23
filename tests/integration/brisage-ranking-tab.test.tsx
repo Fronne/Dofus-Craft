@@ -13,6 +13,11 @@ vi.mock('../../src/services/community-price-api', () => ({
   getLatestItemPrice: vi.fn().mockResolvedValue({ status: 'not-found' }),
 }));
 
+const getSiteSettings = vi.fn();
+vi.mock('../../src/services/site-settings-api', () => ({
+  getSiteSettings: (...args: unknown[]) => getSiteSettings(...args),
+}));
+
 const getSharedCoefficients = vi.fn();
 vi.mock('../../src/services/brisage-coefficient-api', () => ({
   MAX_ITEMS_PER_READ: 96,
@@ -102,6 +107,8 @@ describe('Brisage ranking tab (specs/072)', () => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
     forgetSharedCoefficients();
+    getSiteSettings.mockReset();
+    getSiteSettings.mockResolvedValue(undefined);
     getSharedCoefficients.mockReset();
     getSharedCoefficients.mockResolvedValue(new Map());
     getSharedItemPrices.mockReset();
@@ -119,6 +126,21 @@ describe('Brisage ranking tab (specs/072)', () => {
       expect(screen.queryByText('Classement')).not.toBeInTheDocument();
       expect(getSharedCoefficients).not.toHaveBeenCalled();
       expect(getSharedItemPrices).not.toHaveBeenCalled();
+    });
+
+    // specs/072 (T037): the owner opens the tab to everyone from the administration page.
+    it('shows the tab to a visitor when the shared setting is on', async () => {
+      const { DEFAULT_SITE_SETTINGS } = await import('../../src/domain/site-settings');
+      getSiteSettings.mockResolvedValue({ ...DEFAULT_SITE_SETTINGS, brisageRanking: true });
+      await openBrisage();
+      expect(await screen.findByRole('tab', { name: 'Classement' })).toBeInTheDocument();
+    });
+
+    it('keeps the tab hidden when the shared setting is off', async () => {
+      const { DEFAULT_SITE_SETTINGS } = await import('../../src/domain/site-settings');
+      getSiteSettings.mockResolvedValue({ ...DEFAULT_SITE_SETTINGS, brisageRanking: false });
+      await openBrisage();
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     });
 
     it('opens with ?classement=1, takes the parameter off the address and keeps the access after a reload', async () => {

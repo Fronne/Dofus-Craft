@@ -28,7 +28,15 @@ describe('site settings rules', () => {
   it('has the Forgemagie page disabled and the six others enabled by default', () => {
     expect(DEFAULT_SITE_SETTINGS).toEqual({
       searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true,
+      brisageRanking: false,
     });
+  });
+
+  // specs/072-classement-brisage: the ranking is reserved to the owner until the setting is turned on, and is not a page.
+  it('keeps the Brisage ranking closed by default and does not count it as a page', () => {
+    expect(DEFAULT_SITE_SETTINGS.brisageRanking).toBe(false);
+    expect(enabledPageCount({ ...DEFAULT_SITE_SETTINGS, brisageRanking: true })).toBe(enabledPageCount(DEFAULT_SITE_SETTINGS));
+    expect(isLastEnabledPage({ ...DEFAULT_SITE_SETTINGS, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false, brisagePage: false, brisageRanking: true }, 'brisageRanking')).toBe(false);
   });
 
   it.each([

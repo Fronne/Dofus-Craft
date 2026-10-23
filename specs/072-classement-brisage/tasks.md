@@ -167,8 +167,8 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **But** : FR-012, deuxième moitié — passer de « seulement moi » à « tout le monde » sans livraison de code.
 
-- [ ] T036 Après confirmation, ajouter un réglage booléen `brisageRanking` (défaut : faux) hors de la liste `SITE_PAGES` dans `src/domain/site-settings.ts`, sa lecture dans `worker/src/site-settings.ts`, son écriture dans `admin-worker/src/settings.ts` et un interrupteur dans `admin/SiteSettingsEditor.tsx`, avec les tests existants adaptés (`tests/unit/site-settings-domain.test.ts`, `tests/unit/site-settings-route.test.ts`) ; vérifier d'abord la contrainte de clés de la table `site_settings` (`worker/schema.sql`, `worker/migrations/0023_widen_site_settings_keys.sql`, `tests/unit/worker-schema.test.ts`) et, si une migration est nécessaire, ne rien appliquer en distant sans suivre le skill `cloudflare-d1-deploy`
-- [ ] T037 Dans `src/features/brisage/BrisagePage.tsx`, afficher l'onglet si l'accès local est accordé **ou** si le réglage partagé est activé
+- [x] T036 Après confirmation, ajouter un réglage booléen `brisageRanking` (défaut : faux) hors de la liste `SITE_PAGES` dans `src/domain/site-settings.ts`, sa lecture dans `worker/src/site-settings.ts`, son écriture dans `admin-worker/src/settings.ts` et un interrupteur dans `admin/SiteSettingsEditor.tsx`, avec les tests existants adaptés (`tests/unit/site-settings-domain.test.ts`, `tests/unit/site-settings-route.test.ts`) ; vérifier d'abord la contrainte de clés de la table `site_settings` (`worker/schema.sql`, `worker/migrations/0023_widen_site_settings_keys.sql`, `tests/unit/worker-schema.test.ts`) et, si une migration est nécessaire, ne rien appliquer en distant sans suivre le skill `cloudflare-d1-deploy`
+- [x] T037 Dans `src/features/brisage/BrisagePage.tsx`, afficher l'onglet si l'accès local est accordé **ou** si le réglage partagé est activé
 
 ---
 

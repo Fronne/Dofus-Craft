@@ -285,6 +285,20 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       expect(within(section).getByRole('button', { name: 'Activer la page HDV' })).toBeInTheDocument();
     });
 
+    // specs/072-classement-brisage (T036): the owner opens the Brisage ranking tab to everyone, or takes it back.
+    it('opens the Brisage ranking to everyone in one click, without touching a page', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, brisageRanking: false } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, brisageRanking: true } });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      expect(await within(section).findByText('Réservé au propriétaire')).toBeInTheDocument();
+      fireEvent.click(within(section).getByRole('button', { name: 'Ouvrir à tous : Classement Brisage' }));
+      expect(await within(section).findByText('Classement Brisage ouvert à tous.')).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ brisageRanking: true });
+      expect(within(section).getByRole('button', { name: 'Réserver au propriétaire : Classement Brisage' })).toBeInTheDocument();
+    });
+
     it('disables an enabled page', async () => {
       api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
       api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });

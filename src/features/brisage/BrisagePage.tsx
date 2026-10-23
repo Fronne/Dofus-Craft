@@ -20,7 +20,8 @@ import {
 } from '../../domain/brisage';
 import { resolveItemPrice } from '../../domain/brisage-price';
 import { DEFAULT_RANKING_VIEW, type RankingView } from '../../domain/brisage-ranking';
-import { applyRankingAccessFromSearch, withoutRankingParameter } from '../../persistence/brisage-ranking-access';
+import { useSiteSettings } from '../../app/useSiteSettings';
+import { applyRankingAccessFromSearch,withoutRankingParameter } from '../../persistence/brisage-ranking-access';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
 import { getStoredCoefficient, hasImportedCoefficients, listImportableCoefficients, markCoefficientsImported, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
@@ -100,11 +101,14 @@ function mergeRanges(ranges: Range[]): Range[] {
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   // specs/072-classement-brisage (US6): the Classement tab exists only for the owner, who opens it with `?classement=1`.
-  const [rankingAccess] = useState(() => {
+  // The owner can also open it to everyone with the shared `brisageRanking` setting (administration page).
+  const [localRankingAccess] = useState(() => {
     const { access, touched } = applyRankingAccessFromSearch(window.location.search);
     if (touched) window.history.replaceState(window.history.state, '', withoutRankingParameter(window.location));
     return access;
   });
+  const { settings: siteSettings } = useSiteSettings();
+  const rankingAccess = localRankingAccess || siteSettings.brisageRanking;
   const [tab, setTab] = useState<'sheet' | 'ranking'>('sheet');
   // The sort and filters of the ranking live here so they survive a trip to the item page (FR-010).
   const [rankingView, setRankingView] = useState<RankingView>(DEFAULT_RANKING_VIEW);

@@ -12,14 +12,25 @@ export const SITE_PAGES = [
   { field: 'brisagePage', key: 'brisage_page', label: 'Brisage', route: 'brisage', enabledByDefault: true },
 ] as const;
 
+// specs/072-classement-brisage: a setting that is not a page of the navigation. Stored and edited like the pages, but
+// it has no route and does not count as a page.
+export const SITE_FEATURES = [
+  { field: 'brisageRanking', key: 'brisage_ranking', label: 'Classement Brisage', enabledByDefault: false },
+] as const;
+
 export type SitePage = (typeof SITE_PAGES)[number];
-export type SiteSettingField = SitePage['field'];
+export type SitePageField = SitePage['field'];
+export type SiteFeature = (typeof SITE_FEATURES)[number];
+export type SiteSettingField = SitePageField | SiteFeature['field'];
 // The key of the page in the site's ROUTES (src/app/router.tsx), which this module does not import: the Workers share it.
 export type SiteRouteKey = SitePage['route'];
 
 export type SiteSettings = Record<SiteSettingField, boolean>;
 
-export const DEFAULT_SITE_SETTINGS = Object.fromEntries(SITE_PAGES.map((page) => [page.field, page.enabledByDefault])) as SiteSettings;
+// Every stored setting: the pages, then the other settings.
+export const SITE_SETTING_ENTRIES: readonly { field: SiteSettingField; key: string; enabledByDefault: boolean }[] = [...SITE_PAGES, ...SITE_FEATURES];
+
+export const DEFAULT_SITE_SETTINGS = Object.fromEntries(SITE_SETTING_ENTRIES.map((entry) => [entry.field, entry.enabledByDefault])) as SiteSettings;
 
 // What the administration sends: only the settings it changes, so one never overwrites another.
 export type SiteSettingsChange = Partial<SiteSettings>;
@@ -38,7 +49,7 @@ export function parseSiteSettings(value: unknown): SiteSettings | undefined {
   const record = value as Record<string, unknown>;
   if (typeof record.forgemagiePage !== 'boolean') return undefined;
   const settings = { ...DEFAULT_SITE_SETTINGS };
-  for (const { field } of SITE_PAGES) {
+  for (const { field } of SITE_SETTING_ENTRIES) {
     if (record[field] === undefined) continue;
     if (typeof record[field] !== 'boolean') return undefined;
     settings[field] = record[field];
@@ -50,7 +61,7 @@ export function validateSiteSettingsChange(input: unknown): SiteSettingsValidati
   if (typeof input !== 'object' || input === null) return { ok: false, field: 'forgemagiePage', error: INVALID_VALUE };
   const record = input as Record<string, unknown>;
   const change: SiteSettingsChange = {};
-  for (const { field } of SITE_PAGES) {
+  for (const { field } of SITE_SETTING_ENTRIES) {
     if (record[field] === undefined) continue;
     if (typeof record[field] !== 'boolean') return { ok: false, field, error: INVALID_VALUE };
     change[field] = record[field];
@@ -59,6 +70,7 @@ export function validateSiteSettingsChange(input: unknown): SiteSettingsValidati
   return { ok: true, value: change };
 }
 
+// Only the pages count: the other settings (specs/072) are not pages of the navigation.
 export const enabledPageCount = (settings: SiteSettings): number => SITE_PAGES.filter((page) => settings[page.field]).length;
 
 // The first page of the navigation that is on: where the site's entry points (home, logo, « back » links) lead.
@@ -66,4 +78,4 @@ export const firstEnabledPage = (settings: SiteSettings): SitePage | undefined =
 
 // True when `field` is on and is the only page left on: turning it off would leave the site without a page.
 export const isLastEnabledPage = (settings: SiteSettings, field: SiteSettingField): boolean =>
-  settings[field] && enabledPageCount(settings) === 1;
+  SITE_PAGES.some((page) => page.field === field) && settings[field] && enabledPageCount(settings) === 1;
