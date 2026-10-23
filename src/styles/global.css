@@ -2756,13 +2756,27 @@ select:focus {
 .brisage-stat-icon:empty { display: none; }
 
 /* Price source: the same pills as the categories. */
-.brisage-price-source { display: flex; flex-wrap: wrap; gap: .5rem; }
-.brisage-price-source label { display: inline-flex; align-items: center; min-height: 40px; padding: .4rem .9rem; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); font-size: .88rem; font-weight: 700; cursor: pointer; transition: border-color .15s, background-color .15s, color .15s; }
-.brisage-price-source label:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
-.brisage-price-source label.is-selected { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
-.brisage-price-source label:focus-within { outline: 2px solid var(--link); outline-offset: 2px; }
+/* Achat | Craft: one switch, each side shows its own price; the lit side is the one the figures use. */
+.brisage-price-source { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); }
+.brisage-price-source label { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .4rem 1rem; border-radius: var(--radius-pill); color: var(--text-muted); font-size: .88rem; font-weight: 700; cursor: pointer; transition: color .2s; }
+.brisage-price-source label:hover, .brisage-price-source label.is-selected { color: var(--accent-bright); }
+.brisage-price-source label.is-selected.is-overridden { color: var(--text-muted); }
+.brisage-price-source label:has(input:focus-visible) { outline: 2px solid var(--link); outline-offset: -2px; }
+/* The sliding pill: it travels from Achat to Craft and fades while a custom price is typed. */
+.brisage-switch-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: var(--radius-pill); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--border-strong); transition: transform .22s ease, opacity .2s; }
+.brisage-price-source[data-side="craft"] .brisage-switch-thumb { transform: translateX(calc(100% + 2px)); }
+.brisage-price-source[data-custom] .brisage-switch-thumb { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .brisage-switch-thumb { transition: none; } }
+.brisage-price-source .brisage-cost, .brisage-item-head .brisage-price-source .brisage-cost { height: auto; font-size: 1.05rem; }
+.brisage-price-source .brisage-cost .kamas-amount-icon { width: 16px; height: 16px; }
+.brisage-seg-price { font-family: var(--font-display); font-size: 1.05rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.brisage-perso-button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color .15s, color .15s; }
+.brisage-perso-button:hover { background: var(--accent-soft); color: var(--accent-bright); }
+.brisage-perso-button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.brisage-perso-field { display: inline-flex; align-items: center; gap: var(--space-2); }
 /* specs/070-atelier-prix-craft-brisage: opens the window of the resource prices, as a link beside the note on where the craft price comes from. */
 .brisage-price-notes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.brisage-price-notes .brisage-price-origin { display: inline-flex; align-items: center; min-height: 28px; }
 .brisage-craft-prices-button { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: .2rem .6rem; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--accent-bright); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; transition: background-color .15s; }
 .brisage-craft-prices-button:hover { background: var(--accent-soft); }
 .brisage-craft-prices-button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
