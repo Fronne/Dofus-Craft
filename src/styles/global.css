@@ -2268,11 +2268,13 @@ select:focus {
 .results button:nth-child(n + 6) { animation-delay: 150ms; }
 
 /* The logo's halo breathes, and the egg leans under the pointer. */
+/* specs/074: --brand-glow-rest / --brand-glow-peak strengthen the halo of the Dofus whose picture
+   hardly glows on its own (ébène, ivoire); the others keep these values. */
 @keyframes egg-glow {
-  50% { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent)); }
+  50% { filter: var(--brand-glow-peak, drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent))); }
 }
 .app-nav-brand-mark {
-  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent));
+  filter: var(--brand-glow-rest, drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent)));
   animation: egg-glow 4.5s ease-in-out infinite;
   transition: transform var(--transition-fast);
 }
@@ -2489,6 +2491,8 @@ select:focus {
     width: var(--side-art);
     background: top / cover no-repeat;
     opacity: .4;
+    /* specs/074: the art is blue-grey; each Dofus theme turns it toward its own hue (theme.css). */
+    filter: var(--side-art-filter, none);
     pointer-events: none;
     animation: fade-in 900ms ease-out both;
   }
@@ -2563,7 +2567,7 @@ select:focus {
 /* The two groups of columns, framed: violet for the normal breaking, green for the focus. */
 @media (min-width: 641px) {
   .brisage-table .brisage-group--plain { color: #d9c9ff; background: rgba(150, 120, 255, .26); border: 2px solid #b99cff; border-bottom: 0; border-radius: 12px 12px 0 0; }
-  .brisage-table .brisage-group--focus { color: #d4f08a; background: color-mix(in srgb, var(--accent) 28%, transparent); border: 2px solid var(--accent); border-bottom: 0; border-radius: 12px 12px 0 0; }
+  .brisage-table .brisage-group--focus { color: var(--brisage-focus-text, #d4f08a); background: color-mix(in srgb, var(--accent) 28%, transparent); border: 2px solid var(--accent); border-bottom: 0; border-radius: 12px 12px 0 0; }
   .brisage-table thead tr:nth-child(2) th { color: var(--text-muted); }
   .brisage-table thead tr:nth-child(2) th:nth-child(-n+2) { background: rgba(150, 120, 255, .16); }
   .brisage-table thead tr:nth-child(2) th:nth-child(n+3) { background: color-mix(in srgb, var(--accent) 17%, transparent); }

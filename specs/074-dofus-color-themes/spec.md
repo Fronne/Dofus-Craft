@@ -76,7 +76,7 @@ Le Dofus choisi est mémorisé : l'utilisateur le retrouve à sa prochaine visit
 - **FR-005**: L'icône du site dans la barre de navigation MUST afficher l'image du Dofus sélectionné.
 - **FR-006**: Les images des six Dofus MUST provenir de DofusDB, comme celle de l'émeraude aujourd'hui.
 - **FR-007**: Le choix MUST être mémorisé d'une visite à l'autre et appliqué dès l'affichage de la page, sans flash de l'ancien thème.
-- **FR-008**: Le thème émeraude MUST rester le thème par défaut, et son rendu MUST rester identique à l'actuel.
+- **FR-008**: Le thème émeraude MUST rester le thème par défaut. Son rendu reste celui d'origine, à une exception demandée après la livraison : ses lueurs de fond sont adoucies comme celles des autres thèmes.
 - **FR-009**: Les textes, boutons et indicateurs MUST rester lisibles avec chacun des six Dofus dans les deux modes (contraste suffisant).
 - **FR-010**: Les couleurs à signification fixe (kamas, avertissement, erreur) MUST garder leur rôle avec tous les thèmes.
 

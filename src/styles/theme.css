@@ -61,9 +61,9 @@
   --image-veil: linear-gradient(180deg, rgba(9, 13, 20, .88) 0%, rgba(9, 13, 20, .68) 38%, rgba(9, 13, 20, .8) 100%);
   /* Light behind the page: a turquoise and a green glow at the top, fainter ones lower down. */
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .14), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .26), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .12), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .08), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
     linear-gradient(180deg, #0d2f36 0%, #0a2228 32%, #071619 100%);
   /* The top navigation bar: see-through, since the page scrolls under it. */
@@ -144,9 +144,9 @@
   --border-control: #6f8f8c;
   --scrim: rgba(9, 30, 34, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(38, 166, 154, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(137, 184, 32, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(38, 166, 154, .05), transparent 70%),
     linear-gradient(180deg, #eef6f4 0%, #e2efec 100%);
   --nav-bg: rgba(255, 255, 255, .78);
   --shadow-sm: 0 1px 2px rgba(13, 60, 66, .05), 0 10px 28px -14px rgba(13, 60, 66, .16);
@@ -166,93 +166,101 @@
 
 /* Dofus Pourpre */
 :root[data-dofus="pourpre"] {
-  --bg: #190b12;
-  --panel: rgba(62, 24, 43, .78);
-  --panel-strong: #3e192b;
-  --panel-soft: #502138;
-  --text-muted: #d8cbd1;
-  --text-faint: #b6a5ad;
-  --on-accent: #2a0716;
-  --accent: #e56192;
-  --accent-bright: #f27da8;
-  --accent-gradient-from: #e25a8c;
-  --accent-gradient-to: #d65182;
-  --success: #e56192;
-  --border: rgba(232, 125, 164, .18);
-  --border-control: #967385;
-  --scrim: rgba(14, 6, 10, .66);
+  --bg: #1c0a07;
+  --panel: rgba(71, 21, 16, .78);
+  --panel-strong: #461610;
+  --panel-soft: #5b1c15;
+  --text-muted: #d8cccb;
+  --text-faint: #b6a7a5;
+  --brisage-focus-text: color-mix(in srgb, var(--accent-bright) 45%, #ffffff);
+  --on-accent: #2a0804;
+  --accent: #ff6229;
+  --accent-bright: #ff985c;
+  --accent-gradient-from: #ffbb33;
+  --accent-gradient-to: #fa3019;
+  --success: #ff6229;
+  --danger: #ff7fa6;
+  --side-art-filter: hue-rotate(132deg) saturate(1.1);
+  --border: rgba(232, 132, 125, 0.26);
+  --border-control: #967773;
+  --scrim: rgba(16, 5, 4, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(184, 30, 87, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 43, 171, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(184, 30, 87, .14), transparent 70%),
-    radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #2a131f 0%, #200e17 32%, #15090f 100%);
-  --nav-bg: rgba(32, 14, 23, .72);
-  --input-bg: rgba(18, 8, 13, .55);
-  --button-bg: rgba(232, 125, 164, .07);
-  --image-bg: rgba(18, 8, 13, .45);
-  --inner-bg: rgba(18, 8, 13, .4);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(214, 14, 0, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 73, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(214, 14, 0, 0.11), transparent 70%),
+    radial-gradient(44rem 16rem at 50% 118%, rgba(255, 119, 0, .42), transparent 70%),
+    linear-gradient(180deg, #30100d 0%, #240c0a 32%, #180806 100%);
+  --nav-bg: rgba(36, 12, 10, .72);
+  --input-bg: rgba(20, 7, 5, .55);
+  --button-bg: rgba(232, 132, 125, .07);
+  --image-bg: rgba(20, 7, 5, .45);
+  --inner-bg: rgba(20, 7, 5, .4);
 }
 :root[data-dofus="pourpre"][data-theme="light"] {
-  color: #301221;
-  --bg: #f4ebf0;
+  color: #301512;
+  --bg: #f4eceb;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #eddee6;
-  --text: #301221;
-  --text-muted: #5a3a4a;
-  --text-faint: #624754;
+  --panel-soft: #eddfde;
+  --text: #301512;
+  --text-muted: #5a3d3a;
+  --text-faint: #624947;
+  --brisage-focus-text: var(--accent-bright);
   --on-accent: #ffffff;
-  --accent: #8f1944;
-  --accent-bright: #721336;
-  --accent-gradient-from: #8f1944;
-  --accent-gradient-to: #751538;
-  --success: #8f1944;
-  --border: rgba(84, 28, 56, .14);
-  --border-control: #806070;
-  --scrim: rgba(43, 18, 31, .5);
+  --accent: #a52612;
+  --accent-bright: #821c0d;
+  --accent-gradient-from: #a52612;
+  --accent-gradient-to: #8a200f;
+  --success: #a52612;
+  --danger: #b0224f;
+  --side-art-filter: hue-rotate(132deg) saturate(1.1);
+  --border: rgba(84, 34, 28, .14);
+  --border-control: #806460;
+  --scrim: rgba(43, 21, 18, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(202, 33, 95, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 47, 188, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(202, 33, 95, .08), transparent 70%),
-    linear-gradient(180deg, #f6eef2 0%, #efe1e8 100%);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(235, 16, 0, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 80, 47, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(235, 16, 0, .05), transparent 70%),
+    linear-gradient(180deg, #f6efee 0%, #efe3e1 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(84, 28, 56, .06);
-  --button-bg: rgba(84, 28, 56, .05);
-  --image-bg: rgba(84, 28, 56, .07);
-  --inner-bg: rgba(84, 28, 56, .05);
+  --input-bg: rgba(84, 34, 28, .06);
+  --button-bg: rgba(84, 34, 28, .05);
+  --image-bg: rgba(84, 34, 28, .07);
+  --inner-bg: rgba(84, 34, 28, .05);
 }
 
 /* Dofus Turquoise */
 :root[data-dofus="turquoise"] {
-  --bg: #0a111a;
-  --panel: rgba(21, 41, 65, .78);
-  --panel-strong: #162941;
-  --panel-soft: #1d3554;
+  --bg: #0b1119;
+  --panel: rgba(24, 41, 62, .78);
+  --panel-strong: #192a3e;
+  --panel-soft: #213650;
   --text-muted: #cbd0d8;
   --text-faint: #a5adb6;
+  --brisage-focus-text: color-mix(in srgb, var(--accent-bright) 45%, #ffffff);
   --on-accent: #032421;
   --accent: #29d6d0;
   --accent-bright: #50e2d9;
-  --accent-gradient-from: #34d5d0;
-  --accent-gradient-to: #18a0a0;
+  --accent-gradient-from: #38dcc6;
+  --accent-gradient-to: #18a4b4;
   --success: #29d6d0;
   --link: #7fb8ff;
   --link-strong: #4a8fe0;
-  --border: rgba(125, 232, 228, .18);
+  --side-art-filter: hue-rotate(-35deg);
+  --border: rgba(125, 232, 228, 0.18);
   --border-control: #738396;
-  --scrim: rgba(6, 10, 15, .66);
+  --scrim: rgba(6, 10, 14, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(32, 182, 177, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(43, 139, 171, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(32, 182, 177, .14), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(32, 182, 177, 0.26), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(43, 139, 171, 0.12), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(32, 182, 177, 0.08), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #111d2c 0%, #0d1621 32%, #080f16 100%);
-  --nav-bg: rgba(13, 22, 33, .72);
-  --input-bg: rgba(7, 12, 18, .55);
+    linear-gradient(180deg, #131d2a 0%, #0e1620 32%, #090f15 100%);
+  --nav-bg: rgba(14, 22, 32, .72);
+  --input-bg: rgba(8, 12, 18, .55);
   --button-bg: rgba(125, 232, 228, .07);
-  --image-bg: rgba(7, 12, 18, .45);
-  --inner-bg: rgba(7, 12, 18, .4);
+  --image-bg: rgba(8, 12, 18, .45);
+  --inner-bg: rgba(8, 12, 18, .4);
 }
 :root[data-dofus="turquoise"][data-theme="light"] {
   color: #122030;
@@ -263,6 +271,7 @@
   --text: #122030;
   --text-muted: #3a485a;
   --text-faint: #475362;
+  --brisage-focus-text: var(--accent-bright);
   --on-accent: #ffffff;
   --accent: #056161;
   --accent-bright: #024d50;
@@ -271,13 +280,14 @@
   --success: #056161;
   --link: #1d5fb8;
   --link-strong: #2a76d6;
+  --side-art-filter: hue-rotate(-35deg);
   --border: rgba(28, 53, 84, .14);
   --border-control: #606f80;
   --scrim: rgba(18, 29, 43, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(35, 199, 194, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(47, 152, 188, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(35, 199, 194, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(35, 199, 194, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(47, 152, 188, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(35, 199, 194, .05), transparent 70%),
     linear-gradient(180deg, #eef2f6 0%, #e1e7ef 100%);
   --nav-bg: rgba(255, 255, 255, .78);
   --input-bg: rgba(28, 53, 84, .06);
@@ -288,179 +298,202 @@
 
 /* Dofus Ocre */
 :root[data-dofus="ocre"] {
-  --bg: #19120b;
-  --panel: rgba(63, 43, 23, .78);
-  --panel-strong: #3e2b18;
-  --panel-soft: #51381f;
-  --text-muted: #d8d1cb;
-  --text-faint: #b6ada5;
-  --on-accent: #2a1202;
-  --accent: #eb8f33;
-  --accent-bright: #f6a951;
-  --accent-gradient-from: #ee9a3a;
-  --accent-gradient-to: #e3791c;
-  --success: #eb8f33;
-  --border: rgba(232, 179, 125, .18);
-  --border-control: #968573;
-  --scrim: rgba(14, 10, 6, .66);
+  --bg: #0c1117;
+  --panel: rgba(28, 40, 59, .78);
+  --panel-strong: #1d283a;
+  --panel-soft: #25344b;
+  --text-muted: #cbd0d8;
+  --text-faint: #a5acb6;
+  --brisage-focus-text: color-mix(in srgb, var(--accent-bright) 45%, #ffffff);
+  --on-accent: #241a02;
+  --accent: #fdcc2b;
+  --accent-bright: #ffdd57;
+  --accent-gradient-from: #ffe642;
+  --accent-gradient-to: #f79f08;
+  --success: #fdcc2b;
+  --warning: #ff9a52;
+  --side-art-filter: hue-rotate(-35deg);
+  --border: rgba(125, 170, 232, 0.26);
+  --border-control: #738196;
+  --scrim: rgba(7, 10, 13, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(193, 107, 21, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 139, 43, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(193, 107, 21, .14), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(60, 99, 154, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(60, 99, 154, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #2b1f12 0%, #20170e 32%, #150f09 100%);
-  --nav-bg: rgba(32, 23, 14, .72);
-  --input-bg: rgba(18, 13, 8, .55);
-  --button-bg: rgba(232, 179, 125, .07);
-  --image-bg: rgba(18, 13, 8, .45);
-  --inner-bg: rgba(18, 13, 8, .4);
+    linear-gradient(180deg, #151d28 0%, #10161e 32%, #0b0e14 100%);
+  --nav-bg: rgba(16, 22, 30, .72);
+  --input-bg: rgba(9, 12, 17, .55);
+  --button-bg: rgba(125, 170, 232, .07);
+  --image-bg: rgba(9, 12, 17, .45);
+  --inner-bg: rgba(9, 12, 17, .4);
 }
 :root[data-dofus="ocre"][data-theme="light"] {
-  color: #302112;
-  --bg: #f4f0eb;
+  color: #121e30;
+  --bg: #ebeff4;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #ede6de;
-  --text: #302112;
-  --text-muted: #5a4a3a;
-  --text-faint: #625447;
+  --panel-soft: #dee4ed;
+  --text: #121e30;
+  --text-muted: #3a475a;
+  --text-faint: #475162;
+  --brisage-focus-text: var(--accent-bright);
   --on-accent: #ffffff;
-  --accent: #8a440f;
-  --accent-bright: #6f370b;
-  --accent-gradient-from: #8a440f;
-  --accent-gradient-to: #73390d;
-  --success: #8a440f;
-  --border: rgba(84, 56, 28, .14);
-  --border-control: #807060;
-  --scrim: rgba(43, 31, 18, .5);
+  --accent: #866509;
+  --accent-bright: #6b5006;
+  --accent-gradient-from: #866509;
+  --accent-gradient-to: #6e5307;
+  --success: #866509;
+  --warning: #a8470d;
+  --side-art-filter: hue-rotate(-35deg);
+  --border: rgba(28, 50, 84, .14);
+  --border-control: #606d80;
+  --scrim: rgba(18, 28, 43, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(211, 117, 23, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 152, 47, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(211, 117, 23, .08), transparent 70%),
-    linear-gradient(180deg, #f6f2ee 0%, #efe8e1 100%);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(66, 109, 169, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 155, 47, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(66, 109, 169, .05), transparent 70%),
+    linear-gradient(180deg, #eef1f6 0%, #e1e7ef 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(84, 56, 28, .06);
-  --button-bg: rgba(84, 56, 28, .05);
-  --image-bg: rgba(84, 56, 28, .07);
-  --inner-bg: rgba(84, 56, 28, .05);
+  --input-bg: rgba(28, 50, 84, .06);
+  --button-bg: rgba(28, 50, 84, .05);
+  --image-bg: rgba(28, 50, 84, .07);
+  --inner-bg: rgba(28, 50, 84, .05);
 }
 
 /* Dofus Ébène */
 :root[data-dofus="ebene"] {
-  --bg: #0e0f16;
-  --panel: rgba(31, 36, 55, .78);
-  --panel-strong: #202537;
-  --panel-soft: #2a2f47;
-  --text-muted: #cbcdd8;
-  --text-faint: #a5a9b6;
-  --on-accent: #0c1020;
-  --accent: #97a7ce;
-  --accent-bright: #b6c3e2;
-  --accent-gradient-from: #9cadd3;
-  --accent-gradient-to: #7a8bb8;
-  --success: #97a7ce;
-  --border: rgba(125, 157, 232, .18);
-  --border-control: #737a96;
-  --scrim: rgba(8, 9, 12, .66);
+  --bg: #131111;
+  --panel: rgba(48, 39, 40, .78);
+  --panel-strong: #2f2829;
+  --panel-soft: #3d3435;
+  --text-muted: #d8cbcd;
+  --text-faint: #b6a5a8;
+  --brisage-focus-text: color-mix(in srgb, var(--accent-bright) 45%, #ffffff);
+  --on-accent: #2a0610;
+  --accent: #f23655;
+  --accent-bright: #f8627b;
+  --accent-gradient-from: #f86271;
+  --accent-gradient-to: #ee3a6a;
+  --success: #f23655;
+  --danger: #ff8a3d;
+  --side-art-filter: hue-rotate(140deg) saturate(.45);
+  --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+  --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
+  --border: rgba(232, 125, 143, 0.26);
+  --border-control: #967379;
+  --scrim: rgba(11, 10, 10, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(71, 93, 144, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(64, 43, 171, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(71, 93, 144, .14), transparent 70%),
-    radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #181b25 0%, #12141c 32%, #0c0d13 100%);
-  --nav-bg: rgba(18, 20, 28, .72);
-  --input-bg: rgba(10, 11, 16, .55);
-  --button-bg: rgba(125, 157, 232, .07);
-  --image-bg: rgba(10, 11, 16, .45);
-  --inner-bg: rgba(10, 11, 16, .4);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(203, 11, 43, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 43, 64, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(203, 11, 43, 0.11), transparent 70%),
+    linear-gradient(180deg, #201d1e 0%, #181616 32%, #100f0f 100%);
+  --nav-bg: rgba(24, 22, 22, .72);
+  --input-bg: rgba(13, 12, 12, .55);
+  --button-bg: rgba(232, 125, 143, .07);
+  --image-bg: rgba(13, 12, 12, .45);
+  --inner-bg: rgba(13, 12, 12, .4);
 }
 :root[data-dofus="ebene"][data-theme="light"] {
-  color: #121830;
-  --bg: #eceef3;
+  color: #301217;
+  --bg: #f0efef;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #e0e2eb;
-  --text: #121830;
-  --text-muted: #3a405a;
-  --text-faint: #474c62;
+  --panel-soft: #e7e4e5;
+  --text: #301217;
+  --text-muted: #5a3a3f;
+  --text-faint: #62474b;
+  --brisage-focus-text: var(--accent-bright);
   --on-accent: #ffffff;
-  --accent: #334371;
-  --accent-bright: #25335b;
-  --accent-gradient-from: #334371;
-  --accent-gradient-to: #29375b;
-  --success: #334371;
-  --border: rgba(28, 39, 84, .14);
-  --border-control: #606780;
-  --scrim: rgba(18, 23, 43, .5);
+  --accent: #9e1a30;
+  --accent-bright: #7c1324;
+  --accent-gradient-from: #9e1a30;
+  --accent-gradient-to: #841528;
+  --success: #9e1a30;
+  --danger: #b45309;
+  --side-art-filter: hue-rotate(140deg) saturate(.45);
+  --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+  --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
+  --border: rgba(84, 28, 37, .14);
+  --border-control: #806066;
+  --scrim: rgba(43, 18, 22, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(77, 101, 157, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(70, 47, 188, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(77, 101, 157, .08), transparent 70%),
-    linear-gradient(180deg, #eff1f5 0%, #e3e5ed 100%);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(223, 12, 47, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 47, 70, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(223, 12, 47, .05), transparent 70%),
+    linear-gradient(180deg, #f3f2f2 0%, #e9e7e7 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(28, 39, 84, .06);
-  --button-bg: rgba(28, 39, 84, .05);
-  --image-bg: rgba(28, 39, 84, .07);
-  --inner-bg: rgba(28, 39, 84, .05);
+  --input-bg: rgba(84, 28, 37, .06);
+  --button-bg: rgba(84, 28, 37, .05);
+  --image-bg: rgba(84, 28, 37, .07);
+  --inner-bg: rgba(84, 28, 37, .05);
 }
 
 /* Dofus Ivoire */
 :root[data-dofus="ivoire"] {
-  --bg: #14130f;
-  --panel: rgba(52, 46, 35, .78);
-  --panel-strong: #332e24;
-  --panel-soft: #423b2e;
-  --text-muted: #d8d3cb;
-  --text-faint: #b6b0a5;
-  --on-accent: #241c08;
-  --accent: #e4d5aa;
-  --accent-bright: #f1e7c5;
-  --accent-gradient-from: #e8d9b0;
-  --accent-gradient-to: #c7ae75;
-  --success: #e4d5aa;
-  --border: rgba(232, 203, 125, .18);
-  --border-control: #968a73;
-  --scrim: rgba(12, 11, 9, .66);
+  --bg: #0b0f19;
+  --panel: rgba(23, 35, 63, .78);
+  --panel-strong: #18243e;
+  --panel-soft: #1f2e51;
+  --text-muted: #cbcfd8;
+  --text-faint: #a5aab6;
+  --brisage-focus-text: color-mix(in srgb, var(--accent-bright) 45%, #ffffff);
+  --on-accent: #1c1606;
+  --accent: #f1e0a7;
+  --accent-bright: #f9efc7;
+  --accent-gradient-from: #f7eebf;
+  --accent-gradient-to: #dcb66a;
+  --success: #f1e0a7;
+  --side-art-filter: hue-rotate(-26deg) saturate(.6);
+  --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+  --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
+  --border: rgba(125, 157, 232, 0.26);
+  --border-control: #737e96;
+  --scrim: rgba(6, 9, 14, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(161, 132, 54, .42), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 107, 43, .22), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(161, 132, 54, .14), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(48, 84, 166, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(48, 84, 166, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #23201a 0%, #1a1814 32%, #11100d 100%);
-  --nav-bg: rgba(26, 24, 20, .72);
-  --input-bg: rgba(15, 13, 11, .55);
-  --button-bg: rgba(232, 203, 125, .07);
-  --image-bg: rgba(15, 13, 11, .45);
-  --inner-bg: rgba(15, 13, 11, .4);
+    linear-gradient(180deg, #121a2b 0%, #0e1320 32%, #090d15 100%);
+  --nav-bg: rgba(14, 19, 32, .72);
+  --input-bg: rgba(8, 11, 18, .55);
+  --button-bg: rgba(125, 157, 232, .07);
+  --image-bg: rgba(8, 11, 18, .45);
+  --inner-bg: rgba(8, 11, 18, .4);
 }
 :root[data-dofus="ivoire"][data-theme="light"] {
-  color: #302612;
-  --bg: #f2f0ee;
+  color: #121b30;
+  --bg: #ebeef4;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #e9e7e2;
-  --text: #302612;
-  --text-muted: #5a4f3a;
-  --text-faint: #625947;
+  --panel-soft: #dee2ed;
+  --text: #121b30;
+  --text-muted: #3a435a;
+  --text-faint: #474f62;
+  --brisage-focus-text: var(--accent-bright);
   --on-accent: #ffffff;
   --accent: #735521;
   --accent-bright: #594118;
   --accent-gradient-from: #735521;
   --accent-gradient-to: #5f461c;
   --success: #735521;
-  --border: rgba(84, 65, 28, .14);
-  --border-control: #807560;
-  --scrim: rgba(43, 35, 18, .5);
+  --side-art-filter: hue-rotate(-26deg) saturate(.6);
+  --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+  --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
+  --border: rgba(28, 45, 84, .14);
+  --border-control: #606a80;
+  --scrim: rgba(18, 26, 43, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(176, 145, 59, .2), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 117, 47, .16), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(176, 145, 59, .08), transparent 70%),
-    linear-gradient(180deg, #f4f3f0 0%, #ebe9e5 100%);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(53, 91, 182, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 155, 47, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(53, 91, 182, .05), transparent 70%),
+    linear-gradient(180deg, #eef1f6 0%, #e1e5ef 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(84, 65, 28, .06);
-  --button-bg: rgba(84, 65, 28, .05);
-  --image-bg: rgba(84, 65, 28, .07);
-  --inner-bg: rgba(84, 65, 28, .05);
+  --input-bg: rgba(28, 45, 84, .06);
+  --button-bg: rgba(28, 45, 84, .05);
+  --image-bg: rgba(28, 45, 84, .07);
+  --inner-bg: rgba(28, 45, 84, .05);
 }
 
 /* The light sits on the root, not on <body>: body is only one viewport tall (html, body
