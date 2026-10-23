@@ -103,11 +103,44 @@ export function peekCached<T>(key: string): T | undefined {
 export function clearCache(): void {
   cache.clear();
   pending.clear();
+  deferredWrites.clear();
 }
 
 // specs/072-snapshot-catalogue-statique: puts a complete, already-built value (from the shipped
 // snapshot or a full re-download) in memory and on the device, replacing any previous copy at once.
 export function seedCache<T>(key: string, value: T): void {
   remember(key, value);
-  writePersisted(key, value);
+  writePersistedLater(key, value);
+}
+
+// Writing a multi-MB catalogue to IndexedDB clones it synchronously on the main thread (about
+// 100 ms per index, several times that on a phone). The copy is only for the next visit, so it
+// waits until the page has loaded and settled, and each entry is written in its own task.
+const PERSIST_DELAY_MS = 10_000;
+const deferredWrites = new Map<string, unknown>();
+
+function writePersistedLater(key: string, value: unknown): void {
+  const alreadyScheduled = deferredWrites.size > 0;
+  deferredWrites.set(key, value);
+  if (alreadyScheduled) return;
+  whenPageSettled(() => {
+    const entries = [...deferredWrites];
+    deferredWrites.clear();
+    entries.forEach(([entryKey, entryValue], index) => {
+      setTimeout(() => writePersisted(entryKey, entryValue), index * 200);
+    });
+  });
+}
+
+function whenPageSettled(task: () => void): void {
+  const start = () => {
+    setTimeout(() => {
+      const idle = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+        .requestIdleCallback;
+      if (idle) idle(task, { timeout: 5000 });
+      else task();
+    }, PERSIST_DELAY_MS);
+  };
+  if (typeof document === 'undefined' || document.readyState === 'complete') start();
+  else window.addEventListener('load', start, { once: true });
 }

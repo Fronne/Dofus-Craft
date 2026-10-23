@@ -85,4 +85,20 @@ describe('seedCache (specs/072 snapshot)', () => {
     expect(await pending).toEqual({ snapshot: true });
     expect(peekCached('index')).toEqual({ snapshot: true });
   });
+
+  it('writes the device copy only once the page has settled, not at seed time', async () => {
+    vi.useFakeTimers();
+    const set = vi.fn((_key: string, _value: unknown) => Promise.resolve('saved'));
+    setPersistentStore({ getVersioned: () => Promise.resolve(undefined), set });
+
+    seedCache('index', { snapshot: true });
+    seedCache('sets', { snapshot: true });
+
+    expect(peekCached('index')).toEqual({ snapshot: true });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(set).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(10_000 + 1000);
+    expect(set.mock.calls.map(([key]) => key)).toEqual(['index', 'sets']);
+  });
 });
