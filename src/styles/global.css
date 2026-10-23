@@ -2567,7 +2567,7 @@ select:focus {
 /* The two groups of columns, framed: violet for the normal breaking, green for the focus. */
 @media (min-width: 641px) {
   .brisage-table .brisage-group--plain { color: #d9c9ff; background: rgba(150, 120, 255, .26); border: 2px solid #b99cff; border-bottom: 0; border-radius: 12px 12px 0 0; }
-  .brisage-table .brisage-group--focus { color: #d4f08a; background: color-mix(in srgb, var(--accent) 28%, transparent); border: 2px solid var(--accent); border-bottom: 0; border-radius: 12px 12px 0 0; }
+  .brisage-table .brisage-group--focus { color: var(--brisage-focus-text, #d4f08a); background: color-mix(in srgb, var(--accent) 28%, transparent); border: 2px solid var(--accent); border-bottom: 0; border-radius: 12px 12px 0 0; }
   .brisage-table thead tr:nth-child(2) th { color: var(--text-muted); }
   .brisage-table thead tr:nth-child(2) th:nth-child(-n+2) { background: rgba(150, 120, 255, .16); }
   .brisage-table thead tr:nth-child(2) th:nth-child(n+3) { background: color-mix(in srgb, var(--accent) 17%, transparent); }
