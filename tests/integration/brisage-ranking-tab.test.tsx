@@ -300,7 +300,7 @@ describe('Brisage ranking tab (specs/072)', () => {
     it('resets the filters', async () => {
       noteCoefficient('777', 38);
       await openRanking();
-      fireEvent.change(screen.getByLabelText('Niveau minimum'), { target: { value: '500' } });
+      fireEvent.change(screen.getByLabelText('Niveau maximum'), { target: { value: '5' } });
       expect(rowNames()).toEqual([]);
       fireEvent.click(screen.getAllByRole('button', { name: 'Réinitialiser les filtres' })[0]);
       expect(rowNames().length).toBe(2);

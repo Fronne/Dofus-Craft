@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { getCategories } from '../../data/catalogue-repository';
 import { Icon } from '../../components/Icon';
-import { defaultBrisageSettings } from '../../domain/brisage';
+import { defaultBrisageSettings, MAX_COEFFICIENT } from '../../domain/brisage';
 import { levelRangeError } from '../../domain/brisage-search';
 import {
   ageInDays, bestExoFor, buildRanking, DEFAULT_RANKING_VIEW, filterRows, freshnessOf, sortRows,
@@ -75,7 +75,7 @@ function gainCell(row: RankingRow) {
 
 function thresholdCell(row: RankingRow) {
   if (row.status !== 'ok') return <span className="fm-note">—</span>;
-  if (row.neverProfitable) return <span className="brisage-total-loss">jamais rentable</span>;
+  if (row.unreachable) return <span className="fm-note">au-delà de {percent.format(MAX_COEFFICIENT)} %</span>;
   return row.thresholdCoefficient === undefined ? <span className="fm-note">—</span> : <>{percent.format(row.thresholdCoefficient)} %</>;
 }
 
