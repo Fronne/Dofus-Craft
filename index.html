@@ -13,7 +13,7 @@
     <script>
       try {
         var chosen = localStorage.getItem('craftcheck-dofus');
-        var all = { pourpre: ['/dofus-pourpre.png', '#180d0c'], turquoise: ['/dofus-turquoise.png', '#0b1119'], ocre: ['/dofus-ocre.png', '#17130c'], ebene: ['/dofus-ebene.png', '#131111'], ivoire: ['/dofus-ivoire.png', '#14130f'] };
+        var all = { pourpre: ['/dofus-pourpre.png', '#180d0c'], turquoise: ['/dofus-turquoise.png', '#0b1119'], ocre: ['/dofus-ocre.png', '#18150c'], ebene: ['/dofus-ebene.png', '#131111'], ivoire: ['/dofus-ivoire.png', '#14130f'] };
         var dofus = Object.prototype.hasOwnProperty.call(all, chosen) ? all[chosen] : null;
         if (dofus) {
           document.documentElement.dataset.dofus = chosen;

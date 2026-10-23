@@ -294,65 +294,65 @@
 
 /* Dofus Ocre */
 :root[data-dofus="ocre"] {
-  --bg: #17130c;
-  --panel: rgba(59, 46, 28, .78);
-  --panel-strong: #3a2e1d;
-  --panel-soft: #4b3c25;
-  --text-muted: #d8d2cb;
-  --text-faint: #b6afa5;
-  --on-accent: #241402;
-  --accent: #e08c1f;
-  --accent-bright: #eea63a;
-  --accent-gradient-from: #e49525;
-  --accent-gradient-to: #bd701f;
-  --success: #e08c1f;
+  --bg: #18150c;
+  --panel: rgba(60, 51, 27, .78);
+  --panel-strong: #3b331c;
+  --panel-soft: #4c4224;
+  --text-muted: #d8d4cb;
+  --text-faint: #b6b1a5;
+  --on-accent: #241a02;
+  --accent: #f2c936;
+  --accent-bright: #fadd5c;
+  --accent-gradient-from: #f5d03d;
+  --accent-gradient-to: #dfa616;
+  --success: #f2c936;
   --warning: #ff9a52;
-  --side-art-filter: hue-rotate(154deg) saturate(1.2);
-  --border: rgba(232, 186, 125, .18);
-  --border-control: #968873;
-  --scrim: rgba(13, 11, 7, .66);
+  --side-art-filter: hue-rotate(156deg) saturate(1.2);
+  --border: rgba(232, 211, 125, .18);
+  --border-control: #968d73;
+  --scrim: rgba(13, 12, 7, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(188, 118, 26, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(188, 118, 26, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(193, 159, 21, .26), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 163, 43, .12), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(193, 159, 21, .08), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #282015 0%, #1e1810 32%, #14100b 100%);
-  --nav-bg: rgba(30, 24, 16, .72);
-  --input-bg: rgba(17, 14, 9, .55);
-  --button-bg: rgba(232, 186, 125, .07);
-  --image-bg: rgba(17, 14, 9, .45);
-  --inner-bg: rgba(17, 14, 9, .4);
+    linear-gradient(180deg, #282315 0%, #1e1a10 32%, #14120a 100%);
+  --nav-bg: rgba(30, 26, 16, .72);
+  --input-bg: rgba(17, 15, 9, .55);
+  --button-bg: rgba(232, 211, 125, .07);
+  --image-bg: rgba(17, 15, 9, .45);
+  --inner-bg: rgba(17, 15, 9, .4);
 }
 :root[data-dofus="ocre"][data-theme="light"] {
-  color: #302412;
-  --bg: #f4f1eb;
+  color: #302812;
+  --bg: #f4f2eb;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #ede7de;
-  --text: #302412;
-  --text-muted: #5a4d3a;
-  --text-faint: #625747;
+  --panel-soft: #ede9de;
+  --text: #302812;
+  --text-muted: #5a523a;
+  --text-faint: #625a47;
   --on-accent: #ffffff;
-  --accent: #7c540e;
-  --accent-bright: #61410a;
-  --accent-gradient-from: #7c540e;
-  --accent-gradient-to: #65440b;
-  --success: #7c540e;
+  --accent: #866509;
+  --accent-bright: #6b5006;
+  --accent-gradient-from: #866509;
+  --accent-gradient-to: #6e5307;
+  --success: #866509;
   --warning: #a8470d;
-  --side-art-filter: hue-rotate(154deg) saturate(1.2);
-  --border: rgba(84, 62, 28, .14);
-  --border-control: #807360;
-  --scrim: rgba(43, 33, 18, .5);
+  --side-art-filter: hue-rotate(156deg) saturate(1.2);
+  --border: rgba(84, 69, 28, .14);
+  --border-control: #807860;
+  --scrim: rgba(43, 36, 18, .5);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(206, 129, 28, .12), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 155, 47, .09), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(206, 129, 28, .05), transparent 70%),
-    linear-gradient(180deg, #f6f3ee 0%, #efe9e1 100%);
+    radial-gradient(56rem 32rem at 14% -4%, rgba(211, 174, 23, .12), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(188, 178, 47, .09), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(211, 174, 23, .05), transparent 70%),
+    linear-gradient(180deg, #f6f4ee 0%, #efebe1 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(84, 62, 28, .06);
-  --button-bg: rgba(84, 62, 28, .05);
-  --image-bg: rgba(84, 62, 28, .07);
-  --inner-bg: rgba(84, 62, 28, .05);
+  --input-bg: rgba(84, 69, 28, .06);
+  --button-bg: rgba(84, 69, 28, .05);
+  --image-bg: rgba(84, 69, 28, .07);
+  --inner-bg: rgba(84, 69, 28, .05);
 }
 
 /* Dofus Ébène */
