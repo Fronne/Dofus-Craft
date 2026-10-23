@@ -27,6 +27,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     it('reconnaît une ancre avec ou sans #', () => {
       expect(parseSection('#compteurs')).toBe('compteurs');
       expect(parseSection('cloudflare')).toBe('cloudflare');
+      expect(parseSection('#donnees')).toBe('donnees');
     });
     it('renvoie undefined pour une ancre vide ou inconnue', () => {
       expect(parseSection('')).toBeUndefined();

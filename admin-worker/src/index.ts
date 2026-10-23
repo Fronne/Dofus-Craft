@@ -11,11 +11,26 @@ import { readKeyContributions, validateMonth } from './sniffer-contributions';
 import { createKey, listKeys, revokeKey, validateKeyLabel, type SnifferKeysDb } from './sniffer-keys';
 import { activateMapping, listMappings, uploadMapping, validateMappingUpload, type SnifferMappingsDb } from './sniffer-mappings';
 import { validateSiteSettingsChange } from '../../src/domain/site-settings';
+import {
+  LIST_LIMIT,
+  countRecent,
+  deleteByKeys,
+  deleteRecent,
+  describeTables,
+  findTable,
+  isDuration,
+  listRows,
+  readLog,
+  validateDeleteBody,
+  validateFilters,
+  MAX_ROWS,
+  type CleanupDb,
+} from './data-cleanup';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): the administration page (static
 // assets from dist-admin/) and its API. Every /api/* request goes through verifyOwner first.
 export interface Env extends AccessEnv, UsageEnv {
-  DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb & ActivityDb;
+  DB: CountersDb & MessageDb & SettingsDb & SnifferKeysDb & SnifferMappingsDb & ActivityDb & CleanupDb;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -119,6 +134,51 @@ export async function handleApi(
   if (request.method === 'POST' && activatedMappingId) {
     const activated = await activateMapping(env.DB, Number(activatedMappingId));
     return activated ? json(activated) : json({ error: 'Mapping introuvable.' }, 404);
+  }
+
+  // specs/073-admin-nettoyage-donnees (contracts/admin-data-api.md): list, count and delete rows of the
+  // tables of the registry in data-cleanup.ts, and the trace of the deletions.
+  if (request.method === 'GET' && pathname === '/api/data') {
+    return json({ tables: describeTables(), log: await readLog(env.DB) });
+  }
+  const dataRoute = pathname.match(/^\/api\/data\/([^/]+?)(\/count)?$/);
+  if (dataRoute) {
+    let tableId = dataRoute[1];
+    try {
+      tableId = decodeURIComponent(tableId);
+    } catch {
+      // A malformed escape names no table: answered like an unknown one below.
+    }
+    const table = findTable(tableId);
+    if (!table) return json({ error: 'Table inconnue.' }, 404);
+    const query = new URL(request.url).searchParams;
+    if (request.method === 'GET' && !dataRoute[2]) {
+      const filters = validateFilters(table, { server: query.get('server'), origin: query.get('origin') });
+      if (!filters.ok) return json({ error: filters.error, field: filters.field }, filters.status);
+      const rawLimit = query.get('limit');
+      const limit = rawLimit === null ? LIST_LIMIT : Number(rawLimit);
+      if (!Number.isInteger(limit) || limit < 1 || limit > LIST_LIMIT) {
+        return json({ error: `La limite doit être comprise entre 1 et ${LIST_LIMIT}.`, field: 'limit' }, 400);
+      }
+      return json({ rows: await listRows(env.DB, table, filters.value, limit) });
+    }
+    if (request.method === 'GET' && dataRoute[2]) {
+      const since = query.get('since');
+      if (!isDuration(since)) return json({ error: 'Durée invalide (10m, 1h ou 24h).', field: 'since' }, 400);
+      const filters = validateFilters(table, { server: query.get('server'), origin: query.get('origin') });
+      if (!filters.ok) return json({ error: filters.error, field: filters.field }, filters.status);
+      return json({ count: await countRecent(env.DB, table, since, filters.value), limit: MAX_ROWS });
+    }
+    if (request.method === 'DELETE' && !dataRoute[2]) {
+      const validation = validateDeleteBody(table, await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field, count: validation.count }, validation.status);
+      const deletion = validation.value;
+      const result = deletion.kind === 'keys'
+        ? await deleteByKeys(env.DB, table, deletion.keys)
+        : await deleteRecent(env.DB, table, deletion.duration, deletion.filters, deletion.expectedCount);
+      if (!result.ok) return json({ error: result.error, count: result.count }, result.status);
+      return json({ deleted: result.deleted, logged: result.logged });
+    }
   }
 
   if (request.method === 'GET' && pathname === '/api/counters') return json(await listCounters(env.DB));

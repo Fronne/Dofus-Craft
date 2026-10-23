@@ -66,7 +66,7 @@ describe('worker/migrations', () => {
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
     // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     // specs/069-coefficients-brisage-partages: and the shared breaking coefficients (0021).
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients');
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients' || name === 'admin_cleanup_log');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions' && name !== 'app_visits')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
@@ -95,6 +95,19 @@ describe('worker/migrations', () => {
     expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 0, 'x')")).toThrow();
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 4001, 'x')")).toThrow();
+  });
+
+  it('adds the admin cleanup trace table (0025) without touching a contribution, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0025_add_admin_cleanup_log.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(columns(db, 'admin_cleanup_log')).toEqual(['deleted_at', 'filter_text', 'id', 'mode', 'row_count', 'table_id']);
+    expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
+    db.exec("INSERT INTO admin_cleanup_log (table_id, mode, row_count) VALUES ('prix-communaute', 'duration', 3)");
+    expect(() => db.exec("INSERT INTO admin_cleanup_log (table_id, mode, row_count) VALUES ('x', 'robot', 3)")).toThrow();
+    expect(() => db.exec("INSERT INTO admin_cleanup_log (table_id, mode, row_count) VALUES ('x', 'selection', 0)")).toThrow();
   });
 
   it('adds item_type (0024) without touching existing rows, and refuses an unknown nature', () => {

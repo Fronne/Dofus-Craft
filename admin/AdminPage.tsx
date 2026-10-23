@@ -3,6 +3,7 @@ import type { PlayerCounter } from '../src/domain/player-counter';
 import { adminApi } from './admin-api';
 import { CloudflareUsageEditor } from './CloudflareUsageEditor';
 import { CounterEditor } from './CounterEditor';
+import { DataCleanupEditor } from './DataCleanupEditor';
 import { Dashboard } from './Dashboard';
 import { SECTIONS } from './dashboard-summary';
 import { failureMessage } from './messages';
@@ -64,6 +65,7 @@ export function AdminPage() {
           {section === 'cles' && <SnifferKeysEditor />}
           {section === 'correspondances' && <SnifferMappingsEditor />}
           {section === 'cloudflare' && <CloudflareUsageEditor />}
+          {section === 'donnees' && <DataCleanupEditor />}
         </>
       )}
     </main>

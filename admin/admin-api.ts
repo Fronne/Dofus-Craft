@@ -6,6 +6,7 @@ import { PRICE_ORIGINS, type Activity } from '../admin-worker/src/activity';
 import type { KeyContributions } from '../admin-worker/src/sniffer-contributions';
 import type { SnifferKeyJson } from '../admin-worker/src/sniffer-keys';
 import type { MappingUpload, SnifferMappingJson } from '../admin-worker/src/sniffer-mappings';
+import type { CleanupLogEntry, CleanupRow, Duration, FilterId } from '../admin-worker/src/data-cleanup';
 
 // specs/014-admin-counters (contracts/player-counters-api.md): same-origin calls to the
 // dofus-craft-admin API; the Cloudflare Access session cookie rides along. Never throws.
@@ -37,7 +38,8 @@ async function call<T>(method: string, path: string, body: unknown, read: (paylo
   } catch {
     return { status: 'unavailable' };
   }
-  if (response.status === 400) {
+  // 409 and 422 (specs/073): a refusal with a message of its own, shown as is, like a 400.
+  if (response.status === 400 || response.status === 409 || response.status === 422) {
     const record = (payload ?? {}) as Record<string, unknown>;
     return { status: 'invalid', field: String(record.field ?? ''), error: String(record.error ?? 'Valeur invalide.') };
   }
@@ -80,7 +82,35 @@ export function isActivity(value: unknown): value is Activity {
       PRICE_ORIGINS.every((origin) => isCount((day.prices as Record<string, unknown>)[origin])));
 }
 
-const asSnifferKey = (payload: unknown) => (isSnifferKey(payload) ? payload : undefined);
+// specs/073-admin-nettoyage-donnees (contracts/admin-data-api.md): the tables the page can clean, their rows, the trace.
+export type CleanupTableInfo = { id: string; label: string; columns: { id: string; label: string }[]; filters: FilterId[] };
+export type CleanupOverview = { tables: CleanupTableInfo[]; log: CleanupLogEntry[] };
+export type CleanupFilters = { server?: string; origin?: string };
+export type CleanupDeletion = { keys: string[] } | ({ since: Duration; expectedCount: number } & CleanupFilters);
+
+const isCell = (value: unknown) => value === null || typeof value === 'string' || typeof value === 'number';
+
+export function isCleanupRow(value: unknown): value is CleanupRow {
+  return isRecord(value) && typeof value.key === 'string' && typeof value.date === 'string' && isRecord(value.cells) &&
+    Object.values(value.cells).every(isCell);
+}
+
+export function isCleanupOverview(value: unknown): value is CleanupOverview {
+  return isRecord(value) && Array.isArray(value.tables) && value.tables.every((table) =>
+    isRecord(table) && typeof table.id === 'string' && typeof table.label === 'string' && Array.isArray(table.filters) &&
+    Array.isArray(table.columns) && table.columns.every((column) => isRecord(column) && typeof column.id === 'string' && typeof column.label === 'string')) &&
+    Array.isArray(value.log) && value.log.every((entry) => isRecord(entry) && typeof entry.id === 'number' && typeof entry.deletedAt === 'string' &&
+      typeof entry.table === 'string' && typeof entry.mode === 'string' && typeof entry.filter === 'string' && typeof entry.count === 'number');
+}
+
+const dataQuery = (params: Record<string, string | undefined>) => {
+  const query = new URLSearchParams();
+  for (const [name, value] of Object.entries(params)) if (value !== undefined && value !== '') query.set(name, value);
+  const text = query.toString();
+  return text === '' ? '' : `?${text}`;
+};
+
+const asSnifferKey =(payload: unknown) => (isSnifferKey(payload) ? payload : undefined);
 const asSnifferMapping = (payload: unknown) => (isSnifferMapping(payload) ? payload : undefined);
 
 export const adminApi = {
@@ -109,6 +139,17 @@ export const adminApi = {
   getKeyContributions: (month?: string) =>
     call('GET', month === undefined ? '/sniffer/contributions' : `/sniffer/contributions?month=${encodeURIComponent(month)}`, undefined,
       (payload) => (isKeyContributions(payload) ? payload : undefined)),
+  // specs/073-admin-nettoyage-donnees: list, preview and delete rows; a deletion is final.
+  getCleanup: () => call('GET', '/data', undefined, (payload) => (isCleanupOverview(payload) ? payload : undefined)),
+  listCleanupRows: (table: string, filters: CleanupFilters) =>
+    call('GET', `/data/${encodeURIComponent(table)}${dataQuery({ ...filters })}`, undefined, (payload) =>
+      (isRecord(payload) && Array.isArray(payload.rows) && payload.rows.every(isCleanupRow) ? payload.rows : undefined)),
+  countCleanup: (table: string, since: Duration, filters: CleanupFilters) =>
+    call('GET', `/data/${encodeURIComponent(table)}/count${dataQuery({ since, ...filters })}`, undefined, (payload) =>
+      (isRecord(payload) && isCount(payload.count) && isCount(payload.limit) ? { count: payload.count as number, limit: payload.limit as number } : undefined)),
+  deleteCleanup: (table: string, deletion: CleanupDeletion) =>
+    call('DELETE', `/data/${encodeURIComponent(table)}`, deletion, (payload) =>
+      (isRecord(payload) && isCount(payload.deleted) && typeof payload.logged === 'boolean' ? { deleted: payload.deleted as number, logged: payload.logged } : undefined)),
   getActivity: () => call('GET', '/activity', undefined, (payload) => (isActivity(payload) ? payload : undefined)),
   remove: (id: string) => call<void>('DELETE', `/counters/${encodeURIComponent(id)}`, undefined, () => undefined),
   // specs/057-sniffer-admin: the key itself (secret) is only in the creation's answer.
@@ -125,4 +166,4 @@ export const adminApi = {
   activateSnifferMapping: (id: number) => call('POST', `/sniffer/mappings/${id}/activate`, undefined, asSnifferMapping),
 };
 
-export type { Activity, KeyContributions, PlayerCounter, SnifferKeyJson, SnifferMappingJson };
+export type { Activity, CleanupLogEntry, CleanupRow, Duration, KeyContributions, PlayerCounter, SnifferKeyJson, SnifferMappingJson };

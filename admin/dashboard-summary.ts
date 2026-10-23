@@ -16,7 +16,7 @@ import type { Activity, SnifferKeyJson, SnifferMappingJson } from './admin-api';
 
 // specs/068-admin-dashboard (data-model.md): the dashboard's cards and the pure rules that turn what the
 // administration already reads into a one-line summary.
-export type SectionId = 'pages' | 'bandeau' | 'compteurs' | 'cles' | 'correspondances' | 'cloudflare';
+export type SectionId = 'pages' | 'bandeau' | 'compteurs' | 'cles' | 'correspondances' | 'cloudflare' | 'donnees';
 
 export const SECTIONS: { id: SectionId; title: string }[] = [
   { id: 'pages', title: 'Pages du site' },
@@ -25,6 +25,7 @@ export const SECTIONS: { id: SectionId; title: string }[] = [
   { id: 'cles', title: 'Clés sniffer' },
   { id: 'correspondances', title: 'Mapping' },
   { id: 'cloudflare', title: 'Utilisation Cloudflare' },
+  { id: 'donnees', title: 'Nettoyage des données' },
 ];
 
 export type CardTone = 'neutral' | 'good' | 'warning' | 'over';

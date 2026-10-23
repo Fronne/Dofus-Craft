@@ -67,7 +67,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
   });
 
   describe('US1 — voir l\'état de tout d\'un coup d\'œil', () => {
-    it('affiche six cartes avec leur résumé et l\'e-mail connecté', async () => {
+    it('affiche sept cartes avec leur résumé et l\'e-mail connecté', async () => {
       await renderPage();
       expect(screen.getByText('Connecté : owner@example.com')).toBeInTheDocument();
       // specs/071: the big chart cards first, then the smaller ones.
@@ -78,6 +78,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
         "Bandeau d'information",
         'Compteurs',
         'Mapping',
+        'Nettoyage des données',
       ]);
       expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
       expect(screen.getByRole('link', { name: /Bandeau/ })).toHaveTextContent('Aucun bandeau');
@@ -111,7 +112,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(screen.queryByRole('heading', { name: "Bandeau d'information" })).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Retour au tableau de bord/ })).toHaveAttribute('href', '#');
       await goTo('');
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
 
     it.each([
@@ -149,7 +150,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await goTo('#cloudflare');
       expect(screen.getByRole('heading', { level: 2, name: 'Utilisation Cloudflare' })).toBeInTheDocument();
       await goTo('');
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
 
     it('ne prend pas le focus au premier rendu, puis le donne au titre à chaque changement de vue', async () => {
@@ -174,7 +175,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
 
     it('une ancre inconnue affiche le tableau de bord', async () => {
       await renderPage('#nimporte');
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
   });
 
@@ -229,7 +230,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(cardOf(/Cloudflare/).getByText('Indisponible')).toBeInTheDocument();
       expect(cardOf(/Cloudflare/).queryByRole('img')).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
   });
 
@@ -284,7 +285,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await renderPage();
       expect(cardOf(/Clés/).getByText('Indisponible')).toBeInTheDocument();
       expect(screen.getByRole('link', { name: /Clés/ })).toHaveTextContent('Aucune clé active');
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
   });
 
@@ -385,9 +386,9 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       const visits = itemOf('Visites');
       expect(visits.getByText("22 visiteurs aujourd'hui")).toBeInTheDocument();
       expect(visits.getByRole('img', { name: /Visiteurs par jour/ })).toBeInTheDocument();
-      // Nothing to open: these two are not links, and the six sections still are.
+      // Nothing to open: these two are not links, and the seven sections still are.
       expect(screen.queryByRole('link', { name: /Prix communautaires|Visites/ })).not.toBeInTheDocument();
-      expect(sectionLinks()).toHaveLength(6);
+      expect(sectionLinks()).toHaveLength(7);
     });
 
     it('un historique indisponible rend seulement ces deux cartes indisponibles', async () => {

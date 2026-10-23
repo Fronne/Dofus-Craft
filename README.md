@@ -84,7 +84,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 |---|---|---|
 | Site | `src/` | React 19, TypeScript, Vite. Servi par le Worker Cloudflare `dofus-craft` (fichiers statiques de `dist/`). |
 | API communautaire | `worker/` | Worker `dofus-craft-community-price-api` + base Cloudflare D1 : prix partagés, médianes, compteurs de joueurs (lecture), comptage anonyme des visites, et la page Forgemagie (connexion Discord, sessions du bot, profils — `worker/src/fm/`). |
-| Administration | `admin/`, `admin-worker/` | Page et Worker `dofus-craft-admin`, protégés par Cloudflare Access, pour gérer le site. La page s'ouvre sur un tableau de bord de six cartes-résumé ; une carte ouvre sa section seule (ancres `#pages`, `#bandeau`, `#compteurs`, `#cles`, `#correspondances`, `#cloudflare`). |
+| Administration | `admin/`, `admin-worker/` | Page et Worker `dofus-craft-admin`, protégés par Cloudflare Access, pour gérer le site. La page s'ouvre sur un tableau de bord de cartes-résumé ; une carte ouvre sa section seule (ancres `#pages`, `#bandeau`, `#compteurs`, `#cles`, `#correspondances`, `#cloudflare`, `#donnees`). La section « Nettoyage des données » liste les dernières lignes de trois tables et les supprime (par sélection ou par durée, 500 lignes au plus, avec trace) ; migration 0025 : `npm run worker:db:migrate-cleanup-log`, à appliquer avant de déployer le Worker admin. |
 | Spécifications | `specs/`, `.specify/` | Une spec Speckit par fonctionnalité (spec, plan, tâches). |
 | Tests | `tests/` | Unitaires et intégration (Vitest), bout en bout (Playwright). |
 

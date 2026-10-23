@@ -347,3 +347,15 @@ CREATE TABLE IF NOT EXISTS brisage_coefficients (
 );
 CREATE INDEX IF NOT EXISTS idx_brisage_coefficients_item ON brisage_coefficients (server_id, item_id, noted_at);
 CREATE INDEX IF NOT EXISTS idx_brisage_coefficients_noted_at ON brisage_coefficients (noted_at);
+
+-- specs/073-admin-nettoyage-donnees (migrations/0025_add_admin_cleanup_log.sql): the trace of the rows the
+-- administration page deletes.
+CREATE TABLE IF NOT EXISTS admin_cleanup_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  deleted_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  table_id TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('selection', 'duration')),
+  filter_text TEXT NOT NULL DEFAULT '',
+  row_count INTEGER NOT NULL CHECK (row_count > 0)
+);
+CREATE INDEX IF NOT EXISTS idx_admin_cleanup_log_deleted_at ON admin_cleanup_log (deleted_at);

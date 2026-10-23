@@ -46,6 +46,8 @@ const INITIAL: Summaries = {
   cles: LOADING,
   correspondances: LOADING,
   cloudflare: LOADING,
+  // specs/073: no read of its own — the section lists its rows only once opened.
+  donnees: { state: 'ok', text: 'Supprimer des lignes récentes', tone: 'neutral' },
 };
 
 // What the cards' own reads brought back, kept so a visual can use it too without reading it a second time.
@@ -264,6 +266,7 @@ export function Dashboard() {
         {sectionCard('bandeau')}
         {sectionCard('compteurs')}
         {sectionCard('correspondances')}
+        {sectionCard('donnees')}
       </ul>
     </div>
   );
