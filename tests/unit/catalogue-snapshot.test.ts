@@ -166,7 +166,7 @@ describe('refreshCatalogueIfChanged (specs/072, US3)', () => {
 
     const items = peekCached<CatalogueItemIndexValue>(ITEM_INDEX_KEY);
     expect(items?.items).toHaveLength(3);
-    expect(items?.provenance).toMatchObject({ origin: 'dofusdb', totals: { items: 3, itemSets: 3 } });
+    expect(items?.provenance).toMatchObject({ origin: 'dofusdb', totals: { items: 3, itemSets: 1 } });
     expect(peekCached<ItemSetIndexValue>(ITEM_SET_INDEX_KEY)?.itemSetIdsByItemId.get(3)).toEqual(new Set([7]));
   });
 

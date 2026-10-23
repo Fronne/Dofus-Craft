@@ -1,6 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cached, clearCache, hydrateFromPersistentStore, peekCached, PERSISTED_FRESH_MS, setPersistentStore } from '../../src/data/catalogue-cache';
+import { cached, clearCache, hydrateFromPersistentStore, peekCached, PERSISTED_FRESH_MS, seedCache, setPersistentStore } from '../../src/data/catalogue-cache';
 import { catalogueCache } from '../../src/persistence/indexeddb-catalogue-cache-store';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -72,5 +72,17 @@ describe('cached (specs/021 persistent catalogue)', () => {
 
     expect(peekCached('catalogue-item-index')).toEqual({ items: [1] });
     expect(peekCached('missing')).toBeUndefined();
+  });
+});
+
+describe('seedCache (specs/072 snapshot)', () => {
+  it('is not overwritten by a device copy read after the seed', async () => {
+    await catalogueCache.set('index', { old: true });
+    clearCache();
+    const pending = cached('index', () => Promise.resolve({ network: true }));
+    seedCache('index', { snapshot: true });
+
+    expect(await pending).toEqual({ snapshot: true });
+    expect(peekCached('index')).toEqual({ snapshot: true });
   });
 });

@@ -79,3 +79,16 @@ describe('buildCatalogueSnapshot (specs/072, US2)', () => {
     expect(await readFile(join(dir, 'meta.json'), 'utf8')).toBe(previous);
   });
 });
+
+describe('buildCatalogueSnapshot duplicates', () => {
+  it('refuses a crawl with duplicated ids even when the count matches', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ total: 2, limit: 100, skip: 0, data: [{ id: 1 }, { id: 1 }] }),
+    }));
+
+    const result = await run(buildCatalogueSnapshot({ fetchImpl: fetchImpl as never, outDir, log: () => undefined }));
+
+    expect(result).toHaveProperty('error');
+  });
+});

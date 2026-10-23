@@ -68,6 +68,9 @@ export function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
   const promise: Promise<T> = readPersisted(key).then((persisted) => {
     // Hand the `pending` slot over to the network load (if any), so it isn't mistaken for this one.
     if (pending.get(key) === promise) pending.delete(key);
+    // A snapshot seeded while the device copy was being read is newer than that copy: keep it.
+    const seeded = cache.get(key);
+    if (seeded && seeded.expiresAt > Date.now()) return seeded.value as T;
     if (!persisted) return fetchAndStore(key, loader);
     remember(key, persisted.value as T);
     if (Date.now() - Date.parse(persisted.savedAt) >= PERSISTED_FRESH_MS) {

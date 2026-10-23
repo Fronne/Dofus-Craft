@@ -50,7 +50,7 @@ function isMeta(value: unknown): value is SnapshotMeta {
 }
 
 async function fetchJson(name: string): Promise<unknown> {
-  const response = await fetch(`${SNAPSHOT_URL}${name}`);
+  const response = await fetch(`${SNAPSHOT_URL}${name}`, { cache: 'no-cache' });
   if (!response.ok) throw new Error(`snapshot ${name}: ${response.status}`);
   return response.json();
 }
@@ -143,7 +143,11 @@ export async function refreshCatalogueIfChanged(): Promise<void> {
     if (totals.items === current.totals.items && totals.itemSets === current.totals.itemSets) return;
     const [items, sets] = await Promise.all([getDofusDbItems(''), getDofusDbItemSets('')]);
     if (!items.length || !sets.length) return;
-    seedIndexes(items, sets, { origin: 'dofusdb', generatedAt: new Date().toISOString(), totals });
+    seedIndexes(items, sets, {
+      origin: 'dofusdb',
+      generatedAt: new Date().toISOString(),
+      totals: { items: items.length, itemSets: sets.length },
+    });
   } catch {
     // The next probe, or the next deployment, catches up.
   }

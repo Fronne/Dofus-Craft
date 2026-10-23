@@ -117,6 +117,10 @@ export async function buildCatalogueSnapshot({ fetchImpl = fetch, outDir = OUTPU
   const itemSets = setCrawl.rows.map(projectItemSet);
 
   if (!items.length || !itemSets.length) throw new Error('Catalogue vide : snapshot refusé.');
+  if (new Set(items.map((item) => item.id)).size !== items.length
+    || new Set(itemSets.map((itemSet) => itemSet.id)).size !== itemSets.length) {
+    throw new Error('Catalogue incohérent : identifiants en double (pagination instable).');
+  }
   if (items.length !== itemCrawl.total || itemSets.length !== setCrawl.total) {
     throw new Error(`Catalogue incomplet : ${items.length}/${itemCrawl.total} objets, ${itemSets.length}/${setCrawl.total} panoplies.`);
   }
