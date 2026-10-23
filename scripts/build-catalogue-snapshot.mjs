@@ -81,7 +81,7 @@ async function getJson(fetchImpl, path, params) {
 
 async function crawl(fetchImpl, path, baseParams, pageSize) {
   const rows = [];
-  let total = 0;
+  let total;
   let skip = 0;
   do {
     const page = await getJson(fetchImpl, path, { ...baseParams, $limit: String(pageSize), $skip: String(skip) });
