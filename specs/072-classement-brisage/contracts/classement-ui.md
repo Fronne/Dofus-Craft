@@ -12,12 +12,12 @@
 |---------|---------|---------|
 | Objet | image, nom | oui |
 | Niveau | nombre | oui |
-| Prix | prix HDV retenu, ancienneté | oui |
+| Prix | prix HDV retenu, source (personnel ou communautaire selon le mode), ancienneté | oui |
 | Meilleur choix | « Sans focus » ou « Focus <rune> » | non |
 | Gain | gain par objet (groupe connu) ou « — » | oui |
 | Coefficient | valeur et ancienneté, ou « coefficient inconnu » | non |
 | Seuil | coefficient de rentabilité du meilleur choix, ou « jamais rentable » | oui |
-| Gain avec exo | gain avec le meilleur exo, stat de l'exo, apport ; note « une rune déduite » | oui |
+| Gain avec exo | gain avec le meilleur exo, stat de l'exo, apport ; note « une rune déduite » ; groupe sans coefficient : seuil recalculé avec le prix de la rune ajouté au prix de l'objet | oui |
 | Runes | ancienneté de la rune la plus ancienne | non |
 
 - En-tête triable : bouton avec `aria-sort` (`ascending`, `descending`, `none`) ; un clic bascule le sens.
@@ -28,7 +28,7 @@
 
 ## Filtres
 
-Niveau min / max, catégorie, gain minimum, cases « Masquer les objets sans prix » et « Masquer les objets sans coefficient », bouton « Réinitialiser les filtres ». Un niveau min supérieur au max affiche un message et ne filtre pas.
+Niveau min / max, catégorie, gain minimum, cases « Masquer les objets sans prix » (cochée par défaut) et « Masquer les objets sans coefficient », bouton « Réinitialiser les filtres ». Un niveau min supérieur au max affiche un message et ne filtre pas.
 
 ## Interactions
 

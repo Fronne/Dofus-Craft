@@ -12,12 +12,12 @@ Rien n'est stocké côté serveur pour l'essentiel ; ce sont des vues calculées
 | `coefficient` | nombre ou absent | le plus récent entre local et partagé |
 | `coefficientAt` | date ou absent | date de ce coefficient |
 | `group` | `'known'` ou `'unknown'` | selon la présence d'un coefficient |
-| `status` | `'ok'`, `'missing-rune-price'`, `'no-breakable-line'` | état du calcul |
+| `status` | `'ok'`, `'missing-rune-price'`, `'no-breakable-line'`, `'no-price'` | état du calcul ; `no-price` = objet de l'index sans prix HDV (affiché seulement si « masquer sans prix » est décoché) |
 | `best` | `{ kind: 'normal'` ou `'focus'`, `focusRuneName? }` | meilleur choix de l'analyse |
 | `gainKamas` | nombre ou absent | seulement si `group = 'known'` et `status = 'ok'` |
 | `thresholdCoefficient` | nombre ou absent | seuil de rentabilité du meilleur choix |
 | `neverProfitable` | booléen | seuil > 100 % (groupe `unknown`) |
-| `exo` | `{ effectId, statLabel, runeName, runePriceKamas, gainKamas, improvementKamas }` ou absent | meilleur exo, seulement s'il dépasse le gain sans exo |
+| `exo` | `{ effectId, statLabel, runeName, runePriceKamas, gainKamas?, improvementKamas?, thresholdCoefficient? }` ou absent | meilleur exo, seulement s'il dépasse le gain sans exo ; groupe `known` : `gainKamas` et `improvementKamas` ; groupe `unknown` : seulement `thresholdCoefficient`, recalculé avec le prix de l'objet + `runePriceKamas` |
 | `oldestRunePriceAt` | date ou absent | la plus ancienne des dates de runes utilisées |
 
 Règles :
@@ -32,9 +32,9 @@ Règles :
 | `sortColumn` | `'name'`, `'level'`, `'price'`, `'gain'`, `'threshold'`, `'exoGain'` | défaut `'gain'` |
 | `sortDirection` | `'asc'` ou `'desc'` | défaut `'desc'` ; le groupe `unknown` est trié par seuil croissant par défaut |
 | `levelMin`, `levelMax` | nombres ou absents | `levelMin ≤ levelMax`, sinon message d'erreur |
-| `categoryId` | texte ou absent | catégories de la page Recherche |
+| `categoryId` | texte ou absent | catégories de la page Recherche ; un objet sans `categoryId` dans l'index est exclu dès qu'une catégorie est choisie |
 | `minGainKamas` | nombre ou absent | s'applique au groupe `known` |
-| `hideWithoutPrice`, `hideWithoutCoefficient` | booléens | les deux décochés par défaut |
+| `hideWithoutPrice`, `hideWithoutCoefficient` | booléens | `hideWithoutPrice` coché par défaut, `hideWithoutCoefficient` décoché |
 
 Conservé dans `BrisagePage` tant que l'utilisateur reste sur la page (survit à l'ouverture d'une fiche).
 

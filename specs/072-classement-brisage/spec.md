@@ -108,8 +108,8 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 
 1. **Étant donné** un visiteur qui n'a pas activé le réglage, **quand** il ouvre la page Brisage, **alors** il ne voit pas l'onglet Classement et rien du classement n'est calculé ni affiché.
 2. **Étant donné** le propriétaire, **quand** il active le réglage « visible seulement pour moi », **alors** l'onglet apparaît dans son navigateur.
-3. **Étant donné** le réglage de visibilité, **quand** le propriétaire le bascule sur « visible pour tous », **alors** l'onglet devient visible pour tous les visiteurs. [voir hypothèses : le moyen exact reste à fixer au plan]
-4. **Étant donné** le propriétaire qui n'a pas encore ouvert l'outil sur un navigateur donné, **quand** il veut l'activer, **alors** il dispose d'une façon simple et documentée de le faire.
+3. **Étant donné** le propriétaire qui n'a pas encore activé l'outil sur un navigateur donné, **quand** il ouvre `/brisage?classement=1`, **alors** l'onglet apparaît, le paramètre disparaît de l'adresse et l'accès est conservé après rechargement ; `?classement=0` le retire.
+4. *(phase optionnelle)* **Étant donné** le réglage partagé « visible pour tous » activé par le propriétaire, **quand** un visiteur ouvre la page Brisage, **alors** l'onglet est visible pour lui aussi.
 
 ---
 
@@ -145,6 +145,7 @@ Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'
 3. **Étant donné** un objet recommandant un exo, **quand** la ligne s'affiche, **alors** la colonne « Gain avec exo » indique la stat de l'exo et son apport par rapport au gain sans exo.
 4. **Étant donné** que le coût réel de la forgemagie (échecs, runes supplémentaires) n'est pas modélisé, **quand** la colonne s'affiche, **alors** elle précise que seul le prix d'une rune est déduit, comme minimum.
 5. **Étant donné** que le prix de la rune de l'exo est inconnu, **quand** la ligne s'affiche, **alors** cet exo n'est pas proposé.
+6. **Étant donné** un objet au coefficient inconnu, **quand** la ligne s'affiche, **alors** la colonne « Gain avec exo » montre le seuil de coefficient recalculé avec le prix d'une rune d'exo ajouté au prix de l'objet, et non un gain en kamas.
 
 ---
 
@@ -163,23 +164,23 @@ Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'
 ### Exigences fonctionnelles
 
 - **FR-001** : La page Brisage MUST proposer un onglet « Classement » à côté de la fiche objet actuelle, sans modifier le fonctionnement de celle-ci.
-- **FR-002** : Le classement MUST lister les objets brisables dont le prix est connu sur le serveur de jeu actif, par défaut du gain par objet le plus élevé au plus faible.
+- **FR-002** : Le classement MUST lister les objets brisables du serveur de jeu actif, par défaut du gain par objet le plus élevé au plus faible. Par défaut seuls les objets dont le prix est connu sont montrés (« masquer les objets sans prix » est coché) ; décocher cette option ajoute les objets sans prix, sans gain, en fin de liste.
 - **FR-003** : Pour chaque objet, le gain, le meilleur choix (sans focus ou focus sur une rune précise) et le seuil de coefficient MUST être calculés par les mêmes règles que le verdict de la fiche objet, avec les jets moyens des lignes.
 - **FR-004** : Chaque ligne MUST afficher au minimum : l'objet (nom, image), son niveau, le prix retenu et sa source, le gain par objet, le meilleur choix, le seuil de coefficient, et les indications de fraîcheur.
 - **FR-005** : Chaque colonne utile (au moins : nom, niveau, prix, gain, seuil de coefficient) MUST être triable en croissant et en décroissant par clic sur son en-tête, avec indication du sens ; les valeurs inconnues MUST toujours se placer à la fin.
 - **FR-006** : Le classement MUST indiquer, pour chaque ligne, l'ancienneté du prix de l'objet, des prix de runes utilisés et du coefficient, et mettre en évidence ceux qui dépassent le seuil de péremption.
 - **FR-007** : Un objet sans coefficient connu MUST être signalé « coefficient inconnu » et classé dans un groupe distinct, par coefficient minimum requis croissant ; un gain en kamas précis ne MUST pas lui être attribué. Un seuil supérieur à 100 % MUST être marqué « jamais rentable » et placé en fin de groupe.
 - **FR-008** : Un objet dont une rune nécessaire n'a pas de prix MUST être signalé et placé à la fin ; aucune valeur ne MUST être inventée pour le combler.
-- **FR-009** : Le classement MUST pouvoir être filtré par niveau (minimum et maximum), par type d'objet et par gain minimum, et masquer au choix les objets sans prix ou sans coefficient connu.
+- **FR-009** : Le classement MUST pouvoir être filtré par niveau (minimum et maximum), par catégorie d'équipement (type d'objet) et par gain minimum, et masquer au choix les objets sans prix ou sans coefficient connu.
 - **FR-010** : Un clic sur une ligne MUST ouvrir l'objet dans la fiche actuelle ; le retour au classement MUST retrouver ses filtres et son tri.
 - **FR-011** : L'onglet Classement, son contenu et ses calculs MUST être inaccessibles à tout visiteur pour lequel le réglage de visibilité n'est pas activé, y compris par l'adresse directe.
-- **FR-012** : Le propriétaire MUST pouvoir activer l'accès dans son navigateur par un réglage simple « visible seulement pour moi », puis ouvrir plus tard le classement à tous en changeant ce réglage, sans nouvelle livraison de code.
+- **FR-012** : Le propriétaire MUST pouvoir activer l'accès dans son navigateur par un réglage simple « visible seulement pour moi » (adresse `/brisage?classement=1`, retirée par `?classement=0`, documentée dans le guide de validation). Dans une phase optionnelle, à lancer seulement sur sa confirmation, il pourra ouvrir le classement à tous en changeant un réglage partagé, sans nouvelle livraison de code.
 - **FR-013** : Le classement MUST suivre le serveur de jeu et le mode de prix (personnel ou communautaire) actifs, et se mettre à jour quand ils changent.
 - **FR-014** : Une indisponibilité de données (catalogue, prix, coefficients) MUST produire un classement incomplet clairement signalé, jamais des valeurs fabriquées.
 - **FR-015** : Les montants du classement MUST être présentés comme des estimations, avec le même avertissement que la fiche objet.
 - **FR-016** : Pour chaque objet, le classement MUST proposer une colonne « Gain avec exo » : le meilleur exo possible (stat absente de l'objet, rune au prix connu) est retenu, et le prix d'au moins une rune de cette stat MUST être déduit du gain. La stat de l'exo et son apport par rapport au gain sans exo MUST être indiqués ; si aucun exo n'améliore le gain, aucun n'est recommandé.
 - **FR-017** : La colonne « Gain avec exo » MUST préciser que seul le prix d'une rune est déduit (coût minimum) et que les échecs ou runes supplémentaires de la forgemagie ne sont pas comptés ; elle MUST être triable.
-- **FR-018** : Le gain avec exo MUST s'appliquer aux objets au coefficient connu ; pour le groupe au coefficient inconnu, l'exo MUST se refléter dans le seuil de coefficient requis.
+- **FR-018** : Le gain avec exo MUST s'appliquer aux objets au coefficient connu ; pour le groupe au coefficient inconnu, la colonne « Gain avec exo » MUST afficher à la place le seuil de coefficient recalculé avec le prix de l'objet augmenté du prix d'une rune de l'exo, et le tri de cette colonne porte sur ce seuil.
 
 ### Entités clés
 
@@ -198,12 +199,12 @@ Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'
 - **SC-004** : 0 objet sans coefficient connu n'est présenté avec un gain en kamas précis : tous portent la mention « coefficient inconnu » et un seuil de coefficient.
 - **SC-007** : Pour 100 % des objets d'un échantillon de contrôle, le gain avec exo est égal à celui de la fiche objet avec cet exo, diminué du prix d'une rune de l'exo.
 - **SC-005** : Pour un visiteur qui n'a pas activé le réglage, 0 élément du Classement n'est visible (onglet, contenu, adresse directe).
-- **SC-006** : Le propriétaire passe de « seulement moi » à « tout le monde » en moins d'une minute, sans livraison de code.
+- **SC-006** *(phase optionnelle)* : Une fois la phase d'ouverture à tous livrée, le propriétaire passe de « seulement moi » à « tout le monde » en moins d'une minute, sans livraison de code.
 
 ## Hypothèses
 
 - Le classement ne couvre que les objets dont le prix en HDV est connu (prix noté sur la page Recherche, personnel ou communautaire selon le mode actif), car sans prix aucun gain ne peut être calculé. Le coût de la chaîne de craft n'est pas utilisé dans cette première version (il demande de lire les recettes de chaque objet) ; la fiche, elle, continue de le proposer.
-- Les objets sans prix ne sont listés que si l'option de masquage est décochée, et sans gain.
+- Les objets sans prix sont masqués par défaut ; décochée, l'option les ajoute en fin de liste, sans gain. Un objet sans catégorie connue (index plus ancien) est exclu dès qu'une catégorie est choisie dans les filtres.
 - Les gains sont calculés avec les jets moyens des lignes positives et sans jet saisi à la main : le classement sert à repérer, la fiche à affiner. Les lignes négatives (malus) ne sont pas lues par le classement ; elles ne changent que très peu un focus, donc un écart minime avec la fiche est attendu et signalé.
 - Pour un objet sans coefficient connu, le seuil de coefficient requis vient du calcul déjà présent dans la fiche sans coefficient (`specs/063-brisage-sans-coefficient`). Ce classement mesure la résistance à un mauvais coefficient, pas le gain réel.
 - Un exo vaut une unité de la stat par défaut (une rune de base) ; ce réglage pourra évoluer plus tard. Le coût de pose retenu est le prix d'une rune de cette stat, au minimum.
