@@ -100,9 +100,9 @@
   --radius-pill: 999px;
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
-  --transition-fast: 180ms cubic-bezier(.2, .7, .3, 1);
+  --transition-fast: 250ms ease-out;
   /* A panel, a tab or an unfolded block coming in, and a value that slides (gauge, chevron). */
-  --transition-enter: 160ms ease;
+  --transition-enter: 250ms ease-out;
 
   /* Field heights: large for the main search of the Recherche page only, medium everywhere else,
      small inside tables and inline edits. */
