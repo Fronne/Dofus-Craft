@@ -72,13 +72,26 @@ export function preloadCatalogueIndexes(): void {
   // go into memory first, so the search's synchronous "full index ready?" checks see them at once.
   // The network crawl (thousands of DofusDB rows) waits for an idle moment so it doesn't compete with
   // the first render; a search that needs the index earlier triggers the same loaders itself.
+  if (crawlDeferred) return;
+  crawlDeferred = true;
   void hydrateFromPersistentStore(['catalogue-item-index', 'item-set-index']).finally(() => {
+    // Kept on the device from a previous visit: nothing to crawl for the index, waiters may go on.
+    if (peekCached('catalogue-item-index')) crawlAllowed();
     runWhenIdle(() => {
+      crawlAllowed();
       void getCatalogueItemIndex();
       void getItemSetIndex();
     });
   });
 }
+
+// While the crawl is deferred, whenCatalogueReady must wait for it instead of starting it: its
+// callers (Recherche's first render, preloadCraftProfits) run right at launch.
+let crawlDeferred = false;
+let crawlAllowed: () => void = () => undefined;
+const crawlAllowedPromise = new Promise<void>((resolve) => {
+  crawlAllowed = resolve;
+});
 
 // Idle alone fires right after the first paint, so the crawl would still fight the page's own
 // requests: wait for the page to finish loading, then a few seconds more, then for an idle moment.
@@ -100,7 +113,8 @@ function runWhenIdle(task: () => void): void {
 /** Resolves once the full catalogue (all craftable equipment) has finished loading in the
  * background, so callers can tell a capped preview count apart from the real total. */
 export function whenCatalogueReady(): Promise<void> {
-  return getCatalogueItemIndex().then(() => undefined);
+  const wait = crawlDeferred && !peekCached('catalogue-item-index') ? crawlAllowedPromise : Promise.resolve();
+  return wait.then(() => getCatalogueItemIndex()).then(() => undefined);
 }
 
 export async function searchItems(
