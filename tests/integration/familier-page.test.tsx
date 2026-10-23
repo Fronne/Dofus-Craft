@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPricesLookup } from '../../src/services/community-price-api';
 import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
@@ -56,6 +56,9 @@ async function openFamilier(mode: 'community' | 'personal') {
   fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
   await screen.findByRole('heading', { name: 'XP Familier' });
 }
+
+// The page is lazy-loaded by the app shell: load it once up front so no test pays the cold import.
+beforeAll(async () => { await import('../../src/features/pets/FamilierPage'); });
 
 describe('Familier page (specs/022)', () => {
   beforeEach(() => {

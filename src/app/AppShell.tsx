@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
@@ -13,13 +13,6 @@ import { PriceModeBadge } from '../features/settings/PriceModeBadge';
 import { PriceModeToast } from '../features/settings/PriceModeToast';
 import { PinnedPriceMigrationNotice } from '../features/server/PinnedPriceMigrationNotice';
 import { RecherchePage } from '../features/search/RecherchePage';
-import { EpinglesPage } from '../features/catalogue/EpinglesPage';
-import { ParametresPage } from '../features/settings/ParametresPage';
-import { PricesPage } from '../features/prices/PricesPage';
-import { FamilierPage } from '../features/pets/FamilierPage';
-import { HdvPage } from '../features/hdv/HdvPage';
-import { ForgemagiePage } from '../features/forgemagie/ForgemagiePage';
-import { BrisagePage } from '../features/brisage/BrisagePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import { useSiteSettings } from './useSiteSettings';
@@ -28,6 +21,17 @@ import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference
 import { recordVisit } from '../services/visit-api';
 import { prefersReducedMotion } from '../services/motion';
 import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
+import { lazyPage } from './lazy-page';
+
+// Every page but Recherche (the landing route) is fetched when first visited, so the first load
+// doesn't carry the code and data of every page.
+const EpinglesPage = lazyPage(() => import('../features/catalogue/EpinglesPage').then((m) => ({ default: m.EpinglesPage })));
+const ParametresPage = lazyPage(() => import('../features/settings/ParametresPage').then((m) => ({ default: m.ParametresPage })));
+const PricesPage = lazyPage(() => import('../features/prices/PricesPage').then((m) => ({ default: m.PricesPage })));
+const FamilierPage = lazyPage(() => import('../features/pets/FamilierPage').then((m) => ({ default: m.FamilierPage })));
+const HdvPage = lazyPage(() => import('../features/hdv/HdvPage').then((m) => ({ default: m.HdvPage })));
+const ForgemagiePage = lazyPage(() => import('../features/forgemagie/ForgemagiePage').then((m) => ({ default: m.ForgemagiePage })));
+const BrisagePage = lazyPage(() => import('../features/brisage/BrisagePage').then((m) => ({ default: m.BrisagePage })));
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
@@ -237,6 +241,7 @@ export function AppShell() {
           <ErrorBoundary key={pathname}>
           {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
           <div className="page-enter">
+          <Suspense fallback={<p className="empty" role="status">Chargement…</p>}>
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
             <Route
@@ -270,6 +275,7 @@ export function AppShell() {
             />
             <Route path="*" element={<NotFoundPage entry={entry} />} />
           </Routes>
+          </Suspense>
           </div>
           </ErrorBoundary>
         </main>

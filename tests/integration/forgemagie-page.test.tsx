@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { FmCaptureLine, FmGroupPlayer, FmMe, FmSeance, FmSeanceCapture, FmSeanceDetail, FmSeanceSession } from '../../src/domain/forgemagie';
 
@@ -175,6 +175,9 @@ afterEach(() => {
   cleanup();
   window.history.replaceState(null, '', '/');
 });
+
+// The page is lazy-loaded by the app shell: load it once up front so no test pays the cold import.
+beforeAll(async () => { await import('../../src/features/forgemagie/ForgemagiePage'); });
 
 describe('Forgemagie page — login (US1)', () => {
   it('asks a logged-out player to log in with Discord, saying what Discord will ask', async () => {
