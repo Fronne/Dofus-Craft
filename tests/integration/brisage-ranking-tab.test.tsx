@@ -322,7 +322,7 @@ describe('Brisage ranking tab (specs/072)', () => {
       await resourcePricesFor('personal').save('mikhal', '1557', 5000);
       await openRanking();
       const cell = (await within(rowOf('Cape du Chef Bwork')).findByText('PA', { selector: 'strong' })).closest('td') as HTMLElement;
-      expect(cell.textContent).toMatch(/PA : [+−]?[\d\s  ]+/);
+      expect(cell.textContent).toMatch(/PA : [+−]?[\d\s\u202f\u00a0]+/);
       expect(cell.textContent).toMatch(/\(\+/);
       expect(screen.getByText(/une rune déduite/)).toBeInTheDocument();
     });
