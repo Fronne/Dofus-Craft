@@ -2268,11 +2268,13 @@ select:focus {
 .results button:nth-child(n + 6) { animation-delay: 150ms; }
 
 /* The logo's halo breathes, and the egg leans under the pointer. */
+/* specs/074: --brand-glow-rest / --brand-glow-peak strengthen the halo of the Dofus whose picture
+   hardly glows on its own (ébène, ivoire); the others keep these values. */
 @keyframes egg-glow {
-  50% { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent)); }
+  50% { filter: var(--brand-glow-peak, drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent))); }
 }
 .app-nav-brand-mark {
-  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent));
+  filter: var(--brand-glow-rest, drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent)));
   animation: egg-glow 4.5s ease-in-out infinite;
   transition: transform var(--transition-fast);
 }
