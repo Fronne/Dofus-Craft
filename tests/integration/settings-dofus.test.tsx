@@ -34,7 +34,7 @@ describe('Paramètres : choix du Dofus (specs/074)', () => {
     expect(screen.getByRole('button', { name: 'Dofus Émeraude' })).toHaveAttribute('aria-pressed', 'false');
     expect(document.documentElement.dataset.dofus).toBe('ocre');
     expect(document.querySelector('link[rel="icon"]')).toHaveAttribute('href', '/dofus-ocre.png');
-    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#18150c');
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#0e1116');
     expect(window.localStorage.getItem('craftcheck-dofus')).toBe('ocre');
   });
 
