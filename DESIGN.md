@@ -85,13 +85,19 @@ Paramètres, le joueur peut choisir un autre des six Dofus primordiaux (pourpre,
 sombre comme en clair, indépendamment de `data-theme`.
 
 - Une palette redéfinit l'accent, le fond, les cartes, les bordures, les lueurs et les textes
-  atténués. Elle ne redéfinit jamais `--kamas`, `--exo`, `--warning` ni `--danger` : ces couleurs
-  gardent leur rôle (section 2) avec tous les Dofus. `--link` ne change que pour le turquoise, dont
-  l'accent serait sinon la même teinte que les liens.
+  atténués. Elle ne redéfinit jamais `--kamas` ni `--exo`, et ne touche `--danger` et `--warning`
+  que pour éviter qu'ils se confondent avec l'accent : `--danger` pour le pourpre (rouge-rose,
+  l'accent étant rouge-orangé), `--warning` pour l'ocre (orange, l'accent étant jaune doré).
+  `--link` ne change que pour le turquoise, dont l'accent serait sinon la même teinte que les liens.
+- Les teintes viennent des images des Dofus (mesure des pixels vifs), pas de leurs noms.
+- `--side-art-filter` tourne la teinte des illustrations latérales (section 2, écran large) vers
+  celle du thème ; l'émeraude n'en a pas et garde l'illustration d'origine.
+- Les lueurs de fond sont les mêmes pour les six thèmes (opacités .26, .12 et .08 en sombre).
 - Chaque bloc `:root[data-dofus="x"]` a son jumeau `…[data-theme="light"]`, qui liste les mêmes
   jetons : il doit l'emporter sur le bloc sombre en thème clair.
 - Une nouvelle palette ou un jeton modifié est contrôlé par `tests/unit/theme-contrast.test.ts`,
-  qui teste les douze combinaisons.
+  qui teste les douze combinaisons, et vérifie que `--danger` garde au moins 20° de teinte d'écart
+  avec `--accent`.
 - L'icône de la barre de navigation, l'icône d'onglet et la couleur de la barre d'adresse suivent le
   Dofus (`src/domain/dofus-themes.ts`). `index.html` pose `data-dofus` avant le premier affichage,
   d'après `craftcheck-dofus` dans `localStorage`.

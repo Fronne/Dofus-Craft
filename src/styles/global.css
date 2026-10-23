@@ -2489,6 +2489,8 @@ select:focus {
     width: var(--side-art);
     background: top / cover no-repeat;
     opacity: .4;
+    /* specs/074: the art is blue-grey; each Dofus theme turns it toward its own hue (theme.css). */
+    filter: var(--side-art-filter, none);
     pointer-events: none;
     animation: fade-in 900ms ease-out both;
   }

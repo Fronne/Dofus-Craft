@@ -80,6 +80,19 @@ function ratio(a: Rgba, b: Rgba): number {
 const TEXT = 4.5;
 const SHAPE = 3;
 
+function hue([r, g, b]: Rgba): number {
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  if (d === 0) return 0;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+
+// specs/074 (research.md §2): an error must not pass for the main action, so its hue stays at least
+// this far from the accent's, in every theme. (The warning is not checked this way: next to a pale
+// cream or a gold accent, an amber warning differs by saturation and lightness, not by hue.)
+const MIN_HUE_GAP = 20;
+
 // [foregrounds, backgrounds (bottom layer last), minimum ratio]
 const PAIRS: Array<[string[], string[][], number]> = [
   [['--text', '--text-muted', '--text-faint'], [['--bg'], ['--panel'], ['--panel-strong'], ['--panel-soft'], ['--nav-bg']], TEXT],
@@ -91,6 +104,11 @@ const PAIRS: Array<[string[], string[][], number]> = [
 ];
 
 describe.each(Object.entries(themes))('contrastes du thème %s', (_name, tokens) => {
+  it('--danger reste d\'une autre teinte que --accent', () => {
+    const gap = Math.abs(hue(parse('var(--danger)', tokens)) - hue(parse('var(--accent)', tokens)));
+    expect(Math.min(gap, 360 - gap)).toBeGreaterThanOrEqual(MIN_HUE_GAP);
+  });
+
   const bg = parse('var(--bg)', tokens);
   // Translucent layers are flattened onto the page background, bottom layer first.
   const flatten = (layers: string[]) => [...layers].reverse().reduce((back, layer) => over(parse(`var(${layer})`, tokens), back), bg);
