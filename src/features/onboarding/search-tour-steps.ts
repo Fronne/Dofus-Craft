@@ -91,7 +91,7 @@ export function searchTourSteps(priceMode: PriceMode): TourStep[] {
       points: [
         { term: 'Voir la recette', text: 'ses ressources, pour toute la quantité' },
         { term: 'Auto', text: 'choisit automatiquement la méthode la moins chère' },
-        { term: 'Acheter · Crafter', text: 'imposer l\'une ou l\'autre' },
+        { term: 'Acheter / Crafter', text: 'imposer l\'une ou l\'autre' },
       ],
       absentExample: 'craftable-ingredient',
       wide: true,

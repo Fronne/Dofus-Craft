@@ -211,7 +211,7 @@ export function CraftPricesDialog({
     >
       <div className="craft-prices-panel">
         <header className="craft-prices-head">
-          <h2>Prix des ressources · {itemName}</h2>
+          <h2>Prix des ressources : {itemName}</h2>
           <button type="button" className="btn btn-small" onClick={() => void requestClose()}>Fermer</button>
         </header>
         {detail.status === 'loading' && <p className="fm-note" role="status">Lecture de la recette…</p>}

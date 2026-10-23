@@ -30,8 +30,8 @@ function SeanceCard({ seance, onOpen }: { seance: FmSeance; onOpen: (seanceId: s
           <SeanceStatus state={seance.state} />
         </span>
         <span className="fm-session-date">
-          {seance.fmItem && `#${seance.name} · `}
-          {sessionCountLabel(seance.sessionCount)} · dernière activité le {formatFmDate(seance.lastActivityAt)}
+          {seance.fmItem && `#${seance.name}, `}
+          {sessionCountLabel(seance.sessionCount)}, dernière activité le {formatFmDate(seance.lastActivityAt)}
         </span>
       </span>
       <span className="fm-session-total"><Kamas value={seance.totalKamas} /></span>

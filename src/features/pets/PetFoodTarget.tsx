@@ -91,8 +91,8 @@ export function PetFoodTarget({ xp, prices, ranked, maxQuantity, xpMultiplier, s
               <h3>{card.food.name}</h3>
               <span>
                 {numberFormat.format(card.xpPerUnit)} XP par unité
-                {card.standing.kind === 'ranked' && ` · ${ordinal(card.standing.rank)} la moins chère`}
-                {card.standing.kind === 'capped' && ` · Non classée (plus de ${numberFormat.format(card.standing.maxQuantity)} unités)`}
+                {card.standing.kind === 'ranked' && `, ${ordinal(card.standing.rank)} la moins chère`}
+                {card.standing.kind === 'capped' && `, non classée (plus de ${numberFormat.format(card.standing.maxQuantity)} unités)`}
               </span>
               {card.price && <PriceAge date={card.price.date} />}
             </div>

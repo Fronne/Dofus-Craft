@@ -154,11 +154,11 @@ describe('Familier page (specs/022)', () => {
       type('Niveau visé', '60');
       await waitFor(() => expect(podiumNames()).toEqual(['Peau de Rat', 'Rune Pa Vi', 'Pépite']));
       const peau = normalize(cardOf('Peau de Rat')?.textContent);
-      expect(peau).toContain('1re · la moins chère');
+      expect(peau).toContain('1re, la moins chère');
       expect(peau).toContain('1 081');
       expect(peau).toContain('10 810');
-      expect(normalize(cardOf('Rune Pa Vi')?.querySelector('.pet-podium-rank')?.textContent)).toBe('2e · +1 897');
-      expect(normalize(cardOf('Pépite')?.querySelector('.pet-podium-rank')?.textContent)).toBe('3e · +46 370');
+      expect(normalize(cardOf('Rune Pa Vi')?.querySelector('.pet-podium-rank')?.textContent)).toBe('2e, +1 897');
+      expect(normalize(cardOf('Pépite')?.querySelector('.pet-podium-rank')?.textContent)).toBe('3e, +46 370');
       expect(normalize(cardOf('Pépite')?.textContent)).toContain('57 180');
       expect(cardOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
       expect(screen.queryByText(/sans prix connu|Dafous|indisponibles/)).not.toBeInTheDocument();
@@ -361,7 +361,7 @@ describe('Familier page (specs/022)', () => {
     it('shows the rank, cost, gap with the 1st and share of the objective of a priced food', async () => {
       await openWithThreeFoods();
       const card = normalize(aim('pepi', 'Pépite').textContent);
-      expect(card).toContain('1 XP par unité · 3e la moins chère');
+      expect(card).toContain('1 XP par unité, 3e la moins chère');
       expect(card).toContain('2 859'); // quantity
       expect(card).toContain('57 180');
       expect(card).toContain('+429 %'); // (57 180 − 10 810) ÷ 10 810 = 428,95 %
@@ -392,7 +392,7 @@ describe('Familier page (specs/022)', () => {
       await openWithThreeFoods();
       type('Quantité max', '1000');
       const card = normalize(aim('peau de r', 'Peau de Rat').textContent);
-      expect(card).toContain('Non classée (plus de 1 000 unités)');
+      expect(card).toContain('non classée (plus de 1 000 unités)');
       expect(card).not.toContain('Écart avec la 1re');
     });
   });

@@ -106,7 +106,7 @@ function Spending({ profile, onOpenSeance }: { profile: FmProfile; onOpenSeance:
           <h3 className="fm-subtitle">Par séance de FM</h3>
           <ul className="fm-spend-list">
             {seances.map((seance) => {
-              const text = `#${seance.name} · ${formatFmDate(seance.lastOpenedAt)}`;
+              const text = `#${seance.name}, ${formatFmDate(seance.lastOpenedAt)}`;
               return (
                 <li key={seance.key}>
                   {seance.seanceId !== undefined

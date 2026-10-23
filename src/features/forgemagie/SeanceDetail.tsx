@@ -157,7 +157,7 @@ export function SeanceDetail({ seanceId, me, priceMode, onBack, onUnauthorized }
         </div>
       </div>
       <p className="fm-session-dates fm-detail-meta">
-        Créée le {formatFmDate(seance.createdAt)} · dernière activité le {formatFmDate(seance.lastActivityAt)}
+        Créée le {formatFmDate(seance.createdAt)}, dernière activité le {formatFmDate(seance.lastActivityAt)}
       </p>
       {seance.request && <p className={seance.request.status === 'pending' ? 'fm-note' : 'fm-error'} role="status">{requestMessage(seance.request)}</p>}
       {error && <p className="fm-error" role="alert">{error}</p>}

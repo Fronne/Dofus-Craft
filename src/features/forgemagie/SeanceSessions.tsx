@@ -45,7 +45,7 @@ function Capture({ capture, number, outlier, onChanged }: {
       <summary>
         <span className="fm-capture-heading">
           <b>Capture {number}</b>
-          <span className="fm-note">{formatFmDate(capture.createdAt)} · {fromBot ? 'Discord' : 'Site'}</span>
+          <span className="fm-note">{formatFmDate(capture.createdAt)}, {fromBot ? 'Discord' : 'Site'}</span>
           {capture.corrected && <span className="fm-corrected">corrigée</span>}
         </span>
         <span className="fm-amount"><Kamas value={capture.spentKamas} /></span>
@@ -95,7 +95,7 @@ function Session({ session, outlierCaptureId, onChanged }: {
       <summary>
         <span className="fm-capture-heading">
           <b>Session du {formatFmDate(session.openedAt)}</b>
-          <span className="fm-note">{state} · {count} {count > 1 ? 'captures' : 'capture'}</span>
+          <span className="fm-note">{state}, {count} {count > 1 ? 'captures' : 'capture'}</span>
         </span>
         {open && session.sync && <SyncBadge sync={session.sync} />}
         <span className="fm-amount"><Kamas value={session.totalKamas} /></span>

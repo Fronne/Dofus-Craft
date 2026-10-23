@@ -20,7 +20,7 @@ describe('searchTourSteps (specs/011-search-onboarding)', () => {
       it('explains craftable ingredients: the recipe and the forced choice (specs/015)', () => {
         const step = steps.find((item) => item.id === 'intermediate')!;
         expect(step.target).toBe('craftable-ingredient');
-        expect(step.points!.map((point) => point.term)).toEqual(['Voir la recette', 'Auto', 'Acheter · Crafter']);
+        expect(step.points!.map((point) => point.term)).toEqual(['Voir la recette', 'Auto', 'Acheter / Crafter']);
         expect(step.absentExample).toBe('craftable-ingredient');
       });
 
