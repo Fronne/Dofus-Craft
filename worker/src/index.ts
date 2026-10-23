@@ -4,7 +4,7 @@ import { readPlayerCounters } from './player-counters';
 import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
 import { lotPricesResponse } from './lot-prices';
-import { coefficientsResponse, insertCoefficients, parseCoefficientPayload, purgeExpiredCoefficients } from './brisage-coefficients';
+import { coefficientsResponse, insertClears, insertCoefficients, parseClearPayload, parseCoefficientPayload, purgeExpiredCoefficients } from './brisage-coefficients';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
@@ -238,6 +238,25 @@ export default {
       await insertCoefficients(env.DB, payload);
       clearReadCache();
       return json({ stored: payload.entries.length }, 201);
+    }
+
+    // « The coefficient of this item is unknown »: hides the notes made before it (same key and limiter as above).
+    if (request.method === 'POST' && url.pathname === '/brisage-coefficients/clear') {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      if (env.CONTRIBUTION_LIMITER && !(await env.CONTRIBUTION_LIMITER.limit({ key: ip })).success) {
+        return json({ error: 'Too many contributions, try again in a minute' }, 429);
+      }
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Invalid JSON body' }, 400);
+      }
+      const payload = parseClearPayload(body);
+      if (!payload) return json({ error: 'deviceId and 1 to 100 entries (serverId, itemId) are required' }, 400);
+      await insertClears(env.DB, payload);
+      clearReadCache();
+      return json({ cleared: payload.entries.length }, 201);
     }
 
     // specs/045-restore-production-worker: a player asks for a recipe's prices to be read again now.

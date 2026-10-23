@@ -24,6 +24,7 @@ vi.mock('../../src/services/brisage-coefficient-api', () => ({
   MAX_ENTRIES_PER_SEND: 100,
   getSharedCoefficients: (...args: unknown[]) => getSharedCoefficients(...args),
   submitCoefficients: vi.fn().mockResolvedValue(true),
+  clearSharedCoefficients: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
@@ -60,6 +61,8 @@ vi.mock('../../src/data/servers-repository', () => ({
 import App from '../../src/app/App';
 import { pinnedItemPrices } from '../../src/persistence/indexeddb-pinned-item-price-repository';
 import { forgetSharedCoefficients } from '../../src/features/brisage/use-shared-coefficients';
+import { forgetExoCache, forgetRankingPlace } from '../../src/features/brisage/RankingTab';
+import { forgetRankingCache } from '../../src/features/brisage/useRankingData';
 import { resourcePricesFor } from '../../src/persistence/resource-prices-for-mode';
 
 const COEFFICIENTS_KEY = 'craftcheck-brisage-coefficients';
@@ -107,6 +110,10 @@ describe('Brisage ranking tab (specs/072)', () => {
     window.localStorage.clear();
     globalThis.indexedDB = new IDBFactory();
     forgetSharedCoefficients();
+    forgetRankingCache();
+    forgetExoCache();
+    forgetRankingPlace();
+    window.scrollTo = vi.fn();
     getSiteSettings.mockReset();
     getSiteSettings.mockResolvedValue(undefined);
     getSharedCoefficients.mockReset();
@@ -328,6 +335,42 @@ describe('Brisage ranking tab (specs/072)', () => {
       await screen.findByRole('table');
       expect(screen.getByLabelText('Niveau minimum')).toHaveValue(50);
       expect(screen.getByRole('button', { name: /^Niveau/ }).closest('th')).toHaveAttribute('aria-sort', 'descending');
+    });
+
+    it('comes back to the same number of rows and the same scroll after an item page', async () => {
+      const { loadBrisageItemsIndex } = await import('../../src/data/brisage-items-repository');
+      const original = await loadBrisageItemsIndex();
+      const many = Array.from({ length: 130 }, (_, i) => ({ id: `m${i}`, name: `Objet ${String(i).padStart(3, '0')}`, level: 1 + i, effects: [{ effectId: 125, from: 10, to: 12 }] }));
+      vi.mocked(loadBrisageItemsIndex).mockResolvedValue({ ...original, items: many });
+      for (const item of many) await pinnedItemPrices.save('mikhal', item.id, 100);
+      try {
+        await openRanking();
+        fireEvent.click(screen.getByRole('button', { name: /Afficher plus/ }));
+        expect(rowNames().length).toBe(130);
+        Object.defineProperty(window, 'scrollY', { value: 1234, configurable: true });
+        fireEvent.click(rowOf('Objet 120'));
+        expect(await screen.findByRole('tab', { name: 'Fiche' })).toHaveAttribute('aria-selected', 'true');
+        window.scrollTo = vi.fn();
+        fireEvent.click(screen.getByRole('tab', { name: 'Classement' }));
+        await screen.findByRole('table');
+        expect(rowNames().length).toBe(130);
+        expect(window.scrollTo).toHaveBeenCalledWith(0, 1234);
+      } finally {
+        vi.mocked(loadBrisageItemsIndex).mockResolvedValue(original);
+      }
+    });
+
+    it('does not read the shared prices again when the tab is opened a second time (community mode)', async () => {
+      getSharedItemPrices.mockResolvedValue({ status: 'found', items: [{ itemId: '777', amountKamas: 800, contributedAt: new Date().toISOString() }] });
+      await openBrisage('/brisage?classement=1', 'community');
+      fireEvent.click(await screen.findByRole('tab', { name: 'Classement' }));
+      await screen.findByRole('table');
+      expect(getSharedItemPrices).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('tab', { name: 'Fiche' }));
+      fireEvent.click(await screen.findByRole('tab', { name: 'Classement' }));
+      await screen.findByRole('table');
+      expect(getSharedItemPrices).toHaveBeenCalledTimes(1);
+      expect(rowNames()).toEqual(['Cape du Chef Bwork']);
     });
 
     it('opens the item with Enter on a row', async () => {

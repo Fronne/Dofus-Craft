@@ -17,11 +17,13 @@ vi.mock('../../src/services/community-price-api', () => ({
 
 const getSharedCoefficients = vi.fn();
 const submitCoefficients = vi.fn();
+const clearSharedCoefficients = vi.fn();
 vi.mock('../../src/services/brisage-coefficient-api', () => ({
   MAX_ITEMS_PER_READ: 96,
   MAX_ENTRIES_PER_SEND: 100,
   getSharedCoefficients: (...args: unknown[]) => getSharedCoefficients(...args),
   submitCoefficients: (...args: unknown[]) => submitCoefficients(...args),
+  clearSharedCoefficients: (...args: unknown[]) => clearSharedCoefficients(...args),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({
@@ -487,6 +489,20 @@ describe('Brisage page (specs/061)', () => {
       expect(await screen.findByText(/Dernier coefficient/)).toHaveTextContent('52 %');
       expect(screen.getByText(/Dernier coefficient/)).toHaveTextContent('22/10/2026');
       expect(getSharedCoefficients).toHaveBeenCalledWith('mikhal', expect.arrayContaining(['777']));
+    });
+
+    it('forgets a coefficient noted by mistake, here and for the players (« coefficient inconnu »)', async () => {
+      clearSharedCoefficients.mockResolvedValue(true);
+      getSharedCoefficients.mockResolvedValue(new Map([['777', { coefficient: 52, savedAt: '2026-10-22T09:00:00.000Z' }]]));
+      window.localStorage.setItem(LOCAL, JSON.stringify({ 'mikhal:777': { coefficient: 44, savedAt: '2026-10-23T10:00:00.000Z' } }));
+      await openBrisage();
+      await pickCape();
+      await screen.findByText(/Dernier coefficient/);
+      fireEvent.click(screen.getByRole('button', { name: /Effacer/ }));
+      await waitFor(() => expect(screen.queryByText(/Dernier coefficient/)).not.toBeInTheDocument());
+      expect(JSON.parse(window.localStorage.getItem(LOCAL) ?? '{}')['mikhal:777']).toBeUndefined();
+      expect(clearSharedCoefficients).toHaveBeenCalledWith([{ serverId: 'mikhal', itemId: '777' }]);
+      expect(screen.getByLabelText(/Coefficient de brisage/)).toHaveAttribute('placeholder', 'à saisir');
     });
 
     it('shows the more recent of the shared and the local coefficient', async () => {

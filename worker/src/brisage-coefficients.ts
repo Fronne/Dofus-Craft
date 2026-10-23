@@ -42,6 +42,25 @@ export function parseCoefficientPayload(body: unknown, now: Date = new Date()): 
   return { deviceId, entries: parsed };
 }
 
+export type ClearEntry = { serverId: string; itemId: string };
+export type ClearPayload = { deviceId: string; entries: ClearEntry[] };
+
+// POST /brisage-coefficients/clear: « the coefficient of this item is unknown », dated now (never from the client's
+// clock, so a clear cannot be placed before or after a note it should not touch).
+export function parseClearPayload(body: unknown): ClearPayload | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const { deviceId, entries } = body as Record<string, unknown>;
+  if (!isText(deviceId) || !Array.isArray(entries) || entries.length === 0 || entries.length > MAX_ENTRIES_PER_REQUEST) return undefined;
+  const parsed: ClearEntry[] = [];
+  for (const entry of entries) {
+    if (typeof entry !== 'object' || entry === null) return undefined;
+    const { serverId, itemId } = entry as Record<string, unknown>;
+    if (!isText(serverId) || !isText(itemId)) return undefined;
+    parsed.push({ serverId, itemId });
+  }
+  return { deviceId, entries: parsed };
+}
+
 type Bound<S> = S & { all<T>(): Promise<{ results: T[] }> };
 type CoefficientDb<S, B> = {
   prepare(sql: string): { bind(...values: unknown[]): Bound<S> & B };
@@ -55,10 +74,16 @@ export async function insertCoefficients<S, B>(db: CoefficientDb<S, B>, payload:
   ).bind(entry.serverId, entry.itemId, entry.coefficient, entry.notedAt, payload.deviceId)));
 }
 
+export async function insertClears<S, B>(db: CoefficientDb<S, B>, payload: ClearPayload, now: Date = new Date()): Promise<void> {
+  await db.batch(payload.entries.map((entry) => db.prepare(
+    `INSERT OR IGNORE INTO brisage_coefficient_clears (server_id, item_id, cleared_at, device_id) VALUES (?, ?, ?, ?)`,
+  ).bind(entry.serverId, entry.itemId, now.toISOString(), payload.deviceId)));
+}
+
 type CoefficientRow = { item_id: string; coefficient: number; noted_at: string };
 
 // GET /brisage-coefficients?serverId=&itemIds=a,b : for each item, its latest coefficient of the last 90 days.
-// Items nobody noted are left out; the contributor's device identifier is never returned.
+// Items nobody noted, or whose latest note is older than a clear of the item, are left out; the contributor's device identifier is never returned.
 export async function coefficientsResponse<S, B>(db: CoefficientDb<S, B>, url: URL, now: Date = new Date()): Promise<{ status: number; body: unknown }> {
   const serverId = url.searchParams.get('serverId');
   const itemIds = [...new Set((url.searchParams.get('itemIds') ?? '').split(',').map((id) => id.trim()).filter(Boolean))];
@@ -69,7 +94,9 @@ export async function coefficientsResponse<S, B>(db: CoefficientDb<S, B>, url: U
     `SELECT c.item_id, c.coefficient, c.noted_at FROM brisage_coefficients c
      WHERE c.server_id = ? AND c.noted_at >= ? AND c.item_id IN (${itemIds.map(() => '?').join(', ')})
        AND c.noted_at = (SELECT MAX(n.noted_at) FROM brisage_coefficients n
-         WHERE n.server_id = c.server_id AND n.item_id = c.item_id AND n.noted_at >= ?)`,
+         WHERE n.server_id = c.server_id AND n.item_id = c.item_id AND n.noted_at >= ?)
+       AND NOT EXISTS (SELECT 1 FROM brisage_coefficient_clears k
+         WHERE k.server_id = c.server_id AND k.item_id = c.item_id AND k.cleared_at >= c.noted_at)`,
   ).bind(serverId, retentionCutoff(now), ...itemIds, retentionCutoff(now)).all<CoefficientRow>();
   // Two notes at the very same instant (two devices): either is the latest; the last row read is kept.
   const byItem = new Map<string, CoefficientRow>();
@@ -90,5 +117,6 @@ type PurgeDb = { prepare(sql: string): { bind(...values: unknown[]): { run(): Pr
 // Run by the weekly cron (index.ts), with the retention of the price contributions.
 export async function purgeExpiredCoefficients(db: PurgeDb, now: Date = new Date()): Promise<number> {
   const result = await db.prepare('DELETE FROM brisage_coefficients WHERE noted_at < ?').bind(retentionCutoff(now)).run();
+  await db.prepare('DELETE FROM brisage_coefficient_clears WHERE cleared_at < ?').bind(retentionCutoff(now)).run();
   return result.meta.changes;
 }

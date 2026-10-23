@@ -24,8 +24,8 @@ import { useSiteSettings } from '../../app/useSiteSettings';
 import { applyRankingAccessFromSearch,withoutRankingParameter } from '../../persistence/brisage-ranking-access';
 import type { RuneItemsData } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
-import { getStoredCoefficient, hasImportedCoefficients, listImportableCoefficients, markCoefficientsImported, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
-import { MAX_ENTRIES_PER_SEND, submitCoefficients } from '../../services/brisage-coefficient-api';
+import { getStoredCoefficient, hasImportedCoefficients, listImportableCoefficients, markCoefficientsImported, removeStoredCoefficient, saveCoefficient, type StoredCoefficient } from '../../persistence/brisage-coefficients';
+import { clearSharedCoefficients, MAX_ENTRIES_PER_SEND, submitCoefficients } from '../../services/brisage-coefficient-api';
 import { getBrisageExos, setBrisageExos } from '../../persistence/brisage-exos';
 import { getBrisageSession, setBrisageSession, type BrisageSession, type PriceSource } from '../../persistence/brisage-session';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
@@ -34,7 +34,8 @@ import { ExoRow, type ExoEntry, type ExoRuneChoice } from './ExoRow';
 import { ItemFinder } from './ItemFinder';
 import { ItemHeader } from './ItemHeader';
 import { useItemCost } from './useItemCost';
-import { useSharedCoefficients } from './use-shared-coefficients';
+import { dropSharedCoefficient, useSharedCoefficients } from './use-shared-coefficients';
+import { forgetCachedCoefficient } from './useRankingData';
 import { useItemCraftCost } from './useItemCraftCost';
 import { CraftPricesDialog } from './CraftPricesDialog';
 import { RankingTab } from './RankingTab';
@@ -130,6 +131,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const sharedCoefficientOf = useSharedCoefficients(serverId, item ? [item.id] : []);
   const shownCoefficient = item ? sharedCoefficientOf(item.id, stored) : stored;
   const [coefficientText, setCoefficientText] = useState('');
+  const [, setClearedCount] = useState(0);
   const [manualCost, setManualCost] = useState('');
   // A new item starts with no source chosen ('auto'): the button of the cheaper of the HDV price and the craft cost is lit.
   const [priceSource, setPriceSource] = useState<PriceSource>('auto');
@@ -195,6 +197,20 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       markCoefficientsImported();
     })();
   }, []);
+
+  // « Coefficient unknown »: a note made by mistake is forgotten here and, for the players, hidden at the Worker (the notes
+  // made before this moment are no longer given; a later note replaces it as usual).
+  const forgetCoefficient = () => {
+    if (!serverId || !item) return;
+    removeStoredCoefficient(serverId, item.id);
+    dropSharedCoefficient(serverId, item.id);
+    forgetCachedCoefficient(serverId, item.id);
+    setStored(undefined);
+    setCoefficientText('');
+    // The coefficient shown may have been a shared one only: nothing else changed, so the page is drawn again here.
+    setClearedCount((count) => count + 1);
+    void clearSharedCoefficients([{ serverId, itemId: item.id }]);
+  };
 
   const rememberCoefficient = () => {
     const value = parse(coefficientText);
@@ -443,6 +459,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
             coefficientText={coefficientText}
             onCoefficientText={setCoefficientText}
             onRememberCoefficient={rememberCoefficient}
+            onForgetCoefficient={forgetCoefficient}
             canEditCraftPrices={craftCost.reason !== 'no-recipe'}
             onOpenCraftPrices={() => setCraftPricesOpen(true)}
             craftPricesButtonRef={craftPricesButton}

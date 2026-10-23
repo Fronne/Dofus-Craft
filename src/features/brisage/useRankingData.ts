@@ -30,6 +30,31 @@ export type RankingData = {
   incomplete: string[];
 };
 
+/** What was read is kept this long: coming back to the tab (after an item page) shows it at once instead of reading it again. */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+type Cached = { at: number; data: RankingData; shared: Map<string, StoredCoefficient> };
+const cache = new Map<string, Cached>();
+
+/** The coefficients of the device and the shared ones, the more recent winning. */
+function combine(local: Map<string, StoredCoefficient>, shared: Map<string, StoredCoefficient>): Map<string, StoredCoefficient> {
+  const merged = new Map(local);
+  for (const [itemId, note] of shared) {
+    const best = latestCoefficient(merged.get(itemId), note);
+    if (best) merged.set(itemId, best);
+  }
+  return merged;
+}
+
+/** The coefficient of an item was cleared: the shared one that was kept is forgotten too. */
+export function forgetCachedCoefficient(serverId: string, itemId: string): void {
+  for (const [key, entry] of cache) if (key.startsWith(`${serverId}:`)) entry.shared.delete(itemId);
+}
+
+/** Forgets what was kept (tests). */
+export function forgetRankingCache(): void {
+  cache.clear();
+}
+
 const LOADING: RankingData = { status: 'loading', items: [], itemPrices: new Map(), runePrices: {}, runePriceDates: {}, coefficients: new Map(), incomplete: [] };
 
 async function loadItemPrices(serverId: string, priceMode: PriceMode): Promise<{ prices: RankingData['itemPrices']; unavailable: boolean }> {
@@ -54,6 +79,13 @@ export function useRankingData(serverId: string | undefined, priceMode: PriceMod
     if (!serverId || !key) return;
     let cancelled = false;
     const publish = (data: RankingData) => { if (!cancelled) setLoaded({ key, data }); };
+    const kept = cache.get(key);
+    // Only the shared prices are kept: the prices of the device are read from it in no time and may have just been noted.
+    if (priceMode === 'community' && kept && Date.now() - kept.at < CACHE_TTL_MS) {
+      // The coefficients noted on this device are read again: they may have changed on an item page.
+      publish({ ...kept.data, coefficients: combine(listStoredCoefficients(serverId), kept.shared) });
+      return () => { cancelled = true; };
+    }
     (async () => {
       const [index, itemPrices, runePrices] = await Promise.allSettled([
         loadBrisageItemsIndex(),
@@ -76,8 +108,9 @@ export function useRankingData(serverId: string | undefined, priceMode: PriceMod
       } else {
         incomplete.push('prix des runes');
       }
-      const coefficients = new Map<string, StoredCoefficient>(listStoredCoefficients(serverId));
-      let data: RankingData = { status: 'ready', items, itemPrices: prices, runePrices: runes, runePriceDates: runeDates, coefficients, incomplete };
+      const local = listStoredCoefficients(serverId);
+      const shared = new Map<string, StoredCoefficient>();
+      let data: RankingData = { status: 'ready', items, itemPrices: prices, runePrices: runes, runePriceDates: runeDates, coefficients: new Map(local), incomplete };
       publish(data);
 
       // The shared coefficients are only asked for the items that have a price: the others are not ranked.
@@ -87,19 +120,17 @@ export function useRankingData(serverId: string | undefined, priceMode: PriceMod
       let sharedFailed = false;
       for (let start = 0; start < chunks.length && !cancelled; start += PARALLEL_READS) {
         const answers = await Promise.all(chunks.slice(start, start + PARALLEL_READS).map((chunk) => getSharedCoefficients(serverId, chunk)));
-        const merged = new Map(data.coefficients);
         for (const answer of answers) {
           if (!answer) { sharedFailed = true; continue; }
-          for (const [itemId, shared] of answer) {
-            const best = latestCoefficient(merged.get(itemId), shared);
-            if (best) merged.set(itemId, best);
-          }
+          for (const [itemId, note] of answer) shared.set(itemId, note);
         }
-        data = { ...data, coefficients: merged };
+        data = { ...data, coefficients: combine(local, shared) };
       }
       // One publication at the end: each one rebuilds the ranking and restarts the exo computation.
       if (cancelled) return;
       if (sharedFailed) data = { ...data, incomplete: [...data.incomplete, 'coefficients partagés'] };
+      // An incomplete reading is not kept: the next visit tries again.
+      if (priceMode === 'community' && data.incomplete.length === 0) cache.set(key, { at: Date.now(), data, shared });
       publish(data);
     })().catch(() => publish({ ...LOADING, status: 'ready', incomplete: ['données du classement'] }));
     return () => { cancelled = true; };

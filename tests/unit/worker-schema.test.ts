@@ -66,7 +66,7 @@ describe('worker/migrations', () => {
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
     // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     // specs/069-coefficients-brisage-partages: and the shared breaking coefficients (0021).
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients' || name === 'admin_cleanup_log');
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients' || name === 'brisage_coefficient_clears' || name === 'admin_cleanup_log');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions' && name !== 'app_visits')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
