@@ -33,7 +33,7 @@ requête vers la source du jeu.
 **Acceptance Scenarios**:
 
 1. **Given** une première visite, **When** le joueur ouvre le site, **Then** le catalogue complet est
-   chargé en au plus 2 téléchargements depuis le site lui-même, pour un poids total d'environ 1 Mo ou
+   chargé en au plus 2 téléchargements de données (plus un fichier de description de quelques octets) depuis le site lui-même, pour un poids total d'environ 1 Mo ou
    moins, sans requête paginée vers la source du jeu.
 2. **Given** le catalogue chargé, **When** le joueur recherche un objet, filtre par catégorie ou
    consulte une panoplie, **Then** les résultats sont identiques à ceux obtenus avec le catalogue

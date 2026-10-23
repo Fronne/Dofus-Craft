@@ -21,9 +21,9 @@
 **Independent Test**: cache vide, `fetch` simulé servant le snapshot et refusant DofusDB → recherche complète.
 
 - [ ] T006 [P] [US1] Tests dans `tests/unit/catalogue-snapshot.test.ts` : snapshot valide amorce `catalogue-item-index` et `item-set-index` (dont `itemSetIdsByItemId`) sans appel DofusDB ; longueurs ≠ `totals` ⇒ rejet ; 404 / JSON invalide ⇒ repli ; cache plus récent que `generatedAt` ⇒ snapshot non téléchargé (seul `meta.json` lu)
-- [ ] T007 [US1] Créer `src/data/catalogue-snapshot.ts` : `loadCatalogueSnapshot(): Promise<boolean>` (lit `/catalogue-snapshot/meta.json`, compare au cache gardé, charge `items.json` et `item-sets.json`, valide les longueurs, reconstruit `itemSetIdsByItemId`, appelle `seedCache` avec origine `snapshot`) ; retourne `false` sur tout échec
+- [ ] T007 [US1] Créer `src/data/catalogue-snapshot.ts` : `loadCatalogueSnapshot(): Promise<boolean>` (lit `/catalogue-snapshot/meta.json`, compare au cache gardé, charge `items.json` et `item-sets.json`, valide les longueurs, reconstruit `itemSetIdsByItemId`, appelle `seedCache` avec origine `snapshot`) ; un cache hérité de la spec 021 sans métadonnées est daté par son `savedAt` ; retourne `false` sur tout échec
 - [ ] T008 [US1] Modifier uniquement le corps de `preloadCatalogueIndexes()` dans `src/data/catalogue-repository.ts` : hydrater le cache, appeler `loadCatalogueSnapshot()` ; si `true` ne pas lancer le crawl (research R5), sinon repli sur `getCatalogueItemIndex()` / `getItemSetIndex()` (comportement actuel)
-- [ ] T009 [P] [US1] Test d'équivalence dans `tests/unit/catalogue-snapshot.test.ts` : `mapDofusDbItem` sur objet brut = sur objet projeté (jeu de fixtures représentatif) ; `searchItems` renvoie les mêmes résultats avec index issu du snapshot et index brut (SC-006)
+- [ ] T009 [US1] Test d'équivalence dans `tests/unit/catalogue-snapshot.test.ts` : `mapDofusDbItem` sur objet brut = sur objet projeté (jeu de fixtures représentatif) ; `searchItems` renvoie les mêmes résultats avec index issu du snapshot et index brut (SC-006)
 
 **Checkpoint**: la recherche fonctionne depuis le snapshot.
 
@@ -41,14 +41,14 @@
 **Goal**: retélécharger seulement sur écart de `total`.
 **Independent Test**: `fetch` simulé avec totaux identiques puis différents.
 
-- [ ] T013 [P] [US3] Tests dans `tests/unit/catalogue-snapshot.test.ts` : totaux identiques ⇒ 2 requêtes `$limit=0` et aucun crawl ; écart ⇒ crawl (`getDofusDbItems` / `getDofusDbItemSets`) puis `seedCache` origine `dofusdb` ; délai de 6 h respecté (horloge simulée) ; erreur réseau silencieuse, cache intact ; stockage indisponible ⇒ un contrôle par session
+- [ ] T013 [US3] Tests dans `tests/unit/catalogue-snapshot.test.ts` : totaux identiques ⇒ 2 requêtes `$limit=0` et aucun crawl ; écart ⇒ crawl (`getDofusDbItems` / `getDofusDbItemSets`) puis `seedCache` origine `dofusdb` ; délai de 6 h respecté (horloge simulée) ; erreur réseau silencieuse, cache intact ; stockage indisponible ⇒ un contrôle par session
 - [ ] T014 [US3] Ajouter `refreshCatalogueIfChanged()` dans `src/data/catalogue-snapshot.ts` : lit les `total` (`/items?hasRecipe=true&$limit=0`, `/item-sets?$limit=0`, repli `$limit=1`) via un helper de `src/services/dofusdb-api.ts`, compare aux `totals` du catalogue utilisé, horodatage dans `localStorage` (try/catch, 6 h), retélécharge en fond et remplace les index sans perturber la page en cours
 - [ ] T015 [US3] Brancher l'appel différé de `refreshCatalogueIfChanged()` à la fin du chemin réussi de `preloadCatalogueIndexes()` (une ligne dans `src/data/catalogue-repository.ts`)
 
 ## Phase 6: Polish
 
 - [ ] T016 Mettre à jour `specs/021-background-data-loading` (note de révision : snapshot livré, plus de crawl au lancement) et la documentation de déploiement si elle existe (le build requiert l'accès à DofusDB)
-- [ ] T017 Lancer `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` ; valider le `quickstart.md` (étapes 1 à 6) avec le serveur de dev ou `preview`
+- [ ] T017 Lancer `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` ; valider le `quickstart.md` (étapes 1 à 6) avec `preview` ; mesurer le TTI mobile avec Lighthouse (SC-002, cible < 8 s) et noter le résultat dans `quickstart.md`
 - [ ] T018 Lancer le sous-agent `relecteur` sur le diff et corriger les points graves
 
 ## Dependencies
