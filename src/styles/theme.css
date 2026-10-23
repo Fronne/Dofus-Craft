@@ -166,43 +166,43 @@
 
 /* Dofus Pourpre */
 :root[data-dofus="pourpre"] {
-  --bg: #14110f;
-  --panel: rgba(52, 39, 35, .78);
-  --panel-strong: #332724;
-  --panel-soft: #42332e;
+  --bg: #160f0d;
+  --panel: rgba(57, 36, 29, .78);
+  --panel-strong: #38241e;
+  --panel-soft: #492f27;
   --text-muted: #d8cecb;
   --text-faint: #b6a9a5;
   --on-accent: #2a0e04;
-  --accent: #f66631;
-  --accent-bright: #fc8d55;
-  --accent-gradient-from: #fbc341;
-  --accent-gradient-to: #f04c33;
-  --success: #f66631;
+  --accent: #fd632b;
+  --accent-bright: #ff8b52;
+  --accent-gradient-from: #ffcb3d;
+  --accent-gradient-to: #f63c28;
+  --success: #fd632b;
   --danger: #ff7fa6;
   --side-art-filter: hue-rotate(132deg) saturate(1.1);
-  --border: rgba(232, 164, 125, .18);
-  --border-control: #967c73;
-  --scrim: rgba(12, 9, 9, .66);
+  --border: rgba(232, 164, 125, 0.26);
+  --border-control: #967b73;
+  --scrim: rgba(13, 9, 8, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(203, 81, 11, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 139, 43, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(203, 81, 11, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(203, 81, 11, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 139, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(203, 81, 11, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #231c1a 0%, #1a1514 32%, #110e0d 100%);
-  --nav-bg: rgba(26, 21, 20, .72);
-  --input-bg: rgba(15, 12, 11, .55);
+    linear-gradient(180deg, #271a17 0%, #1d1411 32%, #130d0b 100%);
+  --nav-bg: rgba(29, 20, 17, .72);
+  --input-bg: rgba(16, 11, 9, .55);
   --button-bg: rgba(232, 164, 125, .07);
-  --image-bg: rgba(15, 12, 11, .45);
-  --inner-bg: rgba(15, 12, 11, .4);
+  --image-bg: rgba(16, 11, 9, .45);
+  --inner-bg: rgba(16, 11, 9, .4);
 }
 :root[data-dofus="pourpre"][data-theme="light"] {
-  color: #301a12;
-  --bg: #f2efee;
+  color: #301912;
+  --bg: #f4eeec;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #e9e4e2;
-  --text: #301a12;
-  --text-muted: #5a423a;
+  --panel-soft: #ece2df;
+  --text: #301912;
+  --text-muted: #5a413a;
   --text-faint: #624d47;
   --on-accent: #ffffff;
   --accent: #9c3211;
@@ -212,19 +212,19 @@
   --success: #9c3211;
   --danger: #b0224f;
   --side-art-filter: hue-rotate(132deg) saturate(1.1);
-  --border: rgba(84, 42, 28, .14);
+  --border: rgba(84, 41, 28, .14);
   --border-control: #806860;
   --scrim: rgba(43, 24, 18, .5);
   --bg-glow:
     radial-gradient(56rem 32rem at 14% -4%, rgba(223, 89, 12, .12), transparent 70%),
     radial-gradient(48rem 29rem at 90% -2%, rgba(188, 152, 47, .09), transparent 70%),
     radial-gradient(56rem 44rem at 100% 70%, rgba(223, 89, 12, .05), transparent 70%),
-    linear-gradient(180deg, #f4f1f0 0%, #ebe6e5 100%);
+    linear-gradient(180deg, #f6f0ef 0%, #eee5e2 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(84, 42, 28, .06);
-  --button-bg: rgba(84, 42, 28, .05);
-  --image-bg: rgba(84, 42, 28, .07);
-  --inner-bg: rgba(84, 42, 28, .05);
+  --input-bg: rgba(84, 41, 28, .06);
+  --button-bg: rgba(84, 41, 28, .05);
+  --image-bg: rgba(84, 41, 28, .07);
+  --inner-bg: rgba(84, 41, 28, .05);
 }
 
 /* Dofus Turquoise */
@@ -244,13 +244,13 @@
   --link: #7fb8ff;
   --link-strong: #4a8fe0;
   --side-art-filter: hue-rotate(-35deg);
-  --border: rgba(125, 232, 228, .18);
+  --border: rgba(125, 232, 228, 0.18);
   --border-control: #738396;
   --scrim: rgba(6, 10, 14, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(32, 182, 177, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(43, 139, 171, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(32, 182, 177, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(32, 182, 177, 0.26), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(43, 139, 171, 0.12), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(32, 182, 177, 0.08), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
     linear-gradient(180deg, #131d2a 0%, #0e1620 32%, #090f15 100%);
   --nav-bg: rgba(14, 22, 32, .72);
@@ -294,44 +294,44 @@
 
 /* Dofus Ocre */
 :root[data-dofus="ocre"] {
-  --bg: #0e1116;
-  --panel: rgba(30, 41, 56, .78);
-  --panel-strong: #1f2937;
-  --panel-soft: #283548;
+  --bg: #0b1118;
+  --panel: rgba(25, 40, 62, .78);
+  --panel-strong: #1a283d;
+  --panel-soft: #22344f;
   --text-muted: #cbd0d8;
   --text-faint: #a5acb6;
   --on-accent: #241a02;
-  --accent: #f6c831;
-  --accent-bright: #fcdb5a;
-  --accent-gradient-from: #f9e248;
-  --accent-gradient-to: #f0a50f;
-  --success: #f6c831;
+  --accent: #fdcc2b;
+  --accent-bright: #ffdd57;
+  --accent-gradient-from: #ffe642;
+  --accent-gradient-to: #f79f08;
+  --success: #fdcc2b;
   --warning: #ff9a52;
   --side-art-filter: hue-rotate(-35deg);
-  --border: rgba(125, 170, 232, .18);
-  --border-control: #738296;
-  --scrim: rgba(8, 10, 13, .66);
+  --border: rgba(125, 170, 232, 0.26);
+  --border-control: #738196;
+  --scrim: rgba(7, 9, 14, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(48, 97, 166, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(48, 97, 166, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(48, 97, 166, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(48, 97, 166, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #171d26 0%, #11161c 32%, #0c0f13 100%);
-  --nav-bg: rgba(17, 22, 28, .72);
-  --input-bg: rgba(10, 12, 16, .55);
+    linear-gradient(180deg, #141c2a 0%, #0f151f 32%, #0a0e15 100%);
+  --nav-bg: rgba(15, 21, 31, .72);
+  --input-bg: rgba(8, 12, 17, .55);
   --button-bg: rgba(125, 170, 232, .07);
-  --image-bg: rgba(10, 12, 16, .45);
-  --inner-bg: rgba(10, 12, 16, .4);
+  --image-bg: rgba(8, 12, 17, .45);
+  --inner-bg: rgba(8, 12, 17, .4);
 }
 :root[data-dofus="ocre"][data-theme="light"] {
-  color: #121f30;
-  --bg: #eceff3;
+  color: #121e30;
+  --bg: #ebeff4;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #dfe4ec;
-  --text: #121f30;
+  --panel-soft: #dee4ed;
+  --text: #121e30;
   --text-muted: #3a475a;
-  --text-faint: #475262;
+  --text-faint: #475162;
   --on-accent: #ffffff;
   --accent: #866509;
   --accent-bright: #6b5006;
@@ -340,60 +340,60 @@
   --success: #866509;
   --warning: #a8470d;
   --side-art-filter: hue-rotate(-35deg);
-  --border: rgba(28, 51, 84, .14);
-  --border-control: #606e80;
-  --scrim: rgba(18, 29, 43, .5);
+  --border: rgba(28, 50, 84, .14);
+  --border-control: #606d80;
+  --scrim: rgba(18, 28, 43, .5);
   --bg-glow:
     radial-gradient(56rem 32rem at 14% -4%, rgba(53, 107, 182, .12), transparent 70%),
     radial-gradient(48rem 29rem at 90% -2%, rgba(188, 155, 47, .09), transparent 70%),
     radial-gradient(56rem 44rem at 100% 70%, rgba(53, 107, 182, .05), transparent 70%),
-    linear-gradient(180deg, #eff2f5 0%, #e3e7ee 100%);
+    linear-gradient(180deg, #eef1f6 0%, #e1e7ef 100%);
   --nav-bg: rgba(255, 255, 255, .78);
-  --input-bg: rgba(28, 51, 84, .06);
-  --button-bg: rgba(28, 51, 84, .05);
-  --image-bg: rgba(28, 51, 84, .07);
-  --inner-bg: rgba(28, 51, 84, .05);
+  --input-bg: rgba(28, 50, 84, .06);
+  --button-bg: rgba(28, 50, 84, .05);
+  --image-bg: rgba(28, 50, 84, .07);
+  --inner-bg: rgba(28, 50, 84, .05);
 }
 
 /* Dofus Ébène */
 :root[data-dofus="ebene"] {
-  --bg: #15120e;
-  --panel: rgba(55, 43, 32, .78);
-  --panel-strong: #362b21;
-  --panel-soft: #46372b;
+  --bg: #18110c;
+  --panel: rgba(60, 42, 27, .78);
+  --panel-strong: #3b2a1c;
+  --panel-soft: #4c3724;
   --text-muted: #d8d1cb;
   --text-faint: #b6ada5;
   --on-accent: #1f1004;
-  --accent: #e68f37;
-  --accent-bright: #f5b25c;
-  --accent-gradient-from: #f3b549;
-  --accent-gradient-to: #db6724;
-  --success: #e68f37;
+  --accent: #f28f2c;
+  --accent-bright: #fcb355;
+  --accent-gradient-from: #fbbd41;
+  --accent-gradient-to: #e85d17;
+  --success: #f28f2c;
   --danger: #ff7fa6;
   --side-art-filter: hue-rotate(140deg) saturate(.45);
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
-  --border: rgba(232, 179, 125, .18);
+  --border: rgba(232, 179, 125, 0.26);
   --border-control: #968373;
-  --scrim: rgba(12, 10, 8, .66);
+  --scrim: rgba(13, 10, 7, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(198, 107, 16, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 43, 73, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(198, 107, 16, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(198, 107, 16, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 43, 73, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(198, 107, 16, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #251e18 0%, #1c1712 32%, #120f0c 100%);
-  --nav-bg: rgba(28, 23, 18, .72);
-  --input-bg: rgba(15, 13, 10, .55);
+    linear-gradient(180deg, #281e15 0%, #1e1610 32%, #140f0a 100%);
+  --nav-bg: rgba(30, 22, 16, .72);
+  --input-bg: rgba(17, 12, 9, .55);
   --button-bg: rgba(232, 179, 125, .07);
-  --image-bg: rgba(15, 13, 10, .45);
-  --inner-bg: rgba(15, 13, 10, .4);
+  --image-bg: rgba(17, 12, 9, .45);
+  --inner-bg: rgba(17, 12, 9, .4);
 }
 :root[data-dofus="ebene"][data-theme="light"] {
   color: #302012;
-  --bg: #f3efed;
+  --bg: #f4efeb;
   --panel: rgba(255, 255, 255, .86);
   --panel-strong: #ffffff;
-  --panel-soft: #ebe5e0;
+  --panel-soft: #ede5de;
   --text: #302012;
   --text-muted: #5a493a;
   --text-faint: #625347;
@@ -414,7 +414,7 @@
     radial-gradient(56rem 32rem at 14% -4%, rgba(217, 117, 18, .12), transparent 70%),
     radial-gradient(48rem 29rem at 90% -2%, rgba(188, 47, 80, .09), transparent 70%),
     radial-gradient(56rem 44rem at 100% 70%, rgba(217, 117, 18, .05), transparent 70%),
-    linear-gradient(180deg, #f5f2f0 0%, #ede8e3 100%);
+    linear-gradient(180deg, #f6f2ee 0%, #efe8e1 100%);
   --nav-bg: rgba(255, 255, 255, .78);
   --input-bg: rgba(84, 54, 28, .06);
   --button-bg: rgba(84, 54, 28, .05);
@@ -424,35 +424,35 @@
 
 /* Dofus Ivoire */
 :root[data-dofus="ivoire"] {
-  --bg: #0c1017;
-  --panel: rgba(28, 37, 59, .78);
-  --panel-strong: #1d253a;
-  --panel-soft: #25304b;
+  --bg: #0b0f19;
+  --panel: rgba(23, 35, 63, .78);
+  --panel-strong: #18243e;
+  --panel-soft: #1f2e51;
   --text-muted: #cbcfd8;
   --text-faint: #a5aab6;
   --on-accent: #1c1606;
-  --accent: #ecddac;
-  --accent-bright: #f6eeca;
-  --accent-gradient-from: #f4ebc3;
-  --accent-gradient-to: #d4ba7d;
-  --success: #ecddac;
+  --accent: #f1e0a7;
+  --accent-bright: #f9efc7;
+  --accent-gradient-from: #f7eebf;
+  --accent-gradient-to: #dcb66a;
+  --success: #f1e0a7;
   --side-art-filter: hue-rotate(-26deg) saturate(.6);
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
-  --border: rgba(125, 157, 232, .18);
+  --border: rgba(125, 157, 232, 0.26);
   --border-control: #737e96;
-  --scrim: rgba(7, 9, 13, .66);
+  --scrim: rgba(6, 9, 14, .66);
   --bg-glow:
-    radial-gradient(56rem 32rem at 14% -4%, rgba(48, 84, 166, .26), transparent 70%),
-    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, .12), transparent 70%),
-    radial-gradient(56rem 44rem at 100% 70%, rgba(48, 84, 166, .08), transparent 70%),
+    radial-gradient(56rem 32rem at 14% -4%, rgba(48, 84, 166, 0.36), transparent 70%),
+    radial-gradient(48rem 29rem at 90% -2%, rgba(171, 141, 43, 0.17), transparent 70%),
+    radial-gradient(56rem 44rem at 100% 70%, rgba(48, 84, 166, 0.11), transparent 70%),
     radial-gradient(50rem 38rem at 0% 100%, rgba(255, 201, 77, .07), transparent 70%),
-    linear-gradient(180deg, #151b28 0%, #10141e 32%, #0b0d14 100%);
-  --nav-bg: rgba(16, 20, 30, .72);
-  --input-bg: rgba(9, 11, 17, .55);
+    linear-gradient(180deg, #121a2b 0%, #0e1320 32%, #090d15 100%);
+  --nav-bg: rgba(14, 19, 32, .72);
+  --input-bg: rgba(8, 11, 18, .55);
   --button-bg: rgba(125, 157, 232, .07);
-  --image-bg: rgba(9, 11, 17, .45);
-  --inner-bg: rgba(9, 11, 17, .4);
+  --image-bg: rgba(8, 11, 18, .45);
+  --inner-bg: rgba(8, 11, 18, .4);
 }
 :root[data-dofus="ivoire"][data-theme="light"] {
   color: #121b30;
