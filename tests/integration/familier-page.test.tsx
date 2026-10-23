@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { CommunityPricesLookup } from '../../src/services/community-price-api';
+import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
 
 // specs/022-pet-xp-calculator. Real reference data (src/data/pet-xp-data.json): Peau de Rat (8482)
 // 2,646 XP / unit, Pépite (14635) 1 XP / unit, Rune Pa Vi (1548) 0,225 XP / unit. Level 50 → 60: 2 859 XP.
@@ -262,7 +263,7 @@ describe('Familier page (specs/022)', () => {
 
     // specs/053-hdv-page-toggle: no invitation to a page the owner has turned off.
     it('does not send to the HDV page while it is disabled', async () => {
-      window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: false, hdvPage: false }));
+      window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ ...ALL_PAGES, forgemagiePage: false, hdvPage: false }));
       await openFamilier('personal');
       type('XP totale du familier', '1703');
       type('Niveau visé', '60');

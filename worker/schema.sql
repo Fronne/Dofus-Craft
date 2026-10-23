@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- the friends' HDV tool ('sniffer', see migrations/0019_add_sniffer_origin.sql).
   origin TEXT NOT NULL DEFAULT 'manual' CHECK (origin IN ('manual', 'capture', 'bot', 'sniffer')),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  -- specs/071-sniffer-tous-hdv (migrations/0022_add_contribution_item_type.sql, so last, as ADD COLUMN
+  -- specs/071-sniffer-tous-hdv (migrations/0024_add_contribution_item_type.sql, so last, as ADD COLUMN
   -- puts it): the nature of a price sent by the friends' tool 0.4.0+, from the HDV's item type; NULL
   -- otherwise.
   item_type TEXT CHECK (item_type IN ('equipment', 'resource', 'rune', 'consumable'))
@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
 CREATE INDEX IF NOT EXISTS idx_community_price_contributions_lookup
   ON community_price_contributions (resource_id, server_id, created_at);
 
+-- specs/070-admin-dashboard-graphiques (migrations/0022_add_dashboard_indexes.sql): the dashboard's prices per day and origin.
+CREATE INDEX IF NOT EXISTS idx_community_price_contributions_created_at ON community_price_contributions (created_at, origin);
+
 -- specs/006-anonymous-visit-count: anonymous daily presence signal, one row per device per day.
 -- The composite primary key is the only deduplication mechanism (no application-level logic).
 CREATE TABLE IF NOT EXISTS app_visits (
@@ -52,6 +55,9 @@ CREATE TABLE IF NOT EXISTS app_visits (
   day TEXT NOT NULL,
   PRIMARY KEY (device_id, day)
 );
+
+-- specs/070-admin-dashboard-graphiques (migrations/0022_add_dashboard_indexes.sql): the dashboard's visitors per day.
+CREATE INDEX IF NOT EXISTS idx_app_visits_day ON app_visits (day);
 
 -- specs/014-admin-counters: humorous per-player counters (see migrations/0004_add_player_counters.sql
 -- for the initial rows). Read publicly by GET /player-counters, edited only by the dofus-craft-admin
@@ -86,9 +92,10 @@ CREATE TABLE IF NOT EXISTS info_message (
 
 -- specs/050-forgemagie-page-toggle: the owner's site settings (see
 -- migrations/0016_add_site_settings.sql, keys widened by 0017_add_hdv_page_setting.sql for
--- specs/053-hdv-page-toggle). Written only by the dofus-craft-admin Worker.
+-- specs/053-hdv-page-toggle, widened again by 0023_widen_site_settings_keys.sql for specs/071). Written only by the
+-- dofus-craft-admin Worker.
 CREATE TABLE IF NOT EXISTS site_settings (
-  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page')),
+  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page')),
   value TEXT NOT NULL CHECK (value IN ('0', '1')),
   updated_at TEXT NOT NULL
 );

@@ -1,5 +1,7 @@
 # Contrat d'interface : tableau de bord de l'administration
 
+> Complété par la spec 070 : les cartes reçoivent des visuels (graphiques) et deux cartes en lecture seule sont ajoutées, voir [`specs/070-admin-dashboard-graphiques/contracts/admin-dashboard-ui.md`](../../070-admin-dashboard-graphiques/contracts/admin-dashboard-ui.md). Les adresses, la navigation, le retour et le focus décrits ci-dessous ne changent pas.
+
 Aucune API serveur nouvelle ni modifiée. Contrat de l'interface uniquement.
 
 ## Adresses

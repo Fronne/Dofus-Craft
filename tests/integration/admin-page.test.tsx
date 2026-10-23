@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerCounter } from '../../src/domain/player-counter';
+import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
 
 const api = vi.hoisted(() => ({
   me: vi.fn(),
@@ -20,6 +21,9 @@ const api = vi.hoisted(() => ({
   uploadSnifferMapping: vi.fn(),
   activateSnifferMapping: vi.fn(),
   getUsage: vi.fn(),
+  getTodayUsage: vi.fn(),
+  getKeyContributions: vi.fn(),
+  getActivity: vi.fn(),
 }));
 vi.mock('../../admin/admin-api', () => ({ adminApi: api }));
 
@@ -63,10 +67,11 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
-    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'] } });
+    for (const name of ['getTodayUsage', 'getKeyContributions', 'getActivity'] as const) api[name].mockResolvedValue({ status: 'unavailable' });
     searchDofusDbItemsByName.mockReset().mockResolvedValue([amulet]);
   });
   afterEach(() => {
@@ -254,7 +259,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     const row = (section: HTMLElement, label: string) => within(section).getByText(label, { exact: false, selector: 'p' }).parentElement as HTMLElement;
 
     it('shows the Forgemagie page as disabled, and enables it in one click', async () => {
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
@@ -267,7 +272,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     });
 
     it('shows the HDV page as enabled, and disables it alone in one click (specs/053, FR-010)', async () => {
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: false } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: false } });
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
@@ -281,8 +286,8 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     });
 
     it('disables an enabled page', async () => {
-      api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: true, hdvPage: true } });
-      api.saveSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+      api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
@@ -401,7 +406,7 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     api.me.mockResolvedValue({ status: 'ok', value: 'owner@example.com' });
     api.list.mockResolvedValue({ status: 'ok', value: [] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
-    api.getSettings.mockResolvedValue({ status: 'ok', value: { forgemagiePage: false, hdvPage: true } });
+    api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue(ok(7));
@@ -484,5 +489,90 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     fireEvent.click(within(section()).getByRole('button', { name: 'Réessayer' }));
     await act(async () => {});
     expect(section()).toHaveTextContent('50 000 / 100 000');
+  });
+
+  describe('les sept pages du site (specs/071)', () => {
+    beforeEach(() => { openSection = '#pages'; });
+    const pages = async () => (await screen.findByRole('heading', { name: 'Pages du site' })).closest('section') as HTMLElement;
+    const row = (section: HTMLElement, label: string) => within(section).getByText(label, { exact: false, selector: 'p' }).parentElement as HTMLElement;
+    const allOffExcept = (...on: string[]) => Object.fromEntries(
+      ['searchPage', 'pinnedPage', 'pricesPage', 'hdvPage', 'petsPage', 'forgemagiePage', 'brisagePage'].map((field) => [field, on.includes(field)]),
+    );
+
+    it('liste les sept pages dans l\'ordre de la navigation, chacune avec son état en texte', async () => {
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      await within(section).findByText('Désactivée');
+      const labels = within(section).getAllByText(/^Page .* :/, { selector: 'p' }).map((paragraph) => paragraph.textContent);
+      expect(labels).toEqual([
+        'Page Recherche : Activée',
+        'Page Suivis : Activée',
+        'Page Rentabilité : Activée',
+        'Page HDV : Activée',
+        'Page XP Familier : Activée',
+        'Page Forgemagie : Désactivée',
+        'Page Brisage : Activée',
+      ]);
+    });
+
+    it.each(['Recherche', 'Suivis', 'Rentabilité', 'XP Familier', 'Brisage'])('désactive la page %s seule, sans demander confirmation', async (label) => {
+      const field = { Recherche: 'searchPage', Suivis: 'pinnedPage', Rentabilité: 'pricesPage', 'XP Familier': 'petsPage', Brisage: 'brisagePage' }[label] as string;
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, [field]: false } });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: `Désactiver la page ${label}` }));
+      expect(await within(section).findByText(`Page ${label} désactivée.`)).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ [field]: false });
+      expect(within(row(section, `Page ${label} :`)).getByText('Désactivée')).toBeInTheDocument();
+    });
+
+    it('demande confirmation pour désactiver la dernière page active, et ne l\'envoie qu\'après', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: allOffExcept('brisagePage') });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: allOffExcept() });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page Brisage' }));
+      expect(within(section).getByRole('alert')).toHaveTextContent("C'est la dernière page active : le site n'aura plus aucune page disponible.");
+      expect(api.saveSettings).not.toHaveBeenCalled();
+      fireEvent.click(within(section).getByRole('button', { name: 'Confirmer la désactivation' }));
+      expect(await within(section).findByText('Page Brisage désactivée.')).toBeInTheDocument();
+      expect(api.saveSettings).toHaveBeenCalledWith({ brisagePage: false });
+    });
+
+    it('annule la désactivation de la dernière page active sans rien envoyer', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: allOffExcept('brisagePage') });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page Brisage' }));
+      fireEvent.click(within(section).getByRole('button', { name: 'Annuler' }));
+      expect(api.saveSettings).not.toHaveBeenCalled();
+      expect(within(section).queryByRole('alert')).not.toBeInTheDocument();
+      expect(within(section).getByRole('button', { name: 'Désactiver la page Brisage' })).toBeInTheDocument();
+    });
+
+    it('ne demande pas de confirmation pour activer une page, ni pour désactiver une page quand une autre reste active', async () => {
+      api.getSettings.mockResolvedValue({ status: 'ok', value: allOffExcept('brisagePage', 'hdvPage') });
+      api.saveSettings.mockResolvedValue({ status: 'ok', value: allOffExcept('brisagePage') });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page HDV' }));
+      expect(await within(section).findByText('Page HDV désactivée.')).toBeInTheDocument();
+      expect(within(section).queryByRole('button', { name: 'Confirmer la désactivation' })).not.toBeInTheDocument();
+    });
+
+    it('dit quand l\'enregistrement échoue et garde l\'état réellement enregistré', async () => {
+      api.saveSettings.mockResolvedValue({ status: 'unavailable' });
+      window.location.hash = openSection;
+      render(<AdminPage />);
+      const section = await pages();
+      fireEvent.click(await within(section).findByRole('button', { name: 'Désactiver la page Suivis' }));
+      expect(await within(section).findByRole('alert')).toBeInTheDocument();
+      expect(within(row(section, 'Page Suivis :')).getByText('Activée')).toBeInTheDocument();
+    });
   });
 });

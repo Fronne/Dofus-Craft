@@ -96,3 +96,84 @@ export function parseUsageResponse(payload: unknown): UsageResponse | undefined 
       return undefined;
   }
 }
+
+// specs/070-admin-dashboard-graphiques (data-model.md « Journée Cloudflare »): the current UTC day, hour by hour.
+// The server sends each hour's own consumption; the running total and the hours where 80 % / 100 % of a limit
+// were reached are worked out here, as pure rules.
+export type UsageHour = { hour: number } & Record<UsageMetric, number>;
+
+export type TodayUsageResponse =
+  | { state: 'ok'; date: string; readAt: string; hours: UsageHour[] }
+  | { state: 'not-configured'; missing: UsageSecret[] }
+  | { state: 'denied' }
+  | { state: 'unavailable' };
+
+export type CumulativeHour = {
+  hour: number;
+  // The last hour is the one still running: its figures are not final.
+  partial: boolean;
+  used: Record<UsageMetric, number>;
+  percent: Record<UsageMetric, number>;
+};
+
+export type ThresholdCrossing = { metric: UsageMetric; level: 'warning' | 'over'; hour: number };
+
+// One entry per hour from 0 to `now`'s hour; rows of the same hour add up, an hour without a row is 0, hours
+// outside the day (or not a whole hour from 0 to 23) are ignored.
+export function fillTodayHours(now: Date, rows: UsageHour[]): UsageHour[] {
+  const hours = Array.from({ length: now.getUTCHours() + 1 }, (_, hour): UsageHour => ({ hour, workersRequests: 0, d1RowsRead: 0, d1RowsWritten: 0 }));
+  for (const row of rows) {
+    const entry = Number.isInteger(row.hour) ? hours[row.hour] : undefined;
+    if (!entry) continue;
+    for (const metric of USAGE_METRICS) entry[metric] += row[metric];
+  }
+  return hours;
+}
+
+const noUsage = (): Record<UsageMetric, number> => ({ workersRequests: 0, d1RowsRead: 0, d1RowsWritten: 0 });
+
+// The running total since 00:00 UTC, and its percentage of each limit (rounded, never capped).
+export function cumulativeHours(hours: UsageHour[]): CumulativeHour[] {
+  const used = noUsage();
+  return hours.map((entry, index) => {
+    for (const metric of USAGE_METRICS) used[metric] += entry[metric];
+    const percent = noUsage();
+    for (const metric of USAGE_METRICS) percent[metric] = usagePercent(used[metric], USAGE_LIMITS[metric]);
+    return { hour: entry.hour, partial: index === hours.length - 1, used: { ...used }, percent };
+  });
+}
+
+// For each metric, the first hour whose running total reached 80 % (`warning`) and the first that reached 100 %
+// (`over`) of its limit; nothing for a level never reached.
+export function thresholdCrossings(cumulative: CumulativeHour[]): ThresholdCrossing[] {
+  const crossings: ThresholdCrossing[] = [];
+  for (const metric of USAGE_METRICS) {
+    for (const level of ['warning', 'over'] as const) {
+      const reached = cumulative.find((entry) => {
+        const current = usageLevel(entry.used[metric], USAGE_LIMITS[metric]);
+        return level === 'warning' ? current !== 'ok' : current === 'over';
+      });
+      if (reached) crossings.push({ metric, level, hour: reached.hour });
+    }
+  }
+  return crossings;
+}
+
+export const crossingText = (crossing: ThresholdCrossing) =>
+  `${USAGE_LABELS[crossing.metric]} : ${crossing.level === 'warning' ? '80' : '100'} % franchi à ${crossing.hour} h UTC`;
+
+export function isUsageHour(value: unknown): value is UsageHour {
+  return isRecord(value) && typeof value.hour === 'number' && Number.isInteger(value.hour) && value.hour >= 0 && value.hour <= 23 &&
+    USAGE_METRICS.every((metric) => isCount(value[metric]));
+}
+
+export function parseTodayUsageResponse(payload: unknown): TodayUsageResponse | undefined {
+  if (isRecord(payload) && payload.state === 'ok') {
+    return typeof payload.date === 'string' && typeof payload.readAt === 'string' && Array.isArray(payload.hours) && payload.hours.every(isUsageHour)
+      ? { state: 'ok', date: payload.date, readAt: payload.readAt, hours: payload.hours }
+      : undefined;
+  }
+  // The other states are the same as for the history.
+  const other = parseUsageResponse(payload);
+  return other === undefined || other.state === 'ok' ? undefined : other;
+}

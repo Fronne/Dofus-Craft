@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
 
 const getSiteSettings = vi.hoisted(() => vi.fn());
 vi.mock('../../src/services/site-settings-api', () => ({ getSiteSettings }));
@@ -36,7 +37,7 @@ describe('page HDV activée ou désactivée (specs/053)', () => {
   afterEach(cleanup);
 
   it('hides the link and says the page is unavailable while it is disabled (US2)', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: false });
+    getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: false, hdvPage: false });
     open('/hdv');
     expect(await screen.findByText('HDV est momentanément indisponible')).toBeInTheDocument();
     expect(hdvLink()).not.toBeInTheDocument();
@@ -46,12 +47,12 @@ describe('page HDV activée ou désactivée (specs/053)', () => {
   });
 
   it('shows the link and the page while it is enabled, and remembers the settings (US2)', async () => {
-    getSiteSettings.mockResolvedValue({ forgemagiePage: false, hdvPage: true });
+    getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true });
     open('/hdv');
     await waitFor(() => expect(getSiteSettings).toHaveBeenCalled());
     expect(screen.getByText('Page HDV')).toBeInTheDocument();
     expect(hdvLink()).toBeInTheDocument();
-    await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-site-settings') as string)).toEqual({ forgemagiePage: false, hdvPage: true }));
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-site-settings') as string)).toEqual({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true }));
   });
 
   it('shows the page on a new device while the setting is still being read (FR-002)', () => {
@@ -62,7 +63,7 @@ describe('page HDV activée ou désactivée (specs/053)', () => {
   });
 
   it('waits rather than show the page, on a device that knew it disabled, while reading', () => {
-    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: false, hdvPage: false }));
+    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ ...ALL_PAGES, forgemagiePage: false, hdvPage: false }));
     getSiteSettings.mockReturnValue(new Promise(() => {}));
     open('/hdv');
     expect(screen.getByText('Chargement…')).toBeInTheDocument();
@@ -71,7 +72,7 @@ describe('page HDV activée ou désactivée (specs/053)', () => {
   });
 
   it('keeps the page hidden when the device knew it disabled and the setting cannot be read (US3)', async () => {
-    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ forgemagiePage: false, hdvPage: false }));
+    window.localStorage.setItem('craftcheck-site-settings', JSON.stringify({ ...ALL_PAGES, forgemagiePage: false, hdvPage: false }));
     getSiteSettings.mockResolvedValue(undefined);
     open('/hdv');
     expect(await screen.findByText('HDV est momentanément indisponible')).toBeInTheDocument();

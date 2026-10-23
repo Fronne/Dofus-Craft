@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { SiteSettings } from '../src/domain/site-settings';
+import { SITE_PAGES, isLastEnabledPage, type SiteSettingField, type SiteSettings } from '../src/domain/site-settings';
 import { adminApi } from './admin-api';
 import { failureMessage } from './messages';
 
-// The pages the owner can turn on or off: specs/050 (Forgemagie), specs/053 (HDV).
-const PAGES: { field: keyof SiteSettings; label: string }[] = [
-  { field: 'forgemagiePage', label: 'Forgemagie' },
-  { field: 'hdvPage', label: 'HDV' },
-];
+// The pages the owner can turn on or off: the seven pages of the site's navigation (specs/050, specs/053, specs/071).
+const PAGES = SITE_PAGES.map(({ field, label }) => ({ field, label }));
 
 // specs/050-forgemagie-page-toggle (contracts/site-settings-api.md « Interface »): turn a page of the
 // site on or off. The state shown is always the one the server answered, never an assumed one (FR-008).
@@ -15,6 +12,8 @@ export function SiteSettingsEditor() {
   const [settings, setSettings] = useState<SiteSettings>();
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; error: boolean }>();
+  // The page whose turning off waits for a second click, because it is the last one on (specs/071, FR-006).
+  const [confirming, setConfirming] = useState<SiteSettingField>();
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -30,7 +29,8 @@ export function SiteSettingsEditor() {
   }, [attempt]);
 
   // specs/053-hdv-page-toggle (FR-010): only the page clicked is sent.
-  async function toggle(field: keyof SiteSettings, label: string, current: SiteSettings) {
+  async function toggle(field: SiteSettingField, label: string, current: SiteSettings) {
+    setConfirming(undefined);
     setBusy(true);
     const result = await adminApi.saveSettings({ [field]: !current[field] });
     setBusy(false);
@@ -68,15 +68,29 @@ export function SiteSettingsEditor() {
           <p>
             Page {label} : <strong>{settings[field] ? 'Activée' : 'Désactivée'}</strong>
           </p>
-          <button
-            type="button"
-            className="btn btn-secondary btn-small"
-            aria-label={`${settings[field] ? 'Désactiver' : 'Activer'} la page ${label}`}
-            disabled={busy}
-            onClick={() => void toggle(field, label, settings)}
-          >
-            {settings[field] ? 'Désactiver' : 'Activer'}
-          </button>
+          {confirming === field ? (
+            <>
+              <p className="admin-message admin-message--error" role="alert">
+                C'est la dernière page active : le site n'aura plus aucune page disponible.
+              </p>
+              <button type="button" className="btn btn-secondary btn-small admin-danger" disabled={busy} onClick={() => void toggle(field, label, settings)}>
+                Confirmer la désactivation
+              </button>
+              <button type="button" className="btn btn-secondary btn-small" onClick={() => setConfirming(undefined)}>
+                Annuler
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-secondary btn-small"
+              aria-label={`${settings[field] ? 'Désactiver' : 'Activer'} la page ${label}`}
+              disabled={busy}
+              onClick={() => (isLastEnabledPage(settings, field) ? setConfirming(field) : void toggle(field, label, settings))}
+            >
+              {settings[field] ? 'Désactiver' : 'Activer'}
+            </button>
+          )}
         </div>
       ))}
       {feedback && (

@@ -36,7 +36,9 @@
     "worker:db:migrate-sniffer-origin": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0019_add_sniffer_origin.sql --remote",
     "worker:db:migrate-lot-prices": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0020_add_lot_prices.sql --remote",
     "worker:db:migrate-brisage-coefficients": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0021_add_brisage_coefficients.sql --remote",
-    "worker:db:migrate-item-type": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0022_add_contribution_item_type.sql --remote",
+    "worker:db:migrate-dashboard-indexes": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0022_add_dashboard_indexes.sql --remote",
+    "worker:db:migrate-site-pages": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0023_widen_site_settings_keys.sql --remote",
+    "worker:db:migrate-item-type": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0024_add_contribution_item_type.sql --remote",
     "admin:dev": "vite --config vite.admin.config.ts",
     "admin:build": "vite build --config vite.admin.config.ts",
     "admin:deploy": "wrangler deploy --config admin-worker/wrangler.toml"

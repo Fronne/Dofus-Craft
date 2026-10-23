@@ -91,8 +91,8 @@ triggers in the Cloudflare dashboard before deploying**: a deploy replaces them.
 - specs/071: from tool 0.4.0, an observation may carry `category` (the DofusDB item type): prices of
   every HDV are accepted and tagged in `item_type` (equipment / resource / rune / consumable, from
   `src/item-types.json`, built by `scripts/build-item-types.mjs`). Equipments are item prices
-  (`kind = 'item'`). Migration: `npm run worker:db:migrate-item-type` (0022, adds a column, rewrites no row).
-  **Apply 0022 BEFORE deploying this Worker**: every insert writes `item_type`, so without the column
+  (`kind = 'item'`). Migration: `npm run worker:db:migrate-item-type` (0024, adds a column, rewrites no row).
+  **Apply 0024 BEFORE deploying this Worker**: every insert writes `item_type`, so without the column
   every contribution (manual, Forgemagie, bot, sniffer) fails. Run it once only (a second ADD COLUMN
   fails with "duplicate column"), and never run 0019 again after it (its copy would drop the column).
 - Every price is recorded with `origin = 'sniffer'` and the key's id as `device_id`, at most

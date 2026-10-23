@@ -5,7 +5,7 @@
 ## Phase 1 : Setup
 
 - [x] T001 Créer `scripts/build-item-types.mjs` et générer `worker/src/item-types.json` (typeId → nature, natures de plan.md R1, source et date)
-- [x] T002 Créer `worker/migrations/0022_add_contribution_item_type.sql` : `ALTER TABLE community_price_contributions ADD COLUMN item_type TEXT CHECK (item_type IN ('equipment','resource','rune','consumable'))`
+- [x] T002 Créer `worker/migrations/0024_add_contribution_item_type.sql` : `ALTER TABLE community_price_contributions ADD COLUMN item_type TEXT CHECK (item_type IN ('equipment','resource','rune','consumable'))`
 - [x] T003 [P] Mettre `worker/schema.sql` à jour, ajouter `worker:db:migrate-item-type` à `package.json`
 
 ## Phase 2 : Fondations
@@ -26,5 +26,5 @@
 
 - [x] T012 Mettre `specs/056-sniffer-batch-prices/contracts/sniffer-api.md` à jour
 - [x] T013 `tests/unit/worker-schema.test.ts` : la migration mène à la colonne du schéma
-- [ ] T014 Appliquer 0022 sur une base D1 locale (`--local` seulement)
+- [ ] T014 Appliquer 0024 sur une base D1 locale (`--local` seulement)
 - [ ] T015 `npm test`, typecheck, lint ; relecteur

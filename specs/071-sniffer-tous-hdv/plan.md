@@ -20,11 +20,11 @@ requête par 98 ids), pas de prix par lot. Autres natures : chemin actuel (`unit
 
 **Primary Dependencies**: aucune nouvelle
 
-**Storage**: D1 — migration `0022_add_contribution_item_type.sql` (ADD COLUMN, pas de copie)
+**Storage**: D1 — migration `0024_add_contribution_item_type.sql` (ADD COLUMN, pas de copie)
 
 **Testing**: Vitest, D1 simulée (`tests/support/sqlite-d1.ts`) sur `worker/schema.sql`
 
-**Déploiement** : appliquer 0022 en remote AVANT `wrangler deploy` (chaque INSERT écrit `item_type`).
+**Déploiement** : appliquer 0024 en remote AVANT `wrangler deploy` (chaque INSERT écrit `item_type`).
 
 **Constraints**: plan gratuit (≤ 1000 appels par invocation) : lots de 200 observations, références lues
 par paquets de 98 ids ; `SNIFFER_MIN_VERSION` inchangé ; rien en remote
@@ -60,7 +60,7 @@ par paquets de 98 ids ; `SNIFFER_MIN_VERSION` inchangé ; rien en remote
 scripts/build-item-types.mjs              # génère worker/src/item-types.json
 worker/src/item-types.json                # typeId -> nature, source + date
 worker/src/item-types.ts                  # itemTypeOf(category)
-worker/migrations/0022_add_contribution_item_type.sql
+worker/migrations/0024_add_contribution_item_type.sql
 worker/schema.sql                         # colonne item_type
 worker/src/contribution.ts                # Contribution.itemType, INSERT
 worker/src/latest.ts                      # readLatestItemContributions

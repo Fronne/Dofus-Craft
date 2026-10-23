@@ -1,35 +1,56 @@
-// specs/050-forgemagie-page-toggle, specs/053-hdv-page-toggle (data-model.md): the owner's site
-// settings, shared by the public site, the administration page and both Workers. A setting never
-// saved has its default: the Forgemagie page off, the HDV page on.
-export type SiteSettings = { forgemagiePage: boolean; hdvPage: boolean };
+// specs/050-forgemagie-page-toggle, specs/053-hdv-page-toggle, specs/071-admin-dashboard-moderne (data-model.md): the
+// owner's site settings, shared by the public site, the administration page and both Workers. One list describes the
+// pages the owner can turn on or off; everything else (types, defaults, validation, storage keys, the navigation)
+// derives from it. A setting never saved has its default.
+export const SITE_PAGES = [
+  { field: 'searchPage', key: 'search_page', label: 'Recherche', route: 'search', enabledByDefault: true },
+  { field: 'pinnedPage', key: 'pinned_page', label: 'Suivis', route: 'pinned', enabledByDefault: true },
+  { field: 'pricesPage', key: 'prices_page', label: 'Rentabilité', route: 'prices', enabledByDefault: true },
+  { field: 'hdvPage', key: 'hdv_page', label: 'HDV', route: 'hdv', enabledByDefault: true },
+  { field: 'petsPage', key: 'pets_page', label: 'XP Familier', route: 'pets', enabledByDefault: true },
+  { field: 'forgemagiePage', key: 'forgemagie_page', label: 'Forgemagie', route: 'forgemagie', enabledByDefault: false },
+  { field: 'brisagePage', key: 'brisage_page', label: 'Brisage', route: 'brisage', enabledByDefault: true },
+] as const;
 
-export const DEFAULT_SITE_SETTINGS: SiteSettings = { forgemagiePage: false, hdvPage: true };
+export type SitePage = (typeof SITE_PAGES)[number];
+export type SiteSettingField = SitePage['field'];
+// The key of the page in the site's ROUTES (src/app/router.tsx), which this module does not import: the Workers share it.
+export type SiteRouteKey = SitePage['route'];
 
-// What the administration sends: only the settings it changes, so one never overwrites the other.
+export type SiteSettings = Record<SiteSettingField, boolean>;
+
+export const DEFAULT_SITE_SETTINGS = Object.fromEntries(SITE_PAGES.map((page) => [page.field, page.enabledByDefault])) as SiteSettings;
+
+// What the administration sends: only the settings it changes, so one never overwrites another.
 export type SiteSettingsChange = Partial<SiteSettings>;
 
 export type SiteSettingsValidation =
   | { ok: true; value: SiteSettingsChange }
-  | { ok: false; field: keyof SiteSettings; error: string };
+  | { ok: false; field: SiteSettingField; error: string };
 
 const INVALID_VALUE = 'Valeur attendue : activée ou désactivée.';
 
-// Settings read from the service or kept on this device. Settings saved before specs/053 have no
-// `hdvPage`: they get its default, so the HDV page doesn't disappear for them.
+// Settings read from the service or kept on this device. The Forgemagie setting is the one every version has
+// saved, so it is required; a setting a shorter answer lacks (saved before specs/053 or specs/071) gets its default,
+// so a page never disappears for someone whose settings were kept before it could be turned off.
 export function parseSiteSettings(value: unknown): SiteSettings | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const { forgemagiePage, hdvPage } = value as Record<string, unknown>;
-  if (typeof forgemagiePage !== 'boolean') return undefined;
-  if (hdvPage === undefined) return { forgemagiePage, hdvPage: DEFAULT_SITE_SETTINGS.hdvPage };
-  if (typeof hdvPage !== 'boolean') return undefined;
-  return { forgemagiePage, hdvPage };
+  const record = value as Record<string, unknown>;
+  if (typeof record.forgemagiePage !== 'boolean') return undefined;
+  const settings = { ...DEFAULT_SITE_SETTINGS };
+  for (const { field } of SITE_PAGES) {
+    if (record[field] === undefined) continue;
+    if (typeof record[field] !== 'boolean') return undefined;
+    settings[field] = record[field];
+  }
+  return settings;
 }
 
 export function validateSiteSettingsChange(input: unknown): SiteSettingsValidation {
   if (typeof input !== 'object' || input === null) return { ok: false, field: 'forgemagiePage', error: INVALID_VALUE };
   const record = input as Record<string, unknown>;
   const change: SiteSettingsChange = {};
-  for (const field of ['forgemagiePage', 'hdvPage'] as const) {
+  for (const { field } of SITE_PAGES) {
     if (record[field] === undefined) continue;
     if (typeof record[field] !== 'boolean') return { ok: false, field, error: INVALID_VALUE };
     change[field] = record[field];
@@ -37,3 +58,12 @@ export function validateSiteSettingsChange(input: unknown): SiteSettingsValidati
   if (Object.keys(change).length === 0) return { ok: false, field: 'forgemagiePage', error: INVALID_VALUE };
   return { ok: true, value: change };
 }
+
+export const enabledPageCount = (settings: SiteSettings): number => SITE_PAGES.filter((page) => settings[page.field]).length;
+
+// The first page of the navigation that is on: where the site's entry points (home, logo, « back » links) lead.
+export const firstEnabledPage = (settings: SiteSettings): SitePage | undefined => SITE_PAGES.find((page) => settings[page.field]);
+
+// True when `field` is on and is the only page left on: turning it off would leave the site without a page.
+export const isLastEnabledPage = (settings: SiteSettings, field: SiteSettingField): boolean =>
+  settings[field] && enabledPageCount(settings) === 1;

@@ -57,6 +57,8 @@ describe('worker/migrations', () => {
       median_at_submission_kamas INTEGER, deviation_percent REAL, kind TEXT NOT NULL DEFAULT 'resource',
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')))`);
     migrated.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    // And the visits table (0002), which 0022 puts an index on.
+    migrated.exec('CREATE TABLE app_visits (device_id TEXT NOT NULL, day TEXT NOT NULL, PRIMARY KEY (device_id, day))');
     const directory = resolve(process.cwd(), 'worker/migrations');
     for (const file of readdirSync(directory).filter((name) => name >= '0007').sort()) {
       migrated.exec(readFileSync(resolve(directory, file), 'utf8'));
@@ -65,7 +67,7 @@ describe('worker/migrations', () => {
     // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     // specs/069-coefficients-brisage-partages: and the shared breaking coefficients (0021).
     const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients');
-    expect(tables(migrated).filter((name) => name !== 'community_price_contributions')).toEqual(restored);
+    expect(tables(migrated).filter((name) => name !== 'community_price_contributions' && name !== 'app_visits')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
     expect(columns(migrated, 'community_price_contributions')).toEqual(columns(fresh, 'community_price_contributions'));
@@ -95,17 +97,35 @@ describe('worker/migrations', () => {
     expect(() => db.exec("INSERT INTO brisage_coefficients (server_id, item_id, coefficient, noted_at) VALUES ('mikhal', '1', 4001, 'x')")).toThrow();
   });
 
-  it('adds item_type (0022) without touching existing rows, and refuses an unknown nature', () => {
+  it('adds item_type (0024) without touching existing rows, and refuses an unknown nature', () => {
     const db = new DatabaseSync(':memory:');
     db.exec(readFileSync(resolve(process.cwd(), 'worker/schema.sql'), 'utf8').replace(/,\s*-- specs\/071[\s\S]*?item_type TEXT CHECK \([^)]*\)\)/, ''));
     expect(columns(db, 'community_price_contributions')).not.toContain('item_type');
     db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('old', '1', 'mikhal', 10)");
-    db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_contribution_item_type.sql'), 'utf8'));
+    db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0024_add_contribution_item_type.sql'), 'utf8'));
     expect(db.prepare('SELECT id, amount_kamas, item_type FROM community_price_contributions').all()).toEqual([{ id: 'old', amount_kamas: 10, item_type: null }]);
     db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, item_type) VALUES ('e', '1', 'mikhal', 10, 'equipment')");
     expect(() => db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, item_type) VALUES ('x', '1', 'mikhal', 10, 'robot')")).toThrow();
     // Once only: a second run fails and changes nothing.
-    expect(() => db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_contribution_item_type.sql'), 'utf8'))).toThrow(/duplicate column/);
+    expect(() => db.exec(readFileSync(resolve(process.cwd(), 'worker/migrations/0024_add_contribution_item_type.sql'), 'utf8'))).toThrow(/duplicate column/);
+  });
+
+  // specs/070-admin-dashboard-graphiques: the two indexes the dashboard's reads go through.
+  it('adds the dashboard indexes (0022) without touching a row, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas) VALUES ('kept', '1', 'mikhal', 10)");
+    db.exec("INSERT INTO app_visits (device_id, day) VALUES ('a', '2026-10-22')");
+    db.exec('DROP INDEX idx_community_price_contributions_created_at');
+    db.exec('DROP INDEX idx_app_visits_day');
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0022_add_dashboard_indexes.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    const indexes = (table: string) =>
+      (db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name NOT LIKE 'sqlite_%' ORDER BY name").all(table) as { name: string }[]).map((row) => row.name);
+    expect(indexes('community_price_contributions')).toEqual(['idx_community_price_contributions_created_at', 'idx_community_price_contributions_lookup']);
+    expect(indexes('app_visits')).toEqual(['idx_app_visits_day']);
+    expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
+    expect(db.prepare('SELECT device_id, day FROM app_visits').all()).toEqual([{ device_id: 'a', day: '2026-10-22' }]);
   });
 
   it('can run the origin rebuild (0019) again', () => {
@@ -140,5 +160,38 @@ describe('worker/migrations', () => {
     expect(() => dropped.exec(rebuild)).toThrow();
     for (const statement of statements.slice(-2)) dropped.exec(statement);
     expect(dropped.prepare('SELECT id FROM community_price_contributions').all()).toEqual([{ id: 'a' }]);
+  });
+
+  // specs/071-admin-dashboard-moderne: the key list of site_settings is widened by a rebuild of the table.
+  it('widens the site settings keys (0023) keeping the saved settings, and can run again', () => {
+    const db = freshDatabase();
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('forgemagie_page', '1', '2026-10-01T00:00:00.000Z'), ('hdv_page', '0', '2026-10-02T00:00:00.000Z')");
+    // The table as it was before 0023: only the two keys of 0017.
+    db.exec('DROP TABLE site_settings');
+    db.exec(`CREATE TABLE site_settings (key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page')),
+      value TEXT NOT NULL CHECK (value IN ('0', '1')), updated_at TEXT NOT NULL)`);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('forgemagie_page', '1', '2026-10-01T00:00:00.000Z'), ('hdv_page', '0', '2026-10-02T00:00:00.000Z')");
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('brisage_page', '0', 'x')")).toThrow();
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0023_widen_site_settings_keys.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(db.prepare('SELECT key, value, updated_at FROM site_settings ORDER BY key').all()).toEqual([
+      { key: 'forgemagie_page', value: '1', updated_at: '2026-10-01T00:00:00.000Z' },
+      { key: 'hdv_page', value: '0', updated_at: '2026-10-02T00:00:00.000Z' },
+    ]);
+    for (const key of ['search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page']) {
+      db.exec(`INSERT INTO site_settings (key, value, updated_at) VALUES ('${key}', '0', 'x')`);
+    }
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('autre_page', '0', 'x')")).toThrow();
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('search_page', '2', 'x')")).toThrow();
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
+  });
+
+  it('has the same site_settings table in schema.sql as after the migrations', () => {
+    const fresh = freshDatabase();
+    const sql = (fresh.prepare("SELECT sql FROM sqlite_master WHERE name = 'site_settings'").get() as { sql: string }).sql;
+    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page']) {
+      expect(sql).toContain(`'${key}'`);
+    }
   });
 });
