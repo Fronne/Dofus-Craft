@@ -61,7 +61,7 @@ describe('buildRankingRow with a known coefficient', () => {
     expect(row.gainKamas).toBe(direct.best!.gainKamas);
     expect(row.best?.kind).toBe(direct.best!.kind);
     expect(row.thresholdCoefficient).toBe(direct.best!.kind === 'focus' ? direct.focusThresholdCoefficient : direct.thresholdCoefficient);
-    expect(row.neverProfitable).toBe(false);
+    expect(row.unreachable).toBe(false);
   });
 
   it('keeps a loss as a negative gain', () => {
@@ -118,10 +118,22 @@ describe('buildRankingRow without a coefficient (US7)', () => {
     expect(row.thresholdCoefficient).toBeCloseTo(Math.min(advice.normalBreakEven ?? Infinity, advice.focusBreakEven ?? Infinity), 6);
   });
 
-  it('marks an item that would need more than 100 % as never profitable', () => {
-    const row = unknown(cape, 5_000_000);
+  it('keeps a threshold above 100 % (coefficients go up to 4000 %)', () => {
+    const row = unknown(cape, 10_000);
     expect(row.thresholdCoefficient!).toBeGreaterThan(100);
-    expect(row.neverProfitable).toBe(true);
+    expect(row.thresholdCoefficient!).toBeLessThanOrEqual(4000);
+    expect(row.unreachable).toBe(false);
+  });
+
+  it('marks a threshold above 4000 % as unreachable: no such coefficient exists', () => {
+    const row = unknown(cape, 5_000_000);
+    expect(row.thresholdCoefficient!).toBeGreaterThan(4000);
+    expect(row.unreachable).toBe(true);
+  });
+
+  it('starts with the levels 1 to 200', () => {
+    expect(DEFAULT_RANKING_VIEW.minLevel).toBe(1);
+    expect(DEFAULT_RANKING_VIEW.maxLevel).toBe(200);
   });
 
   it('puts a lower threshold on the cheaper item', () => {

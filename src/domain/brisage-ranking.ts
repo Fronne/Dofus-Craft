@@ -4,6 +4,7 @@ import {
   averageRoll,
   BRISAGE_STATS,
   brisageStat,
+  MAX_COEFFICIENT,
   runeForStat,
   type BrisageLine,
   type BrisageOption,
@@ -20,9 +21,6 @@ import type { RuneItem } from './forgemagie';
 export const STALE_AFTER_DAYS = 7;
 /** Under this many days a date is fresh. */
 export const FRESH_WITHIN_DAYS = 1;
-/** Above this coefficient (%) breaking can never pay: the game does not give more than 100 %. */
-export const MAX_USEFUL_COEFFICIENT = 100;
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type FreshnessLevel = 'fresh' | 'old' | 'stale' | 'unknown';
@@ -76,8 +74,8 @@ export type RankingRow = {
   gainKamas?: number;
   /** The coefficient (%) under which the best choice stops paying the item. */
   thresholdCoefficient?: number;
-  /** The threshold is above 100 % (or the runes are worth nothing): breaking cannot pay at any coefficient. */
-  neverProfitable: boolean;
+  /** The threshold is above the highest coefficient that exists (MAX_COEFFICIENT), or there is none: no coefficient can reach it. */
+  unreachable: boolean;
   exo?: RankingExo;
   /** The oldest date among the prices of the runes the best choice gives. */
   oldestRunePriceAt?: string;
@@ -108,6 +106,8 @@ export type RankingView = {
 export const DEFAULT_RANKING_VIEW: RankingView = {
   sortColumn: 'gain',
   sortDirection: 'desc',
+  minLevel: 1,
+  maxLevel: 200,
   hideWithoutPrice: true,
   hideWithoutCoefficient: false,
 };
@@ -155,7 +155,7 @@ export function buildRankingRow(item: IndexedItem, context: RankingContext): Ran
     itemId: item.id, name: item.name, level: item.level, imageUrl: item.imageUrl, categoryId: item.categoryId,
     priceKamas: price?.kamas, priceUpdatedAt: price?.updatedAt,
     coefficient: coefficient?.coefficient, coefficientAt: coefficient?.savedAt,
-    group: coefficient ? 'known' : 'unknown', status: 'no-price', neverProfitable: false,
+    group: coefficient ? 'known' : 'unknown', status: 'no-price', unreachable: false,
   };
   if (!price || !(price.kamas > 0)) return base;
   const lines = averageLines(item);
@@ -172,7 +172,7 @@ export function buildRankingRow(item: IndexedItem, context: RankingContext): Ran
     return {
       ...base, status: 'ok', gainKamas: best.gainKamas, thresholdCoefficient: threshold,
       best: { kind: best.kind, focusEffectId: best.focusEffectId, focusRuneName: best.focusRuneName },
-      neverProfitable: false,
+      unreachable: false,
       oldestRunePriceAt: datesOf(best, context.runePriceDates),
     };
   }
@@ -183,7 +183,7 @@ export function buildRankingRow(item: IndexedItem, context: RankingContext): Ran
   const { threshold, best, option } = adviceThreshold(advice);
   return {
     ...base, status: 'ok', best, thresholdCoefficient: threshold,
-    neverProfitable: threshold === undefined || threshold > MAX_USEFUL_COEFFICIENT,
+    unreachable: threshold === undefined || threshold > MAX_COEFFICIENT,
     oldestRunePriceAt: datesOf(option, context.runePriceDates),
   };
 }
