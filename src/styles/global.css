@@ -2786,3 +2786,25 @@ button.brisage-badge--exo:hover, button.brisage-badge--exo:focus-visible { trans
 button.brisage-badge--exo svg, button.brisage-badge--exo svg * { color: inherit; }
 button.brisage-badge--exo svg { display: block; flex: none; opacity: .8; }
 button.brisage-badge--exo:hover svg { opacity: 1; }
+
+/* specs/072-classement-brisage: the Classement tab of the Brisage page (reserved for the owner). */
+.brisage-tabs { display: inline-flex; padding: 3px; margin-bottom: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-pill); background: rgba(3, 14, 17, .45); }
+.brisage-tabs button { min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-weight: 600; cursor: pointer; }
+.brisage-tabs button.is-on { background: var(--link); color: #06201d; }
+.ranking { display: grid; gap: var(--space-4); }
+.ranking-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.ranking-filters label { display: grid; gap: var(--space-1); font-size: .85rem; color: var(--text-muted); }
+.ranking-filters input[type='number'], .ranking-filters select { min-width: 8rem; }
+.ranking-filters .ranking-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
+.ranking-sort { border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; padding: 0; text-align: left; }
+.ranking-sort:hover { color: var(--link); }
+.ranking-row { cursor: pointer; }
+.ranking-row:hover, .ranking-row:focus-visible { background: var(--link-soft); outline: none; }
+.ranking-item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ranking-open { border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; padding: 0; }
+.ranking-group th { padding-top: var(--space-4); text-align: left; font-size: .95rem; color: var(--link); }
+.ranking-age { display: inline-flex; align-items: center; gap: .25rem; font-size: .78rem; color: var(--text-muted); white-space: nowrap; }
+.ranking-age--stale { color: var(--danger); font-weight: 600; }
+.ranking-age--unknown { font-style: italic; }
+.ranking-unknown { color: var(--text-muted); font-style: italic; }
+.ranking-column-note { display: block; font-weight: 400; max-width: 14rem; }

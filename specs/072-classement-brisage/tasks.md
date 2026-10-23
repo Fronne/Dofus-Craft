@@ -23,7 +23,7 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **But** : vérifier le point de départ.
 
-- [ ] T001 Lancer `npm run test` dans le worktree et noter les tests déjà en échec éventuels, pour ne pas confondre avec ceux de cette fonctionnalité (à rappeler dans le message du premier commit d'implémentation)
+- [x] T001 Lancer `npm run test` dans le worktree et noter les tests déjà en échec éventuels, pour ne pas confondre avec ceux de cette fonctionnalité (à rappeler dans le message du premier commit d'implémentation)
 
 ---
 
@@ -33,10 +33,10 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **⚠️ CRITIQUE** : aucune histoire ne commence avant la fin de cette phase.
 
-- [ ] T002 [P] Ajouter `listStoredCoefficients(serverId): Map<string, StoredCoefficient>` (coefficients valides du serveur, clé = id d'objet) dans `src/persistence/brisage-coefficients.ts`, avec un test dans `tests/unit/brisage-coefficients.test.ts` (serveur différent ignoré, entrée invalide ignorée)
-- [ ] T003 [P] Créer `src/domain/brisage-ranking.ts` avec les types `RankingRow`, `RankingView`, `FreshnessLevel` de [data-model.md](data-model.md), la constante `STALE_AFTER_DAYS = 7` et la fonction `freshnessOf(date, now): FreshnessLevel` (`unknown` si la date est absente ou illisible) ; tests dans `tests/unit/brisage-ranking.test.ts` (frais, vieux, périmé à 7 jours, date absente)
-- [ ] T004 [P] Exposer les dates des prix de runes : extraire `loadPrices` de `src/features/brisage/useRunePrices.ts` en une fonction partagée qui renvoie aussi `updatedAt` / `latestContributionAt` de chaque prix, sans changer ce que `useRunePrices` renvoie à la fiche ; ajouter un test dans `tests/unit/` qui vérifie que la fiche reçoit les mêmes prix qu'avant
-- [ ] T005 Créer `src/features/brisage/useRankingData.ts` : charge `loadBrisageItemsIndex()`, les prix d'objets du mode actif (`pinnedItemPrices.listAllForServer` en mode personnel, `getSharedItemPrices` en mode communautaire), les prix de runes avec dates (T004) et les coefficients (locaux T002 + partagés par paquets de `MAX_ITEMS_PER_READ`, le plus récent gagne via `latestCoefficient`) ; renvoie `{ status, items, itemPrices, runePrices, coefficients, incomplete: string[] }` où `incomplete` liste les sources indisponibles (FR-014) ; dépend de T002 et T004
+- [x] T002 [P] Ajouter `listStoredCoefficients(serverId): Map<string, StoredCoefficient>` (coefficients valides du serveur, clé = id d'objet) dans `src/persistence/brisage-coefficients.ts`, avec un test dans `tests/unit/brisage-coefficients.test.ts` (serveur différent ignoré, entrée invalide ignorée)
+- [x] T003 [P] Créer `src/domain/brisage-ranking.ts` avec les types `RankingRow`, `RankingView`, `FreshnessLevel` de [data-model.md](data-model.md), la constante `STALE_AFTER_DAYS = 7` et la fonction `freshnessOf(date, now): FreshnessLevel` (`unknown` si la date est absente ou illisible) ; tests dans `tests/unit/brisage-ranking.test.ts` (frais, vieux, périmé à 7 jours, date absente)
+- [x] T004 [P] Exposer les dates des prix de runes : extraire `loadPrices` de `src/features/brisage/useRunePrices.ts` en une fonction partagée qui renvoie aussi `updatedAt` / `latestContributionAt` de chaque prix, sans changer ce que `useRunePrices` renvoie à la fiche ; ajouter un test dans `tests/unit/` qui vérifie que la fiche reçoit les mêmes prix qu'avant
+- [x] T005 Créer `src/features/brisage/useRankingData.ts` : charge `loadBrisageItemsIndex()`, les prix d'objets du mode actif (`pinnedItemPrices.listAllForServer` en mode personnel, `getSharedItemPrices` en mode communautaire), les prix de runes avec dates (T004) et les coefficients (locaux T002 + partagés par paquets de `MAX_ITEMS_PER_READ`, le plus récent gagne via `latestCoefficient`) ; renvoie `{ status, items, itemPrices, runePrices, coefficients, incomplete: string[] }` où `incomplete` liste les sources indisponibles (FR-014) ; dépend de T002 et T004
 
 **Point de contrôle** : les données du classement sont disponibles ; le domaine et ses types existent.
 
@@ -50,12 +50,12 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 ### Tests de l'histoire 6
 
-- [ ] T006 [P] [US6] Écrire `tests/unit/brisage-ranking-access.test.ts` : accès refusé par défaut, accordé après `?classement=1`, retiré après `?classement=0`, refusé si le stockage est illisible ou bloqué (échec sûr)
+- [x] T006 [P] [US6] Écrire `tests/unit/brisage-ranking-access.test.ts` : accès refusé par défaut, accordé après `?classement=1`, retiré après `?classement=0`, refusé si le stockage est illisible ou bloqué (échec sûr)
 
 ### Mise en œuvre de l'histoire 6
 
-- [ ] T007 [US6] Créer `src/persistence/brisage-ranking-access.ts` : clé `craftcheck-brisage-ranking` (`'1'` = accordé), `hasRankingAccess()`, `applyRankingAccessFromSearch(search): boolean` qui lit `classement=1` ou `classement=0`, écrit ou retire l'indicateur, chaque accès au stockage dans un `try/catch`
-- [ ] T008 [US6] Dans `src/features/brisage/BrisagePage.tsx`, appeler `applyRankingAccessFromSearch` au montage, retirer le paramètre `classement` de l'adresse (remplacement d'historique, sans recharger), et ajouter l'état d'accès ; ne rien monter du classement sans accès (FR-011) ; test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` : sans indicateur, ni onglet ni requête de données du classement
+- [x] T007 [US6] Créer `src/persistence/brisage-ranking-access.ts` : clé `craftcheck-brisage-ranking` (`'1'` = accordé), `hasRankingAccess()`, `applyRankingAccessFromSearch(search): boolean` qui lit `classement=1` ou `classement=0`, écrit ou retire l'indicateur, chaque accès au stockage dans un `try/catch`
+- [x] T008 [US6] Dans `src/features/brisage/BrisagePage.tsx`, appeler `applyRankingAccessFromSearch` au montage, retirer le paramètre `classement` de l'adresse (remplacement d'historique, sans recharger), et ajouter l'état d'accès ; ne rien monter du classement sans accès (FR-011) ; test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` : sans indicateur, ni onglet ni requête de données du classement
 
 **Point de contrôle** : la porte fonctionne ; aucun contenu de classement n'est encore affiché.
 
@@ -69,15 +69,15 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 ### Tests de l'histoire 1
 
-- [ ] T009 [P] [US1] Dans `tests/unit/brisage-ranking.test.ts`, tester `buildRankingRow` (coefficient connu) : gain, meilleur choix et seuil identiques à `analyzeBrisage` appelé directement avec les jets moyens (SC-002), objet sans ligne brisable → statut `no-breakable-line`, rune sans prix → statut `missing-rune-price` sans gain inventé, gain négatif conservé
-- [ ] T010 [P] [US1] Dans `tests/integration/brisage-ranking-tab.test.tsx`, tester l'onglet avec accès accordé : trois objets listés dans l'ordre décroissant du gain, perte en bas, serveur changé = seules les données de ce serveur, mode de prix changé (personnel / communautaire) = classement recalculé avec les prix de ce mode (FR-013), objets sans prix absents par défaut (FR-002)
+- [x] T009 [P] [US1] Dans `tests/unit/brisage-ranking.test.ts`, tester `buildRankingRow` (coefficient connu) : gain, meilleur choix et seuil identiques à `analyzeBrisage` appelé directement avec les jets moyens (SC-002), objet sans ligne brisable → statut `no-breakable-line`, rune sans prix → statut `missing-rune-price` sans gain inventé, gain négatif conservé
+- [x] T010 [P] [US1] Dans `tests/integration/brisage-ranking-tab.test.tsx`, tester l'onglet avec accès accordé : trois objets listés dans l'ordre décroissant du gain, perte en bas, serveur changé = seules les données de ce serveur, mode de prix changé (personnel / communautaire) = classement recalculé avec les prix de ce mode (FR-013), objets sans prix absents par défaut (FR-002)
 
 ### Mise en œuvre de l'histoire 1
 
-- [ ] T011 [US1] Dans `src/domain/brisage-ranking.ts`, écrire `buildRankingRow(item, context)` pour un coefficient connu : fusion des lignes par stat comme `mergeRanges` de `BrisagePage.tsx`, jets moyens par `averageRoll`, appel de `analyzeBrisage`, remplissage de `RankingRow` ; et `buildRanking(items, context)` qui renvoie une ligne pour **chaque objet de l'index** : statut `no-price` (sans gain) quand le prix HDV est inconnu, `ok`, `missing-rune-price` ou `no-breakable-line` sinon
-- [ ] T012 [US1] Créer `src/features/brisage/RankingTab.tsx` : appelle `useRankingData`, construit les lignes (mémoïsées par serveur, mode, prix, coefficients), affiche l'avertissement d'estimation (FR-015), l'état de chargement, le bandeau « Classement incomplet : … » (FR-014), le message de liste vide, et le tableau avec les colonnes Objet, Niveau, Prix (avec sa source : personnel ou communautaire selon le mode), Meilleur choix, Gain, Coefficient, Seuil ; les lignes `missing-rune-price` portent le libellé « prix de rune manquant » ; par défaut les lignes `no-price` sont masquées (case « masquer sans prix » cochée, voir T026)
-- [ ] T013 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter le sélecteur d'onglets Fiche / Classement (visible seulement avec l'accès) et monter `RankingTab` ; la fiche reste inchangée et par défaut ; l'état `RankingView` (tri et filtres, valeurs par défaut de [data-model.md](data-model.md)) est tenu dès maintenant dans `BrisagePage` et passé à `RankingTab`, pour survivre à un changement d'onglet (FR-010)
-- [ ] T014 [P] [US1] Ajouter les styles du classement dans `src/styles/global.css`, avec la charte et les classes du tableau de la fiche (`brisage-table`), et un affichage lisible sur mobile
+- [x] T011 [US1] Dans `src/domain/brisage-ranking.ts`, écrire `buildRankingRow(item, context)` pour un coefficient connu : fusion des lignes par stat comme `mergeRanges` de `BrisagePage.tsx`, jets moyens par `averageRoll`, appel de `analyzeBrisage`, remplissage de `RankingRow` ; et `buildRanking(items, context)` qui renvoie une ligne pour **chaque objet de l'index** : statut `no-price` (sans gain) quand le prix HDV est inconnu, `ok`, `missing-rune-price` ou `no-breakable-line` sinon
+- [x] T012 [US1] Créer `src/features/brisage/RankingTab.tsx` : appelle `useRankingData`, construit les lignes (mémoïsées par serveur, mode, prix, coefficients), affiche l'avertissement d'estimation (FR-015), l'état de chargement, le bandeau « Classement incomplet : … » (FR-014), le message de liste vide, et le tableau avec les colonnes Objet, Niveau, Prix (avec sa source : personnel ou communautaire selon le mode), Meilleur choix, Gain, Coefficient, Seuil ; les lignes `missing-rune-price` portent le libellé « prix de rune manquant » ; par défaut les lignes `no-price` sont masquées (case « masquer sans prix » cochée, voir T026)
+- [x] T013 [US1] Dans `src/features/brisage/BrisagePage.tsx`, ajouter le sélecteur d'onglets Fiche / Classement (visible seulement avec l'accès) et monter `RankingTab` ; la fiche reste inchangée et par défaut ; l'état `RankingView` (tri et filtres, valeurs par défaut de [data-model.md](data-model.md)) est tenu dès maintenant dans `BrisagePage` et passé à `RankingTab`, pour survivre à un changement d'onglet (FR-010)
+- [x] T014 [P] [US1] Ajouter les styles du classement dans `src/styles/global.css`, avec la charte et les classes du tableau de la fiche (`brisage-table`), et un affichage lisible sur mobile
 
 **Point de contrôle** : MVP livrable (classement des objets au coefficient connu, réservé au propriétaire).
 
@@ -89,9 +89,9 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : « Niveau » croissant puis décroissant ; valeurs inconnues toujours en fin ; tri conservé quand un filtre change.
 
-- [ ] T015 [P] [US2] Dans `tests/unit/brisage-ranking.test.ts`, tester `sortRows(rows, column, direction)` : chaque colonne triable (nom, niveau, prix, gain, seuil, gain avec exo), sens inversé, valeurs inconnues toujours en fin quel que soit le sens, lignes `missing-rune-price` et `no-price` toujours en fin (FR-008), ordre stable à égalité
-- [ ] T016 [US2] Écrire `sortRows` dans `src/domain/brisage-ranking.ts`
-- [ ] T017 [US2] Dans `src/features/brisage/RankingTab.tsx`, rendre les en-têtes triables (bouton avec `aria-sort`, tri par défaut gain décroissant, clic = bascule du sens, l'état de tri vit déjà dans `BrisagePage` depuis T013) ; test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` sur « Niveau » et `aria-sort`
+- [x] T015 [P] [US2] Dans `tests/unit/brisage-ranking.test.ts`, tester `sortRows(rows, column, direction)` : chaque colonne triable (nom, niveau, prix, gain, seuil, gain avec exo), sens inversé, valeurs inconnues toujours en fin quel que soit le sens, lignes `missing-rune-price` et `no-price` toujours en fin (FR-008), ordre stable à égalité
+- [x] T016 [US2] Écrire `sortRows` dans `src/domain/brisage-ranking.ts`
+- [x] T017 [US2] Dans `src/features/brisage/RankingTab.tsx`, rendre les en-têtes triables (bouton avec `aria-sort`, tri par défaut gain décroissant, clic = bascule du sens, l'état de tri vit déjà dans `BrisagePage` depuis T013) ; test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` sur « Niveau » et `aria-sort`
 
 ---
 
@@ -101,9 +101,9 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : deux objets sans coefficient, seuil 35 % et 90 % : le premier d'abord ; un seuil au-dessus de 100 % affiche « jamais rentable » en fin de groupe ; aucun gain en kamas.
 
-- [ ] T018 [P] [US7] Dans `tests/unit/brisage-ranking.test.ts`, tester `buildRankingRow` sans coefficient : seuil = minimum des seuils connus de `analyzeFocusAdvice` (`normalBreakEven`, `focusBreakEven`), `neverProfitable` au-dessus de 100 %, pas de `gainKamas`, rune sans prix → statut `missing-rune-price`
-- [ ] T019 [US7] Étendre `buildRankingRow` dans `src/domain/brisage-ranking.ts` pour le groupe `unknown` avec `analyzeFocusAdvice` et le prix de l'objet, et faire trier ce groupe par seuil croissant par défaut
-- [ ] T020 [US7] Dans `src/features/brisage/RankingTab.tsx`, afficher deux groupes titrés « Coefficient connu » et « Coefficient inconnu », la mention « coefficient inconnu », « jamais rentable » et « — » à la place du gain ; test d'intégration correspondant
+- [x] T018 [P] [US7] Dans `tests/unit/brisage-ranking.test.ts`, tester `buildRankingRow` sans coefficient : seuil = minimum des seuils connus de `analyzeFocusAdvice` (`normalBreakEven`, `focusBreakEven`), `neverProfitable` au-dessus de 100 %, pas de `gainKamas`, rune sans prix → statut `missing-rune-price`
+- [x] T019 [US7] Étendre `buildRankingRow` dans `src/domain/brisage-ranking.ts` pour le groupe `unknown` avec `analyzeFocusAdvice` et le prix de l'objet, et faire trier ce groupe par seuil croissant par défaut
+- [x] T020 [US7] Dans `src/features/brisage/RankingTab.tsx`, afficher deux groupes titrés « Coefficient connu » et « Coefficient inconnu », la mention « coefficient inconnu », « jamais rentable » et « — » à la place du gain ; test d'intégration correspondant
 
 ---
 
@@ -113,9 +113,9 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : un coefficient vieux de plusieurs jours montre son ancienneté ; au-delà de 7 jours il est mis en évidence ; une rune sans prix est signalée et la ligne passe en fin.
 
-- [ ] T021 [P] [US3] Dans `tests/unit/brisage-ranking.test.ts`, tester le calcul de `oldestRunePriceAt` (la plus ancienne date parmi les runes réellement utilisées) et que les dates absentes donnent `unknown`
-- [ ] T022 [US3] Remplir `oldestRunePriceAt` dans `buildRankingRow` (`src/domain/brisage-ranking.ts`) à partir des dates de T004
-- [ ] T023 [US3] Dans `src/features/brisage/RankingTab.tsx`, afficher l'ancienneté du prix, de la rune la plus ancienne et du coefficient (« il y a 3 j »), mettre en évidence ce qui est périmé par un texte et une icône, pas seulement une couleur ; test d'intégration
+- [x] T021 [P] [US3] Dans `tests/unit/brisage-ranking.test.ts`, tester le calcul de `oldestRunePriceAt` (la plus ancienne date parmi les runes réellement utilisées) et que les dates absentes donnent `unknown`
+- [x] T022 [US3] Remplir `oldestRunePriceAt` dans `buildRankingRow` (`src/domain/brisage-ranking.ts`) à partir des dates de T004
+- [x] T023 [US3] Dans `src/features/brisage/RankingTab.tsx`, afficher l'ancienneté du prix, de la rune la plus ancienne et du coefficient (« il y a 3 j »), mettre en évidence ce qui est périmé par un texte et une icône, pas seulement une couleur ; test d'intégration
 
 ---
 
@@ -125,10 +125,10 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : gain minimum 5 000 retire les objets en dessous ; « masquer sans coefficient » retire le groupe inconnu ; filtres sans résultat = message et réinitialisation.
 
-- [ ] T024 [P] [US4] Dans `tests/unit/brisage-ranking.test.ts`, tester `filterRows(rows, view)` : niveau min/max, catégorie, gain minimum (groupe connu), masquer sans prix, masquer sans coefficient, combinaisons, niveau min supérieur au max (aucun filtrage et erreur `levelRangeError` de `src/domain/brisage-search.ts`), objet sans `categoryId` exclu dès qu'une catégorie est choisie, lignes `no-price` masquées par défaut et visibles (en fin de liste) quand la case est décochée
-- [ ] T025 [US4] Écrire `filterRows` dans `src/domain/brisage-ranking.ts`
-- [ ] T026 [US4] Dans `src/features/brisage/RankingTab.tsx`, ajouter le formulaire de filtres (niveau, catégorie issue des catégories de la page Recherche, gain minimum, case « masquer sans prix » cochée par défaut, case « masquer sans coefficient »), le bouton « Réinitialiser les filtres » (qui remet ces valeurs par défaut) et le message d'absence de résultat ; test d'intégration
-- [ ] T027 [US4] Vérifier par un test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` que tri et filtres survivent à un aller-retour Classement → Fiche → Classement (l'état est déjà tenu dans `BrisagePage` depuis T013, FR-010)
+- [x] T024 [P] [US4] Dans `tests/unit/brisage-ranking.test.ts`, tester `filterRows(rows, view)` : niveau min/max, catégorie, gain minimum (groupe connu), masquer sans prix, masquer sans coefficient, combinaisons, niveau min supérieur au max (aucun filtrage et erreur `levelRangeError` de `src/domain/brisage-search.ts`), objet sans `categoryId` exclu dès qu'une catégorie est choisie, lignes `no-price` masquées par défaut et visibles (en fin de liste) quand la case est décochée
+- [x] T025 [US4] Écrire `filterRows` dans `src/domain/brisage-ranking.ts`
+- [x] T026 [US4] Dans `src/features/brisage/RankingTab.tsx`, ajouter le formulaire de filtres (niveau, catégorie issue des catégories de la page Recherche, gain minimum, case « masquer sans prix » cochée par défaut, case « masquer sans coefficient »), le bouton « Réinitialiser les filtres » (qui remet ces valeurs par défaut) et le message d'absence de résultat ; test d'intégration
+- [x] T027 [US4] Vérifier par un test d'intégration dans `tests/integration/brisage-ranking-tab.test.tsx` que tri et filtres survivent à un aller-retour Classement → Fiche → Classement (l'état est déjà tenu dans `BrisagePage` depuis T013, FR-010)
 
 ---
 
@@ -138,7 +138,7 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : clic sur une ligne = fiche de l'objet ; retour au classement = tri et filtres inchangés.
 
-- [ ] T028 [US5] Dans `src/features/brisage/RankingTab.tsx`, rendre chaque ligne cliquable et atteignable au clavier (Entrée) avec une propriété `onOpen(item)` ; dans `src/features/brisage/BrisagePage.tsx`, la brancher sur `openItem` puis passer à l'onglet Fiche ; test d'intégration (ouverture, retour avec tri et filtres conservés)
+- [x] T028 [US5] Dans `src/features/brisage/RankingTab.tsx`, rendre chaque ligne cliquable et atteignable au clavier (Entrée) avec une propriété `onOpen(item)` ; dans `src/features/brisage/BrisagePage.tsx`, la brancher sur `openItem` puis passer à l'onglet Fiche ; test d'intégration (ouverture, retour avec tri et filtres conservés)
 
 ---
 
@@ -148,18 +148,18 @@ description: "Liste des tâches du classement des objets les plus rentables à b
 
 **Test indépendant** : pour un objet sans une stat à rune chère, gain avec exo = gain obtenu avec l'exo − prix d'une rune de cette stat ; sans amélioration, aucun exo ; sans prix de rune, exo non proposé.
 
-- [ ] T029 [P] [US8] Dans `tests/unit/brisage-ranking.test.ts`, tester le calcul d'exo : ligne `{ value: 1, exo: true }` ajoutée par stat absente, prix d'une rune retranché, meilleur exo retenu, aucun exo recommandé s'il n'améliore pas le gain, exo ignoré sans prix de rune, et pour le groupe inconnu : seuil recalculé avec le prix de l'objet + le prix d'une rune d'exo, sans `gainKamas` (FR-018)
-- [ ] T030 [US8] Écrire `bestExoFor(item, context)` dans `src/domain/brisage-ranking.ts` en réutilisant `analyzeBrisage` / `analyzeFocusAdvice`, `BRISAGE_STATS` et `runeForStat`, et remplir `RankingRow.exo` (groupe connu : gain et apport ; groupe inconnu : `thresholdCoefficient` recalculé avec `itemCostKamas = prix de l'objet + prix d'une rune de l'exo`, comme dans [data-model.md](data-model.md)) ; mesurer le temps de calcul sur l'index complet et, si la mesure dépasse 1 s au premier affichage, calculer l'exo en différé (après le premier affichage) sans bloquer le tri
-- [ ] T031 [US8] Dans `src/features/brisage/RankingTab.tsx`, ajouter la colonne triable « Gain avec exo » (stat de l'exo, apport, note « une rune déduite : échecs et runes supplémentaires non comptés ») ; pour le groupe sans coefficient, elle affiche le seuil recalculé et le tri porte sur ce seuil ; test d'intégration
+- [x] T029 [P] [US8] Dans `tests/unit/brisage-ranking.test.ts`, tester le calcul d'exo : ligne `{ value: 1, exo: true }` ajoutée par stat absente, prix d'une rune retranché, meilleur exo retenu, aucun exo recommandé s'il n'améliore pas le gain, exo ignoré sans prix de rune, et pour le groupe inconnu : seuil recalculé avec le prix de l'objet + le prix d'une rune d'exo, sans `gainKamas` (FR-018)
+- [x] T030 [US8] Écrire `bestExoFor(item, context)` dans `src/domain/brisage-ranking.ts` en réutilisant `analyzeBrisage` / `analyzeFocusAdvice`, `BRISAGE_STATS` et `runeForStat`, et remplir `RankingRow.exo` (groupe connu : gain et apport ; groupe inconnu : `thresholdCoefficient` recalculé avec `itemCostKamas = prix de l'objet + prix d'une rune de l'exo`, comme dans [data-model.md](data-model.md)) ; mesurer le temps de calcul sur l'index complet et, si la mesure dépasse 1 s au premier affichage, calculer l'exo en différé (après le premier affichage) sans bloquer le tri
+- [x] T031 [US8] Dans `src/features/brisage/RankingTab.tsx`, ajouter la colonne triable « Gain avec exo » (stat de l'exo, apport, note « une rune déduite : échecs et runes supplémentaires non comptés ») ; pour le groupe sans coefficient, elle affiche le seuil recalculé et le tri porte sur ce seuil ; test d'intégration
 
 ---
 
 ## Phase 11 : Finitions et vérifications
 
-- [ ] T032 Lancer `npm run test` et `npm run build` (et le lint si le projet en a un) et corriger ce qui casse
-- [ ] T033 Mesurer le tri et un filtre sur l'index complet (SC-003, moins d'une seconde) et le temps pour lire les 10 premiers objets après l'ouverture de l'onglet (SC-001, moins de 10 secondes), et consigner les deux mesures dans `specs/072-classement-brisage/quickstart.md`
-- [ ] T034 Dérouler les huit scénarios de `specs/072-classement-brisage/quickstart.md` dans le navigateur (serveur de développement), vérifier l'exemple chiffré de contrôle contre la fiche objet, et donner l'adresse du serveur de test à l'utilisateur
-- [ ] T035 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves qu'il signale
+- [x] T032 Lancer `npm run test` et `npm run build` (et le lint si le projet en a un) et corriger ce qui casse
+- [x] T033 Mesurer le tri et un filtre sur l'index complet (SC-003, moins d'une seconde) et le temps pour lire les 10 premiers objets après l'ouverture de l'onglet (SC-001, moins de 10 secondes), et consigner les deux mesures dans `specs/072-classement-brisage/quickstart.md`
+- [x] T034 Dérouler les huit scénarios de `specs/072-classement-brisage/quickstart.md` dans le navigateur (serveur de développement), vérifier l'exemple chiffré de contrôle contre la fiche objet, et donner l'adresse du serveur de test à l'utilisateur
+- [x] T035 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves qu'il signale
 
 ---
 

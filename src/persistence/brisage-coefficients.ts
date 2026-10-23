@@ -27,6 +27,16 @@ export function getStoredCoefficient(serverId: string, itemId: string): StoredCo
   return isValid(entry) ? entry : undefined;
 }
 
+/** specs/072-classement-brisage: every coefficient noted on this device for a server, by item id (for the ranking). */
+export function listStoredCoefficients(serverId: string): Map<string, StoredCoefficient> {
+  const found = new Map<string, StoredCoefficient>();
+  const prefix = `${serverId}:`;
+  for (const [key, entry] of Object.entries(readAll())) {
+    if (key.startsWith(prefix) && key.length > prefix.length && isValid(entry)) found.set(key.slice(prefix.length), entry);
+  }
+  return found;
+}
+
 export function saveCoefficient(serverId: string, itemId: string, coefficient: number): StoredCoefficient | undefined {
   const entry = { coefficient, savedAt: new Date().toISOString() };
   if (!isValid(entry)) return undefined;

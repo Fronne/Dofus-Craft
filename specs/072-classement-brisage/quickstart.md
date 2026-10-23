@@ -41,3 +41,13 @@ Chronométrer, après l'ouverture de l'onglet, le temps pour lire les 10 premier
 ## Contrats et modèle
 
 Voir [contracts/classement-ui.md](contracts/classement-ui.md) et [data-model.md](data-model.md).
+
+## Mesures (T033)
+
+Index complet, 3143 objets, mesuré à l'implémentation :
+
+- Tri d'une colonne : 2,6 ms (SC-003, objectif < 1 s).
+- Filtre : 0,6 ms.
+- Calcul du classement de base : 163 ms.
+- Calcul des exos, par paquets de 40 objets sans bloquer l'écran : 5,6 s au total, le tableau reste utilisable pendant ce temps.
+- SC-001 (lire les 10 premiers objets en moins de 10 s) : non chronométré, à vérifier à la main.
