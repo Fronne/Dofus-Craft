@@ -351,7 +351,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const totalTone = (amount: number | undefined) => (
     amount === undefined || Math.round(amount) === 0 ? undefined : amount > 0 ? 'brisage-total-gain' : 'brisage-total-loss'
   );
-  const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : focusWins ? best?.focusEffectId : undefined;
+  const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : best?.kind === 'focus' ? best.focusEffectId : undefined; // the best focus is shown even when the item is a loss
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
     : [];

@@ -311,7 +311,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 /* The Recherche page's main search is the one large field of the site. */
 .search-primary .search-input-wrap > input { min-height: var(--control-lg); padding: .75rem .85rem .75rem 3.25rem; font-size: 1.05rem; }
 .search-primary .search-input-wrap > .search-input-icon { left: var(--space-4); width: 22px; height: 22px; }
-.search-primary input:focus { border-color: var(--accent-bright); }
 
 .filters-panel {
   display: grid;
@@ -2131,7 +2130,7 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+  box-shadow: none;
   outline: none;
 }
 
@@ -2662,8 +2661,7 @@ select:focus {
   .brisage-table tfoot td:empty { display: none; }
 }
 
-/* Brisage fields: no halo around the focused field, no up/down arrows on the numbers. */
-.brisage-block input:focus, .brisage-block input:focus-visible { box-shadow: none; border-color: var(--border-strong); outline: none; }
+/* Brisage fields: no up/down arrows on the numbers. */
 .brisage-block input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
 .brisage-block input[type='number']::-webkit-inner-spin-button, .brisage-block input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .brisage-table .resource-display img { background: transparent; }
