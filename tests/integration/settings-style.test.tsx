@@ -8,7 +8,7 @@ describe('Paramètres sans réglage de design ni d’accent (specs/051)', () => 
   afterEach(cleanup);
 
   function open(setTheme = vi.fn()) {
-    render(<ParametresPage theme="dark" setTheme={setTheme} priceMode="personal" setPriceMode={vi.fn()} />);
+    render(<ParametresPage theme="dark" setTheme={setTheme} dofus="emeraude" setDofus={vi.fn()} priceMode="personal" setPriceMode={vi.fn()} />);
     return setTheme;
   }
 

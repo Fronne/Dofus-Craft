@@ -1,15 +1,21 @@
 import { Icon } from '../../components/Icon';
 import { priceModes } from '../../domain/price-modes';
 import type { PriceMode } from '../../domain/price-modes';
+import type { DofusId } from '../../domain/dofus-themes';
+import { DofusPicker } from './DofusPicker';
 
 export function ParametresPage({
   theme,
   setTheme,
+  dofus,
+  setDofus,
   priceMode,
   setPriceMode,
 }: {
   theme: 'dark' | 'light';
   setTheme: (value: 'dark' | 'light') => void;
+  dofus: DofusId;
+  setDofus: (value: DofusId) => void;
   priceMode: PriceMode;
   setPriceMode: (value: PriceMode) => void;
 }) {
@@ -45,6 +51,14 @@ export function ParametresPage({
             <span>Thème sombre</span>
           </button>
         </div>
+      </section>
+
+      <section className="panel settings-section">
+        <h2>Dofus</h2>
+        <p className="settings-section-description">
+          Choisissez le Dofus dont le site prend les couleurs.
+        </p>
+        <DofusPicker dofus={dofus} setDofus={setDofus} />
       </section>
 
       <section className="panel settings-section">

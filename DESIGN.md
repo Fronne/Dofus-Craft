@@ -77,6 +77,25 @@ Règles :
 - Une couleur ne porte jamais seule une information : un prix ancien a aussi son libellé, un gain a
   son signe, une erreur son message.
 
+### Thèmes de Dofus (specs/074-dofus-color-themes)
+
+Les valeurs du tableau ci-dessus sont celles du Dofus Émeraude, le thème par défaut. Dans
+Paramètres, le joueur peut choisir un autre des six Dofus primordiaux (pourpre, turquoise, ocre,
+ébène, ivoire) : `data-dofus` sur `<html>` (absent pour l'émeraude) active la palette du Dofus, en
+sombre comme en clair, indépendamment de `data-theme`.
+
+- Une palette redéfinit l'accent, le fond, les cartes, les bordures, les lueurs et les textes
+  atténués. Elle ne redéfinit jamais `--kamas`, `--exo`, `--warning` ni `--danger` : ces couleurs
+  gardent leur rôle (section 2) avec tous les Dofus. `--link` ne change que pour le turquoise, dont
+  l'accent serait sinon la même teinte que les liens.
+- Chaque bloc `:root[data-dofus="x"]` a son jumeau `…[data-theme="light"]`, qui liste les mêmes
+  jetons : il doit l'emporter sur le bloc sombre en thème clair.
+- Une nouvelle palette ou un jeton modifié est contrôlé par `tests/unit/theme-contrast.test.ts`,
+  qui teste les douze combinaisons.
+- L'icône de la barre de navigation, l'icône d'onglet et la couleur de la barre d'adresse suivent le
+  Dofus (`src/domain/dofus-themes.ts`). `index.html` pose `data-dofus` avant le premier affichage,
+  d'après `craftcheck-dofus` dans `localStorage`.
+
 ## 3. Typographie
 
 Deux polices embarquées : **Rowdies** (`--font-display`, une seule graisse, 400) pour les titres, en
@@ -137,7 +156,7 @@ Base de 4 px. Seuls ces pas sont utilisés :
   se remplissent, économie qui compte — `useCountUp`), un champ de prix s'éclaire à
   l'enregistrement (`playOnce`), une carte des Suivis s'efface avant de partir (`leaveThen`), les
   listes arrivent en cascade, le losange du menu glisse d'une page à l'autre, le thème change en
-  fondu. Le halo du logo (Dofus Émeraude) est la seule animation continue.
+  fondu. Le halo du logo (le Dofus choisi, l'émeraude par défaut) est la seule animation continue.
 - Sur ordinateur (≥ 1024 px) toute l'interface est rendue à 90 % (`--ui-zoom`).
 
 ## 6. Composants
