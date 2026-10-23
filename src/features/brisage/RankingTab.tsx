@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import runeItems from '../../data/rune-items.json';
 import { getCategories } from '../../data/catalogue-repository';
 import { Icon } from '../../components/Icon';
@@ -25,6 +25,21 @@ const percent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 const EXO_CHUNK = 40;
 /** Rows drawn per group; « Afficher plus » adds as many again, so thousands of items stay quick to sort and filter (SC-003). */
 const PAGE_SIZE = 100;
+
+/** The exo already worked out for each item of a server and price mode, with what it was worked out from. */
+const exoCache = new Map<string, Map<string, { key: string; exo: RankingExo | null }>>();
+/** Forgets the exos kept (tests). */
+export function forgetExoCache(): void {
+  exoCache.clear();
+}
+
+/** Where the player was in the list when an item page was opened, taken back when the list comes back. */
+type Place = { scope: string; limit: number; scrollY: number };
+let lastPlace: Place | undefined;
+/** Forgets the place kept (tests). */
+export function forgetRankingPlace(): void {
+  lastPlace = undefined;
+}
 
 export type RankingOpenItem = { id: string; name: string; level: number; imageUrl?: string };
 
@@ -101,7 +116,12 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
   const data = useRankingData(serverId, priceMode);
   const [categories, setCategories] = useState<Category[]>([]);
   const [exos, setExos] = useState<{ key: object; byItem: Map<string, RankingExo | null>; done: boolean }>();
-  const [limit, setLimit] = useState(PAGE_SIZE);
+  const placeScope = `${serverId}:${priceMode}`;
+  // The place is only for the arrival that follows an item page: it is used up here, so a later arrival starts at the top.
+  const [place] = useState(() => (lastPlace?.scope === placeScope ? lastPlace : undefined));
+  useEffect(() => { lastPlace = undefined; }, []);
+  const [limit, setLimit] = useState(place?.limit ?? PAGE_SIZE);
+  const scrollRestored = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,23 +142,40 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
     if (rows.length === 0) return;
     let cancelled = false;
     const itemById = new Map(data.items.map((item) => [item.id, item]));
-    const todo = rows.filter((row) => row.status === 'ok');
+    // An exo only depends on the price of the item, its coefficient and the prices of the runes: one already worked out
+    // for the same three is taken back as it is, so coming back to the tab (or a new coefficient) only costs what changed.
+    const runeSignature = JSON.stringify(Object.entries(data.runePrices).sort(([a], [b]) => a.localeCompare(b)));
+    const scope = `${serverId}:${priceMode}`;
+    const kept = exoCache.get(scope) ?? new Map<string, { key: string; exo: RankingExo | null }>();
+    exoCache.set(scope, kept);
+    const keyOf = (row: RankingRow) => `${row.priceKamas}|${row.coefficient ?? ''}|${runeSignature}`;
     const byItem = new Map<string, RankingExo | null>();
+    const todo: RankingRow[] = [];
+    for (const row of rows) {
+      if (row.status !== 'ok') continue;
+      const hit = kept.get(row.itemId);
+      if (hit && hit.key === keyOf(row)) byItem.set(row.itemId, hit.exo);
+      else todo.push(row);
+    }
     let position = 0;
     const step = () => {
       if (cancelled) return;
       for (const row of todo.slice(position, position + EXO_CHUNK)) {
         const item = itemById.get(row.itemId);
-        byItem.set(row.itemId, item ? bestExoFor(item, row, context) ?? null : null);
+        const exo = item ? bestExoFor(item, row, context) ?? null : null;
+        byItem.set(row.itemId, exo);
+        kept.set(row.itemId, { key: keyOf(row), exo });
       }
       position += EXO_CHUNK;
       const done = position >= todo.length;
       setExos({ key: exoKey, byItem: new Map(byItem), done });
       if (!done) window.setTimeout(step, 0);
     };
-    window.setTimeout(step, 0);
+    // Everything kept is shown at once; only the rest is worked out, a few items at a time.
+    if (todo.length === 0) setExos({ key: exoKey, byItem, done: true });
+    else window.setTimeout(step, 0);
     return () => { cancelled = true; };
-  }, [rows, data.items, context, exoKey]);
+  }, [rows, data.items, data.runePrices, context, exoKey, serverId, priceMode]);
 
   const exosPending = rows.some((row) => row.status === 'ok') && !(exos?.key === exoKey && exos.done);
 
@@ -157,7 +194,18 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
   const rangeError = levelRangeError({ minLevel: view.minLevel, maxLevel: view.maxLevel });
   const sourceLabel = priceMode === 'community' ? 'communautaire' : 'personnel';
 
-  const openRow = (row: RankingRow) => onOpen({ id: row.itemId, name: row.name, level: row.level, imageUrl: row.imageUrl });
+  // Coming back from an item page, the list is where it was left (same number of rows, same scroll) instead of at the top.
+  const hasRows = shown.length > 0;
+  useLayoutEffect(() => {
+    if (scrollRestored.current || !hasRows) return;
+    scrollRestored.current = true;
+    if (place) window.scrollTo(0, place.scrollY);
+  }, [hasRows, place]);
+
+  const openRow = (row: RankingRow) => {
+    lastPlace = { scope: placeScope, limit, scrollY: window.scrollY };
+    onOpen({ id: row.itemId, name: row.name, level: row.level, imageUrl: row.imageUrl });
+  };
   const onRowKey = (event: KeyboardEvent<HTMLTableRowElement>, row: RankingRow) => {
     if (event.key === 'Enter' && event.target === event.currentTarget) openRow(row);
   };

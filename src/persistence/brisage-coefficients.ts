@@ -48,6 +48,17 @@ export function saveCoefficient(serverId: string, itemId: string, coefficient: n
   return entry;
 }
 
+/** « Coefficient unknown »: forgets what this device noted for the item. */
+export function removeStoredCoefficient(serverId: string, itemId: string): void {
+  const all = readAll();
+  delete all[`${serverId}:${itemId}`];
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch {
+    // Private browsing or blocked storage: nothing to forget.
+  }
+}
+
 /** The more recent of two coefficients (the first on a tie), or the one that exists. */
 export function latestCoefficient(a: StoredCoefficient | undefined, b: StoredCoefficient | undefined): StoredCoefficient | undefined {
   if (!a || !b) return a ?? b;

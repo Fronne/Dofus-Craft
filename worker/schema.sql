@@ -360,3 +360,16 @@ CREATE TABLE IF NOT EXISTS admin_cleanup_log (
   row_count INTEGER NOT NULL CHECK (row_count > 0)
 );
 CREATE INDEX IF NOT EXISTS idx_admin_cleanup_log_deleted_at ON admin_cleanup_log (deleted_at);
+
+-- specs/069-coefficients-brisage-partages (migrations/0027_add_brisage_coefficient_clears.sql): the « coefficient
+-- unknown » notes: a coefficient noted before the latest clear of its item is no longer given.
+CREATE TABLE IF NOT EXISTS brisage_coefficient_clears (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  cleared_at TEXT NOT NULL,
+  device_id TEXT NOT NULL DEFAULT '',
+  UNIQUE (server_id, item_id, cleared_at, device_id)
+);
+CREATE INDEX IF NOT EXISTS idx_brisage_coefficient_clears_item ON brisage_coefficient_clears (server_id, item_id, cleared_at);
+CREATE INDEX IF NOT EXISTS idx_brisage_coefficient_clears_at ON brisage_coefficient_clears (cleared_at);

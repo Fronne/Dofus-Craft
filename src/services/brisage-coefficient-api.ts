@@ -40,6 +40,22 @@ export async function getSharedCoefficients(serverId: string, itemIds: string[])
   return found;
 }
 
+/** « The coefficient of these items is unknown »: the notes made before are no longer given to anybody. True when the Worker stored it. */
+export async function clearSharedCoefficients(entries: { serverId: string; itemId: string }[]): Promise<boolean> {
+  if (entries.length === 0) return true;
+  try {
+    const response = await fetch(`${API_URL}/brisage-coefficients/clear`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: getOrCreateDeviceId(), entries }),
+      keepalive: true,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Sends notes (at most MAX_ENTRIES_PER_SEND); `savedAt` keeps the original date of an imported note. True when the Worker stored them. */
 export async function submitCoefficients(entries: CoefficientToSend[]): Promise<boolean> {
   if (entries.length === 0) return true;

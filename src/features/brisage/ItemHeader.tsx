@@ -21,7 +21,7 @@ const SOURCES: { id: 'hdv' | 'craft'; label: string }[] = [
 
 export function ItemHeader({
   item, priceSource, onPriceSource, loading, hdvKamas, craftKamas, resolved, originText, manualCost, onManualCost, noPriceReason,
-  stored, coefficientText, onCoefficientText, onRememberCoefficient, canEditCraftPrices, onOpenCraftPrices, craftPricesButtonRef,
+  stored, coefficientText, onCoefficientText, onRememberCoefficient, onForgetCoefficient, canEditCraftPrices, onOpenCraftPrices, craftPricesButtonRef,
 }: {
   item: { id: string; name: string; level?: number; imageUrl?: string };
   priceSource: ChosenSource;
@@ -39,6 +39,8 @@ export function ItemHeader({
   coefficientText: string;
   onCoefficientText: (text: string) => void;
   onRememberCoefficient: () => void;
+  /** « Coefficient unknown »: forgets the coefficient noted for the item. */
+  onForgetCoefficient: () => void;
   /** specs/070-atelier-prix-craft-brisage: the item has a recipe, so its resource prices can be edited here. */
   canEditCraftPrices: boolean;
   onOpenCraftPrices: () => void;
@@ -138,6 +140,7 @@ export function ItemHeader({
         {stored && (
           <span className="fm-note" id="brisage-last">
             Dernier coefficient : <b>{number.format(stored.coefficient)} %</b> ({date.format(new Date(stored.savedAt))})
+            {' '}<button type="button" className="brisage-craft-prices-button" onClick={onForgetCoefficient}>Effacer (coefficient inconnu)</button>
           </span>
         )}
       </div>

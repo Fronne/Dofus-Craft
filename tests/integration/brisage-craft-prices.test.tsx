@@ -21,6 +21,7 @@ vi.mock('../../src/services/brisage-coefficient-api', () => ({
   MAX_ENTRIES_PER_SEND: 100,
   getSharedCoefficients: vi.fn().mockResolvedValue(new Map()),
   submitCoefficients: vi.fn().mockResolvedValue(true),
+  clearSharedCoefficients: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('../../src/data/catalogue-repository', () => ({

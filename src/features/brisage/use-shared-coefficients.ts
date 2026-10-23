@@ -30,6 +30,11 @@ export function useSharedCoefficients(serverId: string | undefined, itemIds: str
   return (itemId, local) => latestCoefficient(local, serverId ? known.get(`${serverId}:${itemId}`) ?? undefined : undefined);
 }
 
+/** The coefficient of an item was cleared: the shared one that was read is no longer shown. */
+export function dropSharedCoefficient(serverId: string, itemId: string): void {
+  known.set(`${serverId}:${itemId}`, null);
+}
+
 /** Forgets what was read (tests). */
 export function forgetSharedCoefficients(): void {
   known.clear();
