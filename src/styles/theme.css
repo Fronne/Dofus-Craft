@@ -100,6 +100,11 @@
   --radius-pill: 999px;
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
+  /* Four text sizes: small print, secondary text, body and titles. 12 px is the floor. */
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --text-display: clamp(1.5rem, 3vw, 2rem);
   --transition-fast: 250ms ease-out;
   /* A panel, a tab or an unfolded block coming in, and a value that slides (gauge, chevron). */
   --transition-enter: 250ms ease-out;
@@ -505,7 +510,7 @@
 @media (pointer: coarse) { :root { background-attachment: scroll; } }
 
 * { box-sizing: border-box; }
-body { font-size: 1rem; line-height: 1.5; }
+body { font-size: var(--text-base); line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
 button:focus-visible, summary:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent-bright);
