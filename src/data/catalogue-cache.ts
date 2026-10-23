@@ -49,6 +49,9 @@ function fetchAndStore<T>(key: string, loader: () => Promise<T>): Promise<T> {
   if (existing) return existing as Promise<T>;
   const promise = loader().then((value) => {
     remember(key, value);
+    // A newer value supersedes a snapshot copy still waiting to be written.
+    // A newer value supersedes a snapshot copy still waiting to be written.
+    deferredWrites.delete(key);
     writePersisted(key, value);
     pending.delete(key);
     return value;
@@ -110,7 +113,15 @@ export function clearCache(): void {
 // snapshot or a full re-download) in memory and on the device, replacing any previous copy at once.
 export function seedCache<T>(key: string, value: T): void {
   remember(key, value);
-  writePersistedLater(key, value);
+  // A full re-download from DofusDB is costly to redo: it is kept at once. A shipped snapshot is
+  // cheap to fetch again, so its copy can wait.
+  const origin = (value as { provenance?: { origin?: string } } | null)?.provenance?.origin;
+  if (origin === 'dofusdb') {
+    deferredWrites.delete(key);
+    writePersisted(key, value);
+  } else {
+    writePersistedLater(key, value);
+  }
 }
 
 // Writing a multi-MB catalogue to IndexedDB clones it synchronously on the main thread (about
