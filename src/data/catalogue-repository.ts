@@ -70,10 +70,21 @@ function getItemSetIndex(): Promise<ItemSetIndex> {
 export function preloadCatalogueIndexes(): void {
   // specs/021-background-data-loading (SC-001): the indexes kept on the device from a previous visit
   // go into memory first, so the search's synchronous "full index ready?" checks see them at once.
+  // The network crawl (thousands of DofusDB rows) waits for an idle moment so it doesn't compete with
+  // the first render; a search that needs the index earlier triggers the same loaders itself.
   void hydrateFromPersistentStore(['catalogue-item-index', 'item-set-index']).finally(() => {
-    void getCatalogueItemIndex();
-    void getItemSetIndex();
+    runWhenIdle(() => {
+      void getCatalogueItemIndex();
+      void getItemSetIndex();
+    });
   });
+}
+
+function runWhenIdle(task: () => void): void {
+  const idle = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+    .requestIdleCallback;
+  if (idle) idle(task, { timeout: 5000 });
+  else setTimeout(task, 2000);
 }
 
 /** Resolves once the full catalogue (all craftable equipment) has finished loading in the
