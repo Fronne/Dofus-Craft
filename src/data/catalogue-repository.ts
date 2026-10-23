@@ -80,11 +80,21 @@ export function preloadCatalogueIndexes(): void {
   });
 }
 
+// Idle alone fires right after the first paint, so the crawl would still fight the page's own
+// requests: wait for the page to finish loading, then a few seconds more, then for an idle moment.
+const CRAWL_DELAY_MS = 8000;
+
 function runWhenIdle(task: () => void): void {
-  const idle = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
-    .requestIdleCallback;
-  if (idle) idle(task, { timeout: 5000 });
-  else setTimeout(task, 2000);
+  const start = () => {
+    setTimeout(() => {
+      const idle = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+        .requestIdleCallback;
+      if (idle) idle(task, { timeout: 5000 });
+      else task();
+    }, CRAWL_DELAY_MS);
+  };
+  if (typeof document === 'undefined' || document.readyState === 'complete') start();
+  else window.addEventListener('load', start, { once: true });
 }
 
 /** Resolves once the full catalogue (all craftable equipment) has finished loading in the
