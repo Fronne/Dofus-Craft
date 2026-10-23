@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 
 // specs/061-simplification-page-brisage. Real rune data: Rune Vi 1523, Rune Cha 1525, Rune Do 7435.
@@ -90,6 +90,9 @@ async function pricesKnown() {
   await carnet.save('mikhal', '1525', 5);
   await carnet.save('mikhal', '7435', 3000);
 }
+
+// The page is lazy-loaded by the app shell: load it once up front so no test pays the cold import.
+beforeAll(async () => { await import('../../src/features/brisage/BrisagePage'); });
 
 describe('Brisage page (specs/061)', () => {
   beforeEach(() => {

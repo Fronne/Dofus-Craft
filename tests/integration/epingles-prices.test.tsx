@@ -1,6 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { formatKamas } from '../../src/domain/kamas';
 
 // jest-dom normalizes the received text's whitespace (collapsing the narrow no-break space
@@ -38,6 +38,9 @@ vi.mock('../../src/data/servers-repository', () => ({
 }));
 
 import App from '../../src/app/App';
+
+// The page is lazy-loaded by the app shell: load it once up front so no test pays the cold import.
+beforeAll(async () => { await import('../../src/features/catalogue/EpinglesPage'); });
 
 describe('pinned items page shows craft cost and market price', () => {
   beforeEach(() => {
