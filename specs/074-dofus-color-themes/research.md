@@ -28,12 +28,17 @@ Aucune zone « NEEDS CLARIFICATION » dans la spec. Les décisions ci-dessous fi
 
 ## 3. Teintes des six Dofus
 
-- **Decision** (teinte dominante, mode sombre ; valeurs exactes fixées à l'implémentation et validées par le test de contraste) :
-  émeraude vert `#a5d43a` sur fond sarcelle (actuel) ; pourpre magenta-rouge sur fond prune ;
-  turquoise cyan sur fond bleu nuit, lien décalé vers le bleu ; ocre or-orangé sur fond brun ;
-  ébène accent bleu-gris froid sur fond presque noir ; ivoire accent crème sur fond gris chaud.
-- **Rationale**: chaque Dofus garde sa couleur dans le jeu ; ébène et ivoire sont presque
-  neutres, donc leur accent doit rester assez saturé pour marquer l'état « sélectionné ».
+- **Decision** (mode sombre ; teintes mesurées sur les images des Dofus, pas déduites de leur nom,
+  puis valeurs exactes validées par le test de contraste) :
+  émeraude vert-jaune 65–85° (`#a5d43a`, sur fond sarcelle, actuel) ; pourpre rouge-orangé 12° sur
+  fond bordeaux (pixels vifs à 15–45°) ; turquoise cyan 178° sur fond bleu nuit, lien décalé vers le
+  bleu (165–205°) ; ocre jaune doré 42° sur fond brun-olive (35–55°) ; ébène accent bronze 28° sur
+  fond presque noir (35 % de pixels sombres, reflets ambre) ; ivoire accent crème 44° sur fond gris
+  chaud (36 % de pixels très clairs).
+- **Rationale**: chaque Dofus garde la couleur de son image ; pourpre, ocre, ébène et ivoire sont
+  tous dans la bande rouge-orangé-doré, donc on les distingue par la luminosité et la saturation du
+  fond autant que par la teinte de l'accent. Ébène et ivoire étant presque neutres, leur accent
+  doit rester assez saturé pour marquer l'état « sélectionné ».
 - **Contrôle**: `tests/unit/theme-contrast.test.ts` lit déjà `theme.css`. On l'étend aux 12
   combinaisons avec les mêmes paires (texte 4,5:1, formes 3:1).
 

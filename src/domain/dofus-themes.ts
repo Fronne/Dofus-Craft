@@ -19,10 +19,10 @@ export const DOFUS_STORAGE_KEY = 'craftcheck-dofus';
 
 export const dofusThemes: readonly DofusTheme[] = [
   { id: 'emeraude', name: 'Dofus Émeraude', dofusDbId: 737, image: '/dofus-emeraude.png', themeColor: '#08181c' },
-  { id: 'pourpre', name: 'Dofus Pourpre', dofusDbId: 694, image: '/dofus-pourpre.png', themeColor: '#170c12' },
+  { id: 'pourpre', name: 'Dofus Pourpre', dofusDbId: 694, image: '/dofus-pourpre.png', themeColor: '#180d0c' },
   { id: 'turquoise', name: 'Dofus Turquoise', dofusDbId: 739, image: '/dofus-turquoise.png', themeColor: '#0b1119' },
-  { id: 'ocre', name: 'Dofus Ocre', dofusDbId: 7754, image: '/dofus-ocre.png', themeColor: '#18120c' },
-  { id: 'ebene', name: 'Dofus Ébène', dofusDbId: 7114, image: '/dofus-ebene.png', themeColor: '#120f14' },
+  { id: 'ocre', name: 'Dofus Ocre', dofusDbId: 7754, image: '/dofus-ocre.png', themeColor: '#17140c' },
+  { id: 'ebene', name: 'Dofus Ébène', dofusDbId: 7114, image: '/dofus-ebene.png', themeColor: '#131211' },
   { id: 'ivoire', name: 'Dofus Ivoire', dofusDbId: 7115, image: '/dofus-ivoire.png', themeColor: '#14130f' },
 ];
 
