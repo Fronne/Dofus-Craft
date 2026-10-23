@@ -1,5 +1,6 @@
 import manifest from './catalogue-manifest.json';
 import { cached, hydrateFromPersistentStore, peekCached } from './catalogue-cache';
+import { loadCatalogueSnapshot, refreshCatalogueIfChanged } from './catalogue-snapshot';
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
@@ -31,9 +32,11 @@ function getInitialCatalogueItems(): Promise<CatalogueItemIndex> {
 }
 
 function getCatalogueItemIndex(): Promise<CatalogueItemIndex> {
-  return cached('catalogue-item-index', async () => ({
-    items: await getDofusDbItems(''),
-  }));
+  return cached('catalogue-item-index', async () => {
+    // specs/072: the shipped snapshot fills the index; the crawl is only the fallback.
+    await loadCatalogueSnapshot();
+    return peekCached<CatalogueItemIndex>('catalogue-item-index') ?? { items: await getDofusDbItems('') };
+  });
 }
 
 function getCatalogueItemsForSearch(query: string): Promise<CatalogueItemIndex> {
@@ -54,6 +57,9 @@ function getCatalogueItemsForCategory(query: string, categoryId: string, typeIds
 
 function getItemSetIndex(): Promise<ItemSetIndex> {
   return cached('item-set-index', async () => {
+    await loadCatalogueSnapshot();
+    const seeded = peekCached<ItemSetIndex>('item-set-index');
+    if (seeded) return seeded;
     const sets = await getDofusDbItemSets('');
     const itemSetIdsByItemId = new Map<number, Set<number>>();
     sets.forEach((itemSet) => {
@@ -70,9 +76,14 @@ function getItemSetIndex(): Promise<ItemSetIndex> {
 export function preloadCatalogueIndexes(): void {
   // specs/021-background-data-loading (SC-001): the indexes kept on the device from a previous visit
   // go into memory first, so the search's synchronous "full index ready?" checks see them at once.
+  // specs/072: then the shipped snapshot (or a more recent kept copy) fills them without crawling.
   void hydrateFromPersistentStore(['catalogue-item-index', 'item-set-index']).finally(() => {
-    void getCatalogueItemIndex();
-    void getItemSetIndex();
+    void loadCatalogueSnapshot().then((ready) => {
+      if (ready) return refreshCatalogueIfChanged();
+      void getCatalogueItemIndex();
+      void getItemSetIndex();
+      return undefined;
+    });
   });
 }
 

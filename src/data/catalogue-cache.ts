@@ -101,3 +101,10 @@ export function clearCache(): void {
   cache.clear();
   pending.clear();
 }
+
+// specs/072-snapshot-catalogue-statique: puts a complete, already-built value (from the shipped
+// snapshot or a full re-download) in memory and on the device, replacing any previous copy at once.
+export function seedCache<T>(key: string, value: T): void {
+  remember(key, value);
+  writePersisted(key, value);
+}

@@ -193,3 +193,7 @@ vaut `manual`. Rien d'autre ne change dans la réponse.
 - L'hypothèse « la liste Prix préparée n'est pas gardée d'une visite à l'autre » est remplacée : la
   dernière liste complète est gardée sur l'appareil par serveur + mode et affichée tout de suite avec
   sa date, le temps que la liste à jour soit calculée (voir specs/054).
+
+## Révision 2026-10-23 (spec 072)
+
+Le catalogue complet n'est plus téléchargé page par page à la première visite : il est livré avec le site sous forme de snapshot statique (`specs/072-snapshot-catalogue-statique`). Le téléchargement complet depuis DofusDB ne sert plus que de repli ou sur écart de totaux.

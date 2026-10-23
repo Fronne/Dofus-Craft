@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "snapshot:catalogue": "node scripts/build-catalogue-snapshot.mjs",
+    "prebuild": "npm run snapshot:catalogue",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",

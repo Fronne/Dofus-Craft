@@ -14,3 +14,6 @@ dist-admin/
 
 # Copies de travail Claude Code (claude --worktree)
 .claude/worktrees/
+
+# Snapshot du catalogue DofusDB, regenere par `npm run build` (specs/072)
+public/catalogue-snapshot/

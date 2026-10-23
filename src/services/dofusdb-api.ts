@@ -291,3 +291,21 @@ export async function getDofusDbEffects(effectIds: number[], signal?: AbortSigna
         isRecord(effect) && typeof effect.id === 'number'), signal)));
   return effects.flatMap((page) => page.data);
 }
+
+// specs/072-snapshot-catalogue-statique (FR-007): the cheap freshness probe. Only `total` matters,
+// so no row is asked for; `$limit=0` is refused by some servers, hence the 1-row fallback.
+export async function getDofusDbCatalogueTotals(signal?: AbortSignal): Promise<{ items: number; itemSets: number }> {
+  const total = async <T>(path: string, params: Record<string, string>, guard: (value: unknown) => value is T) => {
+    try {
+      return (await request(`${path}?${new URLSearchParams({ ...params, $limit: '0' })}`, (value): value is DofusDbPage<T> => isPage(value, guard), signal)).total;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      return (await request(`${path}?${new URLSearchParams({ ...params, $limit: '1' })}`, (value): value is DofusDbPage<T> => isPage(value, guard), signal)).total;
+    }
+  };
+  const [items, itemSets] = await Promise.all([
+    total('/items', { hasRecipe: 'true' }, isItem),
+    total('/item-sets', {}, isItemSet),
+  ]);
+  return { items, itemSets };
+}
