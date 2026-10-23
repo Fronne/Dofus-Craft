@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
@@ -16,21 +16,22 @@ import { RecherchePage } from '../features/search/RecherchePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import { useSiteSettings } from './useSiteSettings';
-
-// Every page but Recherche (the landing route) is fetched when first visited, so the first load
-// doesn't carry the code and data of every page.
-const EpinglesPage = lazy(() => import('../features/catalogue/EpinglesPage').then((m) => ({ default: m.EpinglesPage })));
-const ParametresPage = lazy(() => import('../features/settings/ParametresPage').then((m) => ({ default: m.ParametresPage })));
-const PricesPage = lazy(() => import('../features/prices/PricesPage').then((m) => ({ default: m.PricesPage })));
-const FamilierPage = lazy(() => import('../features/pets/FamilierPage').then((m) => ({ default: m.FamilierPage })));
-const HdvPage = lazy(() => import('../features/hdv/HdvPage').then((m) => ({ default: m.HdvPage })));
-const ForgemagiePage = lazy(() => import('../features/forgemagie/ForgemagiePage').then((m) => ({ default: m.ForgemagiePage })));
-const BrisagePage = lazy(() => import('../features/brisage/BrisagePage').then((m) => ({ default: m.BrisagePage })));
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
 import { prefersReducedMotion } from '../services/motion';
 import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble';
+import { lazyPage } from './lazy-page';
+
+// Every page but Recherche (the landing route) is fetched when first visited, so the first load
+// doesn't carry the code and data of every page.
+const EpinglesPage = lazyPage(() => import('../features/catalogue/EpinglesPage').then((m) => ({ default: m.EpinglesPage })));
+const ParametresPage = lazyPage(() => import('../features/settings/ParametresPage').then((m) => ({ default: m.ParametresPage })));
+const PricesPage = lazyPage(() => import('../features/prices/PricesPage').then((m) => ({ default: m.PricesPage })));
+const FamilierPage = lazyPage(() => import('../features/pets/FamilierPage').then((m) => ({ default: m.FamilierPage })));
+const HdvPage = lazyPage(() => import('../features/hdv/HdvPage').then((m) => ({ default: m.HdvPage })));
+const ForgemagiePage = lazyPage(() => import('../features/forgemagie/ForgemagiePage').then((m) => ({ default: m.ForgemagiePage })));
+const BrisagePage = lazyPage(() => import('../features/brisage/BrisagePage').then((m) => ({ default: m.BrisagePage })));
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
