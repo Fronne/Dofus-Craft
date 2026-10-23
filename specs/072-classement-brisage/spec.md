@@ -48,16 +48,16 @@ Le propriétaire clique sur l'en-tête d'une colonne (gain, niveau, seuil de coe
 
 ### User Story 3 - Savoir à quel point les chiffres sont frais et fiables (Priorité : P2)
 
-Chaque ligne indique l'ancienneté du prix de l'objet, des prix de runes utilisés et du coefficient, pour que le propriétaire sache s'il peut se fier au gain affiché. Un objet sans coefficient connu est signalé comme tel : son gain est alors une estimation à coefficient de 100 % (brisage normal sans perte), jamais présentée comme un résultat précis.
+Chaque ligne indique l'ancienneté du prix de l'objet, des prix de runes utilisés et du coefficient, pour que le propriétaire sache s'il peut se fier au gain affiché. Un objet sans coefficient connu est signalé comme tel : il est classé à part (voir l'histoire 7) et son gain n'est jamais présenté comme un résultat précis.
 
 **Pourquoi cette priorité** : un classement trompeur coûte des kamas ; c'est le principe de données traçables et jamais inventées de la constitution du projet.
 
-**Test indépendant** : un objet dont le coefficient date de plusieurs jours montre cette ancienneté ; un objet sans coefficient porte la mention « coefficient inconnu » et son gain est marqué comme estimé à 100 %.
+**Test indépendant** : un objet dont le coefficient date de plusieurs jours montre cette ancienneté ; un objet sans coefficient porte la mention « coefficient inconnu ».
 
 **Scénarios d'acceptation** :
 
 1. **Étant donné** une ligne, **quand** elle s'affiche, **alors** l'ancienneté du prix de l'objet, celle de la rune la plus ancienne utilisée et celle du coefficient y sont lisibles.
-2. **Étant donné** un objet sans coefficient connu, **quand** il s'affiche, **alors** il est signalé « coefficient inconnu » et son gain est indiqué comme estimé à 100 %.
+2. **Étant donné** un objet sans coefficient connu, **quand** il s'affiche, **alors** il est signalé « coefficient inconnu ».
 3. **Étant donné** un objet dont une rune nécessaire n'a pas de prix, **quand** il s'affiche, **alors** son gain n'est pas inventé : la ligne indique « prix de rune manquant » et se classe à la fin.
 4. **Étant donné** un prix ou un coefficient particulièrement ancien (au-delà d'un seuil de péremption défini en hypothèse), **quand** la ligne s'affiche, **alors** il est mis en évidence comme périmé.
 
@@ -113,6 +113,41 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 
 ---
 
+### User Story 7 - Classer aussi les objets sans coefficient connu (Priorité : P2)
+
+Les objets dont le coefficient est inconnu ne sont pas écartés : ils forment un groupe à part, classé selon le coefficient minimum requis pour que le brisage soit rentable, du plus bas au plus haut. Plus ce seuil est bas, plus l'objet est susceptible d'être rentable quel que soit son coefficient réel.
+
+**Pourquoi cette priorité** : la plupart des coefficients ne sont pas connus ; sans cela, la majorité du catalogue serait absente du classement.
+
+**Test indépendant** : deux objets sans coefficient, l'un rentable dès 35 %, l'autre dès 90 % : le premier est listé avant le second ; un objet qui exigerait plus de 100 % est marqué « jamais rentable » et placé en dernier.
+
+**Scénarios d'acceptation** :
+
+1. **Étant donné** des objets sans coefficient connu, **quand** je les consulte, **alors** ils sont dans un groupe distinct de ceux au coefficient connu, classés par coefficient minimum requis croissant.
+2. **Étant donné** un objet dont le seuil dépasse 100 %, **quand** il s'affiche, **alors** il est marqué « jamais rentable » et placé en fin de groupe.
+3. **Étant donné** ce groupe, **quand** je trie par une autre colonne, **alors** le tri s'applique aussi à ce groupe.
+4. **Étant donné** un objet de ce groupe, **quand** il s'affiche, **alors** aucun gain en kamas précis n'est présenté : seul le seuil de coefficient est donné.
+
+---
+
+### User Story 8 - Prendre en compte un exo (Priorité : P3)
+
+Le classement propose, pour chaque objet, le meilleur exo possible : une rune d'une stat que l'objet n'a pas, posée avant de briser. Le gain « avec exo » déduit le prix de cette rune, qu'il faut dépenser au minimum pour poser l'exo. Le meilleur exo et l'amélioration qu'il apporte sont indiqués.
+
+**Pourquoi cette priorité** : un exo à rune chère peut augmenter nettement le profit, mais c'est un raffinement du classement de base.
+
+**Test indépendant** : pour un objet sans une stat dont la rune est chère, le gain avec exo est égal au gain sans exo, plus la valeur des runes que l'exo rapporte au brisage, moins le prix d'une rune de cette stat ; si le résultat n'est pas meilleur que sans exo, aucun exo n'est recommandé.
+
+**Scénarios d'acceptation** :
+
+1. **Étant donné** un objet et les prix des runes, **quand** le classement le calcule, **alors** il teste les exos possibles (stats absentes de l'objet) et retient celui qui donne le meilleur gain, prix de la rune de l'exo déduit.
+2. **Étant donné** que le meilleur exo ne dépasse pas le gain sans exo, **quand** la ligne s'affiche, **alors** aucun exo n'est recommandé.
+3. **Étant donné** un objet recommandant un exo, **quand** la ligne s'affiche, **alors** la colonne « Gain avec exo » indique la stat de l'exo et son apport par rapport au gain sans exo.
+4. **Étant donné** que le coût réel de la forgemagie (échecs, runes supplémentaires) n'est pas modélisé, **quand** la colonne s'affiche, **alors** elle précise que seul le prix d'une rune est déduit, comme minimum.
+5. **Étant donné** que le prix de la rune de l'exo est inconnu, **quand** la ligne s'affiche, **alors** cet exo n'est pas proposé.
+
+---
+
 ### Cas limites
 
 - Aucun objet n'a de prix connu sur le serveur actif : le classement est vide avec un message explicatif, sans erreur.
@@ -133,7 +168,7 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 - **FR-004** : Chaque ligne MUST afficher au minimum : l'objet (nom, image), son niveau, le prix retenu et sa source, le gain par objet, le meilleur choix, le seuil de coefficient, et les indications de fraîcheur.
 - **FR-005** : Chaque colonne utile (au moins : nom, niveau, prix, gain, seuil de coefficient) MUST être triable en croissant et en décroissant par clic sur son en-tête, avec indication du sens ; les valeurs inconnues MUST toujours se placer à la fin.
 - **FR-006** : Le classement MUST indiquer, pour chaque ligne, l'ancienneté du prix de l'objet, des prix de runes utilisés et du coefficient, et mettre en évidence ceux qui dépassent le seuil de péremption.
-- **FR-007** : Un objet sans coefficient connu MUST être signalé « coefficient inconnu » ; son gain MUST alors être calculé à 100 % et indiqué comme estimation, jamais comme résultat précis.
+- **FR-007** : Un objet sans coefficient connu MUST être signalé « coefficient inconnu » et classé dans un groupe distinct, par coefficient minimum requis croissant ; un gain en kamas précis ne MUST pas lui être attribué. Un seuil supérieur à 100 % MUST être marqué « jamais rentable » et placé en fin de groupe.
 - **FR-008** : Un objet dont une rune nécessaire n'a pas de prix MUST être signalé et placé à la fin ; aucune valeur ne MUST être inventée pour le combler.
 - **FR-009** : Le classement MUST pouvoir être filtré par niveau (minimum et maximum), par type d'objet et par gain minimum, et masquer au choix les objets sans prix ou sans coefficient connu.
 - **FR-010** : Un clic sur une ligne MUST ouvrir l'objet dans la fiche actuelle ; le retour au classement MUST retrouver ses filtres et son tri.
@@ -142,6 +177,9 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 - **FR-013** : Le classement MUST suivre le serveur de jeu et le mode de prix (personnel ou communautaire) actifs, et se mettre à jour quand ils changent.
 - **FR-014** : Une indisponibilité de données (catalogue, prix, coefficients) MUST produire un classement incomplet clairement signalé, jamais des valeurs fabriquées.
 - **FR-015** : Les montants du classement MUST être présentés comme des estimations, avec le même avertissement que la fiche objet.
+- **FR-016** : Pour chaque objet, le classement MUST proposer une colonne « Gain avec exo » : le meilleur exo possible (stat absente de l'objet, rune au prix connu) est retenu, et le prix d'au moins une rune de cette stat MUST être déduit du gain. La stat de l'exo et son apport par rapport au gain sans exo MUST être indiqués ; si aucun exo n'améliore le gain, aucun n'est recommandé.
+- **FR-017** : La colonne « Gain avec exo » MUST préciser que seul le prix d'une rune est déduit (coût minimum) et que les échecs ou runes supplémentaires de la forgemagie ne sont pas comptés ; elle MUST être triable.
+- **FR-018** : Le gain avec exo MUST s'appliquer aux objets au coefficient connu ; pour le groupe au coefficient inconnu, l'exo MUST se refléter dans le seuil de coefficient requis.
 
 ### Entités clés
 
@@ -157,7 +195,8 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 - **SC-001** : Le propriétaire trouve les 10 objets les plus rentables de son serveur en moins de 10 secondes après l'ouverture de l'onglet, sans ouvrir aucune fiche.
 - **SC-002** : Pour 100 % des objets d'un échantillon de contrôle, le gain, le meilleur choix et le seuil de coefficient du classement sont identiques à ceux de la fiche objet de ce même objet.
 - **SC-003** : Le tri par colonne et l'application d'un filtre donnent leur résultat en moins d'une seconde, même avec plusieurs milliers d'objets listés.
-- **SC-004** : 0 objet sans coefficient connu n'est présenté comme un résultat précis : tous portent la mention d'estimation.
+- **SC-004** : 0 objet sans coefficient connu n'est présenté avec un gain en kamas précis : tous portent la mention « coefficient inconnu » et un seuil de coefficient.
+- **SC-007** : Pour 100 % des objets d'un échantillon de contrôle, le gain avec exo est égal à celui de la fiche objet avec cet exo, diminué du prix d'une rune de l'exo.
 - **SC-005** : Pour un visiteur qui n'a pas activé le réglage, 0 élément du Classement n'est visible (onglet, contenu, adresse directe).
 - **SC-006** : Le propriétaire passe de « seulement moi » à « tout le monde » en moins d'une minute, sans livraison de code.
 
@@ -165,7 +204,8 @@ L'onglet Classement n'est visible que du propriétaire. Un réglage « visible s
 
 - Le classement ne couvre que les objets dont le prix est connu (prix noté sur la page Recherche ou coût de craft calculable), car sans prix aucun gain ne peut être calculé ; ceux sans prix ne sont listés que si l'option de masquage est décochée.
 - Les gains sont calculés avec les jets moyens des lignes et sans exo ni jet saisi à la main : le classement sert à repérer, la fiche à affiner.
-- Un objet sans coefficient connu est évalué à 100 % (comportement déjà présent dans la fiche sans coefficient, `specs/063-brisage-sans-coefficient`).
+- Pour un objet sans coefficient connu, le seuil de coefficient requis vient du calcul déjà présent dans la fiche sans coefficient (`specs/063-brisage-sans-coefficient`). Ce classement mesure la résistance à un mauvais coefficient, pas le gain réel.
+- Un exo vaut une unité de la stat par défaut (une rune de base) ; ce réglage pourra évoluer plus tard. Le coût de pose retenu est le prix d'une rune de cette stat, au minimum.
 - Le seuil de péremption d'une donnée « ancienne » est de 7 jours, valeur modifiable plus tard.
 - Le réglage « visible seulement pour moi » est conservé dans le navigateur du propriétaire ; il ne remplace pas une vraie authentification (n'importe qui peut le contourner en connaissant la méthode). Ce compromis est accepté pour la phase de test, et le classement ne contient aucune donnée privée.
 - « Ouvrir le classement à tous » demande une valeur partagée entre visiteurs (comme les autres pages activables du site) ; le choix du support exact est laissé au plan.
