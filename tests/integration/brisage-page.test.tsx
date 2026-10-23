@@ -128,7 +128,7 @@ describe('Brisage page (specs/061)', () => {
     expect(screen.queryByLabelText(/Prix de l'objet \(kamas\)/)).not.toBeInTheDocument();
     // No Auto button: the cheaper source is lit first, and only the HDV price is known here.
     expect(screen.queryByLabelText('Auto')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Achat')).toBeChecked();
+    expect(screen.getByLabelText(/^Achat/)).toBeChecked();
     expect(screen.getByText('Prix noté sur la page Recherche')).toBeInTheDocument();
   });
 
@@ -159,14 +159,14 @@ describe('Brisage page (specs/061)', () => {
       await pickCape();
       // The cheaper of the two is lit first: the craft (800) beats the HDV (12 345).
       await waitFor(() => expect(cost()).toMatch(/800/));
-      expect(screen.getByLabelText('Craft')).toBeChecked();
-      fireEvent.click(screen.getByLabelText('Achat'));
+      expect(screen.getByLabelText(/^Craft/)).toBeChecked();
+      fireEvent.click(screen.getByLabelText(/^Achat/));
       await waitFor(() => expect(cost()).toMatch(/12\D345/));
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       expect(await screen.findByText(/Coût de la chaîne de craft \(mode personnel\)/)).toBeInTheDocument();
       expect(cost()).toMatch(/800/);
       expect(cost()).not.toMatch(/12\D345/);
-      fireEvent.click(screen.getByLabelText('Achat'));
+      fireEvent.click(screen.getByLabelText(/^Achat/));
       await waitFor(() => expect(cost()).toMatch(/12\D345/));
     });
 
@@ -175,14 +175,14 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices('laine');
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
       expect(cost() ?? "").not.toMatch(/300/);
       fireEvent.change(await screen.findByLabelText(/Prix de l'objet \(kamas\)/), { target: { value: '900' } });
       expect(await screen.findByText('Saisi à la main')).toBeInTheDocument();
       // The typed price is kept when switching back and forth.
-      fireEvent.click(screen.getByLabelText('Achat'));
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Achat/));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toHaveValue(900);
     });
 
@@ -190,7 +190,7 @@ describe('Brisage page (specs/061)', () => {
       getItemDetail.mockResolvedValue({ recipe: undefined, resources: [] });
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       expect(await screen.findByText(/Aucun craft n'existe pour cet objet/)).toBeInTheDocument();
     });
 
@@ -198,7 +198,7 @@ describe('Brisage page (specs/061)', () => {
       getItemDetail.mockRejectedValue(new Error('offline'));
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       expect(await screen.findByText(/Prix de craft incomplet/)).toBeInTheDocument();
       expect(screen.getByLabelText(/Prix de l'objet \(kamas\)/)).toBeInTheDocument();
     });
@@ -216,13 +216,13 @@ describe('Brisage page (specs/061)', () => {
       await craftPrices();
       await openBrisage();
       await pickCape();
-      fireEvent.click(screen.getByLabelText('Craft'));
+      fireEvent.click(screen.getByLabelText(/^Craft/));
       await screen.findByText(/Coût de la chaîne de craft/);
       cleanup();
       // The server is remembered: the page opens straight on Brisage.
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
-      expect(await screen.findByLabelText('Craft')).toBeChecked();
+      expect(await screen.findByLabelText(/^Craft/)).toBeChecked();
     });
 
     it('brings back a session saved before the price source existed on HDV', async () => {
@@ -231,7 +231,7 @@ describe('Brisage page (specs/061)', () => {
         serverId: 'mikhal', item: { id: '777', name: 'Cape du Chef Bwork', level: 100 }, rolls: {}, coefficientText: '', manualCost: '',
       }));
       await openBrisage();
-      expect(await screen.findByLabelText('Achat')).toBeChecked();
+      expect(await screen.findByLabelText(/^Achat/)).toBeChecked();
     });
   });
 
@@ -630,7 +630,7 @@ describe('Brisage page (specs/061)', () => {
       await pinnedItemPrices.save('mikhal', '777', 12345);
       await openBrisage();
       await pickCape();
-      fireEvent.click(await screen.findByLabelText('Perso'));
+      fireEvent.click(await screen.findByRole('button', { name: 'Saisir un prix perso' }));
       const input = await screen.findByLabelText(/Prix de l'objet \(kamas\)/);
       expect(input).toHaveValue(12345);
       fireEvent.change(input, { target: { value: '5000' } });
@@ -640,8 +640,13 @@ describe('Brisage page (specs/061)', () => {
       cleanup();
       render(<App />);
       await screen.findByRole('heading', { name: 'Brisage' });
-      expect(await screen.findByLabelText('Perso')).toBeChecked();
       expect(await screen.findByLabelText(/Prix de l'objet \(kamas\)/)).toHaveValue(5000);
+      expect(screen.getByText('Prix perso')).toBeInTheDocument();
+      // The cross drops the custom price and goes back to the cheaper side (here Achat, the only one with a price).
+      await waitFor(() => expect(screen.getByText('Achat').closest('label')).toHaveTextContent(/12\D345/));
+      fireEvent.click(screen.getByRole('button', { name: 'Revenir au prix normal' }));
+      await waitFor(() => expect(cost()).toMatch(/12\D345/));
+      expect(screen.queryByLabelText(/Prix de l'objet \(kamas\)/)).not.toBeInTheDocument();
     });
   });
 

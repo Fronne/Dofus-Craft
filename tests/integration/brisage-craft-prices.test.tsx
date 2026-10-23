@@ -140,7 +140,7 @@ describe('Brisage craft prices window (specs/070)', () => {
     await carnet.save('mikhal', 'laine', 100);
     await carnet.save('mikhal', 'cuir', 250);
     await openBrisage();
-    fireEvent.click(await screen.findByLabelText('Craft'));
+    fireEvent.click(await screen.findByLabelText(/^Craft/));
     await waitFor(() => expect(cost()).toMatch(/800/));
     await openWorkshop();
     type('Laine', '200');
