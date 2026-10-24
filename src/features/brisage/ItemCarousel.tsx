@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
 
-// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar, a
+// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar,
 // and four ways to move (arrows, wheel, mouse drag, keyboard). The cards are the children, one <li> each.
 
 const DRAG_THRESHOLD = 5;

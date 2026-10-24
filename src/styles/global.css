@@ -2846,7 +2846,6 @@ html::before, html::after { display: none; }
 .carousel-arrow:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-bright); transform: translateY(-50%) scale(1.06); }
 .carousel-arrow:disabled { opacity: 0; pointer-events: none; }
 .carousel-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.carousel-counter { margin: 0; text-align: center; color: var(--text-muted); font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .carousel-arrow, .brisage-carousel::before, .brisage-carousel::after { transition: none; } }
 @media (max-width: 640px) { .carousel-arrow { display: none; } }
 .brisage-cards button { width: 100%; height: 100%; text-align: left; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); transition: border-color .15s, background-color .15s, transform .15s; }
