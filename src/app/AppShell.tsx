@@ -24,6 +24,7 @@ import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble
 import { lazyPage } from './lazy-page';
 import { useDofusTheme } from './useDofusTheme';
 import { DEFAULT_DOFUS, dofusById } from '../domain/dofus-themes';
+import { PageLoader } from '../components/PageLoader';
 
 // Every page but Recherche (the landing route) is fetched when first visited, so the first load
 // doesn't carry the code and data of every page.
@@ -102,22 +103,24 @@ export function AppShell() {
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
-  // The side illustrations drift up slowly while the page scrolls, for a sense of depth: a
-  // twentieth of the scroll, 48px at most (global.css reads --side-art-shift).
+  // The little Dofus of the right-hand illustration is drawn again above the calm band (global.css,
+  // .app-shell::before). The illustration is 1011 × 1800 and covers a box as wide as the margin and as high
+  // as the window, so the Dofus (at 275, 1059 in it, 520 wide with its glow) moves with the window size.
+  // It must stay exactly where it is in the picture, or its lit stones no longer match the ones under it.
   useEffect(() => {
-    if (typeof window.matchMedia !== 'function' || prefersReducedMotion()) return;
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        document.documentElement.style.setProperty('--side-art-shift', `${Math.min(window.scrollY / 20, 48)}px`);
-      });
+    const place = () => {
+      const root = document.documentElement;
+      // The page may be zoomed in CSS (ultra-wide screens): everything below is in zoomed pixels.
+      const zoom = parseFloat(getComputedStyle(root).zoom) || 1;
+      const margin = (window.innerWidth / zoom - 1392) / 2;
+      const scale = Math.max(margin / 1011, window.innerHeight / zoom / 1800);
+      root.style.setProperty('--egg-x', `${root.clientWidth / zoom - margin + 275 * scale}px`);
+      root.style.setProperty('--egg-y', `${1059 * scale}px`);
+      root.style.setProperty('--egg-size', `${520 * scale}px`);
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
-    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
   }, []);
   useEffect(() => {
     void recordVisit();
@@ -139,7 +142,7 @@ export function AppShell() {
   // is never said unavailable), the unavailable page when it is off.
   const guarded = (field: SiteSettingField, element: ReactElement) => {
     if (siteSettings[field]) return element;
-    if (readingSiteSettings) return <p className="empty" role="status">Chargement…</p>;
+    if (readingSiteSettings) return <PageLoader image={dofusById(dofus).image} />;
     const item = NAV_ITEMS.find((candidate) => candidate.page === field)!;
     return <PageUnavailable label={item.label} icon={item.icon} entry={entry} />;
   };
@@ -254,13 +257,13 @@ export function AppShell() {
           <ErrorBoundary key={pathname}>
           {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
           <div className="page-enter">
-          <Suspense fallback={<p className="empty" role="status">Chargement…</p>}>
+          <Suspense fallback={<PageLoader image={dofusById(dofus).image} />}>
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
             <Route
               path={ROUTES.home}
               element={readingSiteSettings
-                ? <p className="empty" role="status">Chargement…</p>
+                ? <PageLoader image={dofusById(dofus).image} />
                 : entry ? <Navigate to={entry.to} replace /> : <NoPageAvailable />}
             />
             <Route path={ROUTES.search} element={guarded('searchPage', <RecherchePage priceMode={priceMode} />)} />
