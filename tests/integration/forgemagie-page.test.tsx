@@ -270,11 +270,11 @@ describe('Forgemagie page — séances de FM (US1)', () => {
     const [first, second, third] = cards.map((card) => normalize(card.textContent));
     expect(first).toContain('Rtograf PA');
     expect(first).toContain('En cours');
-    expect(first).toContain('#fm-cyril-rtograf · 2 sessions · dernière activité le');
+    expect(first).toContain('#fm-cyril-rtograf, 2 sessions, dernière activité le');
     expect(first).toContain('68 472');
     expect(second).toContain('#fm-cyril-coiffe');
     expect(second).toContain('En pause');
-    expect(second).toContain('1 session · dernière activité le');
+    expect(second).toContain('1 session, dernière activité le');
     expect(third).toContain('Archivée');
     expect(fm.getFmSeances).toHaveBeenCalled();
   });
@@ -302,7 +302,7 @@ describe('Forgemagie page — séances de FM (US1)', () => {
   it('opens a séance: its figures, what was bought and its sessions', async () => {
     await openSeance();
     expect(fm.getFmSeance).toHaveBeenCalledWith('c2');
-    expect(screen.getByText(/Créée le .* · dernière activité le /)).toBeInTheDocument();
+    expect(screen.getByText(/Créée le .*, dernière activité le /)).toBeInTheDocument();
 
     const tiles = [...document.querySelectorAll('.fm-detail-stats .stat-tile')].map((tile) => normalize(tile.textContent));
     expect(tiles).toEqual(['Total dépensé68 472 kamas', 'Runes achetées11', 'Sessions2', 'Captures2']);
@@ -321,7 +321,7 @@ describe('Forgemagie page — séances de FM (US1)', () => {
     const sessions = screen.getByRole('region', { name: 'Sessions' });
     expect(within(sessions).getByRole('heading', { name: 'Sessions (2)' })).toBeInTheDocument();
     const open = normalize(fold(/Session du 30/).textContent);
-    expect(open).toContain('en cours · 1 capture');
+    expect(open).toContain('en cours, 1 capture');
     expect(open).toContain('Ouverte dans Discord');
     const closed = normalize(fold(/Session du 29/).textContent);
     expect(closed).toContain('arrêtée le');
@@ -332,7 +332,7 @@ describe('Forgemagie page — séances de FM (US1)', () => {
   it('shows a capture: where it comes from, what it bought and what does not count', async () => {
     await openSeance();
     const capture = normalize(fold(/^Capture 1$/).textContent);
-    expect(capture).toContain('· Discord');
+    expect(capture).toContain(', Discord');
     expect(capture).toContain('Rune Ga Pa');
     expect(capture).toContain('Non compté (pas une rune) : 3 × Potion de rappel (1 000 kamas).');
     expect(capture).toContain('Le bot, dans Discord, les compte dans son total.');
@@ -343,7 +343,7 @@ describe('Forgemagie page — séances de FM (US1)', () => {
     const siteCapture: FmSeanceCapture = { ...botCapture, origin: 'capture', corrected: true, lines: [] };
     await openSeance({ ...runningDetail, sessions: [{ ...openSession, captures: [siteCapture] }] });
     const capture = normalize(fold(/^Capture 1$/).textContent);
-    expect(capture).toContain('· Site');
+    expect(capture).toContain(', Site');
     expect(capture).toContain('corrigée');
     expect(capture).not.toContain('Le bot, dans Discord');
     expect(capture).not.toContain('Le récap du bot');
@@ -767,7 +767,7 @@ describe('Forgemagie page — the players of the group (US4)', () => {
     const cards = [...document.querySelectorAll('.fm-player-card')].map((card) => normalize(card.textContent));
     expect(cards).toHaveLength(2);
     expect(cards[0]).toContain('Cyriltoi');
-    expect(cards[0]).toContain('2 séances · dernière activité le');
+    expect(cards[0]).toContain('2 séances, dernière activité le');
     expect(cards[0]).toContain('profil privé : visible de toi seul');
     expect(cards[0]).toContain('69 472');
     expect(cards[1]).toContain('Alice');
@@ -783,7 +783,7 @@ describe('Forgemagie page — the players of the group (US4)', () => {
     const seances = within(list).getAllByRole('listitem', { hidden: true }).map((item) => normalize(item.textContent));
     expect(seances[0]).toContain('Rtograf PA');
     expect(seances[0]).toContain('En cours');
-    expect(seances[0]).toContain('#fm-cyril-rtograf · 2 sessions');
+    expect(seances[0]).toContain('#fm-cyril-rtograf, 2 sessions');
     expect(seances[1]).toContain('#fm-cyril-coiffe');
     expect(seances[1]).toContain('Archivée');
     // A séance of the group is not a link to its detail.
@@ -840,8 +840,8 @@ describe('Forgemagie page — profile (US5)', () => {
     const list = within(spending).getByRole('heading', { name: 'Par séance de FM' }).nextElementSibling as HTMLElement;
     const lines = within(list).getAllByRole('listitem').map((item) => normalize(item.textContent));
     expect(lines).toHaveLength(3);
-    expect(lines[0]).toMatch(/^#fm-cyril-rtograf · .*140 000/);
-    expect(lines[1]).toMatch(/^#fm-ancien · .*10 000/);
+    expect(lines[0]).toMatch(/^#fm-cyril-rtograf, .*140 000/);
+    expect(lines[1]).toMatch(/^#fm-ancien, .*10 000/);
     expect(lines[2]).toMatch(/^Captures importées hors séance500/);
     expect(within(list).queryByRole('button', { name: /#fm-ancien/ })).not.toBeInTheDocument();
     expect(within(spending).getByRole('heading', { name: 'Par objet acheté' })).toBeInTheDocument();

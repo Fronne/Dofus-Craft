@@ -38,7 +38,7 @@ export function PetFoodPodium({ entries, caption }: { entries: PetFoodPodiumEntr
                 <FoodImage food={entry.food} />
                 <div>
                   <span className="pet-podium-rank">
-                    {entry.rank === 1 ? '1re · la moins chère' : <>{ordinal(entry.rank)} · <Kamas value={entry.gapKamas} signed /></>}
+                    {entry.rank === 1 ? '1re, la moins chère' : <>{ordinal(entry.rank)}, <Kamas value={entry.gapKamas} signed /></>}
                   </span>
                   <h3>{entry.food.name}</h3>
                 </div>

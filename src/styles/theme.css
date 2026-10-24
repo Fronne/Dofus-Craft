@@ -100,9 +100,14 @@
   --radius-pill: 999px;
 
   /* Motion — short and consistent; disabled under prefers-reduced-motion below. */
-  --transition-fast: 180ms cubic-bezier(.2, .7, .3, 1);
+  /* Four text sizes: small print, secondary text, body and titles. 12 px is the floor. */
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --text-display: clamp(1.5rem, 3vw, 2rem);
+  --transition-fast: 250ms ease-out;
   /* A panel, a tab or an unfolded block coming in, and a value that slides (gauge, chevron). */
-  --transition-enter: 160ms ease;
+  --transition-enter: 250ms ease-out;
 
   /* Field heights: large for the main search of the Recherche page only, medium everywhere else,
      small inside tables and inline edits. */
@@ -179,6 +184,8 @@
   --accent-gradient-from: #ffbb33;
   --accent-gradient-to: #fa3019;
   --success: #ff6229;
+  --link: #ffb199;
+  --link-strong: #ff9a73;
   --danger: #ff7fa6;
   --border: rgba(232, 132, 125, 0.26);
   --border-control: #967773;
@@ -211,6 +218,8 @@
   --accent-gradient-from: #a52612;
   --accent-gradient-to: #8a200f;
   --success: #a52612;
+  --link: #9c4a1a;
+  --link-strong: #b85a28;
   --danger: #b0224f;
   --border: rgba(84, 34, 28, .14);
   --border-control: #806460;
@@ -307,6 +316,8 @@
   --accent-gradient-from: #ffe642;
   --accent-gradient-to: #f79f08;
   --success: #fdcc2b;
+  --link: #7fb8ff;
+  --link-strong: #4a8fe0;
   --warning: #ff9a52;
   --border: rgba(125, 170, 232, 0.26);
   --border-control: #738196;
@@ -339,6 +350,8 @@
   --accent-gradient-from: #866509;
   --accent-gradient-to: #6e5307;
   --success: #866509;
+  --link: #1d5fb8;
+  --link-strong: #2a76d6;
   --warning: #a8470d;
   --border: rgba(28, 50, 84, .14);
   --border-control: #606d80;
@@ -370,6 +383,8 @@
   --accent-gradient-from: #f86271;
   --accent-gradient-to: #ee3a6a;
   --success: #f23655;
+  --link: #f2a3b7;
+  --link-strong: #e8809c;
   --danger: #ff8a3d;
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
@@ -403,6 +418,8 @@
   --accent-gradient-from: #9e1a30;
   --accent-gradient-to: #841528;
   --success: #9e1a30;
+  --link: #a03a5e;
+  --link-strong: #b8456e;
   --danger: #b45309;
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
@@ -436,6 +453,8 @@
   --accent-gradient-from: #f7eebf;
   --accent-gradient-to: #dcb66a;
   --success: #f1e0a7;
+  --link: #8fb4ff;
+  --link-strong: #6a94e6;
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
   --border: rgba(125, 157, 232, 0.26);
@@ -469,6 +488,8 @@
   --accent-gradient-from: #735521;
   --accent-gradient-to: #5f461c;
   --success: #735521;
+  --link: #2a5fb5;
+  --link-strong: #3a72cf;
   --brand-glow-rest: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
   --brand-glow-peak: drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 95%, transparent));
   --border: rgba(28, 45, 84, .14);
@@ -495,7 +516,7 @@
 @media (pointer: coarse) { :root { background-attachment: scroll; } }
 
 * { box-sizing: border-box; }
-body { font-size: 1rem; line-height: 1.5; }
+body { font-size: var(--text-base); line-height: 1.5; }
 button, input, select, textarea { font: inherit; }
 button:focus-visible, summary:focus-visible, a:focus-visible {
   outline: 2px solid var(--accent-bright);

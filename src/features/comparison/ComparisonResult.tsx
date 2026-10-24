@@ -134,7 +134,7 @@ export function ComparisonVerdict({ result, marketPriceField }: { result: Compar
             <span>
               d’économie
               {result.percentage !== undefined && (
-                <> · {formatPercent(result.percentage)} moins cher {recommendation === 'craft' ? 'qu’à l’HDV' : 'que le craft'}</>
+                <>, {formatPercent(result.percentage)} moins cher {recommendation === 'craft' ? 'qu’à l’HDV' : 'que le craft'}</>
               )}
             </span>
           </div>
