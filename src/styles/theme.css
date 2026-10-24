@@ -521,35 +521,25 @@ input:where([type=checkbox], [type=radio], [type=file]):focus-visible { outline:
 :root[data-dofus="pourpre"] {
   --page-art: url(/backgrounds/songe-fond-pourpre.webp?v=13);
   --page-eggs: url(/backgrounds/songe-oeufs-pourpre.webp?v=13);
-  --side-art-left: url(/backgrounds/songe-gauche-pourpre.webp?v=13);
-  --side-art-right: url(/backgrounds/songe-droite-pourpre.webp?v=13);
-  --side-egg: url(/backgrounds/songe-dofus-pourpre.webp?v=13);
+  --page-fountain: url(/backgrounds/songe-fontaine-pourpre.webp?v=1);
 }
 :root[data-dofus="turquoise"] {
   --page-art: url(/backgrounds/songe-fond-turquoise.webp?v=13);
   --page-eggs: url(/backgrounds/songe-oeufs-turquoise.webp?v=13);
-  --side-art-left: url(/backgrounds/songe-gauche-turquoise.webp?v=13);
-  --side-art-right: url(/backgrounds/songe-droite-turquoise.webp?v=13);
-  --side-egg: url(/backgrounds/songe-dofus-turquoise.webp?v=13);
+  --page-fountain: url(/backgrounds/songe-fontaine-turquoise.webp?v=1);
 }
 :root[data-dofus="ocre"] {
   --page-art: url(/backgrounds/songe-fond-ocre.webp?v=13);
   --page-eggs: url(/backgrounds/songe-oeufs-ocre.webp?v=13);
-  --side-art-left: url(/backgrounds/songe-gauche-ocre.webp?v=13);
-  --side-art-right: url(/backgrounds/songe-droite-ocre.webp?v=13);
-  --side-egg: url(/backgrounds/songe-dofus-ocre.webp?v=13);
+  --page-fountain: url(/backgrounds/songe-fontaine-ocre.webp?v=1);
 }
 :root[data-dofus="ebene"] {
   --page-art: url(/backgrounds/songe-fond-ebene.webp?v=13);
   --page-eggs: url(/backgrounds/songe-oeufs-ebene.webp?v=13);
-  --side-art-left: url(/backgrounds/songe-gauche-ebene.webp?v=13);
-  --side-art-right: url(/backgrounds/songe-droite-ebene.webp?v=13);
-  --side-egg: url(/backgrounds/songe-dofus-ebene.webp?v=13);
+  --page-fountain: url(/backgrounds/songe-fontaine-ebene.webp?v=1);
 }
 :root[data-dofus="ivoire"] {
   --page-art: url(/backgrounds/songe-fond-ivoire.webp?v=13);
   --page-eggs: url(/backgrounds/songe-oeufs-ivoire.webp?v=13);
-  --side-art-left: url(/backgrounds/songe-gauche-ivoire.webp?v=13);
-  --side-art-right: url(/backgrounds/songe-droite-ivoire.webp?v=13);
-  --side-egg: url(/backgrounds/songe-dofus-ivoire.webp?v=13);
+  --page-fountain: url(/backgrounds/songe-fontaine-ivoire.webp?v=1);
 }

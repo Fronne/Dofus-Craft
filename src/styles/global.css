@@ -2476,29 +2476,24 @@ select:focus {
 .prices-total { border-top-width: 2px; border-top-color: var(--border-strong); }
 
 /* ---------- Illustration behind the page ----------
-   The Dofus illustration (recolored per theme by scripts/recolor-page-art.mjs and build-side-art.mjs), fixed
-   under everything, in three parts from the back (z-index):
-   - the whole picture, faint, in the middle of the screen (body::after);
-   - on wide screens, its left and right halves in the margins on each side of the content column, sharp,
-     with their fade baked into the files (html::before and html::after);
+   The Dofus illustration (recolored per theme by scripts/recolor-page-art.mjs), fixed under everything, in
+   three parts from the back (z-index):
+   - the whole picture (body::after), one file for every screen: it covers the window, so a 21:9 screen
+     crops a band of its top and bottom (the lit centre stays), a 16:9 one nothing;
    - a calm band as wide as the content (body::before), so the text that is not on a panel — titles,
-     counts, chips — never sits on the picture. The cards and tables are on very opaque panels (theme.css). */
-body::before, body::after, html::before, html::after {
+     counts, chips — never sits on the picture. The cards and tables are on very opaque panels (theme.css);
+   - the six little Dofus and their halos, lit, above that band (.app-shell::after). */
+body::before, body::after {
   content: '';
   position: fixed;
   pointer-events: none;
 }
-/* The whole picture, faint, behind the column. It covers the screen (no edge to show), and fades out toward
-   the margins, where the sharp halves take over. */
 body::after {
   inset: 0;
   z-index: -3;
   background: var(--page-art, url(/backgrounds/songe-fond-emeraude.webp?v=13)) center / cover no-repeat;
-  -webkit-mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px)), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px)), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
-  mask-composite: intersect;
-  opacity: .38;
+  filter: saturate(.85) brightness(.95);
+  opacity: .4;
 }
 /* ---------- Page loader: the Dofus breathes inside a halo (motion neutralized by prefers-reduced-motion in theme.css) ---------- */
 .page-loader {
@@ -2531,14 +2526,18 @@ body::after {
 @keyframes page-loader-halo { 0%, 100% { opacity: .45; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.1); } }
 @keyframes page-loader-egg { 0%, 100% { transform: translateY(2px) scale(.96); } 50% { transform: translateY(-4px) scale(1.04); } }
 /* The six little Dofus of the picture and their halos, alone and clearly lit, above the calm band (which
-   would hide them) and under the panels. Same placement as body::after, so they stay on their pedestals. */
+   would hide them) and under the panels. Same placement as body::after, so they stay on their pedestals.
+   The shadows around the jet of the fountain are lifted the same way: it is the second background, drawn
+   under the Dofus (scripts/build-fountain-art.mjs). */
 .app-shell::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: var(--page-eggs, url(/backgrounds/songe-oeufs-emeraude.webp?v=13)) center / cover no-repeat;
+  background:
+    var(--page-eggs, url(/backgrounds/songe-oeufs-emeraude.webp?v=13)) center / cover no-repeat,
+    var(--page-fountain, url(/backgrounds/songe-fontaine-emeraude.webp?v=1)) center / cover no-repeat;
   -webkit-mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px));
   mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px));
   opacity: .75;
@@ -2568,57 +2567,25 @@ body::before {
     color-mix(in srgb, var(--bg) 3%, transparent) calc(50% + 1010px),
     color-mix(in srgb, var(--bg) 0%, transparent) calc(50% + 1020px));
 }
-html::before, html::after { display: none; }
-@media (min-width: 1620px) {
-  /* 1392px: the content column (1376px) plus room for the scrollbar that 100vw counts in. */
-  html { --side-art: calc((100vw - 1392px) / 2); }
-  html::before, html::after {
-    display: block;
-    top: 0;
-    height: 100vh;
-    z-index: -2;
-    width: var(--side-art);
-    background: top / cover no-repeat;
-    opacity: .4;
-    animation: fade-in 900ms ease-out both;
-  }
-  /* The little Dofus of the right half, put back above the calm band (which would hide it) at the very
-     spot it has in that picture; AppShell works out its position and size from the window (--egg-*). */
-  .app-shell::before {
-    content: '';
-    position: fixed;
-    z-index: -1;
-    left: var(--egg-x, -999px);
-    top: var(--egg-y, 0);
-    width: var(--egg-size, 0);
-    height: var(--egg-size, 0);
-    transform: translate(-50%, -50%);
-    /* The lit stone, under a glow in the theme's color that dies out toward the shade around it. */
-    background:
-      radial-gradient(closest-side, color-mix(in srgb, var(--accent-bright) var(--egg-glow, 34%), transparent), color-mix(in srgb, var(--accent) calc(var(--egg-glow, 34%) / 3), transparent) 55%, transparent),
-      var(--side-egg, url(/backgrounds/songe-dofus-emeraude.webp?v=13)) center / contain no-repeat;
-    filter: var(--egg-filter, none);
-    opacity: .9;
-    pointer-events: none;
-    animation: fade-in 900ms ease-out both;
-  }
-  /* The mask brings each half to nothing before the edge of its box, so no straight line shows beside the column. */
-  html::before { left: 0; background-image: var(--side-art-left, url(/backgrounds/songe-gauche-emeraude.webp?v=13)); background-position: top right; -webkit-mask-image: linear-gradient(to right, #000 0%, #000 30%, rgba(0, 0, 0, .55) 62%, rgba(0, 0, 0, .15) 85%, transparent 100%); mask-image: linear-gradient(to right, #000 0%, #000 30%, rgba(0, 0, 0, .55) 62%, rgba(0, 0, 0, .15) 85%, transparent 100%); }
-  html::after { right: 0; background-image: var(--side-art-right, url(/backgrounds/songe-droite-emeraude.webp?v=13)); background-position: top left; -webkit-mask-image: linear-gradient(to left, #000 0%, #000 30%, rgba(0, 0, 0, .55) 62%, rgba(0, 0, 0, .15) 85%, transparent 100%); mask-image: linear-gradient(to left, #000 0%, #000 30%, rgba(0, 0, 0, .55) 62%, rgba(0, 0, 0, .15) 85%, transparent 100%); }
+/* Readable over the lit picture: what sits on the page itself (not on a card) gets the card's opaque panel,
+   or the beam of the fountain and the lit Dofus, drawn above the calm band, show through it. */
+.results button:not(.selected), .brisage-cards button:not(.selected) { background: var(--panel); }
+.results button.selected { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--panel-strong); }
+.page-enter > .empty-state, .page-enter > .brisage-invite {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
 }
-/* The Dofus of these themes is bright against its lit stones: less glow and a darker sprite so it stands out. */
-:root:not([data-dofus]), :root[data-dofus="emeraude"], :root[data-dofus="ocre"], :root[data-dofus="ivoire"] {
-  --egg-glow: 12%;
-  --egg-filter: brightness(.78) contrast(1.2);
-}
+.page-enter > .brisage-invite { padding: var(--space-3) var(--space-4); }
 /* 16:9 screens (the screen's ratio, not the window's, which the browser bars change): the whole page is shown at 90%. */
 @media (min-width: 1620px) and (min-device-aspect-ratio: 17/10) and (max-device-aspect-ratio: 18/10) {
-  /* vw and vh are not zoomed: divide them by the zoom so the margins still match the column. */
-  html { zoom: .9; --side-art: calc((100vw / .9 - 1392px) / 2); }
-  html::before, html::after { height: calc(100vh / .9); }
+  html { zoom: .9; }
 }
-:root[data-theme="light"] body::after { opacity: .22; }
-:root[data-theme="light"]::before, :root[data-theme="light"]::after { opacity: .22; }
+/* Light theme: the picture darkens the pale background (multiply) instead of whitening it, the calm band lets a
+   little more of it through, and the lit layer is softer, so the page is not one white sheet. */
+:root[data-theme="light"] body::after { opacity: .5; mix-blend-mode: multiply; }
+:root[data-theme="light"] body::before { opacity: .78; }
+:root[data-theme="light"] .app-shell::after { opacity: .5; }
 
 /* specs/060-page-brisage */
 .brisage-block { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }

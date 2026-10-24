@@ -67,7 +67,7 @@ Règles :
   losange ; le nom de la caractéristique reste toujours écrit.
 - Un texte posé sur une image utilise `--on-image`, avec le voile `--image-veil` ou l'ombre
   `--on-image-shadow` pour rester lisible. Ces trois jetons ne changent pas avec le thème.
-- Derrière la page, l'illustration « Songe infini » d'Ankama, recolorée par thème (`scripts/recolor-page-art.mjs` pour l'image entière `songe-fond-<thème>.webp`, puis `scripts/build-side-art.mjs` pour ses deux moitiés). Trois couches fixes : l'image entière, discrète (38 %), au centre de l'écran ; sur écran large (à partir de 1620 px), ses deux moitiés nettes dans les marges de part et d'autre du contenu, à 40 % d'opacité (22 % en thème clair), au fondu enregistré dans les fichiers ; le petit Dofus de la marge droite, redessiné au-dessus de la bande (`songe-dofus-<thème>.webp`, placé par AppShell, à sa position dans l'illustration) ; et une bande calme presque opaque (90 % de `--bg`) aussi large que le contenu, pour que le texte hors panneau (titres, compteurs, puces) ne soit jamais posé sur l'image. Les cartes et tableaux sont sur des panneaux très opaques (94 à 95 %).
+- Derrière la page, l'illustration « Songe infini » d'Ankama, recolorée par thème (`scripts/recolor-page-art.mjs` pour l'image entière `songe-fond-<thème>.webp` et son calque de petits Dofus `songe-oeufs-<thème>.webp`). Une seule image pour tous les écrans (16:9 comme 21:9), en `cover`. Trois couches fixes : l'image entière, nette, à 40 % d'opacité (22 % en thème clair) ; une bande calme presque opaque (90 % de `--bg`) aussi large que le contenu, pour que le texte hors panneau (titres, compteurs, puces) ne soit jamais posé sur l'image ; et les six petits Dofus éclairés avec leurs halos, plus le faisceau de la fontaine (`songe-fontaine-<thème>.webp`, `scripts/build-fountain-art.mjs`), au-dessus de la bande, au centre. En thème clair, l'image est fondue en `multiply` (50 %), la bande est à environ 70 % et le calque éclairé à 50 %. Les puces de résultats, les cartes Brisage et les états vides posés sur la page ont le fond opaque des panneaux. Les cartes et tableaux sont sur des panneaux très opaques (94 à 95 %).
 - Les cases d'équipement des filtres de catégorie sont neutres (`--slot-bg`, `--slot-border`, `--slot-glyph`) ; seule celle de la catégorie choisie prend la couleur d'accent.
 - Les surfaces translucides (`--panel`, `--nav-bg`) laissent passer la lumière du fond ; un menu, un
   dialogue ou une bulle, qui passent au-dessus du contenu, sont opaques (`--panel-strong`).
@@ -90,7 +90,7 @@ sombre comme en clair, indépendamment de `data-theme`.
   l'accent étant rouge-orangé), `--warning` pour l'ocre (orange, l'accent étant jaune doré).
   `--link` ne change que pour le turquoise, dont l'accent serait sinon la même teinte que les liens.
 - Les teintes viennent des images des Dofus (mesure des pixels vifs), pas de leurs noms.
-- `--page-art`, `--side-art-left` et `--side-art-right` donnent les images de chaque thème : pierre teintée, feuillage et petits
+- `--page-art` et `--page-eggs` donnent les images de chaque thème : pierre teintée, feuillage et petits
   Dofus aux couleurs du thème. L'émeraude garde les couleurs d'origine (petits Dofus verts).
 - Les lueurs de fond sont les mêmes pour les six thèmes (opacités .26, .12 et .08 en sombre).
 - Chaque bloc `:root[data-dofus="x"]` a son jumeau `…[data-theme="light"]`, qui liste les mêmes

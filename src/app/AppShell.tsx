@@ -103,25 +103,6 @@ export function AppShell() {
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
-  // The little Dofus of the right-hand illustration is drawn again above the calm band (global.css,
-  // .app-shell::before). The illustration is 1011 × 1800 and covers a box as wide as the margin and as high
-  // as the window, so the Dofus (at 275, 1059 in it, 520 wide with its glow) moves with the window size.
-  // It must stay exactly where it is in the picture, or its lit stones no longer match the ones under it.
-  useEffect(() => {
-    const place = () => {
-      const root = document.documentElement;
-      // The page may be zoomed in CSS (ultra-wide screens): everything below is in zoomed pixels.
-      const zoom = parseFloat(getComputedStyle(root).zoom) || 1;
-      const margin = (window.innerWidth / zoom - 1392) / 2;
-      const scale = Math.max(margin / 1011, window.innerHeight / zoom / 1800);
-      root.style.setProperty('--egg-x', `${root.clientWidth / zoom - margin + 275 * scale}px`);
-      root.style.setProperty('--egg-y', `${1059 * scale}px`);
-      root.style.setProperty('--egg-size', `${520 * scale}px`);
-    };
-    place();
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
-  }, []);
   useEffect(() => {
     void recordVisit();
   }, []);
