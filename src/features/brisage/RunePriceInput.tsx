@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { formatKamasInput, KAMAS_ICON_URL, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
+import { classifyPriceAge } from '../../domain/price-age';
 import type { PriceMode } from '../../domain/price-modes';
+import { formatRelativeTime } from '../../domain/time';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { submitCommunityPrice } from '../../services/community-price-api';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
@@ -10,8 +12,6 @@ import { lookupCommunityPrice } from '../comparison/useCommunityPrice';
 // specs/067 (histoire 5): the unit price of a rune is typed right in the table. It goes to the carnet of the active mode;
 // in Mode communautaire it is also shared with the group, after the same outlier confirmation as the other pages
 // (specs/007), so a mistyped price is not published unchecked.
-
-const DATE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
 
 export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, updatedAt, onSaved }: {
   runeId: string;
@@ -27,6 +27,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
 }) {
   const [typed, setTyped] = useState<string>();
   const [dialog, confirmOutlier] = useOutlierConfirm();
+  const age = classifyPriceAge(updatedAt);
   const value = typed ?? (price !== undefined && price > 0 ? formatKamasInput(String(price)) : '0');
 
   // A commit waits for the shared price and the confirmation: a second blur meanwhile must not save or share twice.
@@ -72,8 +73,10 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
         {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
       </span>
       {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
-      {price !== undefined && updatedAt && !Number.isNaN(Date.parse(updatedAt)) && (
-        <span className="fm-note brisage-price-date">{DATE.format(new Date(updatedAt))}</span>
+      {price !== undefined && (
+        <small className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}>
+          {updatedAt ? formatRelativeTime(updatedAt) : 'date inconnue'}
+        </small>
       )}
       {dialog}
     </>
