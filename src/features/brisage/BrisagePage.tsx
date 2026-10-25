@@ -210,7 +210,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
 
   // An exo taken off is kept a few seconds, so « Annuler » puts it back where it was.
   const [removedExo, setRemovedExo] = useState<{ entry: ExoEntry; index: number }>();
-  const undoTimer = useRef<ReturnType<typeof setTimeout>>();
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const removeExo = (entry: ExoEntry) => {
     const index = exoEntries.indexOf(entry);
     changeExos(exoEntries.filter((other) => other !== entry));
