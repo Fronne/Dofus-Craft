@@ -540,27 +540,27 @@ input:where([type=checkbox], [type=radio], [type=file]):focus-visible { outline:
 /* The page artwork, one file per Dofus (made by scripts/recolor-page-art.mjs). Outside the palette blocks
    above: dark and light themes use the same file. The emerald is the default in global.css. */
 :root[data-dofus="pourpre"] {
-  --page-art: url(/backgrounds/songe-fond-pourpre.webp?v=15);
-  --page-eggs: url(/backgrounds/songe-oeufs-pourpre.webp?v=15);
+  --page-art: url(/backgrounds/songe-fond-pourpre.webp?v=16);
+  --page-eggs: url(/backgrounds/songe-oeufs-pourpre.webp?v=16);
   --page-fountain: url(/backgrounds/songe-fontaine-pourpre.webp?v=1);
 }
 :root[data-dofus="turquoise"] {
-  --page-art: url(/backgrounds/songe-fond-turquoise.webp?v=15);
-  --page-eggs: url(/backgrounds/songe-oeufs-turquoise.webp?v=15);
+  --page-art: url(/backgrounds/songe-fond-turquoise.webp?v=16);
+  --page-eggs: url(/backgrounds/songe-oeufs-turquoise.webp?v=16);
   --page-fountain: url(/backgrounds/songe-fontaine-turquoise.webp?v=1);
 }
 :root[data-dofus="ocre"] {
-  --page-art: url(/backgrounds/songe-fond-ocre.webp?v=15);
-  --page-eggs: url(/backgrounds/songe-oeufs-ocre.webp?v=15);
+  --page-art: url(/backgrounds/songe-fond-ocre.webp?v=16);
+  --page-eggs: url(/backgrounds/songe-oeufs-ocre.webp?v=16);
   --page-fountain: url(/backgrounds/songe-fontaine-ocre.webp?v=1);
 }
 :root[data-dofus="ebene"] {
-  --page-art: url(/backgrounds/songe-fond-ebene.webp?v=15);
-  --page-eggs: url(/backgrounds/songe-oeufs-ebene.webp?v=15);
+  --page-art: url(/backgrounds/songe-fond-ebene.webp?v=16);
+  --page-eggs: url(/backgrounds/songe-oeufs-ebene.webp?v=16);
   --page-fountain: url(/backgrounds/songe-fontaine-ebene.webp?v=1);
 }
 :root[data-dofus="ivoire"] {
-  --page-art: url(/backgrounds/songe-fond-ivoire.webp?v=15);
-  --page-eggs: url(/backgrounds/songe-oeufs-ivoire.webp?v=15);
+  --page-art: url(/backgrounds/songe-fond-ivoire.webp?v=16);
+  --page-eggs: url(/backgrounds/songe-oeufs-ivoire.webp?v=16);
   --page-fountain: url(/backgrounds/songe-fontaine-ivoire.webp?v=1);
 }

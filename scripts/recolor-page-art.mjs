@@ -67,14 +67,41 @@ function fromHsl(h, s, l) {
 function foliageWeight(h, s, l) {
   // The chroma (not the HSL saturation, which is large for any nearly white pixel) keeps the white noise out.
   const chromaValue = s * (1 - Math.abs(2 * l - 1));
-  // The shaded leaves are blue-greys (hue up to 230, chroma under 0.09); the stone of those hues is far more chromatic.
-  const greyish = 1 - smooth((chromaValue - 0.09) / 0.05);
-  const hue = smooth((h - 70) / 20) * (1 - smooth((h - (200 + 30 * greyish)) / 20));
+  // The shaded leaves are blue-greys (hue up to 225, chroma under 0.065); the dark stone of those hues has a chroma of 0.1 and more.
+  const greyish = 1 - smooth((chromaValue - 0.065) / 0.03);
+  const hue = smooth((h - 70) / 20) * (1 - smooth((h - (200 + 25 * greyish)) / 20));
   const chroma = smooth((chromaValue - 0.008) / 0.025);
   return hue * chroma * smooth((l - 0.04) / 0.08) * (1 - smooth((l - 0.8) / 0.1));
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;
+
+// The foliage weight of every pixel, cleaned up: specks that are alone on the stone are dropped, and the holes inside a
+// cluster of leaves (shadows, grey patches) are filled with the pixels that are not clearly stone. Right of the middle of
+// the picture only the bright tufts count: the dark moss under the arch keeps its own colors.
+async function foliageMask(data, width, height, scale) {
+  const raw = Buffer.alloc(width * height);
+  const loose = Buffer.alloc(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const p = y * width + x;
+      const [h, s, l] = toHsl(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]);
+      const right = x / scale > 1000 ? smooth((l - 0.22) / 0.08) : 1;
+      raw[p] = Math.round(255 * foliageWeight(h, s, l) * right);
+      const chroma = s * (1 - Math.abs(2 * l - 1));
+      loose[p] = Math.round(255 * (h < 225 ? 1 : 0) * (1 - smooth((chroma - 0.065) / 0.03)) * smooth((l - 0.04) / 0.08) * (1 - smooth((l - 0.8) / 0.1)) * right);
+    }
+  }
+  const blurred = await sharp(raw, { raw: { width, height, channels: 1 } }).blur(2.5 * scale).extractChannel(0).raw().toBuffer();
+  const mask = new Float32Array(width * height);
+  for (let p = 0; p < mask.length; p += 1) {
+    const around = blurred[p] / 255;
+    const core = (raw[p] / 255) * smooth((around - 0.22) / 0.2);
+    const fill = (loose[p] / 255) * smooth((around - 0.4) / 0.25);
+    mask[p] = Math.max(core, fill);
+  }
+  return mask;
+}
 
 const fondSource = process.argv[2];
 if (!fondSource) {
@@ -90,6 +117,7 @@ if (!fondSource) {
   const LOGO = { x: 1897, y: 1050, rx: 105, ry: 90 };
   const { data, info } = await sharp(fondSource).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const scale = info.width / 2000;
+  const foliage = await foliageMask(data, info.width, info.height, scale);
   const HALO = 0.32;
   const HALO_RADIUS = 46;
   const MAIN_EGG = 2;
@@ -104,11 +132,11 @@ if (!fondSource) {
       for (let x = 0; x < info.width; x += 1) {
         const i = (y * info.width + x) * 4;
         const [r, g, b] = [out[i], out[i + 1], out[i + 2]];
-        const [h, s, l] = toHsl(r, g, b);
+        const [, , l] = toHsl(r, g, b);
         let color = stoneTint(r, g, b, theme);
         if (theme.grass) {
           const grass = fromHsl(theme.grass.h, theme.grass.s, Math.min(l * theme.grass.l, 0.9));
-          color = color.map((v, k) => lerp(v, grass[k], foliageWeight(h, s, l)));
+          color = color.map((v, k) => lerp(v, grass[k], foliage[i / 4]));
         }
         // Each little Dofus takes the color of one of the six primordial Dofus, with a faint halo of that
         // color around it. The one in the middle of the picture (the one the page lights up in the margin)
