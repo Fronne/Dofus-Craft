@@ -75,7 +75,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
       {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
       {price !== undefined && (
         <small className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}>
-          {updatedAt ? formatRelativeTime(updatedAt) : 'date inconnue'}
+          {updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
         </small>
       )}
       {dialog}
