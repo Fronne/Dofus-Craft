@@ -100,6 +100,29 @@ function mergeRanges(ranges: Range[]): Range[] {
   return [...merged.values()];
 }
 
+/** The best exo to add, inside the verdict: its rune and what breaking the item with it brings. */
+function BestExo({ exo, onAdd }: { exo: NonNullable<ReturnType<typeof bestExoFor>>; onAdd: () => void }) {
+  return (
+    <div className="brisage-best-exo" aria-label="Meilleur exo à ajouter">
+      <span className="brisage-verdict-label">Meilleur exo à ajouter</span>
+      <div className="brisage-best-exo-head">
+        <div className="brisage-best-exo-rune">
+          {exo.runeImageUrl && <img src={exo.runeImageUrl} alt="" width="40" height="40" />}
+          <div>
+            <strong>{exo.runeName}</strong>
+            {exo.improvementKamas !== undefined ? (
+              <p className="verdict-subtitle"><Kamas value={Math.round(exo.improvementKamas)} signed /></p>
+            ) : exo.thresholdCoefficient !== undefined && (
+              <p className="verdict-subtitle">Rentable tant que le coefficient reste au-dessus de {number.format(exo.thresholdCoefficient)} %</p>
+            )}
+          </div>
+        </div>
+        <button type="button" className="btn btn-secondary" onClick={onAdd}>+ Ajouter</button>
+      </div>
+    </div>
+  );
+}
+
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const { serverId } = useActiveServer();
   // specs/072-classement-brisage (US6): the Classement tab exists only for the owner, who opens it with `?classement=1`.
@@ -342,6 +365,13 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     };
     return bestExoFor(indexed, buildRankingRow(indexed, context), context, negativeRanges.map((range) => range.effectId));
   })();
+  // Once the exo is in the table it is no longer offered.
+  const offeredExo = bestExo && !exos.some((exo) => exo.effectId === bestExo.effectId) ? bestExo : undefined;
+  const addBestExo = () => {
+    if (!offeredExo) return;
+    newExoCount.current += 1;
+    changeExos([{ id: `new-${newExoCount.current}`, effectId: offeredExo.effectId, value: 1 }, ...exoEntries]);
+  };
   /** The price of a rune: typed in the table when a server is chosen, else only shown. */
   const runePriceCell = (runeId: string, runeName: string) => (serverId
     ? (
@@ -409,7 +439,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     : [];
 
   let verdict = { title: 'Prix manquants', hint: undefined as string | undefined, tone: 'neutral' as 'good' | 'bad' | 'neutral' };
-  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: 'Même le meilleur choix ne couvre pas le prix de l\'objet.', tone: 'bad' };
+  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: undefined, tone: 'bad' };
   else if (best?.kind === 'normal') verdict = { title: 'Rentable sans focus', hint: 'Le focus ne rapporte pas plus : brisez normalement.', tone: 'good' };
   else if (best) verdict = { title: `Rentable avec un focus ${shortRune(best)}`, hint: undefined, tone: 'good' };
 
@@ -532,6 +562,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <div><dt>Rentable tant que le coefficient reste au-dessus de</dt><dd>{number.format(adviceBreakEven)} %</dd></div>
                         </dl>
                       )}
+                      {offeredExo && <BestExo exo={offeredExo} onAdd={addBestExo} />}
                     </div>
                   </div>
                 </section>
@@ -544,18 +575,18 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     <div className="verdict-head">
                       <span className="verdict-icon" aria-hidden="true"><Icon name={verdict.tone === 'good' ? 'check' : 'info'} size={22} /></span>
                       <div className="verdict-text">
-                        <span className="brisage-verdict-label">Verdict</span>
+                        <span className="visually-hidden">Verdict</span>
                         <p className="verdict-title">{verdict.title}</p>
-                        {best && (
-                          <p className="verdict-subtitle">
-                            <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
-                            {focusWins && normal?.gainKamas !== undefined && (
-                              <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
-                            )}
-                          </p>
+                        {focusWins && normal?.gainKamas !== undefined && (
+                          <p className="verdict-subtitle">Contre <Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</p>
                         )}
                         {verdict.hint && <p className="verdict-subtitle">{verdict.hint}</p>}
                       </div>
+                      {best && (
+                        <div className="brisage-verdict-gain">
+                          <Kamas value={Math.round(best.gainKamas!)} signed />
+                        </div>
+                      )}
                     </div>
                     {(ok.thresholdCoefficient !== undefined || ok.focusThresholdCoefficient !== undefined) && (
                       <dl className="brisage-facts">
@@ -570,27 +601,10 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         )}
                       </dl>
                     )}
+                    {offeredExo && <BestExo exo={offeredExo} onAdd={addBestExo} />}
                   </div>
                 </div>
               </section>
-              )}
-
-              {bestExo && (
-                <section className="brisage-part market-price-panel brisage-best-exo" aria-label="Meilleur exo à ajouter">
-                  <span className="brisage-verdict-label">Meilleur exo à ajouter</span>
-                  <p className="brisage-best-exo-rune">
-                    {bestExo.runeImageUrl && <img src={bestExo.runeImageUrl} alt="" width="32" height="32" />}
-                    <strong>{bestExo.runeName}</strong> <span className="fm-note">({bestExo.statLabel})</span>
-                  </p>
-                  {bestExo.gainKamas !== undefined && bestExo.improvementKamas !== undefined ? (
-                    <p className="verdict-subtitle">
-                      <Kamas value={Math.round(bestExo.gainKamas)} signed /> par objet avec l'exo, soit <Kamas value={Math.round(bestExo.improvementKamas)} signed /> de plus
-                    </p>
-                  ) : bestExo.thresholdCoefficient !== undefined && (
-                    <p className="verdict-subtitle">Rentable tant que le coefficient reste au-dessus de {number.format(bestExo.thresholdCoefficient)} %</p>
-                  )}
-                  <p className="fm-note">Estimation : une rune de l'exo au minimum, son prix n'est pas déduit ; échecs et runes en plus non comptés.</p>
-                </section>
               )}
 
               <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">

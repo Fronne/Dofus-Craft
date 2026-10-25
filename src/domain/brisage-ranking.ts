@@ -233,14 +233,18 @@ export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingC
       if (gain === undefined) continue;
       candidate.gainKamas = gain;
       candidate.improvementKamas = candidate.gainKamas - (row.gainKamas ?? 0);
-      if (candidate.improvementKamas > 0 && (!best || candidate.gainKamas > (best.gainKamas ?? -Infinity))) best = candidate;
+      // Not offered when the extra gain does not even cover the rune that has to be spent (the price is not shown as taken off).
+      if (candidate.improvementKamas > runePrice && (!best || candidate.gainKamas > (best.gainKamas ?? -Infinity))) best = candidate;
     } else {
       const advice = analyzeFocusAdvice({ level: item.level, lines: withExo, itemCostKamas: row.priceKamas }, context.runes, context.runePrices, context.settings);
       if (advice.status !== 'ok' || advice.reference.missingRuneIds.length > 0) continue;
       const { threshold } = adviceThreshold(advice);
       if (threshold === undefined) continue;
       candidate.thresholdCoefficient = threshold;
-      const beatsBase = row.thresholdCoefficient === undefined || threshold < row.thresholdCoefficient;
+      // Not offered when, with the rune added to the price of the item, the threshold would not beat the item as it is.
+      const paid = analyzeFocusAdvice({ level: item.level, lines: withExo, itemCostKamas: row.priceKamas + runePrice }, context.runes, context.runePrices, context.settings);
+      const paidThreshold = paid.status === 'ok' ? adviceThreshold(paid).threshold : undefined;
+      const beatsBase = row.thresholdCoefficient === undefined || (paidThreshold !== undefined && paidThreshold < row.thresholdCoefficient);
       if (beatsBase && (!best || threshold < (best.thresholdCoefficient ?? Infinity))) best = candidate;
     }
   }

@@ -2513,12 +2513,19 @@ body::before {
 .verdict--bad .verdict-icon { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
 .verdict--bad p.verdict-title { color: var(--danger); }
 .brisage-verdict-label { font-size: var(--text-xs); font-weight: 700; color: var(--accent-bright); }
-.brisage-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); margin: var(--space-4) 0 0; padding-top: var(--space-4); border-top: .5px solid var(--border); }
-.brisage-facts dt { font-size: var(--text-sm); color: var(--text-muted); }
-.brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: var(--text-display); line-height: 1.2; }
-/* The advice without a coefficient: the text gets most of the width, the figure sits beside it (it used to be squeezed into 340px). */
-.item-verdict-panel .brisage-verdict .verdict-head { flex: 3 1 28rem; }
-.item-verdict-panel .brisage-verdict .brisage-facts { flex: 1 1 15rem; grid-template-columns: minmax(0, 1fr); margin: 0; padding-top: 0; border-top: 0; }
+.brisage-verdict-gain { display: grid; justify-items: end; margin-left: auto; text-align: right; font-family: var(--font-display); font-size: var(--text-display); line-height: 1.1; color: var(--success); }
+.brisage-verdict-gain small { font-family: inherit; font-size: var(--text-xs); color: var(--text-muted); }
+.verdict--bad .brisage-verdict-gain { color: var(--danger); }
+.brisage-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-2); margin: var(--space-4) 0 0; }
+.brisage-facts > div { display: flex; flex-direction: column; gap: .15rem; padding: var(--space-3); border-radius: var(--radius-sm, 8px); background: var(--input-bg); }
+.brisage-facts dt { font-size: var(--text-xs); color: var(--text-muted); }
+.brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: var(--text-lg, 1.15rem); line-height: 1.2; }
+/* The verdict reads top to bottom: the title with the gain on its right, then the figures in tiles, then the exo to add. */
+.item-verdict-panel .brisage-verdict { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+.item-verdict-panel .brisage-verdict .verdict-head { flex: none; grid-template-columns: auto minmax(0, 1fr) auto; }
+.item-verdict-panel .brisage-verdict .brisage-verdict-gain { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.item-verdict-panel .brisage-verdict .brisage-facts { margin: 0; }
+.item-verdict-panel .brisage-verdict .brisage-best-exo { margin: 0; }
 .brisage-table-wrap { overflow-x: auto; }
 .brisage-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 .brisage-table th, .brisage-table td { padding: .8rem .75rem; text-align: right; border-bottom: .5px solid var(--border); vertical-align: middle; }
@@ -2545,9 +2552,12 @@ body::before {
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
 .brisage-roll.is-modified { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .brisage-price-date { display: block; }
-.brisage-best-exo { display: grid; gap: var(--space-2); }
+.brisage-best-exo { display: grid; gap: var(--space-2); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent); border-radius: var(--radius-sm, 8px); background: var(--accent-soft); }
 .brisage-best-exo p { margin: 0; }
-.brisage-best-exo-rune { display: flex; align-items: center; gap: var(--space-2); }
+.brisage-best-exo-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.brisage-best-exo-rune { display: flex; align-items: center; gap: var(--space-3); font-family: var(--font-display); font-size: var(--text-base); line-height: 1.2; }
+.brisage-best-exo-rune strong { display: block; }
+.brisage-best-exo-rune img { flex: none; padding: 4px; border-radius: 50%; background: var(--accent-soft); }
 .brisage-roll-state { display: none; }
 /* The stat's name is only read out on desktop (the icon and the hover show it); a card shows it. */
 .brisage-stat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

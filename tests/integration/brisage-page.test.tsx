@@ -387,13 +387,16 @@ describe('Brisage page (specs/061)', () => {
       await pricesKnown();
       // The cape has no Sagesse (weight 3): a costly Rune Sa is the exo that pays the most.
       const saRuneId = (runeItems as { runes: { id: string; name: string; effectId: number }[] }).runes.find((rune) => rune.effectId === 124 && rune.name === 'Rune Sa')!.id;
-      await resourcePricesFor('personal').save('mikhal', saRuneId, 5000);
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 20000);
       await openBrisage();
       await pickCape();
       fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
       const block = (await screen.findByText('Meilleur exo à ajouter')).closest('section') as HTMLElement;
       expect(within(block).getByText('Rune Sa', { selector: 'strong' })).toBeInTheDocument();
-      expect(block.textContent).toMatch(/de plus/);
+      expect(block.textContent).toMatch(/\+/);
+      // The button puts the exo in the table, and the block is no longer offered.
+      fireEvent.click(within(block).getByRole('button', { name: /Ajouter/ }));
+      await waitFor(() => expect(screen.queryByText('Meilleur exo à ajouter')).not.toBeInTheDocument());
     });
 
     it('hides the block when the only rune that would pay is too heavy to be put as an exo (weight 30 or more)', async () => {
