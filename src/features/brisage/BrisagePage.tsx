@@ -19,7 +19,8 @@ import {
   type BrisageOption,
 } from '../../domain/brisage';
 import { resolveItemPrice } from '../../domain/brisage-price';
-import { DEFAULT_RANKING_VIEW, type RankingView } from '../../domain/brisage-ranking';
+import { bestExoFor, buildRankingRow, DEFAULT_RANKING_VIEW, exoCandidates, type RankingContext, type RankingView } from '../../domain/brisage-ranking';
+import type { IndexedItem } from '../../domain/brisage-search';
 import { useSiteSettings } from '../../app/useSiteSettings';
 import { applyRankingAccessFromSearch,withoutRankingParameter } from '../../persistence/brisage-ranking-access';
 import type { RuneItemsData } from '../../domain/forgemagie';
@@ -316,6 +317,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       const found = exo.effectId === undefined ? undefined : runeForStat(RUNES, exo.effectId, SETTINGS.runeSize);
       if (found) ids.add(found.rune.id);
     }
+    // The prices of the runes that could be put on the item as an exo, to find the best one.
+    for (const { found } of exoCandidates(new Set([...ranges, ...negativeRanges].map((range) => range.effectId)), RUNES, SETTINGS)) ids.add(found.rune.id);
     return [...ids].sort();
   }, [ranges, negativeRanges, storedExos]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
@@ -328,6 +331,17 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     const typedPrice = priceOverrides[overrideKey(runeId)];
     if (typedPrice !== undefined) prices[runeId] = typedPrice;
   }
+  // The exo that pays the most when put on the item as it is (average rolls, no exo of the table); nothing when none pays more.
+  const bestExo = (() => {
+    if (!item || !(item.level !== undefined && item.level > 0) || ranges.length === 0 || !(cost > 0) || priceLoading) return undefined;
+    const indexed: IndexedItem = { id: item.id, name: item.name, level: item.level, effects: ranges };
+    const context: RankingContext = {
+      runes: RUNES, settings: SETTINGS, runePrices: prices, runePriceDates: {},
+      itemPrices: new Map([[item.id, { kamas: cost }]]),
+      coefficients: coefficient > 0 ? new Map([[item.id, { coefficient, savedAt: '' }]]) : new Map(),
+    };
+    return bestExoFor(indexed, buildRankingRow(indexed, context), context);
+  })();
   /** The price of a rune: typed in the table when a server is chosen, else only shown. */
   const runePriceCell = (runeId: string, runeName: string) => (serverId
     ? (
@@ -559,6 +573,24 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                   </div>
                 </div>
               </section>
+              )}
+
+              {bestExo && (
+                <section className="brisage-part market-price-panel brisage-best-exo" aria-label="Meilleur exo à ajouter">
+                  <span className="brisage-verdict-label">Meilleur exo à ajouter</span>
+                  <p className="brisage-best-exo-rune">
+                    {bestExo.runeImageUrl && <img src={bestExo.runeImageUrl} alt="" width="32" height="32" />}
+                    <strong>{bestExo.runeName}</strong> <span className="fm-note">({bestExo.statLabel})</span>
+                  </p>
+                  {bestExo.gainKamas !== undefined && bestExo.improvementKamas !== undefined ? (
+                    <p className="verdict-subtitle">
+                      <Kamas value={Math.round(bestExo.gainKamas)} signed /> par objet avec l'exo, soit <Kamas value={Math.round(bestExo.improvementKamas)} signed /> de plus
+                    </p>
+                  ) : bestExo.thresholdCoefficient !== undefined && (
+                    <p className="verdict-subtitle">Rentable tant que le coefficient reste au-dessus de {number.format(bestExo.thresholdCoefficient)} %</p>
+                  )}
+                  <p className="fm-note">Estimation : une rune de l'exo au minimum, son prix n'est pas déduit ; échecs et runes en plus non comptés.</p>
+                </section>
               )}
 
               <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">

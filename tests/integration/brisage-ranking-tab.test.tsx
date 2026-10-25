@@ -384,21 +384,21 @@ describe('Brisage ranking tab (specs/072)', () => {
   describe('exo (US8)', () => {
     it('gives the best exo with the rune taken off the gain, for a known coefficient', async () => {
       noteCoefficient('777', 100);
-      await resourcePricesFor('personal').save('mikhal', '1557', 5000);
+      await resourcePricesFor('personal').save('mikhal', '7435', 5000);
       await openRanking();
-      const cell = (await within(rowOf('Cape du Chef Bwork')).findByText('Rune Ga Pa', { selector: 'strong' })).closest('td') as HTMLElement;
-      expect(cell.textContent).toMatch(/Rune Ga Pa : \+?[\d\s\u202f\u00a0]+/);
+      const cell = (await within(rowOf('Cape du Chef Bwork')).findByText('Rune Do', { selector: 'strong' })).closest('td') as HTMLElement;
+      expect(cell.textContent).toMatch(/Rune Do : \+?[\d\s\u202f\u00a0]+/);
       expect(screen.queryByText(/une rune déduite/)).not.toBeInTheDocument();
     });
 
     it('gives a threshold, never a gain, for an unknown coefficient', async () => {
-      await resourcePricesFor('personal').save('mikhal', '1557', 5000);
+      await resourcePricesFor('personal').save('mikhal', '7435', 5000);
       await openRanking();
-      // The cape has no coefficient noted: its Rune Vi / Cha are cheap, so a costly rune of PA lowers the threshold a lot.
+      // The cape has no coefficient noted: its Rune Vi / Cha are cheap, so a costly rune of Do lowers the threshold a lot.
       const row = within(rowOf('Cape du Chef Bwork'));
       expect(row.getByText('coefficient inconnu')).toBeInTheDocument();
-      const cell = (await row.findByText('Rune Ga Pa', { selector: 'strong' })).closest('td') as HTMLElement;
-      expect(cell.textContent).toMatch(/Rune Ga Pa : [\d,]+ %/);
+      const cell = (await row.findByText('Rune Do', { selector: 'strong' })).closest('td') as HTMLElement;
+      expect(cell.textContent).toMatch(/Rune Do : [\d,]+ %/);
       expect(cell.querySelector('.kamas-amount')).toBeNull();
     });
   });

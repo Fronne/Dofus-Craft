@@ -230,21 +230,21 @@ describe('filterRows (US4)', () => {
 });
 
 describe('bestExoFor (US8)', () => {
-  // Rune Ga Pa (1557, stat PA 111): an exo of 1 PA gives about 1.5 runes at 100 %, so it pays more than the rune only
-  // at a high coefficient — at 38 % it gives under one rune and never pays.
+  // Rune Do (7435, stat Dommages 112, weight 20): an exo of 1 Do gives about 1.5 runes at 100 %, so it pays more than the
+  // rune only at a high coefficient — at 38 % it gives under one rune and never pays.
   const highCoefficient = new Map([['777', { coefficient: 100, savedAt: ago(1) }]]);
-  const withGaPa = (extra: Partial<RankingContext> = {}) => context({
+  const withDo = (extra: Partial<RankingContext> = {}) => context({
     coefficients: highCoefficient,
-    runePrices: { ...context().runePrices, '1557': 5000 },
+    runePrices: { ...context().runePrices, '7435': 5000 },
     ...extra,
   });
 
   it('takes the price of one rune off the gain and keeps the exo only if it beats the item as it is', () => {
-    const ctx = withGaPa();
+    const ctx = withDo();
     const row = buildRankingRow(cape, ctx);
     const exo = bestExoFor(cape, row, ctx);
     expect(exo).toBeDefined();
-    expect(exo!.effectId).toBe(111);
+    expect(exo!.effectId).toBe(112);
     expect(exo!.runePriceKamas).toBe(5000);
     expect(exo!.gainKamas!).toBeGreaterThan(row.gainKamas!);
     expect(exo!.improvementKamas).toBeCloseTo(exo!.gainKamas! - row.gainKamas!, 6);
@@ -252,13 +252,13 @@ describe('bestExoFor (US8)', () => {
   });
 
   it('does not take the price of the rune off, even at a low coefficient', () => {
-    const ctx = withGaPa({ coefficients: new Map([['777', { coefficient: 38, savedAt: ago(1) }]]) });
+    const ctx = withDo({ coefficients: new Map([['777', { coefficient: 38, savedAt: ago(1) }]]) });
     const exo = bestExoFor(cape, buildRankingRow(cape, ctx), ctx);
     expect(exo?.improvementKamas ?? 0).toBeLessThan(5000);
   });
 
   it('gives the gain of the item page with that exo, the price of the rune not taken off (SC-007)', () => {
-    const ctx = withGaPa();
+    const ctx = withDo();
     const row = buildRankingRow(cape, ctx);
     const exo = bestExoFor(cape, row, ctx);
     expect(exo).toBeDefined();
@@ -284,11 +284,20 @@ describe('bestExoFor (US8)', () => {
   });
 
   it('gives a threshold, never a gain, for an unknown coefficient', () => {
-    const ctx = withGaPa({ coefficients: new Map() });
+    const ctx = withDo({ coefficients: new Map() });
     const row = buildRankingRow(cape, ctx);
     const exo = bestExoFor(cape, row, ctx);
     expect(exo).toBeDefined();
     expect(exo!.gainKamas).toBeUndefined();
     expect(exo!.thresholdCoefficient!).toBeLessThan(row.thresholdCoefficient!);
+  });
+
+  it('never offers a stat of a weight of 30 or more, however well it would pay', () => {
+    // Rune Ga Pa (1557, PA, weight 100) at a high price: it would pay, but it is too hard to put on an item.
+    const ctx = withDo({ runePrices: { ...context().runePrices, '1557': 5000 } });
+    const exo = bestExoFor(cape, buildRankingRow(cape, ctx), ctx);
+    expect(exo?.effectId).not.toBe(111);
+    const onlyHeavy = context({ coefficients: highCoefficient, runePrices: { '1523': 5, '1525': 5, '1557': 5000 } });
+    expect(bestExoFor(cape, buildRankingRow(cape, onlyHeavy), onlyHeavy)).toBeUndefined();
   });
 });

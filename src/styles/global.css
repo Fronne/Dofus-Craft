@@ -2545,6 +2545,9 @@ body::before {
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
 .brisage-roll.is-modified { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .brisage-price-date { display: block; }
+.brisage-best-exo { display: grid; gap: var(--space-2); }
+.brisage-best-exo p { margin: 0; }
+.brisage-best-exo-rune { display: flex; align-items: center; gap: var(--space-2); }
 .brisage-roll-state { display: none; }
 /* The stat's name is only read out on desktop (the icon and the hover show it); a card shows it. */
 .brisage-stat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

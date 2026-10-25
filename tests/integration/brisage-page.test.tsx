@@ -381,6 +381,35 @@ describe('Brisage page (specs/061)', () => {
     expect(screen.getAllByText(/^à [\d,]+ %$/)).toHaveLength(3);
   });
 
+  describe('best exo to add', () => {
+    it('shows the exo that pays the most, with its rune and the gain it brings', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 10);
+      await pricesKnown();
+      // The cape has no Sagesse (weight 3): a costly Rune Sa is the exo that pays the most.
+      const saRuneId = (runeItems as { runes: { id: string; name: string; effectId: number }[] }).runes.find((rune) => rune.effectId === 124 && rune.name === 'Rune Sa')!.id;
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 5000);
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
+      const block = (await screen.findByText('Meilleur exo à ajouter')).closest('section') as HTMLElement;
+      expect(within(block).getByText('Rune Sa', { selector: 'strong' })).toBeInTheDocument();
+      expect(block.textContent).toMatch(/de plus/);
+    });
+
+    it('hides the block when the only rune that would pay is too heavy to be put as an exo (weight 30 or more)', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 10);
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', '1523', 5);
+      await carnet.save('mikhal', '1525', 5);
+      await carnet.save('mikhal', '1557', 9000);
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
+      await screen.findByText('Verdict');
+      expect(screen.queryByText('Meilleur exo à ajouter')).not.toBeInTheDocument();
+    });
+  });
+
   it('accepts a coefficient above 100 %', async () => {
     await pinnedItemPrices.save('mikhal', '777', 1000);
     await pricesKnown();
