@@ -205,13 +205,13 @@ describe('mention d’un prix Huzounet fragile sur une ligne de ressource (specs
   it('says « peu de relevés » for a provisional Huzounet price', async () => {
     getCommunityPrice.mockResolvedValue(price(120, minutesAgo(60), { latestOrigin: 'external', latestFragile: 'provisional' }));
     await openRecherche();
-    expect(await screen.findByText(/· peu de relevés/)).toHaveClass('price-note');
+    expect(await screen.findByText(/, peu de relevés/)).toHaveClass('price-note');
   });
 
   it('says « relevé ancien » for an old Huzounet price', async () => {
     getCommunityPrice.mockResolvedValue(price(120, minutesAgo(60), { latestOrigin: 'external', latestFragile: 'stale' }));
     await openRecherche();
-    expect(await screen.findByText(/· relevé ancien/)).toBeInTheDocument();
+    expect(await screen.findByText(/, relevé ancien/)).toBeInTheDocument();
   });
 
   it('says nothing for a price shared by the group, nor for a sound Huzounet price', async () => {
@@ -230,7 +230,7 @@ describe('mention d’un prix Huzounet fragile sur une ligne de ressource (specs
   it('says nothing while the player is typing another price', async () => {
     getCommunityPrice.mockResolvedValue(price(120, minutesAgo(60), { latestOrigin: 'external', latestFragile: 'provisional' }));
     await openRecherche();
-    await screen.findByText(/· peu de relevés/);
+    await screen.findByText(/, peu de relevés/);
     await waitFor(() => expect(priceField()).toHaveValue('120'));
     fireEvent.change(priceField(), { target: { value: '999' } });
     await waitFor(() => expect(document.querySelector('.price-note')).toBeNull());
@@ -239,12 +239,12 @@ describe('mention d’un prix Huzounet fragile sur une ligne de ressource (specs
   it('keeps the mention with the price kept on the device, when the service cannot be reached (FR-009)', async () => {
     getCommunityPrice.mockResolvedValue(price(120, minutesAgo(60), { latestOrigin: 'external', latestFragile: 'provisional' }));
     const first = await openRecherche();
-    await screen.findByText(/· peu de relevés/);
+    await screen.findByText(/, peu de relevés/);
     first.unmount();
 
     getCommunityPrice.mockResolvedValue({ status: 'unavailable' });
     await openRecherche('community', true);
     await waitFor(() => expect(priceField()).toHaveValue('120'));
-    expect(await screen.findByText(/· peu de relevés/)).toBeInTheDocument();
+    expect(await screen.findByText(/, peu de relevés/)).toBeInTheDocument();
   });
 });

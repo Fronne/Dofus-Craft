@@ -24,6 +24,7 @@ import { PlayerCounters } from '../features/dungeon-counter/DungeonCounterBubble
 import { lazyPage } from './lazy-page';
 import { useDofusTheme } from './useDofusTheme';
 import { DEFAULT_DOFUS, dofusById } from '../domain/dofus-themes';
+import { PageLoader } from '../components/PageLoader';
 
 // Every page but Recherche (the landing route) is fetched when first visited, so the first load
 // doesn't carry the code and data of every page.
@@ -102,23 +103,6 @@ export function AppShell() {
   useEffect(() => {
     setPriceMode(priceMode);
   }, [priceMode]);
-  // The side illustrations drift up slowly while the page scrolls, for a sense of depth: a
-  // twentieth of the scroll, 48px at most (global.css reads --side-art-shift).
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function' || prefersReducedMotion()) return;
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        document.documentElement.style.setProperty('--side-art-shift', `${Math.min(window.scrollY / 20, 48)}px`);
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
   useEffect(() => {
     void recordVisit();
   }, []);
@@ -139,7 +123,7 @@ export function AppShell() {
   // is never said unavailable), the unavailable page when it is off.
   const guarded = (field: SiteSettingField, element: ReactElement) => {
     if (siteSettings[field]) return element;
-    if (readingSiteSettings) return <p className="empty" role="status">Chargement…</p>;
+    if (readingSiteSettings) return <PageLoader image={dofusById(dofus).image} />;
     const item = NAV_ITEMS.find((candidate) => candidate.page === field)!;
     return <PageUnavailable label={item.label} icon={item.icon} entry={entry} />;
   };
@@ -254,13 +238,13 @@ export function AppShell() {
           <ErrorBoundary key={pathname}>
           {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
           <div className="page-enter">
-          <Suspense fallback={<p className="empty" role="status">Chargement…</p>}>
+          <Suspense fallback={<PageLoader image={dofusById(dofus).image} />}>
           <Routes>
             {/* Former Accueil page (specs/023 FR-001b): its address now opens the Recherche page. */}
             <Route
               path={ROUTES.home}
               element={readingSiteSettings
-                ? <p className="empty" role="status">Chargement…</p>
+                ? <PageLoader image={dofusById(dofus).image} />
                 : entry ? <Navigate to={entry.to} replace /> : <NoPageAvailable />}
             />
             <Route path={ROUTES.search} element={guarded('searchPage', <RecherchePage priceMode={priceMode} />)} />

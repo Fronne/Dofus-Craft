@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
 
-// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar, a
-// position counter, and four ways to move (arrows, wheel, mouse drag, keyboard). The cards are the children, one <li> each.
+// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar,
+// and four ways to move (arrows, wheel, mouse drag, keyboard). The cards are the children, one <li> each.
 
 const DRAG_THRESHOLD = 5;
 const NEAR_END = 240;
@@ -17,7 +17,6 @@ export function ItemCarousel({ total, shown, onNearEnd, children }: {
 }) {
   const list = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
-  const [lastSeen, setLastSeen] = useState(0);
   const [dragging, setDragging] = useState(false);
   const nearEnd = useRef(onNearEnd);
   useEffect(() => { nearEnd.current = onNearEnd; });
@@ -27,13 +26,6 @@ export function ItemCarousel({ total, shown, onNearEnd, children }: {
     if (!element) return;
     const max = element.scrollWidth - element.clientWidth;
     setEdges({ start: element.scrollLeft <= 1, end: max <= 1 || element.scrollLeft >= max - 1 });
-    // The last card whose right edge is inside the row: the "5" of "5 / 38".
-    const right = element.getBoundingClientRect().right + 1;
-    let seen = 0;
-    Array.from(element.children).forEach((card, position) => {
-      if (card.firstElementChild && card.firstElementChild.getBoundingClientRect().right <= right) seen = position + 1;
-    });
-    setLastSeen(seen);
     // Everything shown fits without scrolling (wide screen): nothing would ever ask for more, so ask now.
     if (max <= 1 && element.clientWidth > 0) nearEnd.current();
   }, []);
@@ -169,7 +161,6 @@ export function ItemCarousel({ total, shown, onNearEnd, children }: {
           <button type="button" className="carousel-arrow carousel-arrow--next" aria-label="Objets suivants" disabled={edges.end && shown >= total} onClick={() => stepBy(1)}>
             <Icon name="chevron-right" size={20} />
           </button>
-          <p className="carousel-counter" aria-hidden="true">{Math.min(lastSeen, total)} / {total} objet{total > 1 ? 's' : ''}</p>
         </>
       )}
     </div>

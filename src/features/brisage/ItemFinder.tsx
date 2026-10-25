@@ -21,6 +21,7 @@ import { useRunePrices } from './useRunePrices';
 // is an ESTIMATE (specs/064): normal breaking at a reference coefficient of 100 %, from the average roll.
 
 const PAGE_SIZE = 6;
+const countFormat = new Intl.NumberFormat('fr-FR');
 
 export type FoundItem = { id: string; name: string; level: number; imageUrl?: string };
 
@@ -164,8 +165,10 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
             </div>
           ) : (
             <>
-              <span className="visually-hidden" role="status">{results.length} objet{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}</span>
-              {chosen.length > 0 && <p className="brisage-results-meta">Chiffres en estimation à 100 % de coefficient, jet moyen</p>}
+              <p className="brisage-results-meta">
+                <span className="brisage-results-hint">{chosen.length > 0 ? 'Chiffres en estimation à 100 % de coefficient, jet moyen' : ''}</span>
+                <span className="brisage-results-count" role="status">{countFormat.format(results.length)} objet{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}</span>
+              </p>
             </>
           )}
           {results.length > 0 && (

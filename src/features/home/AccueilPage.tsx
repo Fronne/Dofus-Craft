@@ -18,7 +18,6 @@ export function AccueilPage({ priceMode }: { priceMode: PriceMode }) {
     <>
       <section className="home-hero">
         <div className="home-hero-content">
-          <span className="eyebrow">Bienvenue</span>
           <h1>Analysez vos crafts en un coup d'œil</h1>
           <p>
             Comparez le coût de fabrication d'un objet à son prix à l'hôtel de vente et sachez

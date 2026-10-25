@@ -82,7 +82,7 @@ export function ResourcePriceInput({
       {updatedAt && (
         <small>
           Dernière mise à jour : {formatRelativeTime(updatedAt)}
-          {priceNote && <span className="price-note"> · {priceNote}</span>}
+          {priceNote && <span className="price-note">, {priceNote}</span>}
         </small>
       )}
       <span className="price-input-cell">

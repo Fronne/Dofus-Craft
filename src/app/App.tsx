@@ -6,6 +6,8 @@ import { ServerProvider, useActiveServer } from './ServerContext';
 import { preloadCatalogueIndexes } from '../data/catalogue-repository';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { PageLoader } from '../components/PageLoader';
+import { DEFAULT_DOFUS, dofusById } from '../domain/dofus-themes';
 
 function AppContent() {
   const { hasSelectedServer, loadingServers, serversError, servers, retryServers } = useActiveServer();
@@ -13,10 +15,7 @@ function AppContent() {
   if (loadingServers) {
     return (
       <main className="server-onboarding" aria-busy="true">
-        <p className="sync-status" role="status">
-          <span className="loading-spinner" aria-hidden="true" />
-          Chargement des serveurs…
-        </p>
+        <PageLoader image={dofusById(DEFAULT_DOFUS).image} label="Chargement des serveurs…" />
       </main>
     );
   }

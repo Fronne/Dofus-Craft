@@ -46,8 +46,8 @@ export function PetObjectiveBanner({ levels, totalXpField, progress, xp, almanax
               <span className="pet-progress-marker" style={{ left: `clamp(6px, ${progress.percent}%, calc(100% - 6px))` }} aria-hidden="true" />
             </div>
             <div className="pet-progress-bounds">
-              <span>Niveau {progress.level} · {numberFormat.format(progress.totalXp)} XP</span>
-              <span>Niveau {PET_MAX_LEVEL} · {numberFormat.format(maxTotalXp())} XP</span>
+              <span>Niveau {progress.level}, {numberFormat.format(progress.totalXp)} XP</span>
+              <span>Niveau {PET_MAX_LEVEL}, {numberFormat.format(maxTotalXp())} XP</span>
             </div>
           </div>
         )}
@@ -67,7 +67,7 @@ export function PetObjectiveBanner({ levels, totalXpField, progress, xp, almanax
           <span className="pet-almanax-switch-track" aria-hidden="true" />
           <span>
             Almanax du 23 juillet (+50 % d'XP)
-            {isPetXpAlmanaxDay() && <small> · c'est aujourd'hui</small>}
+            {isPetXpAlmanaxDay() && <small> (c'est aujourd'hui)</small>}
           </span>
         </label>
       </div>
