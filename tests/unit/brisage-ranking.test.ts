@@ -251,12 +251,13 @@ describe('bestExoFor (US8)', () => {
     expect(cape.effects.map((e) => e.effectId)).not.toContain(exo!.effectId);
   });
 
-  it('recommends nothing when the exo gives less than the rune it costs (low coefficient)', () => {
+  it('does not take the price of the rune off, even at a low coefficient', () => {
     const ctx = withGaPa({ coefficients: new Map([['777', { coefficient: 38, savedAt: ago(1) }]]) });
-    expect(bestExoFor(cape, buildRankingRow(cape, ctx), ctx)).toBeUndefined();
+    const exo = bestExoFor(cape, buildRankingRow(cape, ctx), ctx);
+    expect(exo?.improvementKamas ?? 0).toBeLessThan(5000);
   });
 
-  it('gives the gain of the item page with that exo, less the price of one rune (SC-007)', () => {
+  it('gives the gain of the item page with that exo, the price of the rune not taken off (SC-007)', () => {
     const ctx = withGaPa();
     const row = buildRankingRow(cape, ctx);
     const exo = bestExoFor(cape, row, ctx);
@@ -267,7 +268,7 @@ describe('bestExoFor (US8)', () => {
     );
     expect(direct.status).toBe('ok');
     if (direct.status !== 'ok') return;
-    expect(exo!.gainKamas).toBeCloseTo(direct.best!.gainKamas! - exo!.runePriceKamas, 6);
+    expect(exo!.gainKamas).toBeCloseTo(direct.best!.gainKamas!, 6);
   });
 
   it('recommends nothing when no rune of an absent stat has a price', () => {
