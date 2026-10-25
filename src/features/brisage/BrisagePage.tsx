@@ -208,6 +208,30 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     if (serverId && item) setBrisageExos(serverId, item.id, next.flatMap((exo) => (exo.effectId === undefined ? [] : [{ effectId: exo.effectId, value: exo.value }])));
   };
 
+  // An exo taken off is kept a few seconds, so « Annuler » puts it back where it was.
+  const [removedExo, setRemovedExo] = useState<{ entry: ExoEntry; index: number }>();
+  const undoTimer = useRef<ReturnType<typeof setTimeout>>();
+  const removeExo = (entry: ExoEntry) => {
+    const index = exoEntries.indexOf(entry);
+    changeExos(exoEntries.filter((other) => other !== entry));
+    clearTimeout(undoTimer.current);
+    if (entry.effectId === undefined) { setRemovedExo(undefined); return; }
+    setRemovedExo({ entry, index });
+    undoTimer.current = setTimeout(() => setRemovedExo(undefined), 6000);
+  };
+  const undoRemoveExo = () => {
+    if (!removedExo) return;
+    clearTimeout(undoTimer.current);
+    // The same rune was put again in the meantime: nothing to bring back.
+    if (exos.some((exo) => exo.effectId === removedExo.entry.effectId)) { setRemovedExo(undefined); return; }
+    const next = [...exoEntries];
+    next.splice(Math.min(removedExo.index, next.length), 0, removedExo.entry);
+    changeExos(next);
+    setRemovedExo(undefined);
+  };
+  useEffect(() => { clearTimeout(undoTimer.current); setRemovedExo(undefined); }, [item?.id]);
+  useEffect(() => () => clearTimeout(undoTimer.current), []);
+
   // specs/069 (FR-006): the notes made before they were shared are sent once, with their original date; the flag is
   // set only once the server has them, so a failed send is tried again at the next visit.
   useEffect(() => {
@@ -384,7 +408,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
         }}
       />
     )
-    : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">prix manquant</span>);
+    : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">—</span>);
 
   const ready = item && (ranges.length > 0 || flippedLines.length > 0) && !priceLoading;
   const lineInputs = [
@@ -554,7 +578,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <span className="brisage-verdict-label">Conseil</span>
                           <p className="verdict-title">{adviceTitle}</p>
                           <p className="verdict-subtitle">{adviceHint}</p>
-                          <p className="verdict-subtitle">Coefficient inconnu : indiquez-le (relevé en jeu) pour un verdict précis.</p>
+                          <p className="verdict-subtitle">Coefficient inconnu : indiquez-le pour un verdict précis.</p>
                         </div>
                       </div>
                       {adviceBreakEven !== undefined && (
@@ -607,6 +631,13 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
               </section>
               )}
 
+              {removedExo && (
+                <div className="brisage-undo-toast" role="status">
+                  <span>Exo retiré</span>
+                  <button type="button" onClick={undoRemoveExo}>Annuler</button>
+                </div>
+              )}
+
               <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">
                 <div className="brisage-block-head">
                   <h2 id="brisage-lines-title">Lignes de l'objet</h2>
@@ -634,6 +665,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
+                        <th scope="col" rowSpan={2} className="brisage-actions"><span className="visually-hidden">Actions</span></th>
                       </tr>
                       <tr role="row">
                         <th scope="col">Runes</th><th scope="col">Valeur des runes</th><th scope="col">Runes</th><th scope="col">Valeur des runes</th>
@@ -658,7 +690,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                               changeExos(exoEntries.map((other) => (other === entry ? { id: entry.id, effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
                             }}
                             onValue={(value) => changeExos(exoEntries.map((other) => (other === entry ? { ...entry, value } : other)))}
-                            onRemove={() => changeExos(exoEntries.filter((other) => other !== entry))}
+                            onRemove={() => removeExo(entry)}
                           />
                         );
                       })}
@@ -702,6 +734,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
                             <td role="cell" data-label="Focus : valeur des runes">{focusValue !== undefined ? <Kamas value={Math.round(focusValue)} /> : <span className="fm-note">—</span>}</td>
+                            <td role="cell" className="brisage-actions" />
                           </tr>
                         );
                       })}
@@ -742,6 +775,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un malus">—</td>
                             <td role="cell" data-label="Focus : valeur des runes" title="Pas de focus possible sur un malus">—</td>
+                            <td role="cell" className="brisage-actions" />
                           </tr>
                         );
                       })}

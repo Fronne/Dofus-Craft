@@ -2551,7 +2551,23 @@ body::before {
 .brisage-group-title { display: block; font-size: var(--text-sm); font-weight: 700; }
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
 .brisage-roll.is-modified { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.brisage-price-date { display: block; }
+.brisage-rune-price { display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.brisage-price-date { position: relative; display: inline-grid; place-items: center; flex: none; color: var(--text-muted); cursor: default; }
+/* The date of the price: a small bubble to the right of the clock (above or below it, the table's scroll box would cut it). */
+.brisage-price-date[data-tip]::after {
+  content: attr(data-tip); position: absolute; z-index: 5; left: calc(100% + 10px); top: 50%; transform: translate(-4px, -50%);
+  padding: .35rem .65rem; border: .5px solid var(--border-strong, var(--border)); border-radius: var(--radius-sm, 8px);
+  background: var(--panel-strong); color: var(--text); font-size: var(--text-xs); font-weight: 600; white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / .35); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+.brisage-price-date[data-tip]::before {
+  content: ''; position: absolute; z-index: 6; left: calc(100% + 5px); top: 50%; width: 8px; height: 8px; transform: translateY(-50%) rotate(45deg);
+  border-left: .5px solid var(--border-strong, var(--border)); border-bottom: .5px solid var(--border-strong, var(--border)); background: var(--panel-strong);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--transition-fast);
+}
+.brisage-price-date[data-tip]:hover::after, .brisage-price-date[data-tip]:focus-visible::after { opacity: 1; visibility: visible; transform: translate(0, -50%); }
+.brisage-price-date[data-tip]:hover::before, .brisage-price-date[data-tip]:focus-visible::before { opacity: 1; visibility: visible; }
+.brisage-price-date:hover, .brisage-price-date:focus-visible { color: var(--text); }
 .brisage-best-exo { display: grid; gap: var(--space-2); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent); border-radius: var(--radius-sm, 8px); background: var(--accent-soft); }
 .brisage-best-exo p { margin: 0; }
 .brisage-best-exo-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
@@ -2588,6 +2604,8 @@ body::before {
   .brisage-table tfoot td:nth-child(4), .brisage-table tfoot td:nth-child(5) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); border-bottom: .5px solid var(--border); }
   .brisage-table tfoot tr:last-child td:nth-child(2), .brisage-table tfoot tr:last-child td:nth-child(3) { border-bottom: .5px solid var(--brisage-plain); }
   .brisage-table tfoot tr:last-child td:nth-child(4), .brisage-table tfoot tr:last-child td:nth-child(5) { border-bottom: .5px solid var(--accent); }
+  /* The price column: its title sits over the middle of the price field and its clock. */
+  .brisage-table thead tr:first-child th:nth-child(3), .brisage-table tbody td:nth-child(3) { text-align: center; }
   .brisage-table tfoot td:nth-child(2) { border-left: .5px solid var(--brisage-plain); }
   .brisage-table tfoot td:nth-child(3) { border-right: .5px solid var(--brisage-plain); }
   .brisage-table tfoot td:nth-child(4) { border-left: .5px solid var(--accent); }
@@ -2614,6 +2632,9 @@ body::before {
 .brisage-exo-add { margin-left: auto; min-height: 36px; }
 .brisage-exo-picker { position: relative; display: inline-block; }
 .brisage-exo-pick { white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: .5px solid var(--exo); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--exo); font: inherit; font-weight: 600; cursor: pointer; }
+/* The picker's frame sits in the padding of the cell, so the icon of the rune lines up with the icons of the other lines. */
+.brisage-line--exo .brisage-exo-pick { gap: .55rem; margin-left: calc(-1 * var(--space-3) - .5px); }
+.brisage-line--exo .brisage-exo-pick .brisage-exo-icon { width: 32px; height: 32px; }
 .brisage-exo-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; flex: none; }
 .brisage-exo-options { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: grid; gap: var(--space-1); width: max-content; min-width: 18rem; max-width: min(34rem, 92vw); padding: var(--space-1); border: .5px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .brisage-exo-list { display: grid; gap: 2px; max-height: 16rem; margin: 0; padding: 0; list-style: none; overflow-y: auto; }
@@ -2649,6 +2670,8 @@ body::before {
   .brisage-table thead tr:nth-child(2) { display: none; }
   .brisage-table thead th.brisage-jet-head { display: block; padding: 0 0 var(--space-3); text-align: left; border: 0; }
   .brisage-table, .brisage-table tbody, .brisage-table tr, .brisage-table th, .brisage-table td { display: block; }
+  .brisage-table td.brisage-actions { width: auto; padding: 0; text-align: right; }
+  .brisage-table td.brisage-actions:empty { display: none; }
   .brisage-table tbody tr { margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--panel); }
   .brisage-table tbody tr.brisage-best { border: .5px solid var(--accent); }
   .brisage-table tbody th, .brisage-table tbody td,
@@ -2790,12 +2813,24 @@ body::before {
 .brisage-craft-prices-button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
 
 /* specs/066: the "Exo" badge is also the button that removes the line. */
-button.brisage-badge--exo { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 1.3rem; padding: 0 .5rem 0 .6rem; border: 0; font: inherit; font-size: var(--text-xs); font-weight: 700; line-height: 1; cursor: pointer; }
-button.brisage-badge--exo { transition: transform var(--transition-fast); }
-button.brisage-badge--exo:hover, button.brisage-badge--exo:focus-visible { transform: scale(1.12); filter: brightness(1.15); outline: 2px solid var(--exo); outline-offset: 2px; }
-button.brisage-badge--exo svg, button.brisage-badge--exo svg * { color: inherit; }
-button.brisage-badge--exo svg { display: block; flex: none; opacity: .8; }
-button.brisage-badge--exo:hover svg { opacity: 1; }
+.brisage-line--exo .brisage-badge--exo { display: inline-flex; align-items: center; height: 1.3rem; padding: 0 .6rem; line-height: 1; }
+/* The bin at the end of an exo line: grey, red when pointed at. */
+/* The rules between the lines stay, except under the bin column; a soft highlight follows the pointer. */
+.brisage-table th.brisage-actions, .brisage-table td.brisage-actions, .brisage-table .brisage-best td.brisage-actions { border-bottom: 0; background: none; }
+.brisage-table tbody tr:hover > :not(.brisage-actions) { background-image: linear-gradient(rgb(255 255 255 / .05), rgb(255 255 255 / .05)); }
+.brisage-rune-price { flex-wrap: wrap; }
+.brisage-rune-price .brisage-price-missing { flex-basis: 100%; text-align: center; }
+.brisage-table th.brisage-actions, .brisage-table td.brisage-actions { width: 3.25rem; padding-left: var(--space-2); padding-right: var(--space-2); text-align: center; vertical-align: middle; }
+.brisage-table td.brisage-actions .brisage-exo-remove { display: grid; margin: 0 auto; }
+/* Same family as the site's round buttons: a thin frame, a faint fill, and a soft red when pointed at. */
+.brisage-exo-remove { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border: .5px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); cursor: pointer; transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast); }
+.brisage-exo-remove svg, .brisage-exo-remove svg * { color: inherit; }
+.brisage-exo-remove:hover, .brisage-exo-remove:focus-visible { border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.brisage-exo-remove:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.brisage-exo-remove:active { transform: scale(.94); }
+.brisage-undo-toast { position: fixed; left: 50%; bottom: var(--space-5); z-index: 60; transform: translateX(-50%); display: flex; align-items: center; gap: var(--space-4); padding: .65rem .65rem .65rem 1rem; border: .5px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: var(--shadow-md); color: var(--text); font-size: var(--text-sm); font-weight: 600; animation: price-mode-toast-in 250ms ease-out; }
+.brisage-undo-toast button { min-height: 32px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+@media (max-width: 960px) { .brisage-undo-toast { bottom: calc(64px + var(--space-4)); } }
 
 /* specs/072-classement-brisage: the Classement tab of the Brisage page (reserved for the owner). */
 .brisage-tabs { display: inline-flex; padding: 3px; margin-bottom: var(--space-4); border: .5px solid var(--border); border-radius: var(--radius-pill); background: rgba(3, 14, 17, .45); }

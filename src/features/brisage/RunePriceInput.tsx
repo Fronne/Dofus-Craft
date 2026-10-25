@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Icon } from '../../components/Icon';
 import { formatKamasInput, KAMAS_ICON_URL, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import { classifyPriceAge } from '../../domain/price-age';
@@ -60,6 +61,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
 
   return (
     <>
+      <div className="brisage-rune-price">
       <span className="kamas-input-wrap brisage-price-wrap">
         <input
           type="text" inputMode="numeric" className="brisage-price-input" placeholder="prix"
@@ -72,12 +74,17 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
         />
         {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
       </span>
-      {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
       {price !== undefined && (
-        <small className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}>
-          {updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
-        </small>
+        <span
+          role="img" tabIndex={0}
+          className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}
+          aria-label={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
+          data-tip={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
+        >
+          <Icon name="clock" size={16} />
+        </span>
       )}
+      </div>
       {dialog}
     </>
   );

@@ -105,13 +105,7 @@ export function ExoRow({ entry, choices, plain, priceCell, onPick, onValue, onRe
       <th scope="row" role="rowheader" data-label="Rune">
         <span className="brisage-line-name" title={chosen?.label}>
           <RunePicker chosen={chosen} choices={choices} onPick={onPick} />
-          <button
-            type="button" className="brisage-badge brisage-badge--exo"
-            aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} title="Retirer l'exo" onClick={onRemove}
-          >
-            Exo
-            <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true" focusable="false"><path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-          </button>
+          <span className="brisage-badge brisage-badge--exo">Exo</span>
         </span>
       </th>
       <td role="cell" data-label="Jet de l'exo">
@@ -133,11 +127,21 @@ export function ExoRow({ entry, choices, plain, priceCell, onPick, onValue, onRe
           </span>
         )}
       </td>
-      <td role="cell" data-label="Prix de la rune">{!chosen ? '—' : priceCell ?? (plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">prix manquant</span>)}</td>
+      <td role="cell" data-label="Prix de la rune">{!chosen ? '—' : priceCell ?? (plain?.unitPriceKamas !== undefined ? <Kamas value={plain.unitPriceKamas} /> : <span className="fm-note">—</span>)}</td>
       <td role="cell" data-label="Sans focus : runes">{plain ? number.format(Math.round(plain.count)) : '—'}</td>
       <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
       <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un exo">—</td>
       <td role="cell" data-label="Focus : valeur des runes" title="Pas de focus possible sur un exo">—</td>
+      <td role="cell" className="brisage-actions">
+        <button
+          type="button" className="brisage-exo-remove"
+          aria-label={`Retirer l'exo${chosen ? ` ${chosen.label}` : ''}`} title="Retirer l'exo" onClick={onRemove}
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+          </svg>
+        </button>
+      </td>
     </tr>
   );
 }
