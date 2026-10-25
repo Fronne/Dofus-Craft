@@ -2398,7 +2398,7 @@ body::before, body::after {
 body::after {
   inset: 0;
   z-index: -3;
-  background: var(--page-art, url(/backgrounds/songe-fond-emeraude.webp?v=13)) center / cover no-repeat;
+  background: var(--page-art, url(/backgrounds/songe-fond-emeraude.webp?v=14)) center / cover no-repeat;
   filter: saturate(.85) brightness(.95);
   opacity: .4;
 }

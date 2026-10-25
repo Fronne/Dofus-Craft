@@ -19,7 +19,7 @@ const THEMES = [
   { id: 'turquoise', rotate: -35, saturate: 1, grass: { h: 176, s: 0.66, l: 1.2 }, orb: { h: 176, s: 0.72, l: 0.58 } },
   { id: 'ocre', rotate: -35, saturate: 1, grass: { h: 42, s: 0.72, l: 1.25 }, orb: { h: 44, s: 0.82, l: 0.6 } },
   { id: 'ebene', rotate: 140, saturate: 0.45, grass: { h: 350, s: 0.55, l: 0.85 }, orb: { h: 350, s: 0.7, l: 0.52 } },
-  { id: 'ivoire', rotate: -26, saturate: 0.6, grass: { h: 46, s: 0.48, l: 1.7 }, orb: { h: 42, s: 0.58, l: 0.78 } },
+  { id: 'ivoire', rotate: -26, saturate: 0.6, grass: { h: 46, s: 0.25, l: 2.3 }, orb: { h: 42, s: 0.58, l: 0.78 } },
 ];
 
 const smooth = (t) => { const c = Math.min(Math.max(t, 0), 1); return c * c * (3 - 2 * c); };
@@ -63,10 +63,12 @@ function fromHsl(h, s, l) {
 
 // 1 on the foliage, 0 on the blue-violet stone. The leaves are grey-green and barely saturated (0.04 to
 // 0.09, hues 90 to 200); the stone is bluer (hue 210 and up) and clearly more saturated (0.12 and up).
+// The dark leaves, the greyest ones and the little glowing cyan flowers (hue up to 200, quite saturated) count too.
 function foliageWeight(h, s, l) {
-  const hue = smooth((h - 70) / 20) * (1 - smooth((h - 190) / 25));
-  const saturation = smooth((s - 0.015) / 0.03) * (1 - smooth((s - 0.1) / 0.05));
-  return hue * saturation * smooth((l - 0.12) / 0.1) * (1 - smooth((l - 0.62) / 0.12));
+  const hue = smooth((h - 70) / 20) * (1 - smooth((h - 200) / 20));
+  // The chroma (not the HSL saturation, which is large for any nearly white pixel) keeps the white noise out.
+  const chroma = smooth((s * (1 - Math.abs(2 * l - 1)) - 0.008) / 0.025);
+  return hue * chroma * smooth((l - 0.04) / 0.08) * (1 - smooth((l - 0.8) / 0.1));
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;
