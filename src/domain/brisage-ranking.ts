@@ -213,10 +213,11 @@ export function exoCandidates(have: Set<number>, runes: RuneItem[], settings: Br
  * The exo is only given when it beats breaking the item as it is. The stats of a weight of EXO_MAX_STAT_WEIGHT or more
  * are never offered.
  */
-export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingContext): RankingExo | undefined {
+export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingContext, alsoHave: number[] = []): RankingExo | undefined {
   if (row.status !== 'ok' || row.priceKamas === undefined) return undefined;
   const lines = averageLines(item);
-  const have = new Set(item.effects.map((effect) => effect.effectId));
+  // `alsoHave`: stats of the item that are not lines of the analysis (its maluses), which cannot be offered as an exo either.
+  const have = new Set([...item.effects.map((effect) => effect.effectId), ...alsoHave]);
   let best: RankingExo | undefined;
   for (const { stat, found } of exoCandidates(have, context.runes, context.settings)) {
     const runePrice = context.runePrices[found.rune.id];

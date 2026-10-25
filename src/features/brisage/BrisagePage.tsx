@@ -340,7 +340,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       itemPrices: new Map([[item.id, { kamas: cost }]]),
       coefficients: coefficient > 0 ? new Map([[item.id, { coefficient, savedAt: '' }]]) : new Map(),
     };
-    return bestExoFor(indexed, buildRankingRow(indexed, context), context);
+    return bestExoFor(indexed, buildRankingRow(indexed, context), context, negativeRanges.map((range) => range.effectId));
   })();
   /** The price of a rune: typed in the table when a server is chosen, else only shown. */
   const runePriceCell = (runeId: string, runeName: string) => (serverId
