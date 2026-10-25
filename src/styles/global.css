@@ -2557,7 +2557,8 @@ select:focus {
 .brisage-roll-fixed { display: inline-flex; align-items: baseline; gap: var(--space-2); }
 .brisage-group-title { display: block; font-size: .95rem; font-weight: 700; }
 .brisage-table .brisage-group { text-align: center; border-bottom: 0; }
-.brisage-roll.is-modified { border-color: var(--kamas); color: var(--kamas); font-weight: 600; }
+.brisage-roll.is-modified { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.brisage-price-date { display: block; font-size: .8rem; }
 .brisage-roll-state { display: none; }
 /* The stat's name is only read out on desktop (the icon and the hover show it); a card shows it. */
 .brisage-stat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -2808,6 +2809,7 @@ button.brisage-badge--exo:hover svg { opacity: 1; }
 .ranking-row { cursor: pointer; }
 .ranking-row:hover, .ranking-row:focus-visible { background: var(--link-soft); outline: none; }
 .ranking-item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ranking-rune-icon { vertical-align: middle; margin-right: var(--space-1); }
 .ranking-open { border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; padding: 0; }
 .ranking-group th { padding-top: var(--space-4); text-align: left; font-size: .95rem; color: var(--link); }
 .ranking-age { display: inline-flex; align-items: center; gap: .25rem; font-size: .78rem; color: var(--text-muted); white-space: nowrap; }

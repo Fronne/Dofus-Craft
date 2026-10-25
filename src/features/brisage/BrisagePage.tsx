@@ -321,6 +321,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const fetched = useRunePrices(serverId, priceMode, runeIds);
   // specs/067: a price typed in the table is used at once, before the carnet is read again; one entry per server and mode.
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const [dateOverrides, setDateOverrides] = useState<Record<string, string>>({});
   const overrideKey = (runeId: string) => `${serverId}:${priceMode}:${runeId}`;
   const prices: Record<string, number | undefined> = { ...fetched.prices };
   for (const runeId of runeIds) {
@@ -332,7 +333,11 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     ? (
       <RunePriceInput
         key={runeId} runeId={runeId} runeName={runeName} serverId={serverId} priceMode={priceMode} price={prices[runeId]}
-        onSaved={(id, amount) => setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }))}
+        updatedAt={dateOverrides[overrideKey(runeId)] ?? fetched.dates[runeId]}
+        onSaved={(id, amount) => {
+          setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }));
+          setDateOverrides((known) => ({ ...known, [overrideKey(id)]: new Date().toISOString() }));
+        }}
       />
     )
     : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">prix manquant</span>);
@@ -383,7 +388,8 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const totalTone = (amount: number | undefined) => (
     amount === undefined || Math.round(amount) === 0 ? undefined : amount > 0 ? 'brisage-total-gain' : 'brisage-total-loss'
   );
-  const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : best?.kind === 'focus' ? best.focusEffectId : undefined; // the best focus is shown even when the item is a loss
+  // The line with the best focus is always marked, even when breaking without focus pays more or the item is a loss.
+  const highlightedEffectId = bestFocus?.focusEffectId;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
     : [];

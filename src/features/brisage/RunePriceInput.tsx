@@ -11,13 +11,17 @@ import { lookupCommunityPrice } from '../comparison/useCommunityPrice';
 // in Mode communautaire it is also shared with the group, after the same outlier confirmation as the other pages
 // (specs/007), so a mistyped price is not published unchecked.
 
-export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, onSaved }: {
+const DATE = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' });
+
+export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, updatedAt, onSaved }: {
   runeId: string;
   runeName: string;
   serverId: string;
   priceMode: PriceMode;
   /** The price in use, if any. */
   price: number | undefined;
+  /** When the price in use was last changed, if known. */
+  updatedAt?: string;
   /** Called with the price once it is saved, so the table recomputes at once. */
   onSaved: (runeId: string, price: number) => void;
 }) {
@@ -68,6 +72,9 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
         {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
       </span>
       {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
+      {price !== undefined && updatedAt && !Number.isNaN(Date.parse(updatedAt)) && (
+        <span className="fm-note brisage-price-date">{DATE.format(new Date(updatedAt))}</span>
+      )}
       {dialog}
     </>
   );

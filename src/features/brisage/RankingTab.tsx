@@ -63,6 +63,14 @@ function Age({ date, what }: { date: string | undefined; what: string }) {
   );
 }
 
+const RUNE_IMAGES = new Map(RUNES.map((rune) => [rune.name, rune.imageUrl]));
+
+/** The icon of the rune of an exo, in front of its stat. */
+function RuneIcon({ name }: { name: string }) {
+  const url = RUNE_IMAGES.get(name);
+  return url ? <img className="ranking-rune-icon" src={url} alt="" loading="lazy" width="20" height="20" /> : null;
+}
+
 const COLUMNS: { column: RankingColumn | undefined; label: string; note?: string }[] = [
   { column: 'name', label: 'Objet' },
   { column: 'level', label: 'Niveau' },
@@ -97,10 +105,10 @@ function thresholdCell(row: RankingRow) {
 function exoCell(row: RankingRow, exo: RankingExo | undefined, pending: boolean) {
   if (row.status !== 'ok') return <span className="fm-note">—</span>;
   if (!exo) return <span className="fm-note">{pending ? 'calcul…' : '—'}</span>;
-  if (row.group === 'unknown') return <><strong>{exo.statLabel}</strong> : {percent.format(exo.thresholdCoefficient!)} %</>;
+  if (row.group === 'unknown') return <><RuneIcon name={exo.runeName} /><strong>{exo.statLabel}</strong> : {percent.format(exo.thresholdCoefficient!)} %</>;
   return (
     <>
-      <strong>{exo.statLabel}</strong> : <Kamas value={Math.round(exo.gainKamas!)} signed />
+      <RuneIcon name={exo.runeName} /><strong>{exo.statLabel}</strong> : <Kamas value={Math.round(exo.gainKamas!)} signed />
       {' '}<span className="fm-note">(+<Kamas value={Math.round(exo.improvementKamas!)} />)</span>
     </>
   );

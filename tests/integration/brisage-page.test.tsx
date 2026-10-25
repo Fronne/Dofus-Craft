@@ -365,7 +365,7 @@ describe('Brisage page (specs/061)', () => {
     expect(labels).toEqual(['à 66 %', 'à 66 %', 'à 66 %']);
   });
 
-  it('says to break normally, with no highlighted line, when no focus pays more', async () => {
+  it('says to break normally, and still marks the best focus line, when no focus pays more', async () => {
     await pinnedItemPrices.save('mikhal', '777', 10);
     await pricesKnown();
     // Runes priced the same per point of weight (Do weighs 20): a focus only loses the other lines' half.
@@ -375,7 +375,7 @@ describe('Brisage page (specs/061)', () => {
     fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
-    expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Meilleur focus').length).toBeGreaterThan(0);
     // The gain block only shows the next three breaks.
     expect(screen.queryByText('Coefficient actuel')).not.toBeInTheDocument();
     expect(screen.getAllByText(/^à [\d,]+ %$/)).toHaveLength(3);

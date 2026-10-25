@@ -8,9 +8,9 @@ import { getCommunityPrices } from '../../services/community-price-api';
 // Mode communautaire the latest shared price replaces an older carnet entry, like the XP Familier page
 // (specs/024). A rune without a price is simply absent: the page asks for it, it never guesses one.
 
-export type RunePricesState = { status: 'loading' | 'ready'; prices: Record<string, number>; communityUnavailable: boolean };
+export type RunePricesState = { status: 'loading' | 'ready'; prices: Record<string, number>; dates: Record<string, string | undefined>; communityUnavailable: boolean };
 
-const LOADING: RunePricesState = { status: 'loading', prices: {}, communityUnavailable: false };
+const LOADING: RunePricesState = { status: 'loading', prices: {}, dates: {}, communityUnavailable: false };
 
 /** A rune price with the date it was noted (specs/072: the ranking shows how fresh the prices it uses are). */
 export type RunePriceDetail = { unitPriceKamas: number; updatedAt?: string };
@@ -36,8 +36,9 @@ export async function loadRunePriceDetails(
 async function loadPrices(serverId: string, priceMode: PriceMode, ids: string[]): Promise<Omit<RunePricesState, 'status'>> {
   const { prices: detailed, communityUnavailable } = await loadRunePriceDetails(serverId, priceMode, ids);
   const prices: Record<string, number> = {};
-  for (const [id, detail] of Object.entries(detailed)) prices[id] = detail.unitPriceKamas;
-  return { prices, communityUnavailable };
+  const dates: Record<string, string | undefined> = {};
+  for (const [id, detail] of Object.entries(detailed)) { prices[id] = detail.unitPriceKamas; dates[id] = detail.updatedAt; }
+  return { prices, dates, communityUnavailable };
 }
 
 export function useRunePrices(serverId: string | undefined, priceMode: PriceMode, ids: string[]): RunePricesState {
@@ -48,7 +49,7 @@ export function useRunePrices(serverId: string | undefined, priceMode: PriceMode
     let cancelled = false;
     loadPrices(serverId, priceMode, ids)
       .then((result) => { if (!cancelled) setLoaded({ key, state: { status: 'ready', ...result } }); })
-      .catch(() => { if (!cancelled) setLoaded({ key, state: { status: 'ready', prices: {}, communityUnavailable: priceMode === 'community' } }); });
+      .catch(() => { if (!cancelled) setLoaded({ key, state: { status: 'ready', prices: {}, dates: {}, communityUnavailable: priceMode === 'community' } }); });
     return () => { cancelled = true; };
     // `ids` is covered by `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
