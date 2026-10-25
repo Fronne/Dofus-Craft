@@ -65,9 +65,12 @@ function fromHsl(h, s, l) {
 // 0.09, hues 90 to 200); the stone is bluer (hue 210 and up) and clearly more saturated (0.12 and up).
 // The dark leaves, the greyest ones and the little glowing cyan flowers (hue up to 200, quite saturated) count too.
 function foliageWeight(h, s, l) {
-  const hue = smooth((h - 70) / 20) * (1 - smooth((h - 200) / 20));
   // The chroma (not the HSL saturation, which is large for any nearly white pixel) keeps the white noise out.
-  const chroma = smooth((s * (1 - Math.abs(2 * l - 1)) - 0.008) / 0.025);
+  const chromaValue = s * (1 - Math.abs(2 * l - 1));
+  // The shaded leaves are blue-greys (hue up to 230, chroma under 0.09); the stone of those hues is far more chromatic.
+  const greyish = 1 - smooth((chromaValue - 0.09) / 0.05);
+  const hue = smooth((h - 70) / 20) * (1 - smooth((h - (200 + 30 * greyish)) / 20));
+  const chroma = smooth((chromaValue - 0.008) / 0.025);
   return hue * chroma * smooth((l - 0.04) / 0.08) * (1 - smooth((l - 0.8) / 0.1));
 }
 
