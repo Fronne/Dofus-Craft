@@ -1,9 +1,8 @@
-import { useRef } from 'react';
 import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
 import { SyncStatusIndicator } from '../../components/SyncStatusIndicator';
-import { prefersReducedMotion } from '../../services/motion';
+import { ItemCarousel } from '../brisage/ItemCarousel';
 
 // specs/051-site-visual-refresh (FR-018): the first page shows 6 results, so the chosen item's
 // detail stays close to the search field.
@@ -41,7 +40,6 @@ export function ItemResults({
   error?: string;
   onRetry?: () => void;
 }) {
-  const resultsTopRef = useRef<HTMLDivElement>(null);
   const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
   // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
   // display yet (first visit, no cache) — once a list is already on screen, a background
@@ -82,17 +80,10 @@ export function ItemResults({
   // While the total is still being computed it isn't reliable yet, so a full page is the only hint
   // that more results may exist.
   const hasMore = totalPending ? items.length >= resultLimit : items.length < total;
-  const canCollapse = resultLimit > RESULTS_PAGE_SIZE;
-  // Back to one page, then bring the top of the results into view — otherwise the page, now much
-  // shorter, leaves the player further down (on the item detail) with no sign of what happened.
-  const collapse = () => {
-    setResultLimit(RESULTS_PAGE_SIZE);
-    resultsTopRef.current?.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-  };
   return (
     <div className="results-block">
-      {/* One line: how many were found, how many are shown, and the way to see more or fewer. */}
-      <div className="results-meta" ref={resultsTopRef}>
+      {/* One line: how many were found. */}
+      <div className="results-meta">
         {/* While the catalogue is revalidating or the total count is still being computed, a single
             "Mise à jour…" takes the count's spot; the offline notice sits next to the count instead. */}
         {isRevalidating || totalPending ? (
@@ -103,42 +94,31 @@ export function ItemResults({
             {syncStatus}
           </span>
         )}
-        {(hasMore || canCollapse) && (
-          <span className="results-more">
-            {!totalPending && <span className="results-more-count">{items.length} sur {total}</span>}
-            {hasMore && (
-              <button
-                type="button"
-                className="results-more-button"
-                disabled={isRevalidating}
-                onClick={() => setResultLimit(resultLimit + RESULTS_MORE_STEP)}
-              >
-                Afficher {RESULTS_MORE_STEP} de plus
-              </button>
-            )}
-            {canCollapse && (
-              <button type="button" className="results-collapse" onClick={collapse}>
-                Réduire
-              </button>
-            )}
-          </span>
-        )}
       </div>
-      <div className="results" aria-label="Résultats de recherche">
+      {/* A row of cards that scrolls sideways; near its right end the next results are asked for. */}
+      <ItemCarousel
+        total={hasMore ? Math.max(total, items.length + 1) : items.length}
+        shown={items.length}
+        onNearEnd={() => { if (hasMore && !isRevalidating) setResultLimit(resultLimit + RESULTS_MORE_STEP); }}
+      >
         {items.map((item) => (
-          <button type="button" className={selected === item.id ? 'selected' : ''} aria-pressed={selected === item.id} onClick={() => onSelect(item.id)} key={item.id}>
-            {item.imageUrl ? (
-              <img src={item.imageUrl} alt="" loading="lazy" width="32" height="32" />
-            ) : (
-              <span className="result-image-fallback" aria-hidden="true">{item.name.slice(0, 1)}</span>
-            )}
-            <span className="result-item-info">
-              <span className="result-item-name">{item.name}</span>
-              {item.level !== undefined && <span className="result-item-level"> Niveau {item.level}</span>}
-            </span>
-          </button>
+          <li key={item.id}>
+            <button type="button" className={selected === item.id ? 'selected' : undefined} aria-pressed={selected === item.id} onClick={() => onSelect(item.id)}>
+              <span className="brisage-card-image">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt="" loading="lazy" width="36" height="36" />
+                ) : (
+                  <span className="result-image-fallback" aria-hidden="true">{item.name.slice(0, 1)}</span>
+                )}
+              </span>
+              <span className="result-item-info">
+                <span className="result-item-name" title={item.name}>{item.name}</span>
+                {item.level !== undefined && <span className="brisage-card-level">Niveau {item.level}</span>}
+              </span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ItemCarousel>
     </div>
   );
 }

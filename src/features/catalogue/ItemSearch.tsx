@@ -49,7 +49,7 @@ export function ItemSearch({
               // Down or Enter leaves the field for the first result, without a detour through the filters.
               onKeyDown={(event) => {
                 if (event.key !== 'ArrowDown' && event.key !== 'Enter') return;
-                const first = document.querySelector<HTMLElement>('.results > button');
+                const first = document.querySelector<HTMLElement>('.results > li > button');
                 if (!first) return;
                 event.preventDefault();
                 first.focus();
