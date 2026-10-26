@@ -6,7 +6,7 @@ import { PILL_HEIGHT, areaPath, placePills, smoothPath } from './chart-paths';
 const WIDTH = 600;
 const HEIGHT = 170;
 // The right margin holds the pill at the end of each curve.
-const PAD = { left: 40, right: 124, top: 10, bottom: 22 };
+const PAD = { left: 40, right: 140, top: 10, bottom: 22 };
 
 const dayLabel = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
 const group = new Intl.NumberFormat('fr-FR');

@@ -42,8 +42,8 @@ export function placePills(pills: Pill[], width: number, top: number, bottom: nu
     .sort((a, b) => a.endY - b.endY);
   let previousBottom = -Infinity;
   return sized.map((pill) => {
-    const fitsRight = pill.endX + 8 + pill.width <= width;
-    const x = fitsRight ? pill.endX + 8 : pill.endX - 8 - pill.width;
+    // Right of the end of the curve; pushed back inside the chart when the text is long, never onto the curve.
+    const x = Math.max(pill.endX + 4, Math.min(pill.endX + 8, width - 2 - pill.width));
     let y = pill.endY - PILL_HEIGHT / 2;
     y = Math.max(y, previousBottom + 4, top);
     y = Math.min(y, bottom - PILL_HEIGHT);

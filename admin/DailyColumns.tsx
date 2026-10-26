@@ -78,7 +78,7 @@ export function DailyColumns({ columns, series, caption }: { columns: Column[]; 
           const centre = x + barWidth / 2;
           const isBest = best?.column.date === column.date;
           return (
-            <g key={column.date} className="daily-column" tabIndex={0}>
+            <g key={column.date} className="daily-column">
               <title>{`${column.date} : ${series.map((item) => `${item.label} ${group.format(column.parts[item.id] ?? 0)}`).join(', ')}`}</title>
               <rect x={x - 3} y={PAD.top - 6} width={barWidth + 6} height={plotHeight + 6} className="daily-hit" />
               {series.map((item, seriesIndex) => {
