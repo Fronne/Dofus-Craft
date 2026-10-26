@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Page XP Familier : la barre de progression du bandeau objectif devient un curseur glissable (souris, tactile, flèches du clavier) qui fait varier le « Niveau actuel » du familier, de 1 au niveau maximum. Quand on glisse, l'XP totale du familier s'aligne sur le début exact du niveau choisi (l'éventuelle XP en plus déjà saisie est remplacée), « XP à donner » et le pourcentage se recalculent en direct. Le niveau visé n'est pas modifié. Les champs de saisie existants restent utilisables et la barre les suit. Une bulle « Niveau N » s'affiche pendant le glissement. Complète la spec 055-refonte-xp-familier (bandeau objectif)."
+**Input**: User description: "Page XP Familier : la barre de progression du bandeau objectif devient un curseur glissable (souris, tactile, flèches du clavier) qui fait varier le « Niveau actuel » du familier, du niveau minimum (0) au niveau maximum. Quand on glisse, l'XP totale du familier s'aligne sur le début exact du niveau choisi (l'éventuelle XP en plus déjà saisie est remplacée), « XP à donner » et le pourcentage se recalculent en direct. Le niveau visé n'est pas modifié. Les champs de saisie existants restent utilisables et la barre les suit. Une bulle « Niveau N » s'affiche pendant le glissement. Complète la spec 055-refonte-xp-familier (bandeau objectif)."
 
 **Périmètre** : cette spec ne change que le bandeau « objectif » de la page XP Familier
 (`specs/055-refonte-xp-familier`, histoire 1). Les règles de calcul, la courbe d'XP, les ressources,
@@ -18,7 +18,7 @@ les prix, l'Almanax et la mémorisation des saisies restent ceux de `specs/022-p
 
 Dans le bandeau objectif, la barre de progression du familier peut être saisie et déplacée avec la
 souris, au doigt ou avec les flèches du clavier. Le repère suit le geste et le niveau actuel du
-familier change en conséquence, entre le niveau 1 et le niveau maximum. Le joueur n'a plus à taper
+familier change en conséquence, entre le niveau minimum (0) et le niveau maximum. Le joueur n'a plus à taper
 un nombre pour comparer plusieurs niveaux de départ.
 
 **Why this priority**: c'est toute la fonctionnalité demandée ; le reste en dépend.
@@ -37,7 +37,7 @@ actuel » indique 85, l'XP totale vaut exactement le début du niveau 85, et « 
    choisi.
 3. **Given** le repère sélectionné au clavier, **When** le joueur appuie sur la flèche droite ou
    haut (resp. gauche ou bas), **Then** le niveau actuel augmente (resp. diminue) d'un niveau ;
-   Début et Fin vont au niveau 1 et au niveau maximum.
+   Début et Fin vont au niveau minimum et au niveau maximum.
 4. **Given** un niveau visé de 60, **When** le joueur fait glisser le repère au-delà de 60, **Then**
    le niveau visé n'est pas modifié et le bandeau indique qu'il n'y a plus d'XP à donner.
 5. **Given** un écran tactile, **When** le joueur fait glisser le repère du doigt, **Then** le
@@ -70,7 +70,7 @@ glisser le repère : la bulle affiche le niveau pendant le geste et disparaît a
 
 ### Edge Cases
 
-- Niveau actuel 1 et niveau maximum : le repère reste dans la barre, sans déborder.
+- Niveau actuel minimum (0) et niveau maximum : le repère reste dans la barre, sans déborder.
 - Niveau actuel supérieur ou égal au niveau visé : « XP à donner » indique qu'il n'y a rien à donner
   (comportement existant), et la barre reste déplaçable.
 - Relâchement hors de la barre pendant un glissement : le niveau courant est conservé.
@@ -85,10 +85,10 @@ glisser le repère : la bulle affiche le niveau pendant le geste et disparaît a
 ### Functional Requirements
 
 - **FR-001**: Le joueur MUST pouvoir faire glisser le repère de la barre de progression du bandeau
-  objectif à la souris et au doigt pour choisir le niveau actuel du familier, de 1 au niveau
+  objectif à la souris et au doigt pour choisir le niveau actuel du familier, du niveau minimum (0) au niveau
   maximum.
 - **FR-002**: Le joueur MUST pouvoir régler le niveau avec le clavier : flèches (±1 niveau), Début
-  (niveau 1), Fin (niveau maximum).
+  (niveau minimum), Fin (niveau maximum).
 - **FR-003**: Quand un niveau est choisi sur la barre, l'XP totale du familier MUST être remplacée
   par le début exact de ce niveau, sans conserver d'XP en plus.
 - **FR-004**: Le niveau actuel, l'XP totale, « XP à donner » et le pourcentage de progression MUST
@@ -107,9 +107,9 @@ glisser le repère : la bulle affiche le niveau pendant le geste et disparaît a
 
 ### Key Entities
 
-- **Niveau actuel du familier** : niveau de départ, de 1 au niveau maximum ; son début exact donne
+- **Niveau actuel du familier** : niveau de départ, du niveau minimum (0) au niveau maximum ; son début exact donne
   l'XP totale du familier.
-- **XP totale du familier** : XP accumulée depuis le niveau 1 ; elle détermine le niveau actuel et
+- **XP totale du familier** : XP accumulée depuis le niveau 0 ; elle détermine le niveau actuel et
   la position de la barre.
 - **Niveau visé** : objectif choisi par le joueur, indépendant du glissement.
 
@@ -122,7 +122,7 @@ glisser le repère : la bulle affiche le niveau pendant le geste et disparaît a
 - **SC-002**: Pendant un glissement, « XP à donner » et le pourcentage suivent le repère sans retard
   perceptible (pas de saut visible entre le repère et les chiffres).
 - **SC-003**: Après un choix sur la barre, l'XP totale affichée égale exactement le début du niveau
-  choisi dans 100 % des niveaux de 1 au niveau maximum.
+  choisi dans 100 % des niveaux du niveau minimum (0) au niveau maximum.
 - **SC-004**: Les mêmes gestes fonctionnent à la souris, au doigt et au clavier ; tout niveau est
   atteignable avec le clavier seul.
 
