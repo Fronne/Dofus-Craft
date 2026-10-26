@@ -2246,6 +2246,7 @@ select:focus {
 .search > .filters-bar { grid-column: 1; margin-top: 0; }
 .results-block > .results-meta { grid-column: 2; justify-content: flex-end; min-height: 44px; margin-top: 0; padding-top: 0; border-top: 0; }
 .results-meta-count { color: var(--text); }
+.results-position { color: var(--text-faint); font-size: var(--text-sm); font-weight: 500; }
 /* Six results across on a wide screen. */
 .results { grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: var(--space-2); margin-top: 0; }
 .results button { min-height: 56px; padding: .5rem .75rem; gap: .625rem; }

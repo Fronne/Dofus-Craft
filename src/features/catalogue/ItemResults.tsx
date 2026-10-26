@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
@@ -40,7 +41,9 @@ export function ItemResults({
   error?: string;
   onRetry?: () => void;
 }) {
-  const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
+  // How many cards the player has scrolled past, up to the last one fully in view.
+  const [seen, setSeen] = useState(0);
+  const syncStatus =<SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
   // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
   // display yet (first visit, no cache) — once a list is already on screen, a background
   // revalidation must never replace it with a skeleton (that would also discard the user's scroll
@@ -91,15 +94,21 @@ export function ItemResults({
         ) : (
           <span className="results-meta-count">
             <span>{total} {total === 1 ? 'objet trouvé' : 'objets trouvés'}</span>
+            {seen > 0 && total > 1 && <span className="results-position">{Math.min(seen, total)} vus</span>}
             {syncStatus}
           </span>
         )}
       </div>
       {/* A row of cards that scrolls sideways; near its right end the next results are asked for. */}
+      {/* A new search starts a new row (back at the first card); more results of the same search keep the place. */}
       <ItemCarousel
+        key={items[0]?.id}
         total={hasMore ? Math.max(total, items.length + 1) : items.length}
         shown={items.length}
-        onNearEnd={() => { if (hasMore && !isRevalidating) setResultLimit(resultLimit + RESULTS_MORE_STEP); }}
+        onVisibleEnd={setSeen}
+        // Only once the results asked for are all here: while a request is pending, the many scroll events
+        // must not pile more on top of it.
+        onNearEnd={() => { if (hasMore && !isRevalidating && items.length >= resultLimit) setResultLimit(items.length + RESULTS_MORE_STEP); }}
       >
         {items.map((item) => (
           <li key={item.id}>

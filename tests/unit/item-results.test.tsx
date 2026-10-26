@@ -4,6 +4,10 @@ import { ItemResults, RESULTS_MORE_STEP, RESULTS_PAGE_SIZE } from '../../src/fea
 
 const oneItem = [{ id: '1', name: 'Item', level: 12, kind: 'Equipment' as const, categoryId: 'equipment-type-1' }];
 
+const sixItems = Array.from({ length: 6 }, (_, index) => ({
+  id: String(index), name: `Item ${index}`, level: 1, kind: 'Equipment' as const, categoryId: 'equipment-type-1',
+}));
+
 describe('ItemResults carousel', () => {
   afterEach(() => {
     cleanup();
@@ -36,9 +40,24 @@ describe('ItemResults carousel', () => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
     vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800);
     const setResultLimit = vi.fn();
-    render(<ItemResults items={oneItem} selected="" onSelect={vi.fn()} total={50} resultLimit={6} setResultLimit={setResultLimit} />);
+    render(<ItemResults items={sixItems} selected="" onSelect={vi.fn()} total={50} resultLimit={6} setResultLimit={setResultLimit} />);
 
     expect(setResultLimit).toHaveBeenCalledWith(18);
+  });
+
+  it('asks for nothing more while the results already asked for have not all arrived', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(800);
+    const setResultLimit = vi.fn();
+    render(<ItemResults items={sixItems} selected="" onSelect={vi.fn()} total={50} resultLimit={18} setResultLimit={setResultLimit} />);
+
+    expect(setResultLimit).not.toHaveBeenCalled();
+  });
+
+  it('says how many cards have been seen', () => {
+    render(<ItemResults items={sixItems} selected="" onSelect={vi.fn()} total={50} resultLimit={6} setResultLimit={vi.fn()} />);
+
+    expect(screen.getByText('6 vus')).toBeInTheDocument();
   });
 
   it('asks for nothing once every result is shown', () => {
