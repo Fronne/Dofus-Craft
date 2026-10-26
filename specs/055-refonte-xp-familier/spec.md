@@ -225,3 +225,5 @@ porte son rang (4 à 10), et un tri par XP par unité réordonne les lignes sans
   la marge pendant la réalisation.
 - Les éléments actuels non cités (messages d'état, lien vers la page HDV, mentions du serveur et du
   mode de prix) sont conservés et replacés dans le bloc le plus proche.
+
+**Révision 2026-10-26** : la barre de progression du bandeau objectif est désormais un curseur glissable qui fait varier le niveau actuel (`specs/075-familier-level-slider`).

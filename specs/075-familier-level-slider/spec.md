@@ -63,8 +63,9 @@ glisser le repère : la bulle affiche le niveau pendant le geste et disparaît a
    bulle « Niveau N » affiche le niveau courant et disparaît au relâchement.
 2. **Given** une valeur tapée dans « Niveau actuel » ou dans « XP totale du familier », **When** la
    saisie est valide, **Then** le repère se place sur le niveau correspondant.
-3. **Given** une saisie invalide dans un des champs, **When** le joueur touche la barre, **Then** la
-   barre redevient utilisable et remplace la saisie invalide par le niveau choisi.
+3. **Given** une XP totale invalide dans son champ, **When** la page s'affiche, **Then** la barre est
+   masquée (comme aujourd'hui) ; dès que la saisie redevient valide, elle réapparaît à la bonne
+   place et reste glissable.
 
 ---
 

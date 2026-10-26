@@ -291,6 +291,7 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
         xp={xp}
         almanax={almanax}
         onAlmanaxChange={setAlmanax}
+        onLevelChange={(level) => setText((current) => withField(current, 'currentLevel', String(level)))}
       />
 
       {plan && plan.xpNeeded > 0 && (
@@ -304,7 +305,7 @@ export function FamilierPage({ priceMode, hdvPageEnabled = true }: { priceMode: 
                   Prix partagés indisponibles : les prix gardés sur cet appareil sont affichés.
                 </p>
               )}
-              {podium.length > 0 && <PetFoodPodium entries={podium} caption={`${serverName ? `Serveur ${serverName}, ` : ''}${modeLabel}`} />}
+              {podium.length > 0 && <PetFoodPodium entries={podium} />}
             </>
           )}
 

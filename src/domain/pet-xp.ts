@@ -98,6 +98,17 @@ export function maxTotalXp(curve: readonly number[] = PET_XP_CURVE): number {
 }
 
 /**
+ * The level at a position of the progress bar, `fraction` (0 to 1) of the way to the maximum total XP
+ * (specs/075): the highest level whose cumulative XP is not above that position. Out-of-range or
+ * non-numeric positions are brought back to the first or last level.
+ */
+export function levelAtProgress(fraction: number, curve: readonly number[] = PET_XP_CURVE): number {
+  const position = Number.isFinite(fraction) ? Math.min(Math.max(fraction, 0), 1) : 0;
+  // The small margin keeps a position computed from an exact level start (a ratio) on that level.
+  return levelForTotalXp(position * maxTotalXp(curve) + 1e-6, curve).level;
+}
+
+/**
  * The level a pet with `totalXp` has reached — the highest level whose cumulative XP is not above it —
  * and the XP it already holds inside that level (FR-002).
  */
