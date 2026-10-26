@@ -45,6 +45,8 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
   const [prefs, setPrefs] = useState<SearchPrefs>(getSearchPrefs);
   const [query, setQuery] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
+  // How many cards the player has scrolled past, up to the last one fully in view.
+  const [seen, setSeen] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -167,12 +169,15 @@ export function ItemFinder({ runes, settings, serverId, priceMode, selectedId, o
             <>
               <p className="brisage-results-meta">
                 <span className="brisage-results-hint">{chosen.length > 0 ? 'Chiffres en estimation à 100 % de coefficient, jet moyen' : ''}</span>
-                <span className="brisage-results-count" role="status">{countFormat.format(results.length)} objet{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}</span>
+                <span className="brisage-results-tally">
+                  <span className="brisage-results-count" role="status">{countFormat.format(results.length)} objet{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}</span>
+                  {seen > 0 && results.length > 1 && <span className="results-position">{countFormat.format(Math.min(seen, results.length))} vus</span>}
+                </span>
               </p>
             </>
           )}
           {results.length > 0 && (
-            <ItemCarousel key={`${query}|${categoryId}|${chosen.join(',')}|${minLevel}|${maxLevel}|${sort}`} total={results.length} shown={Math.min(visible, results.length)} onNearEnd={() => { if (results.length > visible) setVisible((count) => count + PAGE_SIZE); }}>
+            <ItemCarousel key={`${query}|${categoryId}|${chosen.join(',')}|${minLevel}|${maxLevel}|${sort}`} total={results.length} shown={Math.min(visible, results.length)} onVisibleEnd={setSeen} onNearEnd={() => { if (results.length > visible) setVisible((count) => count + PAGE_SIZE); }}>
               {results.slice(0, visible).map((result) => (
                 <li key={result.item.id}>
                   <ItemCard

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Item } from '../../domain/types';
 import { EmptyState } from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/SkeletonCard';
@@ -12,7 +12,7 @@ export const RESULTS_PAGE_SIZE = 6;
 export const RESULTS_MORE_STEP = 12;
 
 export function ItemResults({
-  items,
+  items: itemsProp,
   selected,
   onSelect,
   loading,
@@ -43,7 +43,16 @@ export function ItemResults({
 }) {
   // How many cards the player has scrolled past, up to the last one fully in view.
   const [seen, setSeen] = useState(0);
-  const syncStatus =<SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
+  // Asking for more results is a new search for the data layer: for a moment there is nothing at all. The row
+  // then keeps the cards it had, so it stays where it was instead of going back to a skeleton and to the start.
+  const held = useRef<Item[]>([]);
+  const askedAt = useRef(0);
+  if (itemsProp.length && itemsProp[0].id !== held.current[0]?.id) askedAt.current = 0;
+  if (itemsProp.length > askedAt.current) askedAt.current = 0;
+  if (itemsProp.length) held.current = itemsProp;
+  const holding = !itemsProp.length && !!loading && askedAt.current > 0;
+  const items = holding ? held.current : itemsProp;
+  const syncStatus = <SyncStatusIndicator isRevalidating={isRevalidating} offline={offline} lastSyncedAt={lastSyncedAt} />;
   // specs/010-search-instant-cache, FR-005: only show the skeleton when there is truly nothing to
   // display yet (first visit, no cache) — once a list is already on screen, a background
   // revalidation must never replace it with a skeleton (that would also discard the user's scroll
@@ -89,7 +98,7 @@ export function ItemResults({
       <div className="results-meta">
         {/* While the catalogue is revalidating or the total count is still being computed, a single
             "Mise à jour…" takes the count's spot; the offline notice sits next to the count instead. */}
-        {isRevalidating || totalPending ? (
+        {isRevalidating || totalPending || holding ? (
           <SyncStatusIndicator isRevalidating offline={false} />
         ) : (
           <span className="results-meta-count">
@@ -108,7 +117,11 @@ export function ItemResults({
         onVisibleEnd={setSeen}
         // Only once the results asked for are all here: while a request is pending, the many scroll events
         // must not pile more on top of it.
-        onNearEnd={() => { if (hasMore && !isRevalidating && items.length >= resultLimit) setResultLimit(items.length + RESULTS_MORE_STEP); }}
+        onNearEnd={() => {
+          if (!hasMore || isRevalidating || holding || items.length < resultLimit) return;
+          askedAt.current = items.length;
+          setResultLimit(items.length + RESULTS_MORE_STEP);
+        }}
       >
         {items.map((item) => (
           <li key={item.id}>
