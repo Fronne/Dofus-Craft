@@ -6,3 +6,10 @@ export const USAGE_STYLE: Record<UsageMetric, { stroke: string; dash?: string }>
   d1RowsRead: { stroke: 'var(--warning)', dash: '6 3' },
   d1RowsWritten: { stroke: 'var(--danger)', dash: '2 3' },
 };
+
+// Short names for the pill at the end of each curve (the legend and the table keep the full ones).
+export const USAGE_SHORT: Record<UsageMetric, string> = {
+  workersRequests: 'Requêtes',
+  d1RowsRead: 'Lectures',
+  d1RowsWritten: 'Écritures',
+};

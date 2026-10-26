@@ -64,6 +64,7 @@ export function KeyContributions({ initial, activity = [] }: { initial: KeyContr
           ) : (
             <BarList
               caption={`Lignes de prix ajoutées par clé, ${where}`}
+              zeroText={(count) => `${count} ${count > 1 ? 'clés sans envoi' : 'clé sans envoi'} ${where}`}
               bars={data.keys.map((key) => ({ label: key.label, value: key.rows, note: key.revoked ? 'révoquée' : undefined }))}
             />
           )}

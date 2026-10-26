@@ -298,12 +298,24 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       ...overrides,
     });
 
-    it("montre un point par jour du mois en cours, avec ses valeurs en texte", async () => {
+    it("montre une colonne par jour avec des lignes, ses valeurs en texte, et laisse de côté les jours à 0", async () => {
       api.getKeyContributions.mockResolvedValue(contributions({ days: [{ date: '2026-10-01', rows: 100 }, { date: '2026-10-02', rows: 0 }, { date: '2026-10-03', rows: 50 }] }));
       await renderPage();
       const card = cardOf(/Clés/);
       expect(card.getByRole('img', { name: 'Lignes de prix ajoutées par jour, ce mois-ci' })).toBeInTheDocument();
-      expect(card.getByRole('row', { name: /2026-10-02 0/, hidden: true })).toBeInTheDocument();
+      expect(card.getByRole('row', { name: /2026-10-01 100/, hidden: true })).toBeInTheDocument();
+      expect(card.getByRole('row', { name: /2026-10-03 50/, hidden: true })).toBeInTheDocument();
+      expect(card.queryByRole('row', { name: /2026-10-02/, hidden: true })).not.toBeInTheDocument();
+    });
+
+    it('ne dessine pas les clés à 0 : une ligne les compte', async () => {
+      api.getKeyContributions.mockResolvedValue(contributions({
+        keys: [{ keyId: 'a', label: 'Alice', revoked: false, rows: 50 }, { keyId: 'b', label: 'Bob', revoked: false, rows: 0 }, { keyId: 'c', label: 'Carl', revoked: false, rows: 0 }],
+      }));
+      await renderPage();
+      const card = cardOf(/Clés/);
+      expect(card.getByText('2 clés sans envoi ce mois-ci')).toBeInTheDocument();
+      expect(card.queryByText('Bob')).not.toBeInTheDocument();
     });
 
     it('propose les mois ayant des données, le mois en cours choisi', async () => {
