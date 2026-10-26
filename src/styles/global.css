@@ -2734,8 +2734,10 @@ body::before {
 .brisage-cards > li { display: contents; }
 /* Carousel (ItemCarousel): one row of cards, snapping, with arrows, edge fades, a slim scrollbar and a position counter. */
 .brisage-carousel { position: relative; min-width: 0; margin-top: calc(var(--space-2) * -1); }
-.brisage-carousel > .results.brisage-cards { margin-top: 0; grid-template-columns: none; grid-template-rows: none; grid-auto-flow: column; grid-auto-columns: min(15rem, 85%); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-3); scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; cursor: grab; }
+.brisage-carousel > .results.brisage-cards { margin-top: 0; grid-template-columns: none; grid-template-rows: none; grid-auto-flow: column; grid-auto-columns: min(15rem, 85%); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-3); scrollbar-width: thin; scrollbar-color: transparent transparent; cursor: grab; }
 .brisage-carousel .brisage-cards button { scroll-snap-align: start; }
+/* The scrollbar is hidden at rest; it shows only while the pointer is on the cards or a card has the focus. */
+.brisage-carousel:hover > .results.brisage-cards, .brisage-carousel:focus-within > .results.brisage-cards { scrollbar-color: var(--border-strong) transparent; }
 .brisage-carousel[data-dragging] > .results.brisage-cards { cursor: grabbing; scroll-snap-type: none; user-select: none; }
 .brisage-carousel[data-dragging] .brisage-cards button { pointer-events: none; }
 /* Fades on the edges that still hide cards. */
