@@ -34,6 +34,7 @@ const FamilierPage = lazyPage(() => import('../features/pets/FamilierPage').then
 const HdvPage = lazyPage(() => import('../features/hdv/HdvPage').then((m) => ({ default: m.HdvPage })));
 const ForgemagiePage = lazyPage(() => import('../features/forgemagie/ForgemagiePage').then((m) => ({ default: m.ForgemagiePage })));
 const BrisagePage = lazyPage(() => import('../features/brisage/BrisagePage').then((m) => ({ default: m.BrisagePage })));
+const BonsPlansPage = lazyPage(() => import('../features/good-deals/BonsPlansPage').then((m) => ({ default: m.BonsPlansPage })));
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
@@ -45,6 +46,7 @@ const NAV_ITEMS = [
   { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false, page: 'petsPage' as const },
   { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false, page: 'forgemagiePage' as const },
   { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false, page: 'brisagePage' as const },
+  { to: ROUTES.bonsPlans, label: 'Bons plans', icon: 'coins' as const, end: false, page: 'bonsPlansPage' as const },
 ];
 
 const SITE_NAME = 'Dofus Craft';
@@ -57,6 +59,7 @@ const PAGE_TITLES: Record<string, string> = {
   [ROUTES.pets]: `XP Familier — ${SITE_NAME}`,
   [ROUTES.forgemagie]: `Forgemagie — ${SITE_NAME}`,
   [ROUTES.brisage]: `Brisage — ${SITE_NAME}`,
+  [ROUTES.bonsPlans]: `Bons plans de l'HDV — ${SITE_NAME}`,
   [ROUTES.settings]: `Paramètres — ${SITE_NAME}`,
 };
 
@@ -273,6 +276,7 @@ export function AppShell() {
             <Route path={ROUTES.hdv} element={guarded('hdvPage', <HdvPage priceMode={priceMode} />)} />
             {/* specs/060-page-brisage (FR-001): reachable from the Brisage link of the menu. */}
             <Route path={ROUTES.brisage} element={guarded('brisagePage', <BrisagePage priceMode={priceMode} />)} />
+            <Route path={ROUTES.bonsPlans} element={guarded('bonsPlansPage', <BonsPlansPage />)} />
             <Route path={ROUTES.pets} element={guarded('petsPage', <FamilierPage priceMode={priceMode} hdvPageEnabled={hdvEnabled} />)} />
             <Route path={ROUTES.forgemagie} element={guarded('forgemagiePage', <ForgemagiePage priceMode={priceMode} />)} />
             <Route

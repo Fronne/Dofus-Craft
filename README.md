@@ -72,6 +72,13 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
     prix.
   - On peut aussi **coller une capture du chat** dans son Profil : elle est lue sur l'appareil (jamais
     envoyée), et les lignes lues sont vérifiées et corrigées avant d'être enregistrées.
+- **Bons plans** (page désactivée par défaut, à activer depuis l'administration) : liste les
+  équipements de l'HDV au moins 25 % moins chers (seuil réglable dans l'administration) que des
+  exemplaires de jet proche, avec une carte par annonce (stats, prix, étiquette « −40 % »), un tri
+  par économie et des filtres exo / stat. Seules les annonces vues il y a moins de 24 h comptent.
+  Elle dépend du client de relevé, qui doit envoyer les exemplaires (`copies`). Le jet est comparé
+  avec des poids de stats (`src/domain/brisage.ts`, exo ×1,5) : ce sont des estimations, pas une
+  valeur de marché.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
 - **Personnalisation** : thème clair ou sombre, couleur d'accent, design « Nouveau » (par défaut)

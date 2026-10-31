@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS info_message (
 -- specs/072). Written only by the
 -- dofus-craft-admin Worker.
 CREATE TABLE IF NOT EXISTS site_settings (
-  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking')),
+  key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking', 'bons_plans_page')),
   value TEXT NOT NULL CHECK (value IN ('0', '1')),
   updated_at TEXT NOT NULL
 );
@@ -320,8 +320,26 @@ CREATE TABLE IF NOT EXISTS sniffer_daily_usage (
   key_id TEXT NOT NULL,
   day TEXT NOT NULL,
   rows_written INTEGER NOT NULL DEFAULT 0 CHECK (rows_written >= 0),
+  -- specs/078-bons-plans-hdv: equipment copies written that day (their own cap).
+  copies_written INTEGER NOT NULL DEFAULT 0 CHECK (copies_written >= 0),
   PRIMARY KEY (key_id, day)
 );
+
+-- specs/078-bons-plans-hdv (migrations/0028_add_hdv_listings.sql): one row per equipment copy on sale,
+-- sent by the friends' tool. Only served while seen within the last 24 hours.
+CREATE TABLE IF NOT EXISTS hdv_listings (
+  server_id TEXT NOT NULL,
+  listing_id TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  price_kamas INTEGER NOT NULL CHECK (price_kamas > 0),
+  stats_json TEXT NOT NULL,
+  first_seen_at TEXT NOT NULL,
+  last_seen_at TEXT NOT NULL,
+  key_id TEXT NOT NULL,
+  PRIMARY KEY (server_id, listing_id)
+);
+CREATE INDEX IF NOT EXISTS idx_hdv_listings_seen ON hdv_listings (server_id, last_seen_at);
+CREATE INDEX IF NOT EXISTS idx_hdv_listings_item ON hdv_listings (server_id, item_id);
 
 -- specs/059-prix-par-lot (migrations/0020_add_lot_prices.sql): the last price seen for each HDV lot
 -- size of a resource, sent by the friends' tool. The contributions above stay the lot 1 price.
@@ -373,3 +391,11 @@ CREATE TABLE IF NOT EXISTS brisage_coefficient_clears (
 );
 CREATE INDEX IF NOT EXISTS idx_brisage_coefficient_clears_item ON brisage_coefficient_clears (server_id, item_id, cleared_at);
 CREATE INDEX IF NOT EXISTS idx_brisage_coefficient_clears_at ON brisage_coefficient_clears (cleared_at);
+
+-- specs/078-bons-plans-hdv (migrations/0028_add_hdv_listings.sql): numeric site settings. site_settings
+-- only holds 0/1 for the pages, so the good deal threshold (percent) lives here. Written by the admin Worker.
+CREATE TABLE IF NOT EXISTS numeric_settings (
+  key TEXT PRIMARY KEY CHECK (key IN ('good_deal_threshold')),
+  value INTEGER NOT NULL CHECK (value BETWEEN 5 AND 90),
+  updated_at TEXT NOT NULL
+);

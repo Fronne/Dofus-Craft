@@ -18,16 +18,16 @@ const allOff: SiteSettings = Object.fromEntries(SITE_PAGES.map((page) => [page.f
 const only = (...fields: (keyof SiteSettings)[]): SiteSettings => ({ ...allOff, ...Object.fromEntries(fields.map((field) => [field, true])) });
 
 describe('site settings rules', () => {
-  it('lists the seven pages in the order of the navigation, each with its own storage key', () => {
-    expect(SITE_PAGES.map((page) => page.label)).toEqual(['Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie', 'Brisage']);
-    expect(SITE_PAGES.map((page) => page.key)).toEqual(['search_page', 'pinned_page', 'prices_page', 'hdv_page', 'pets_page', 'forgemagie_page', 'brisage_page']);
-    expect(new Set(SITE_PAGES.map((page) => page.key)).size).toBe(7);
-    expect(new Set(SITE_PAGES.map((page) => page.field)).size).toBe(7);
+  it('lists the eight pages in the order of the navigation, each with its own storage key', () => {
+    expect(SITE_PAGES.map((page) => page.label)).toEqual(['Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie', 'Brisage', 'Bons plans']);
+    expect(SITE_PAGES.map((page) => page.key)).toEqual(['search_page', 'pinned_page', 'prices_page', 'hdv_page', 'pets_page', 'forgemagie_page', 'brisage_page', 'bons_plans_page']);
+    expect(new Set(SITE_PAGES.map((page) => page.key)).size).toBe(8);
+    expect(new Set(SITE_PAGES.map((page) => page.field)).size).toBe(8);
   });
 
-  it('has the Forgemagie page disabled and the six others enabled by default', () => {
+  it('has the Forgemagie and Bons plans pages disabled and the six others enabled by default', () => {
     expect(DEFAULT_SITE_SETTINGS).toEqual({
-      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true,
+      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true, bonsPlansPage: false,
       brisageRanking: false,
     });
   });

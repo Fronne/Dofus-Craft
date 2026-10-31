@@ -37,10 +37,10 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
   });
 
   it('résume les pages actives', () => {
-    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true }).text).toBe('6 pages actives sur 7');
-    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true }).text).toBe('7 pages actives sur 7');
-    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false }).text).toBe('1 page active sur 7');
-    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false, brisagePage: false }).text).toBe('0 page active sur 7');
+    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true }).text).toBe('6 pages actives sur 8');
+    expect(summarizePages({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true }).text).toBe('7 pages actives sur 8');
+    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false }).text).toBe('1 page active sur 8');
+    expect(summarizePages({ ...ALL_PAGES, searchPage: false, pinnedPage: false, pricesPage: false, hdvPage: false, petsPage: false, brisagePage: false }).text).toBe('0 page active sur 8');
   });
 
   it('résume le bandeau', () => {

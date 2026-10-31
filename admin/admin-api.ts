@@ -50,6 +50,11 @@ async function call<T>(method: string, path: string, body: unknown, read: (paylo
 
 const asCounter = (payload: unknown) => (isPlayerCounter(payload) ? payload : undefined);
 
+const parseThreshold = (payload: unknown): number | undefined =>
+  typeof payload === 'object' && payload !== null && typeof (payload as Record<string, unknown>).thresholdPercent === 'number'
+    ? (payload as { thresholdPercent: number }).thresholdPercent
+    : undefined;
+
 // specs/057-sniffer-admin (contracts/admin-sniffer-api.md): the friends' keys and the mappings.
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 const isDateOrNull = (value: unknown) => value === null || typeof value === 'string';
@@ -132,6 +137,9 @@ export const adminApi = {
   // specs/053-hdv-page-toggle: only the settings changed are sent, so one never overwrites the other.
   getSettings: () => call('GET', '/settings', undefined, parseSiteSettings),
   saveSettings: (change: SiteSettingsChange) => call('PUT', '/settings', change, parseSiteSettings),
+  // specs/078-bons-plans-hdv: the good deal threshold, in percent.
+  getGoodDealThreshold: () => call('GET', '/good-deal-threshold', undefined, parseThreshold),
+  saveGoodDealThreshold: (thresholdPercent: number) => call('PUT', '/good-deal-threshold', { thresholdPercent }, parseThreshold),
   // specs/058-admin-cloudflare-usage: always answers 200 with a `state`, so "not configured" is a value, not a failure.
   getUsage: (days: UsageWindow) => call('GET', `/usage?days=${days}`, undefined, parseUsageResponse),
   // specs/070-admin-dashboard-graphiques: today's consumption hour by hour (same states as above).

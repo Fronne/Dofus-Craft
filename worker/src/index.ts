@@ -4,6 +4,7 @@ import { readPlayerCounters } from './player-counters';
 import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
 import { lotPricesResponse } from './lot-prices';
+import { bonsPlansResponse, purgeStaleListings } from './listings';
 import { coefficientsResponse, insertClears, insertCoefficients, parseClearPayload, parseCoefficientPayload, purgeExpiredCoefficients } from './brisage-coefficients';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
@@ -155,6 +156,11 @@ export default {
       return cachedJson(url, () => lotPricesResponse(env.DB, url));
     }
 
+    // specs/078-bons-plans-hdv: the equipment copies seen on the HDV in the last 24 hours; the site judges them.
+    if (request.method === 'GET' && url.pathname === '/bons-plans') {
+      return cachedJson(url, () => bonsPlansResponse(env.DB, url));
+    }
+
     // specs/069-coefficients-brisage-partages: the latest breaking coefficient noted for each item.
     if (request.method === 'GET' && url.pathname === '/brisage-coefficients') {
       return cachedJson(url, () => coefficientsResponse(env.DB, url));
@@ -303,6 +309,8 @@ export default {
       await purgeStaleExternalPrices(env.DB, retentionCutoff());
       // specs/069: the same 90 days for the shared breaking coefficients.
       console.log(`Retention: ${await purgeExpiredCoefficients(env.DB)} brisage coefficient(s) older than 90 days removed`);
+      // specs/078: HDV announcements are served for 24 hours; the rest is dropped here.
+      console.log(`Retention: ${await purgeStaleListings(env.DB)} HDV announcement(s) older than 24 hours removed`);
       return;
     }
     if (env.HUZOUNET_SYNC !== '1') return;

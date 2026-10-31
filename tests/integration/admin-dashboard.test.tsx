@@ -13,6 +13,8 @@ const api = vi.hoisted(() => ({
   deleteMessage: vi.fn(),
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
+  getGoodDealThreshold: vi.fn(),
+  saveGoodDealThreshold: vi.fn(),
   listSnifferKeys: vi.fn(),
   createSnifferKey: vi.fn(),
   revokeSnifferKey: vi.fn(),
@@ -55,6 +57,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     api.list.mockResolvedValue({ status: 'ok', value: [] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
     api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
+    api.getGoodDealThreshold.mockResolvedValue({ status: 'ok', value: 25 });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'ok', days: 7, readAt: '2026-10-21T10:00:00Z', history: [today] } });
@@ -80,7 +83,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
         'Mapping',
         'Nettoyage des données',
       ]);
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 8');
       expect(screen.getByRole('link', { name: /Bandeau/ })).toHaveTextContent('Aucun bandeau');
       expect(screen.getByRole('link', { name: /Compteurs/ })).toHaveTextContent('Aucun compteur');
       expect(screen.getByRole('link', { name: /Clés/ })).toHaveTextContent('Aucune clé active');
@@ -140,7 +143,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       });
       api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: true, hdvPage: true } });
       await goTo('');
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('7 pages actives sur 7');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('7 pages actives sur 8');
     });
   });
 
@@ -229,7 +232,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await renderPage();
       expect(cardOf(/Cloudflare/).getByText('Indisponible')).toBeInTheDocument();
       expect(cardOf(/Cloudflare/).queryByRole('img')).not.toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 8');
       expect(sectionLinks()).toHaveLength(7);
     });
   });
@@ -395,7 +398,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       await renderPage();
       expect(itemOf('Prix communautaires').getAllByText('Indisponible')).toHaveLength(2);
       expect(itemOf('Visites').getAllByText('Indisponible')).toHaveLength(2);
-      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 7');
+      expect(screen.getByRole('link', { name: /Pages du site/ })).toHaveTextContent('6 pages actives sur 8');
     });
 
     it('sans prix ni visiteur, le dit au lieu de montrer un graphique vide', async () => {
@@ -533,7 +536,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       api.getKeyContributions.mockResolvedValue(contributions({ total: 1250 }));
       api.getActivity.mockResolvedValue({ status: 'ok', value: { pricesTotal: 5, visitorsToday: 22, days: [] } });
       await renderPage();
-      expect(figure('Pages actives')).toHaveTextContent('6 sur 7');
+      expect(figure('Pages actives')).toHaveTextContent('6 sur 8');
       expect(figure('Lignes ce mois-ci')).toHaveTextContent(/1\s250/);
       expect(figure('Visiteurs du jour')).toHaveTextContent('22');
       expect(figure('Limite du jour')).toHaveTextContent('85 %');
@@ -584,7 +587,7 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
     it('prévient quand aucune page n\'est active', async () => {
       api.getSettings.mockResolvedValue({ status: 'ok', value: Object.fromEntries(Object.keys(ALL_PAGES).map((field) => [field, false])) });
       await renderPage();
-      expect(figure('Pages actives')).toHaveTextContent('0 sur 7');
+      expect(figure('Pages actives')).toHaveTextContent('0 sur 8');
       expect(figure('Pages actives')).toHaveTextContent('Aucune page disponible');
     });
 

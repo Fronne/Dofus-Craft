@@ -13,6 +13,7 @@ vi.mock('../../src/features/hdv/HdvPage', () => ({ HdvPage: () => <h1>Contenu HD
 vi.mock('../../src/features/pets/FamilierPage', () => ({ FamilierPage: () => <h1>Contenu XP Familier</h1> }));
 vi.mock('../../src/features/forgemagie/ForgemagiePage', () => ({ ForgemagiePage: () => <h1>Contenu Forgemagie</h1> }));
 vi.mock('../../src/features/brisage/BrisagePage', () => ({ BrisagePage: () => <h1>Contenu Brisage</h1> }));
+vi.mock('../../src/features/good-deals/BonsPlansPage', () => ({ BonsPlansPage: () => <h1>Contenu Bons plans</h1> }));
 vi.mock('../../src/features/settings/ParametresPage', () => ({ ParametresPage: () => <h1>Contenu Paramètres</h1> }));
 vi.mock('../../src/components/InfoBanner', () => ({ InfoBanner: () => null }));
 vi.mock('../../src/features/dungeon-counter/DungeonCounterBubble', () => ({ PlayerCounters: () => null }));
@@ -33,14 +34,14 @@ function open(path: string) {
 }
 
 const PATHS: Record<string, string> = {
-  Recherche: '/', Suivis: '/suivis', Rentabilité: '/rentabilite', HDV: '/hdv', 'XP Familier': '/familier', Forgemagie: '/forgemagie', Brisage: '/brisage',
+  Recherche: '/', Suivis: '/suivis', Rentabilité: '/rentabilite', HDV: '/hdv', 'XP Familier': '/familier', Forgemagie: '/forgemagie', Brisage: '/brisage', 'Bons plans': '/bons-plans',
 };
-const settings = (overrides: Partial<SiteSettings>): SiteSettings => ({ ...DEFAULT_SITE_SETTINGS, forgemagiePage: true, ...overrides });
+const settings = (overrides: Partial<SiteSettings>): SiteSettings => ({ ...DEFAULT_SITE_SETTINGS, forgemagiePage: true, bonsPlansPage: true, ...overrides });
 const allOff = Object.fromEntries(SITE_PAGES.map((page) => [page.field, false])) as SiteSettings;
 const navLink = (name: string) => screen.queryByRole('link', { name });
 
 // specs/071-admin-dashboard-moderne (FR-001 to FR-007): every page of the navigation follows the owner's setting.
-describe('les sept pages activées ou désactivées (specs/071)', () => {
+describe('les huit pages activées ou désactivées (specs/071)', () => {
   beforeEach(() => {
     window.localStorage.clear();
     getSiteSettings.mockReset();

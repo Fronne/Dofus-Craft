@@ -14,6 +14,8 @@ const api = vi.hoisted(() => ({
   deleteMessage: vi.fn(),
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
+  getGoodDealThreshold: vi.fn(),
+  saveGoodDealThreshold: vi.fn(),
   listSnifferKeys: vi.fn(),
   createSnifferKey: vi.fn(),
   revokeSnifferKey: vi.fn(),
@@ -68,6 +70,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
     api.list.mockResolvedValue({ status: 'ok', value: [nicomoux] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
     api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
+    api.getGoodDealThreshold.mockResolvedValue({ status: 'ok', value: 25 });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue({ status: 'ok', value: { state: 'not-configured', missing: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'] } });
@@ -263,7 +266,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
-      await within(section).findByText('Désactivée');
+      await within(section).findAllByText('Désactivée');
       fireEvent.click(within(section).getByRole('button', { name: 'Activer la page Forgemagie' }));
       expect(await within(section).findByText('Page Forgemagie activée.')).toBeInTheDocument();
       expect(api.saveSettings).toHaveBeenCalledWith({ forgemagiePage: true });
@@ -276,7 +279,7 @@ describe('page d\'administration (specs/014-admin-counters)', () => {
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
-      await within(section).findByText('Désactivée');
+      await within(section).findAllByText('Désactivée');
       expect(within(row(section, 'Page HDV :')).getByText('Activée')).toBeInTheDocument();
       fireEvent.click(within(section).getByRole('button', { name: 'Désactiver la page HDV' }));
       expect(await within(section).findByText('Page HDV désactivée.')).toBeInTheDocument();
@@ -421,6 +424,7 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     api.list.mockResolvedValue({ status: 'ok', value: [] });
     api.getMessage.mockResolvedValue({ status: 'ok', value: null });
     api.getSettings.mockResolvedValue({ status: 'ok', value: { ...ALL_PAGES, forgemagiePage: false, hdvPage: true } });
+    api.getGoodDealThreshold.mockResolvedValue({ status: 'ok', value: 25 });
     api.listSnifferKeys.mockResolvedValue({ status: 'ok', value: [] });
     api.listSnifferMappings.mockResolvedValue({ status: 'ok', value: [] });
     api.getUsage.mockResolvedValue(ok(7));
@@ -510,14 +514,14 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
     const pages = async () => (await screen.findByRole('heading', { name: 'Pages du site' })).closest('section') as HTMLElement;
     const row = (section: HTMLElement, label: string) => within(section).getByText(label, { exact: false, selector: 'p' }).parentElement as HTMLElement;
     const allOffExcept = (...on: string[]) => Object.fromEntries(
-      ['searchPage', 'pinnedPage', 'pricesPage', 'hdvPage', 'petsPage', 'forgemagiePage', 'brisagePage'].map((field) => [field, on.includes(field)]),
+      ['searchPage', 'pinnedPage', 'pricesPage', 'hdvPage', 'petsPage', 'forgemagiePage', 'brisagePage', 'bonsPlansPage'].map((field) => [field, on.includes(field)]),
     );
 
-    it('liste les sept pages dans l\'ordre de la navigation, chacune avec son état en texte', async () => {
+    it('liste les huit pages dans l\'ordre de la navigation, chacune avec son état en texte', async () => {
       window.location.hash = openSection;
       render(<AdminPage />);
       const section = await pages();
-      await within(section).findByText('Désactivée');
+      await within(section).findAllByText('Désactivée');
       const labels = within(section).getAllByText(/^Page .* :/, { selector: 'p' }).map((paragraph) => paragraph.textContent);
       expect(labels).toEqual([
         'Page Recherche : Activée',
@@ -527,6 +531,7 @@ describe('section Utilisation Cloudflare (specs/058-admin-cloudflare-usage)', ()
         'Page XP Familier : Activée',
         'Page Forgemagie : Désactivée',
         'Page Brisage : Activée',
+        'Page Bons plans : Désactivée',
       ]);
     });
 

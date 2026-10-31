@@ -118,7 +118,7 @@ describe('HDV page setting (specs/053)', () => {
 describe('the seven pages (specs/071)', () => {
   it('reads the six other pages as enabled while nothing is saved', async () => {
     await expect(readSiteSettings(env.DB)).resolves.toEqual({
-      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true, brisageRanking: false,
+      searchPage: true, pinnedPage: true, pricesPage: true, hdvPage: true, petsPage: true, forgemagiePage: false, brisagePage: true, bonsPlansPage: false, brisageRanking: false,
     });
   });
 

@@ -10,6 +10,7 @@ import { failureMessage } from './messages';
 import { NewCounterForm } from './NewCounterForm';
 import { MessageEditor } from './MessageEditor';
 import { SiteSettingsEditor } from './SiteSettingsEditor';
+import { GoodDealThresholdEditor } from './GoodDealThresholdEditor';
 import { SnifferKeysEditor } from './SnifferKeysEditor';
 import { SnifferMappingsEditor } from './SnifferMappingsEditor';
 import { useSection } from './useSection';
@@ -60,6 +61,7 @@ export function AdminPage() {
             <span className="admin-back-current">{SECTIONS.find((entry) => entry.id === section)?.title}</span>
           </nav>
           {section === 'pages' && <SiteSettingsEditor />}
+          {section === 'pages' && <GoodDealThresholdEditor />}
           {section === 'bandeau' && <MessageEditor />}
           {section === 'compteurs' && <CountersSection />}
           {section === 'cles' && <SnifferKeysEditor />}

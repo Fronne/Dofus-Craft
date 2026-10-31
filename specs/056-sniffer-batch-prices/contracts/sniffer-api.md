@@ -102,3 +102,10 @@ Chaque observation acceptée devient une contribution `origin = 'sniffer'`, `dev
 clé ; une ressource (sans catégorie, ou ressource / rune / consommable) a `kind = 'resource'` et le
 prix `unitPrice(lots, médiane communautaire)` arrondi. Un écart à la référence n'est jamais un motif
 de refus. Un lot de 0 observation répond `200 {"accepted":0,"rejected":[]}`.
+
+### `copies` (specs/078-bons-plans-hdv)
+
+Une observation d'équipement peut porter en plus `copies` (chaque exemplaire en vente avec son
+jet), pour la page « Bons plans ». Format, bornes et règles de remplacement :
+`specs/078-bons-plans-hdv/contracts/sniffer-copies.md`. Le champ est facultatif ; un outil qui ne
+l'envoie pas reste accepté. `lots` est inchangé.

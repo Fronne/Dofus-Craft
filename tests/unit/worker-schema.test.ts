@@ -66,7 +66,7 @@ describe('worker/migrations', () => {
     // specs/050-forgemagie-page-toggle: site_settings comes from a migration of that range too (0016).
     // specs/056-sniffer-batch-prices: so do the sniffer tables (0018); specs/059-prix-par-lot: and the lot prices (0020).
     // specs/069-coefficients-brisage-partages: and the shared breaking coefficients (0021).
-    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients' || name === 'brisage_coefficient_clears' || name === 'admin_cleanup_log');
+    const restored = tables(fresh).filter((name) => name.startsWith('fm_') || name.startsWith('external_') || name.startsWith('sniffer_') || name === 'site_settings' || name === 'community_price_lots' || name === 'brisage_coefficients' || name === 'brisage_coefficient_clears' || name === 'admin_cleanup_log' || name === 'hdv_listings' || name === 'numeric_settings');
     expect(tables(migrated).filter((name) => name !== 'community_price_contributions' && name !== 'app_visits')).toEqual(restored);
     for (const table of restored) expect([table, columns(migrated, table)]).toEqual([table, columns(fresh, table)]);
     // 0019 keeps every contribution and every column, and accepts the 'sniffer' origin.
@@ -220,10 +220,26 @@ describe('worker/migrations', () => {
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
   });
 
+  // specs/078-bons-plans-hdv: the key list gets 'bons_plans_page' by one more rebuild of the table.
+  it('widens the site settings keys once more (0029) keeping the saved settings, and can run again', () => {
+    const db = freshDatabase();
+    db.exec('DROP TABLE site_settings');
+    db.exec(`CREATE TABLE site_settings (key TEXT PRIMARY KEY CHECK (key IN ('forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking')),
+      value TEXT NOT NULL CHECK (value IN ('0', '1')), updated_at TEXT NOT NULL)`);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('brisage_ranking', '1', '2026-10-02T00:00:00.000Z')");
+    expect(() => db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('bons_plans_page', '1', 'x')")).toThrow();
+    const migration = readFileSync(resolve(process.cwd(), 'worker/migrations/0029_add_bons_plans_setting.sql'), 'utf8');
+    db.exec(migration);
+    db.exec(migration);
+    expect(db.prepare('SELECT key, value FROM site_settings').all()).toEqual([{ key: 'brisage_ranking', value: '1' }]);
+    db.exec("INSERT INTO site_settings (key, value, updated_at) VALUES ('bons_plans_page', '1', 'x')");
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'site_settings_new'").all()).toEqual([]);
+  });
+
   it('has the same site_settings table in schema.sql as after the migrations', () => {
     const fresh = freshDatabase();
     const sql = (fresh.prepare("SELECT sql FROM sqlite_master WHERE name = 'site_settings'").get() as { sql: string }).sql;
-    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking']) {
+    for (const key of ['forgemagie_page', 'hdv_page', 'search_page', 'pinned_page', 'prices_page', 'pets_page', 'brisage_page', 'brisage_ranking', 'bons_plans_page']) {
       expect(sql).toContain(`'${key}'`);
     }
   });

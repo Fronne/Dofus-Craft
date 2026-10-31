@@ -9,5 +9,6 @@ export const ROUTES = {
   hdv: '/hdv',
   forgemagie: '/forgemagie',
   brisage: '/brisage',
+  bonsPlans: '/bons-plans',
   settings: '/parametres',
 } as const;

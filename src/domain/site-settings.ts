@@ -10,6 +10,8 @@ export const SITE_PAGES = [
   { field: 'petsPage', key: 'pets_page', label: 'XP Familier', route: 'pets', enabledByDefault: true },
   { field: 'forgemagiePage', key: 'forgemagie_page', label: 'Forgemagie', route: 'forgemagie', enabledByDefault: false },
   { field: 'brisagePage', key: 'brisage_page', label: 'Brisage', route: 'brisage', enabledByDefault: true },
+  // specs/078-bons-plans-hdv: off until the friends' tool sends the copies of equipments.
+  { field: 'bonsPlansPage', key: 'bons_plans_page', label: 'Bons plans', route: 'bonsPlans', enabledByDefault: false },
 ] as const;
 
 // specs/072-classement-brisage: a setting that is not a page of the navigation. Stored and edited like the pages, but

@@ -3,6 +3,7 @@ import { sha256Hex } from './fm/http';
 import type { ContributionsSummary } from './median';
 import { itemTypeOf, type ItemType } from './item-types';
 import { readLatestItemContributions } from './latest';
+import { COPY_DAILY_LIMIT, listingStatements, parseCopies, type Copy } from './listings';
 import { lotPriceStatements } from './lot-prices';
 import { isKnownResource } from './resource-catalogue';
 import { isKnownServer, SERVERS } from './servers';
@@ -122,12 +123,13 @@ export async function snifferConfigResponse(env: SnifferEnv, url: URL): Promise<
 }
 
 // specs/071-sniffer-tous-hdv: `itemType` only when the tool (0.4.0+) sent a category.
-type Observation = { itemId: string; ladder: Ladder; itemType?: ItemType };
+// specs/078: `copies`, every copy of an equipment on sale with its stats, only from a tool that sends them.
+type Observation = { itemId: string; ladder: Ladder; itemType?: ItemType; copies?: Copy[] };
 
 // One observation of a batch, or the reason it is refused (data-model.md « Observation »).
 export function parseObservation(value: unknown): Observation | RejectReason {
   if (!isRecord(value) || !isRecord(value.lots)) return 'invalid';
-  const { itemId, seenAt, lots, category } = value;
+  const { itemId, seenAt, lots, category, copies: rawCopies } = value;
   if (typeof itemId !== 'string' || !/^\d+$/.test(itemId)) return 'invalid';
   if (typeof seenAt !== 'string' || Number.isNaN(Date.parse(seenAt))) return 'invalid';
   const ladder: Ladder = {};
@@ -139,7 +141,10 @@ export function parseObservation(value: unknown): Observation | RejectReason {
   const onSale = LOT_SIZES.some((size) => (ladder[size] ?? 0) > 0);
   // A tool older than 0.4.0 sends no category (null counts as none): resources of the site's catalogue
   // only, as in specs/056.
+  const hasCopies = rawCopies !== undefined && rawCopies !== null;
   if (category === undefined || category === null) {
+    // Copies only make sense for an equipment, which needs its category.
+    if (hasCopies) return 'invalid';
     if (!isKnownResource(itemId)) return 'not_an_ingredient';
     return onSale ? { itemId, ladder } : 'no_price';
   }
@@ -149,7 +154,13 @@ export function parseObservation(value: unknown): Observation | RejectReason {
   if (!itemType) return 'unknown_category';
   // An equipment is one copy: the cheapest one on sale, as lot 1 and nothing else.
   if (itemType === 'equipment' && Object.keys(lots).some((size) => size !== '1')) return 'invalid';
-  return onSale ? { itemId, ladder, itemType } : 'no_price';
+  let copies: Copy[] | undefined;
+  if (hasCopies) {
+    if (itemType !== 'equipment') return 'invalid';
+    copies = parseCopies(rawCopies);
+    if (!copies) return 'invalid';
+  }
+  return onSale ? { itemId, ladder, itemType, ...(copies ? { copies } : {}) } : 'no_price';
 }
 
 async function readMedians(db: SnifferDb, itemIds: string[], serverId: string): Promise<Map<string, ContributionsSummary>> {
@@ -213,9 +224,16 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
   // prices (5000 a day, an equipment counting as one), not these extra rows.
   const lotWrites = resources.map(({ itemId, ladder }) => lotPriceStatements(env.DB, serverId, itemId, ladder, keyId, now));
   const day = now.toISOString().slice(0, 10);
-  const usage = await env.DB.prepare(`SELECT rows_written FROM sniffer_daily_usage WHERE key_id = ? AND day = ?`)
-    .bind(keyId, day).first<{ rows_written: number }>();
+  const usage = await env.DB.prepare(`SELECT rows_written, copies_written FROM sniffer_daily_usage WHERE key_id = ? AND day = ?`)
+    .bind(keyId, day).first<{ rows_written: number; copies_written: number }>();
   const used = usage?.rows_written ?? 0;
+  // specs/078: the copies of equipments have their own daily cap, a batch crossing it is refused whole too.
+  const copyWrites = kept.flatMap((observation) => (observation.copies ? [{ itemId: observation.itemId, copies: observation.copies }] : []));
+  const copiesInBatch = copyWrites.reduce((total, write) => total + write.copies.length, 0);
+  const copiesUsed = usage?.copies_written ?? 0;
+  if (copiesUsed + copiesInBatch > COPY_DAILY_LIMIT) {
+    return { status: 429, body: { error: 'daily_limit', kind: 'copies', limit: COPY_DAILY_LIMIT, used: copiesUsed } };
+  }
   // A batch that would cross the cap is refused whole: never a partial write (spec, edge cases). Read
   // then written without a lock: two concurrent batches of one key may each pass, so the cap can be
   // crossed by at most one batch per concurrent request — the count itself stays exact.
@@ -257,10 +275,12 @@ export async function snifferBatchResponse(env: SnifferEnv, body: unknown, keyId
     }, latest === undefined ? undefined : { medianAmountKamas: latest }).statement);
   }
   for (const write of lotWrites) statements.push(...write.statements);
+  for (const { itemId, copies } of copyWrites) statements.push(...listingStatements(env.DB, serverId, itemId, copies, keyId, now));
   statements.push(env.DB.prepare(
-    `INSERT INTO sniffer_daily_usage (key_id, day, rows_written) VALUES (?, ?, ?)
-     ON CONFLICT (key_id, day) DO UPDATE SET rows_written = rows_written + excluded.rows_written`,
-  ).bind(keyId, day, kept.length));
+    `INSERT INTO sniffer_daily_usage (key_id, day, rows_written, copies_written) VALUES (?, ?, ?, ?)
+     ON CONFLICT (key_id, day) DO UPDATE SET
+       rows_written = rows_written + excluded.rows_written, copies_written = copies_written + excluded.copies_written`,
+  ).bind(keyId, day, kept.length, copiesInBatch));
   // All or nothing: the prices, the lot prices and the day's count are written together.
   await env.DB.batch(statements);
   return { status: 200, body: { accepted: kept.length, rejected }, wrote: true };

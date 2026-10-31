@@ -6,6 +6,7 @@ import { createCounter, deleteCounter, listCounters, updateCounter, type Counter
 import { deleteMessage, getMessage, saveMessage, type MessageDb } from './message';
 import { validateInfoMessageInput } from '../../src/domain/info-message';
 import { getSettings, saveSettings, type SettingsDb } from './settings';
+import { getThreshold, saveThreshold, validateThreshold } from './good-deal-threshold';
 import { readActivity, type ActivityDb } from './activity';
 import { readKeyContributions, validateMonth } from './sniffer-contributions';
 import { createKey, listKeys, revokeKey, validateKeyLabel, type SnifferKeysDb } from './sniffer-keys';
@@ -94,6 +95,16 @@ export async function handleApi(
       const validation = validateSiteSettingsChange(await readBody(request));
       if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
       return json(await saveSettings(env.DB, validation.value));
+    }
+  }
+
+  // specs/078-bons-plans-hdv: the threshold (percent) from which an HDV announcement is a good deal.
+  if (pathname === '/api/good-deal-threshold') {
+    if (request.method === 'GET') return json(await getThreshold(env.DB));
+    if (request.method === 'PUT') {
+      const validation = validateThreshold(await readBody(request));
+      if (!validation.ok) return json({ error: validation.error, field: validation.field }, 400);
+      return json(await saveThreshold(env.DB, validation.value));
     }
   }
 
