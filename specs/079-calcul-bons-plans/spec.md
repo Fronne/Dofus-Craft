@@ -139,4 +139,4 @@ Un excellent objet sans Sagesse reste noté comme excellent, et un objet médioc
 - Les prix restent des prix demandés à l'HDV, pas des prix vendus.
 - Une stat dont l'importance dépend de l'objet (Sagesse, Prospection dans des cas exceptionnels) reste mal estimée : le site ne sait pas pour quoi un objet est joué. Limite acceptée.
 - Moins d'annonces sont jugées, environ 40 % de moins sur l'instantané. Limite acceptée : un faux bon plan coûte plus cher qu'un exemplaire non jugé.
-- Dix effets sans poids, dont `2825` sur 739 lignes, restent ignorés. Ils ne sont pas prévus par les objets de l'index et leur nature reste à identifier au moment du plan.
+- Les effets sans poids restent ignorés. Neuf des dix plus fréquents sont des malus (−PA, −Portée, −Fuite…). `2825` (739 lignes) signifie « Empêche les futures forgemagies » : son effet sur le prix n'est pas traité par cette spec.
