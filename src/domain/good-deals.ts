@@ -20,13 +20,65 @@ export type JetLine = { effectId: number; value: number };
 /** The effects the item can roll normally; a line outside them is an exo. */
 export type ItemEffect = { effectId: number; from?: number; to?: number };
 
-/** The theoretical roll of a stat, "min – max" ("min" alone when fixed); undefined for an exo or a stat with no known bounds. */
+/** The theoretical roll of a stat, "min à max" as in game ("min" alone when fixed); undefined for an exo or a stat with no known bounds. */
 export function theoreticalRange(effectId: number, itemEffects: ItemEffect[]): string | undefined {
   const effect = itemEffects.find((candidate) => candidate.effectId === effectId);
   if (!effect || (effect.from === undefined && effect.to === undefined)) return undefined;
   const low = Math.min(effect.from ?? effect.to!, effect.to ?? effect.from!);
   const high = Math.max(effect.from ?? effect.to!, effect.to ?? effect.from!);
-  return low === high ? `${low}` : `${low} – ${high}`;
+  return low === high ? `${low}` : `${low} à ${high}`;
+}
+
+// The malus effects seen on the announcements, by the effect of the stat they lower (DofusDB, oppositeId).
+// They have no brisage weight, so the quality ignores them: only the card names them.
+const MALUS_OF_STAT: Record<number, number> = {
+  101: 111, 127: 128, 116: 117, 2990: 182, 171: 115, 175: 174, 754: 752, 755: 753, 162: 160, 163: 161, 411: 410, 413: 412,
+  415: 414, 417: 416, 419: 418, 421: 420, 423: 422, 215: 210, 216: 211, 218: 213, 219: 214,
+};
+const LOCKED_EFFECT = 2825;
+
+export type JetLineText = { text: string; iconEffectId: number; isMalus: boolean };
+
+/** How a line of an announcement reads on its card; a malus shows its stat with a minus sign. */
+export function describeJetLine(line: JetLine): JetLineText {
+  if (line.effectId === LOCKED_EFFECT) return { text: 'Empêche les futures forgemagies', iconEffectId: line.effectId, isMalus: false };
+  const lowered = MALUS_OF_STAT[line.effectId];
+  const statName = (value: string) => {
+    const label = brisageStat(lowered ?? line.effectId)?.label ?? `Effet ${line.effectId}`;
+    // As in game: "3% Critique", not "3 Critique (%)".
+    return label.endsWith(' (%)') ? `${value}% ${label.slice(0, -4)}` : `${value} ${label}`;
+  };
+  if (lowered === undefined) return { text: statName(`${line.value}`), iconEffectId: line.effectId, isMalus: false };
+  return { text: statName(`−${line.value}`), iconEffectId: lowered, isMalus: true };
+}
+
+export type JetCardLine = JetLineText & {
+  effectId: number;
+  tone: 'normal' | 'exo' | 'malus' | 'muted';
+  range?: string;
+};
+
+/**
+ * The lines of a card, in the order of the game: what the item rolls (a line the copy lacks shows at 0),
+ * then the exos, the maluses, and whatever else the announcement carries.
+ */
+export function jetCardLines(stats: JetLine[], itemEffects: ItemEffect[]): JetCardLine[] {
+  const rolled = itemEffects
+    .filter((effect) => brisageStat(effect.effectId))
+    .map((effect): JetCardLine => {
+      const value = stats.find((line) => line.effectId === effect.effectId)?.value ?? 0;
+      const text = describeJetLine({ effectId: effect.effectId, value });
+      return { ...text, effectId: effect.effectId, tone: value === 0 ? 'muted' : 'normal', range: theoreticalRange(effect.effectId, itemEffects) };
+    });
+  const extras = stats
+    .filter((line) => !rolled.some((rolledLine) => rolledLine.effectId === line.effectId))
+    .map((line): JetCardLine => {
+      const text = describeJetLine(line);
+      const tone = text.isMalus ? 'malus' : brisageStat(line.effectId) ? 'exo' : 'muted';
+      return { ...text, effectId: line.effectId, tone };
+    });
+  const ofTone = (tone: JetCardLine['tone']) => extras.filter((line) => line.tone === tone);
+  return [...rolled, ...ofTone('exo'), ...ofTone('malus'), ...ofTone('muted')];
 }
 
 export type DealVerdict = {

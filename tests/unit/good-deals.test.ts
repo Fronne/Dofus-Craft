@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateListings, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, theoreticalRange, type DealVerdict, type Listing } from '../../src/domain/good-deals';
+import { describeJetLine, evaluateListings, jetCardLines, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, theoreticalRange, type DealVerdict, type Listing } from '../../src/domain/good-deals';
 
 // specs/078-bons-plans-hdv (research R2–R4): the quality of a roll and the good-deal rule.
 // Effect 125 = Vitalité (weight 0.2), 118 = Force, 178 = Soins. 999 is in no table.
@@ -113,7 +113,7 @@ describe('selectGoodDeals', () => {
 
 describe('theoreticalRange', () => {
   it('gives the min and max of a normal stat', () => {
-    expect(theoreticalRange(125, EFFECTS)).toBe('1 – 60');
+    expect(theoreticalRange(125, EFFECTS)).toBe('1 à 60');
   });
   it('gives nothing for an exo, which the item cannot roll', () => {
     expect(theoreticalRange(178, EFFECTS)).toBeUndefined();
@@ -121,7 +121,7 @@ describe('theoreticalRange', () => {
   it('shows a fixed stat once and ignores the order of the bounds', () => {
     expect(theoreticalRange(1, [{ effectId: 1, from: 50, to: 50 }])).toBe('50');
     expect(theoreticalRange(1, [{ effectId: 1, from: 8 }])).toBe('8');
-    expect(theoreticalRange(1, [{ effectId: 1, from: -5, to: -20 }])).toBe('-20 – -5');
+    expect(theoreticalRange(1, [{ effectId: 1, from: -5, to: -20 }])).toBe('-20 à -5');
   });
   it('gives nothing when the bounds are unknown', () => {
     expect(theoreticalRange(1, [{ effectId: 1 }])).toBeUndefined();
@@ -237,5 +237,58 @@ describe('stat importance', () => {
     const exo = jetQuality([{ effectId: 124, value: 10 }], []);
     expect(exo.quality).toBeCloseTo(10 * 3 * 1.5 * 0.25);
     expect(exo.exoTiers).toEqual(['124:high']);
+  });
+});
+
+describe('describeJetLine', () => {
+  it('reads a normal line with its value and label', () => {
+    expect(describeJetLine({ effectId: 125, value: 245 })).toEqual({ text: '245 Vitalité', iconEffectId: 125, isMalus: false });
+  });
+
+  it('shows a malus with a minus sign, on the stat it lowers', () => {
+    expect(describeJetLine({ effectId: 116, value: 1 })).toEqual({ text: '−1 Portée', iconEffectId: 117, isMalus: true });
+    expect(describeJetLine({ effectId: 755, value: 30 })).toEqual({ text: '−30 Tacle', iconEffectId: 753, isMalus: true });
+  });
+
+  it('names the forgemagie lock without its value', () => {
+    expect(describeJetLine({ effectId: 2825, value: 0 }).text).toBe('Empêche les futures forgemagies');
+  });
+
+  it('falls back on the effect id for an unknown effect', () => {
+    expect(describeJetLine({ effectId: 999, value: 7 }).text).toBe('7 Effet 999');
+  });
+});
+
+describe('jetCardLines', () => {
+  const ITEM = [{ effectId: 125, from: 251, to: 300 }, { effectId: 115, from: 2, to: 3 }, { effectId: 117, from: 1, to: 1 }];
+  const lines = jetCardLines(
+    [{ effectId: 755, value: 30 }, { effectId: 2825, value: 0 }, { effectId: 178, value: 5 }, { effectId: 115, value: 3 }, { effectId: 125, value: 280 }],
+    ITEM,
+  );
+
+  it('follows the item, then the exos, the maluses and the rest', () => {
+    expect(lines.map((line) => line.effectId)).toEqual([125, 115, 117, 178, 755, 2825]);
+    expect(lines.map((line) => line.tone)).toEqual(['normal', 'normal', 'muted', 'exo', 'malus', 'muted']);
+  });
+
+  it('reads like the game, with the theoretical roll on the rolled lines only', () => {
+    expect(lines[0]).toMatchObject({ text: '280 Vitalité', range: '251 à 300' });
+    expect(lines[1]).toMatchObject({ text: '3% Critique', range: '2 à 3' });
+    expect(lines[2]).toMatchObject({ text: '0 Portée', range: '1' });
+    expect(lines[3].range).toBeUndefined();
+    expect(lines[4].text).toBe('−30 Tacle');
+    expect(lines[4].range).toBeUndefined();
+  });
+
+  it('keeps the percent on a malus', () => {
+    expect(describeJetLine({ effectId: 171, value: 5 }).text).toBe('−5% Critique');
+  });
+
+  it('keeps an announcement line even when the item effect has no known stat', () => {
+    expect(jetCardLines([{ effectId: 999, value: 4 }], [{ effectId: 999, from: 1, to: 5 }]).map((line) => line.text)).toEqual(['4 Effet 999']);
+  });
+
+  it('leaves out an item effect with no known stat', () => {
+    expect(jetCardLines([], [{ effectId: 999, from: 1, to: 2 }])).toEqual([]);
   });
 });

@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
-import { BRISAGE_STATS, brisageStat } from '../../domain/brisage';
-import { DEAL_SORTS, selectGoodDeals, theoreticalRange, type DealSort } from '../../domain/good-deals';
+import { BRISAGE_STATS } from '../../domain/brisage';
+import { DEAL_SORTS, jetCardLines, selectGoodDeals, type DealSort } from '../../domain/good-deals';
 import { formatKamas } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
 import { GoodDealBadge } from './GoodDealBadge';
@@ -14,26 +14,27 @@ import { useGoodDeals, type Deal } from './useGoodDeals';
 
 const PAGE_SIZE = 40;
 
-const statLabel = (effectId: number) => brisageStat(effectId)?.label ?? `Effet ${effectId}`;
-
 // One card per announcement: the item, the −40 % tag, each line of the roll with its stat icon, the price.
 function DealCard({ deal }: { deal: Deal }) {
   return (
     <li className="good-deal-card">
-      <span className="good-deal-tag"><GoodDealBadge deal={deal} compact /></span>
-      <div className="good-deal-main">
-        <span className="good-deal-name">{deal.itemName}</span>
-        {deal.hasExo && <span className="good-deal-exo">Exo</span>}
+      <div className="good-deal-head">
+        <div className="good-deal-main">
+          <span className="good-deal-name">{deal.itemName}</span>
+          {deal.hasExo && <span className="good-deal-exo">Exo</span>}
+        </div>
+        <span className="good-deal-tag"><GoodDealBadge deal={deal} compact /></span>
       </div>
       <ul className="good-deal-jet" aria-label="Jet de l'annonce">
-        {deal.listing.stats.map((line) => {
-          const asset = statIconAsset(line.effectId);
-          const range = theoreticalRange(line.effectId, deal.itemEffects);
+        {jetCardLines(deal.listing.stats, deal.itemEffects).map((line) => {
+          const asset = statIconAsset(line.iconEffectId);
           return (
-            <li key={line.effectId} className={deal.exoEffectIds.includes(line.effectId) ? 'good-deal-line good-deal-line-exo' : 'good-deal-line'}>
+            <li key={line.effectId} className={`good-deal-line good-deal-line-${line.tone}`}>
               {asset ? <CharacteristicIcon asset={asset} size={18} /> : <span className="good-deal-icon-gap" aria-hidden="true" />}
-              {line.value} {statLabel(line.effectId)}
-              {range && <span className="good-deal-range" aria-label={`jet théorique ${range}`}>[{range}]</span>}
+              <span>
+                {line.text}
+                {line.range && <> <span className="good-deal-range" aria-label={`jet théorique ${line.range}`}>[{line.range}]</span></>}
+              </span>
             </li>
           );
         })}

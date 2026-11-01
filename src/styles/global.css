@@ -2861,16 +2861,20 @@ body::before {
 .good-deal-badge-partial { font-weight: 400; color: var(--text-muted); }
 .good-deal-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin: 0 0 var(--space-4); }
 .good-deal-list { list-style: none; margin: var(--space-3) 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-3); }
-.good-deal-card { position: relative; display: flex; flex-direction: column; gap: .6rem; padding: var(--space-3) var(--space-4); border-radius: var(--radius-xs); background: var(--panel); border: 1px solid var(--border-strong); }
-.good-deal-tag { position: absolute; top: var(--space-3); right: var(--space-3); }
+.good-deal-card { display: flex; flex-direction: column; gap: .6rem; padding: var(--space-3) var(--space-4); border-radius: var(--radius-xs); background: var(--panel); border: 1px solid var(--border-strong); }
+.good-deal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.good-deal-tag { flex: none; }
 .good-deal-badge--tag { font-size: .85rem; }
-.good-deal-main { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding-right: 4.5rem; }
+.good-deal-main { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; }
 .good-deal-name { font-weight: 700; }
 .good-deal-exo { padding: 0 .45rem; border-radius: 999px; background: var(--exo); color: #fff; font-size: .72rem; font-weight: 700; }
 .good-deal-jet { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; font-size: .85rem; color: var(--text-muted); }
 .good-deal-line { display: flex; align-items: center; gap: .4rem; }
+.good-deal-line-normal { color: var(--success); font-weight: 600; }
 .good-deal-line-exo { color: var(--exo); font-weight: 600; }
-.good-deal-range { color: var(--text-muted); opacity: .75; font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.good-deal-line-malus { color: var(--danger); font-weight: 600; }
+.good-deal-line-muted { color: var(--text-muted); }
+.good-deal-range { white-space: nowrap; color: var(--text-muted); opacity: .75; font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 .good-deal-icon-gap { display: inline-block; width: 18px; height: 18px; flex: none; }
 .good-deal-foot { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-top: .6rem; border-top: 1px solid var(--border-strong); }
 .good-deal-prices { display: grid; font-variant-numeric: tabular-nums; }
