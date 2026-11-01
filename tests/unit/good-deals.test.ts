@@ -51,9 +51,10 @@ describe('evaluateListings', () => {
   });
 
   it('marks a clearly better roll sold at the price of weaker ones', () => {
+    // Bounds unknown: no defect, so the weaker rolls stay comparable to the better one.
     const weak = [listing(1_000_000, 40), listing(1_000_000, 42), listing(1_000_000, 41), listing(1_000_000, 43)];
     const better = listing(1_000_000, 52);
-    const verdict = evaluateListings([...weak, better], EFFECTS, 15).find((v) => v.listingId === better.listingId)!;
+    const verdict = evaluateListings([...weak, better], [{ effectId: 125 }], 15).find((v) => v.listingId === better.listingId)!;
     expect(verdict.isGoodDeal).toBe(true);
   });
 
@@ -124,5 +125,117 @@ describe('theoreticalRange', () => {
   });
   it('gives nothing when the bounds are unknown', () => {
     expect(theoreticalRange(1, [{ effectId: 1 }])).toBeUndefined();
+  });
+});
+
+// specs/079-calcul-bons-plans: a Force line big enough for the exo to stay within the quality range.
+describe('exo tiers', () => {
+  const STRONG = [{ effectId: 118, from: 1, to: 500 }];
+  const copyWith = (effectId: number, value: number): Listing => {
+    counter += 1;
+    return { listingId: `T${counter}`, itemId: '1', priceKamas: 1_000_000, stats: [{ effectId: 118, value: 500 }, { effectId, value }] };
+  };
+  const neighbours = (effectId: number, value: number, others: number) => {
+    const judged = copyWith(effectId, value);
+    const copies = [judged, ...[1, 2, 3].map(() => copyWith(effectId, others))];
+    return evaluateListings(copies, STRONG, 25).find((v) => v.listingId === judged.listingId)!.neighbourCount;
+  };
+
+  it('keeps apart two exos on each side of 30 weight, for any stat', () => {
+    expect(neighbours(2812, 1, 2)).toBe(0); // Dommages aux sorts: 15, 30
+    expect(neighbours(115, 2, 3)).toBe(0); // Critique: 20, 30
+    expect(neighbours(124, 9, 10)).toBe(0); // Sagesse: 27, 30
+  });
+
+  it('compares two exos on the same side', () => {
+    expect(neighbours(2812, 2, 3)).toBe(3);
+    expect(neighbours(115, 1, 2)).toBe(3);
+  });
+});
+
+describe('defects', () => {
+  const defects = (effectId: number, max: number, value: number) =>
+    jetQuality([{ effectId, value }], [{ effectId, from: 1, to: max }]).defectEffectIds;
+
+  it('accepts 5 under the max on the main characteristics and Dommages Neutre', () => {
+    for (const effectId of [118, 126, 123, 119, 138, 430]) {
+      expect(defects(effectId, 100, 95)).toEqual([]);
+      expect(defects(effectId, 100, 94)).toEqual([effectId]);
+    }
+  });
+
+  it('accepts 1 under the max on the other damages and the % resistances', () => {
+    for (const effectId of [112, 422, 2812, 210, 2803]) {
+      expect(defects(effectId, 20, 19)).toEqual([]);
+      expect(defects(effectId, 20, 18)).toEqual([effectId]);
+    }
+  });
+
+  it('accepts nothing under the max on Critique, PA, PM, Portée, Invocations', () => {
+    for (const effectId of [115, 111, 128, 117, 182]) {
+      expect(defects(effectId, 10, 10)).toEqual([]);
+      expect(defects(effectId, 10, 9)).toEqual([effectId]);
+    }
+  });
+
+  it('accepts 2 on Dommages Critiques only when the max is above 20', () => {
+    expect(defects(418, 20, 18)).toEqual([418]);
+    expect(defects(418, 20, 19)).toEqual([]);
+    expect(defects(418, 21, 19)).toEqual([]);
+    expect(defects(418, 21, 18)).toEqual([418]);
+  });
+
+  it('scales the Vitalité gap with the max, 12 at least', () => {
+    expect(defects(125, 100, 88)).toEqual([]);
+    expect(defects(125, 100, 87)).toEqual([125]);
+    expect(defects(125, 400, 370)).toEqual([]);
+    expect(defects(125, 400, 369)).toEqual([125]);
+  });
+
+  it('never counts a defect on Dommages Poussée, Sagesse or a stat over its max', () => {
+    expect(defects(414, 100, 1)).toEqual([]);
+    expect(defects(124, 100, 1)).toEqual([]);
+    expect(defects(118, 100, 110)).toEqual([]);
+  });
+
+  it('counts a missing line as 0, and invents nothing from unknown bounds', () => {
+    expect(jetQuality([], [{ effectId: 111, from: 1, to: 1 }]).defectEffectIds).toEqual([111]);
+    expect(jetQuality([], [{ effectId: 118 }]).defectEffectIds).toEqual([]);
+  });
+
+  it('only compares copies with the same defects', () => {
+    const effects = [{ effectId: 118, from: 1, to: 100 }, { effectId: 126, from: 1, to: 100 }];
+    const copy = (force: number, intelligence: number): Listing => {
+      counter += 1;
+      return { listingId: `D${counter}`, itemId: '1', priceKamas: 1_000_000, stats: [{ effectId: 118, value: force }, { effectId: 126, value: intelligence }] };
+    };
+    const judged = copy(80, 100);
+    const others = [copy(100, 80), copy(100, 80), copy(100, 80)];
+    expect(evaluateListings([judged, ...others], effects, 25).find((v) => v.listingId === judged.listingId)!.neighbourCount).toBe(0);
+    const same = [copy(79, 100), copy(80, 99), copy(81, 100)];
+    expect(evaluateListings([judged, ...same], effects, 25).find((v) => v.listingId === judged.listingId)!.neighbourCount).toBe(3);
+  });
+});
+
+describe('stat importance', () => {
+  const line = (effectId: number, value: number) => jetQuality([{ effectId, value }], [{ effectId, from: 1, to: value }]).quality;
+
+  it('scales the brisage weight by the importance of the stat', () => {
+    expect(line(111, 1)).toBeCloseTo(100 * 1.5); // PA
+    expect(line(118, 10)).toBeCloseTo(10); // Force
+    expect(line(752, 10)).toBeCloseTo(10 * 4 * 0.5); // Fuite
+    expect(line(414, 10)).toBeCloseTo(10 * 5 * 0.5); // Dommages Poussée
+    expect(line(124, 40)).toBeCloseTo(40 * 3 * 0.25); // Sagesse
+    expect(line(240, 10)).toBeCloseTo(10 * 2 * 0.25); // Résistances Terre
+  });
+
+  it('counts nothing for a stat of no importance', () => {
+    for (const effectId of [220, 225, 226, 795]) expect(line(effectId, 10)).toBe(0);
+  });
+
+  it('adds the exo factor to the importance, and leaves the tier on the brisage weight', () => {
+    const exo = jetQuality([{ effectId: 124, value: 10 }], []);
+    expect(exo.quality).toBeCloseTo(10 * 3 * 1.5 * 0.25);
+    expect(exo.exoTiers).toEqual(['124:high']);
   });
 });
