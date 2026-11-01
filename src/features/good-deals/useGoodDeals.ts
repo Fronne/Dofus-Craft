@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadBrisageItemsIndex } from '../../data/brisage-items-repository';
-import { evaluateListings, isFresh, type DealVerdict, type Listing } from '../../domain/good-deals';
+import { evaluateListings, isFresh, type DealVerdict, type ItemEffect, type Listing } from '../../domain/good-deals';
 import { getGoodDealsPayload } from '../../services/good-deals-api';
 
 // specs/078-bons-plans-hdv: reads the fresh announcements of a server and judges them. The judging is the
@@ -10,6 +10,8 @@ export type Deal = DealVerdict & {
   listing: Listing;
   itemName: string;
   imageUrl?: string;
+  /** What the item can roll normally: the theoretical bounds shown beside each line. */
+  itemEffects: ItemEffect[];
 };
 
 export type GoodDealsState =
@@ -43,7 +45,7 @@ export function useGoodDeals(serverId: string | undefined): GoodDealsState {
         if (!item) continue;
         const verdicts = evaluateListings(listings, item.effects, payload.thresholdPercent);
         verdicts.forEach((verdict, position) => {
-          deals.push({ ...verdict, listing: listings[position], itemName: item.name, imageUrl: item.imageUrl });
+          deals.push({ ...verdict, listing: listings[position], itemName: item.name, imageUrl: item.imageUrl, itemEffects: item.effects });
         });
       }
       setState({ serverId, value: { status: 'ready', deals, thresholdPercent: payload.thresholdPercent } });

@@ -3,7 +3,7 @@ import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
 import { BRISAGE_STATS, brisageStat } from '../../domain/brisage';
-import { DEAL_SORTS, selectGoodDeals, type DealSort } from '../../domain/good-deals';
+import { DEAL_SORTS, selectGoodDeals, theoreticalRange, type DealSort } from '../../domain/good-deals';
 import { formatKamas } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
 import { GoodDealBadge } from './GoodDealBadge';
@@ -28,10 +28,12 @@ function DealCard({ deal }: { deal: Deal }) {
       <ul className="good-deal-jet" aria-label="Jet de l'annonce">
         {deal.listing.stats.map((line) => {
           const asset = statIconAsset(line.effectId);
+          const range = theoreticalRange(line.effectId, deal.itemEffects);
           return (
             <li key={line.effectId} className={deal.exoEffectIds.includes(line.effectId) ? 'good-deal-line good-deal-line-exo' : 'good-deal-line'}>
               {asset ? <CharacteristicIcon asset={asset} size={18} /> : <span className="good-deal-icon-gap" aria-hidden="true" />}
               {line.value} {statLabel(line.effectId)}
+              {range && <span className="good-deal-range" aria-label={`jet théorique ${range}`}>[{range}]</span>}
             </li>
           );
         })}

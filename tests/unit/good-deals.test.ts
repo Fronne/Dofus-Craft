@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateListings, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, type DealVerdict, type Listing } from '../../src/domain/good-deals';
+import { evaluateListings, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, theoreticalRange, type DealVerdict, type Listing } from '../../src/domain/good-deals';
 
 // specs/078-bons-plans-hdv (research R2–R4): the quality of a roll and the good-deal rule.
 // Effect 125 = Vitalité (weight 0.2), 118 = Force, 178 = Soins. 999 is in no table.
@@ -107,5 +107,22 @@ describe('selectGoodDeals', () => {
 
   it('answers nothing when nothing matches', () => {
     expect(selectGoodDeals([], { sort: 'savingKamas', exoOnly: true })).toEqual([]);
+  });
+});
+
+describe('theoreticalRange', () => {
+  it('gives the min and max of a normal stat', () => {
+    expect(theoreticalRange(125, EFFECTS)).toBe('1 – 60');
+  });
+  it('gives nothing for an exo, which the item cannot roll', () => {
+    expect(theoreticalRange(178, EFFECTS)).toBeUndefined();
+  });
+  it('shows a fixed stat once and ignores the order of the bounds', () => {
+    expect(theoreticalRange(1, [{ effectId: 1, from: 50, to: 50 }])).toBe('50');
+    expect(theoreticalRange(1, [{ effectId: 1, from: 8 }])).toBe('8');
+    expect(theoreticalRange(1, [{ effectId: 1, from: -5, to: -20 }])).toBe('-20 – -5');
+  });
+  it('gives nothing when the bounds are unknown', () => {
+    expect(theoreticalRange(1, [{ effectId: 1 }])).toBeUndefined();
   });
 });

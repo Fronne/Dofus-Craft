@@ -19,6 +19,15 @@ export type JetLine = { effectId: number; value: number };
 /** The effects the item can roll normally; a line outside them is an exo. */
 export type ItemEffect = { effectId: number; from?: number; to?: number };
 
+/** The theoretical roll of a stat, "min – max" ("min" alone when fixed); undefined for an exo or a stat with no known bounds. */
+export function theoreticalRange(effectId: number, itemEffects: ItemEffect[]): string | undefined {
+  const effect = itemEffects.find((candidate) => candidate.effectId === effectId);
+  if (!effect || (effect.from === undefined && effect.to === undefined)) return undefined;
+  const low = Math.min(effect.from ?? effect.to!, effect.to ?? effect.from!);
+  const high = Math.max(effect.from ?? effect.to!, effect.to ?? effect.from!);
+  return low === high ? `${low}` : `${low} – ${high}`;
+}
+
 export type DealVerdict = {
   listingId: string;
   itemId: string;

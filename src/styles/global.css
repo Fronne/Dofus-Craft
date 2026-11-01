@@ -2829,6 +2829,7 @@ button.brisage-badge--exo:hover svg { opacity: 1; }
 .good-deal-jet { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; font-size: .85rem; color: var(--text-muted); }
 .good-deal-line { display: flex; align-items: center; gap: .4rem; }
 .good-deal-line-exo { color: var(--exo); font-weight: 600; }
+.good-deal-range { color: var(--text-muted); opacity: .75; font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 .good-deal-icon-gap { display: inline-block; width: 18px; height: 18px; flex: none; }
 .good-deal-foot { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-top: .6rem; border-top: 1px solid var(--border-strong); }
 .good-deal-prices { display: grid; font-variant-numeric: tabular-nums; }
