@@ -365,7 +365,7 @@ describe('Brisage page (specs/061)', () => {
     expect(labels).toEqual(['à 66 %', 'à 66 %', 'à 66 %']);
   });
 
-  it('says to break normally, with no highlighted line, when no focus pays more', async () => {
+  it('says to break normally, and still marks the best focus line, when no focus pays more', async () => {
     await pinnedItemPrices.save('mikhal', '777', 10);
     await pricesKnown();
     // Runes priced the same per point of weight (Do weighs 20): a focus only loses the other lines' half.
@@ -375,10 +375,42 @@ describe('Brisage page (specs/061)', () => {
     fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
     expect(await screen.findByText('Rentable sans focus')).toBeInTheDocument();
     expect(screen.getByText(/Le focus ne rapporte pas plus/)).toBeInTheDocument();
-    expect(screen.queryByText('Meilleur focus')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Meilleur focus').length).toBeGreaterThan(0);
     // The gain block only shows the next three breaks.
     expect(screen.queryByText('Coefficient actuel')).not.toBeInTheDocument();
     expect(screen.getAllByText(/^à [\d,]+ %$/)).toHaveLength(3);
+  });
+
+  describe('best exo to add', () => {
+    it('shows the exo that pays the most, with its rune and the gain it brings', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 10);
+      await pricesKnown();
+      // The cape has no Sagesse (weight 3): a costly Rune Sa is the exo that pays the most.
+      const saRuneId = (runeItems as { runes: { id: string; name: string; effectId: number }[] }).runes.find((rune) => rune.effectId === 124 && rune.name === 'Rune Sa')!.id;
+      await resourcePricesFor('personal').save('mikhal', saRuneId, 20000);
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
+      const block = (await screen.findByText('Meilleur exo à ajouter')).closest('section') as HTMLElement;
+      expect(within(block).getByText('Rune Sa', { selector: 'strong' })).toBeInTheDocument();
+      expect(block.textContent).toMatch(/\+/);
+      // The button puts the exo in the table, and the block is no longer offered.
+      fireEvent.click(within(block).getByRole('button', { name: /Ajouter/ }));
+      await waitFor(() => expect(screen.queryByText('Meilleur exo à ajouter')).not.toBeInTheDocument());
+    });
+
+    it('hides the block when the only rune that would pay is too heavy to be put as an exo (weight 30 or more)', async () => {
+      await pinnedItemPrices.save('mikhal', '777', 10);
+      const carnet = resourcePricesFor('personal');
+      await carnet.save('mikhal', '1523', 5);
+      await carnet.save('mikhal', '1525', 5);
+      await carnet.save('mikhal', '1557', 9000);
+      await openBrisage();
+      await pickCape();
+      fireEvent.change(await screen.findByLabelText(/Coefficient de brisage/), { target: { value: '100' } });
+      await screen.findByText('Verdict');
+      expect(screen.queryByText('Meilleur exo à ajouter')).not.toBeInTheDocument();
+    });
   });
 
   it('accepts a coefficient above 100 %', async () => {
@@ -770,6 +802,28 @@ describe('Brisage page (specs/061)', () => {
       fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo Force" }));
       await waitFor(() => expect(exoRows()).toHaveLength(0));
       await waitFor(() => expect(total()).toBe(before));
+      // « Annuler » puts the exo back with its value.
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(5);
+      expect(screen.queryByRole('button', { name: 'Annuler' })).not.toBeInTheDocument();
+    });
+
+    it('removes only the exo line that was chosen when there are several', async () => {
+      await ready();
+      addExo('Rune Fo Force', 'Force', '5');
+      addExo('Rune Ga Pa PA', 'PA', '1');
+      expect(exoRows()).toHaveLength(2);
+      fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo PA" }));
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(5);
+      expect(screen.queryByLabelText("Valeur de l'exo PA")).not.toBeInTheDocument();
+      // Back, then the other one taken off: the first stays.
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+      await waitFor(() => expect(exoRows()).toHaveLength(2));
+      fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo Force" }));
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      expect(screen.getByLabelText("Valeur de l'exo PA")).toHaveValue(1);
     });
 
     it('searches the runes of the list by name or stat, ignoring case and accents, and picks the first with Enter', async () => {
@@ -833,6 +887,21 @@ describe('Brisage page (specs/061)', () => {
       expect(await screen.findByLabelText("Valeur de l'exo Force")).toHaveValue(5);
     });
 
+    it('removes only the chosen exo after a reload, and keeps the others stored', async () => {
+      await ready();
+      addExo('Rune Fo Force', 'Force', '5');
+      addExo('Rune Ga Pa PA', 'PA', '1');
+      await waitFor(() => expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-exos')!)['mikhal:777']).toHaveLength(2));
+      cleanup();
+      render(<App />);
+      await screen.findByRole('heading', { name: 'Brisage' });
+      await waitFor(() => expect(exoRows()).toHaveLength(2));
+      fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo PA" }));
+      await waitFor(() => expect(exoRows()).toHaveLength(1));
+      expect(screen.getByLabelText("Valeur de l'exo Force")).toHaveValue(5);
+      expect(JSON.parse(window.localStorage.getItem('craftcheck-brisage-exos')!)['mikhal:777']).toEqual([{ effectId: 118, value: 5 }]);
+    });
+
     it('accepts a roll above the maximum of a line as an over, and refuses it above the weight limit', async () => {
       await ready();
       // Do (weight 20) goes from 1 to 9 on this item: 10 weighs 200, above 101, and is refused.
@@ -889,12 +958,12 @@ describe('Brisage page (specs/061)', () => {
     const priceCell = (label: string) => field(label).closest('tr')!.querySelector('[data-label="Prix de la rune"]')!;
     const total = () => document.querySelector('tfoot td[data-label="Sans focus : total"]')?.textContent ?? '';
 
-    it('shows the price of the rune on every malus, and says when it is missing', async () => {
+    it('shows the price of the rune on every malus, and nothing written when it is missing', async () => {
       await resourcePricesFor('personal').save('mikhal', saRuneId, 10);
       await openWithMalus([FORCE_MALUS, SAGESSE_MALUS]);
       await screen.findByLabelText('Jet de Sagesse (malus)');
       await waitFor(() => expect(priceCell('Jet de Sagesse (malus)')).not.toHaveTextContent('prix manquant'));
-      expect(priceCell('Jet de Force (malus)')).toHaveTextContent('prix manquant');
+      expect(priceCell('Jet de Force (malus)')).not.toHaveTextContent('prix manquant');
     });
 
     it('counts a malus turned positive like an exo: runes, no focus, back to a malus when the roll is negative again', async () => {

@@ -176,7 +176,7 @@ export function Dashboard() {
   const bars = raw.counters ? counterBars(raw.counters) : [];
   visuals.compteurs = (
     <DashboardVisual state={sourceState(summaries.compteurs, raw.counters?.length === 0)}>
-      <BarList caption="Valeur de chaque compteur" bars={bars.map((bar) => ({ label: bar.label, value: bar.count }))} />
+      <BarList caption="Valeur de chaque compteur" zeroText={(count) => `${count} ${count > 1 ? 'compteurs à 0' : 'compteur à 0'}`} bars={bars.map((bar) => ({ label: bar.label, value: bar.count }))} />
     </DashboardVisual>
   );
 

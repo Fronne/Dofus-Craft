@@ -203,7 +203,7 @@ describe('Brisage ranking tab (specs/072)', () => {
       fireEvent.click(await screen.findByRole('tab', { name: 'Classement' }));
       await screen.findByRole('table');
       expect(rowNames()).toEqual(['Anneau du Sage']);
-      expect(within(rowOf('Anneau du Sage')).getByText(/communautaire/)).toBeInTheDocument();
+      expect(within(rowOf('Anneau du Sage')).queryByText(/communautaire/)).not.toBeInTheDocument();
     });
 
     it('says so when no item has a price', async () => {
@@ -384,31 +384,22 @@ describe('Brisage ranking tab (specs/072)', () => {
   describe('exo (US8)', () => {
     it('gives the best exo with the rune taken off the gain, for a known coefficient', async () => {
       noteCoefficient('777', 100);
-      await resourcePricesFor('personal').save('mikhal', '1557', 5000);
+      await resourcePricesFor('personal').save('mikhal', '7435', 5000);
       await openRanking();
-      const cell = (await within(rowOf('Cape du Chef Bwork')).findByText('PA', { selector: 'strong' })).closest('td') as HTMLElement;
-      expect(cell.textContent).toMatch(/PA : [+−]?[\d\s\u202f\u00a0]+/);
-      expect(cell.textContent).toMatch(/\(\+/);
-      expect(screen.getByText(/une rune déduite/)).toBeInTheDocument();
+      const cell = (await within(rowOf('Cape du Chef Bwork')).findByText('Rune Do', { selector: 'strong' })).closest('td') as HTMLElement;
+      expect(cell.textContent).toMatch(/Rune Do : \+?[\d\s\u202f\u00a0]+/);
+      expect(screen.queryByText(/une rune déduite/)).not.toBeInTheDocument();
     });
 
     it('gives a threshold, never a gain, for an unknown coefficient', async () => {
-      await resourcePricesFor('personal').save('mikhal', '1557', 5000);
+      await resourcePricesFor('personal').save('mikhal', '7435', 5000);
       await openRanking();
-      // The cape has no coefficient noted: its Rune Vi / Cha are cheap, so a costly rune of PA lowers the threshold a lot.
+      // The cape has no coefficient noted: its Rune Vi / Cha are cheap, so a costly rune of Do lowers the threshold a lot.
       const row = within(rowOf('Cape du Chef Bwork'));
       expect(row.getByText('coefficient inconnu')).toBeInTheDocument();
-      const cell = (await row.findByText('PA', { selector: 'strong' })).closest('td') as HTMLElement;
-      expect(cell.textContent).toMatch(/PA : [\d,]+ %/);
+      const cell = (await row.findByText('Rune Do', { selector: 'strong' })).closest('td') as HTMLElement;
+      expect(cell.textContent).toMatch(/Rune Do : [\d,]+ %/);
       expect(cell.querySelector('.kamas-amount')).toBeNull();
-    });
-
-    it('shows nothing for an item whose exo would not pay', async () => {
-      noteCoefficient('777', 38);
-      await resourcePricesFor('personal').save('mikhal', '1557', 5000);
-      await openRanking();
-      await waitFor(() => expect(within(rowOf('Cape du Chef Bwork')).queryByText('calcul…')).not.toBeInTheDocument());
-      expect(within(rowOf('Cape du Chef Bwork')).queryByText('PA', { selector: 'strong' })).not.toBeInTheDocument();
     });
   });
 });

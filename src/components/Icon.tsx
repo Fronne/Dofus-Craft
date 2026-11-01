@@ -33,9 +33,13 @@ export type IconName =
   | 'rune'
   | 'hammer'
   | 'user'
-  | 'image';
+  | 'image'
+  | 'clock';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  clock: {
+    children: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+  },
   // A hammer, for the séances de FM (specs/049).
   hammer: {
     children: '<path d="M13.5 3.5l7 7-3 3-7-7z"/><path d="M12.5 8.5 4 17a1.9 1.9 0 0 0 2.7 2.7l8.5-8.5"/>',

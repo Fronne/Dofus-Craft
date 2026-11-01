@@ -1,39 +1,45 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
 
-// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar, a
-// position counter, and four ways to move (arrows, wheel, mouse drag, keyboard). The cards are the children, one <li> each.
+// The row of result cards on the Brisage page, as a carousel: arrows, edge fades, snapping, a slim scrollbar,
+// and four ways to move (arrows, wheel, mouse drag, keyboard). The cards are the children, one <li> each.
 
 const DRAG_THRESHOLD = 5;
 const NEAR_END = 240;
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-export function ItemCarousel({ total, shown, onNearEnd, children }: {
+export function ItemCarousel({ total, shown, onNearEnd, onVisibleEnd, children }: {
   total: number;
   shown: number;
   onNearEnd: () => void;
+  /** How many cards, counted from the first, are now fully in view up to the right edge. */
+  onVisibleEnd?: (count: number) => void;
   children: ReactNode;
 }) {
   const list = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ start: true, end: true });
-  const [lastSeen, setLastSeen] = useState(0);
   const [dragging, setDragging] = useState(false);
   const nearEnd = useRef(onNearEnd);
-  useEffect(() => { nearEnd.current = onNearEnd; });
+  const visibleEnd = useRef(onVisibleEnd);
+  const lastSeen = useRef(0);
+  useEffect(() => { nearEnd.current = onNearEnd; visibleEnd.current = onVisibleEnd; });
 
   const measure = useCallback(() => {
     const element = list.current;
     if (!element) return;
     const max = element.scrollWidth - element.clientWidth;
     setEdges({ start: element.scrollLeft <= 1, end: max <= 1 || element.scrollLeft >= max - 1 });
-    // The last card whose right edge is inside the row: the "5" of "5 / 38".
-    const right = element.getBoundingClientRect().right + 1;
+    // The buttons, not the <li> around them: those take no box of their own.
+    const cards = element.querySelectorAll<HTMLElement>(':scope > li > button');
+    const right = element.scrollLeft + element.clientWidth + 1;
     let seen = 0;
-    Array.from(element.children).forEach((card, position) => {
-      if (card.firstElementChild && card.firstElementChild.getBoundingClientRect().right <= right) seen = position + 1;
-    });
-    setLastSeen(seen);
+    cards.forEach((card) => { if (card.offsetLeft - element.offsetLeft + card.offsetWidth <= right) seen += 1; });
+    seen = Math.min(cards.length, Math.max(1, seen));
+    if (cards.length > 0 && seen !== lastSeen.current) {
+      lastSeen.current = seen;
+      visibleEnd.current?.(seen);
+    }
     // Everything shown fits without scrolling (wide screen): nothing would ever ask for more, so ask now.
     if (max <= 1 && element.clientWidth > 0) nearEnd.current();
   }, []);
@@ -44,6 +50,15 @@ export function ItemCarousel({ total, shown, onNearEnd, children }: {
     const element = list.current;
     if (element && element.scrollLeft + element.clientWidth >= element.scrollWidth - NEAR_END) nearEnd.current();
   }, [measure]);
+
+  // A card already picked when the list appears (a shared link, a return to the page) is brought into view.
+  useLayoutEffect(() => {
+    const element = list.current;
+    const card = element?.querySelector<HTMLElement>(':scope > li > button.selected');
+    if (!element || !card) return;
+    const left = card.offsetLeft - element.offsetLeft;
+    if (left + card.offsetWidth > element.clientWidth) element.scrollLeft = Math.max(0, left - 8);
+  }, []);
 
   // New cards (or a new list) change what fits: measure again.
   useLayoutEffect(measure, [measure, shown, total]);
@@ -169,7 +184,6 @@ export function ItemCarousel({ total, shown, onNearEnd, children }: {
           <button type="button" className="carousel-arrow carousel-arrow--next" aria-label="Objets suivants" disabled={edges.end && shown >= total} onClick={() => stepBy(1)}>
             <Icon name="chevron-right" size={20} />
           </button>
-          <p className="carousel-counter" aria-hidden="true">{Math.min(lastSeen, total)} / {total} objet{total > 1 ? 's' : ''}</p>
         </>
       )}
     </div>

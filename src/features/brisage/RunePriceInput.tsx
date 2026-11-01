@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
+import { Icon } from '../../components/Icon';
 import { formatKamasInput, KAMAS_ICON_URL, parseKamas } from '../../domain/kamas';
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
+import { classifyPriceAge } from '../../domain/price-age';
 import type { PriceMode } from '../../domain/price-modes';
+import { formatRelativeTime } from '../../domain/time';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { submitCommunityPrice } from '../../services/community-price-api';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
@@ -11,18 +14,21 @@ import { lookupCommunityPrice } from '../comparison/useCommunityPrice';
 // in Mode communautaire it is also shared with the group, after the same outlier confirmation as the other pages
 // (specs/007), so a mistyped price is not published unchecked.
 
-export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, onSaved }: {
+export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, updatedAt, onSaved }: {
   runeId: string;
   runeName: string;
   serverId: string;
   priceMode: PriceMode;
   /** The price in use, if any. */
   price: number | undefined;
+  /** When the price in use was last changed, if known. */
+  updatedAt?: string;
   /** Called with the price once it is saved, so the table recomputes at once. */
   onSaved: (runeId: string, price: number) => void;
 }) {
   const [typed, setTyped] = useState<string>();
   const [dialog, confirmOutlier] = useOutlierConfirm();
+  const age = classifyPriceAge(updatedAt);
   const value = typed ?? (price !== undefined && price > 0 ? formatKamasInput(String(price)) : '0');
 
   // A commit waits for the shared price and the confirmation: a second blur meanwhile must not save or share twice.
@@ -55,6 +61,7 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
 
   return (
     <>
+      <div className="brisage-rune-price">
       <span className="kamas-input-wrap brisage-price-wrap">
         <input
           type="text" inputMode="numeric" className="brisage-price-input" placeholder="prix"
@@ -67,7 +74,17 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, o
         />
         {value && <img src={KAMAS_ICON_URL} alt="kamas" className="kamas-input-suffix" width={18} height={18} />}
       </span>
-      {price === undefined && <span className="fm-note brisage-price-missing">prix manquant</span>}
+      {price !== undefined && (
+        <span
+          role="img" tabIndex={0}
+          className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}
+          aria-label={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
+          data-tip={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
+        >
+          <Icon name="clock" size={16} />
+        </span>
+      )}
+      </div>
       {dialog}
     </>
   );

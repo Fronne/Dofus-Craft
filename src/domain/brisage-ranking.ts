@@ -48,12 +48,13 @@ export type RankingExo = {
   effectId: number;
   statLabel: string;
   runeName: string;
+  runeImageUrl?: string;
   /** The one rune of the stat that has to be spent at least to put the exo on the item. */
   runePriceKamas: number;
-  /** Known coefficient: the gain with the exo, the price of the rune already taken off. */
+  /** Known coefficient: the gain with the exo, the price of the rune not taken off. */
   gainKamas?: number;
   improvementKamas?: number;
-  /** Unknown coefficient: the threshold with the rune added to the price of the item. */
+  /** Unknown coefficient: the threshold with the exo, the price of the rune not added to the price of the item. */
   thresholdCoefficient?: number;
 };
 
@@ -193,23 +194,36 @@ export function buildRanking(items: IndexedItem[], context: RankingContext): Ran
   return items.map((item) => buildRankingRow(item, context));
 }
 
+/** A stat whose weight per point is this or more is too hard to put on an item as an exo: its rune is never offered. */
+export const EXO_MAX_STAT_WEIGHT = 30;
+
+/** The stats an item that has the stats `have` can be given as an exo, each with its rune; the too heavy ones are left out. */
+export function exoCandidates(have: Set<number>, runes: RuneItem[], settings: BrisageSettings) {
+  return BRISAGE_STATS.flatMap((stat) => {
+    if (have.has(stat.effectId) || HUNT_EFFECT_IDS.includes(stat.effectId)) return [];
+    if ((settings.stats[stat.effectId]?.weight ?? stat.weight) >= EXO_MAX_STAT_WEIGHT) return [];
+    const found = runeForStat(runes, stat.effectId, settings.runeSize);
+    return found ? [{ stat, found }] : [];
+  });
+}
+
 /**
  * The best exo for a row: a rune of a stat the item does not have, put on it before breaking. At least one rune of that
- * stat has to be spent, so its price is taken off; the failures and extra runes of the forgemagie are not counted. The
- * exo is only given when it beats breaking the item as it is.
+ * stat has to be spent, but its price is not taken off; the failures and extra runes of the forgemagie are not counted.
+ * The exo is only given when it beats breaking the item as it is. The stats of a weight of EXO_MAX_STAT_WEIGHT or more
+ * are never offered.
  */
-export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingContext): RankingExo | undefined {
+export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingContext, alsoHave: number[] = []): RankingExo | undefined {
   if (row.status !== 'ok' || row.priceKamas === undefined) return undefined;
   const lines = averageLines(item);
-  const have = new Set(item.effects.map((effect) => effect.effectId));
+  // `alsoHave`: stats of the item that are not lines of the analysis (its maluses), which cannot be offered as an exo either.
+  const have = new Set([...item.effects.map((effect) => effect.effectId), ...alsoHave]);
   let best: RankingExo | undefined;
-  for (const stat of BRISAGE_STATS) {
-    if (have.has(stat.effectId) || HUNT_EFFECT_IDS.includes(stat.effectId)) continue;
-    const found = runeForStat(context.runes, stat.effectId, context.settings.runeSize);
-    const runePrice = found ? context.runePrices[found.rune.id] : undefined;
-    if (!found || typeof runePrice !== 'number' || !(runePrice > 0)) continue;
+  for (const { stat, found } of exoCandidates(have, context.runes, context.settings)) {
+    const runePrice = context.runePrices[found.rune.id];
+    if (typeof runePrice !== 'number' || !(runePrice > 0)) continue;
     const withExo: BrisageLine[] = [...lines, { effectId: stat.effectId, value: 1, exo: true }];
-    const candidate: RankingExo = { effectId: stat.effectId, statLabel: stat.label, runeName: found.rune.name, runePriceKamas: runePrice };
+    const candidate: RankingExo = { effectId: stat.effectId, statLabel: stat.label, runeName: found.rune.name, runeImageUrl: found.rune.imageUrl, runePriceKamas: runePrice };
     if (row.group === 'known') {
       const analysis = analyzeBrisage(
         { level: item.level, lines: withExo, coefficient: row.coefficient!, itemCostKamas: row.priceKamas },
@@ -217,16 +231,20 @@ export function bestExoFor(item: IndexedItem, row: RankingRow, context: RankingC
       );
       const gain = analysis.status === 'ok' ? analysis.best?.gainKamas : undefined;
       if (gain === undefined) continue;
-      candidate.gainKamas = gain - runePrice;
+      candidate.gainKamas = gain;
       candidate.improvementKamas = candidate.gainKamas - (row.gainKamas ?? 0);
-      if (candidate.improvementKamas > 0 && (!best || candidate.gainKamas > (best.gainKamas ?? -Infinity))) best = candidate;
+      // Not offered when the extra gain does not even cover the rune that has to be spent (the price is not shown as taken off).
+      if (candidate.improvementKamas > runePrice && (!best || candidate.gainKamas > (best.gainKamas ?? -Infinity))) best = candidate;
     } else {
-      const advice = analyzeFocusAdvice({ level: item.level, lines: withExo, itemCostKamas: row.priceKamas + runePrice }, context.runes, context.runePrices, context.settings);
+      const advice = analyzeFocusAdvice({ level: item.level, lines: withExo, itemCostKamas: row.priceKamas }, context.runes, context.runePrices, context.settings);
       if (advice.status !== 'ok' || advice.reference.missingRuneIds.length > 0) continue;
       const { threshold } = adviceThreshold(advice);
       if (threshold === undefined) continue;
       candidate.thresholdCoefficient = threshold;
-      const beatsBase = row.thresholdCoefficient === undefined || threshold < row.thresholdCoefficient;
+      // Not offered when, with the rune added to the price of the item, the threshold would not beat the item as it is.
+      const paid = analyzeFocusAdvice({ level: item.level, lines: withExo, itemCostKamas: row.priceKamas + runePrice }, context.runes, context.runePrices, context.settings);
+      const paidThreshold = paid.status === 'ok' ? adviceThreshold(paid).threshold : undefined;
+      const beatsBase = row.thresholdCoefficient === undefined || (paidThreshold !== undefined && paidThreshold < row.thresholdCoefficient);
       if (beatsBase && (!best || threshold < (best.thresholdCoefficient ?? Infinity))) best = candidate;
     }
   }

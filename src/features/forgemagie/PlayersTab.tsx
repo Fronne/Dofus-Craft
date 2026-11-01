@@ -21,8 +21,8 @@ function PlayerSeance({ seance }: { seance: FmGroupSeance }) {
           <SeanceStatus state={seance.state} />
         </span>
         <span className="fm-session-date">
-          {seance.fmItem && `#${seance.name} · `}
-          {sessionCountLabel(seance.sessionCount)} · dernière activité le {formatFmDate(seance.lastActivityAt)}
+          {seance.fmItem && `#${seance.name}, `}
+          {sessionCountLabel(seance.sessionCount)}, dernière activité le {formatFmDate(seance.lastActivityAt)}
         </span>
       </span>
       <span className="fm-session-total"><Kamas value={seance.totalKamas} /></span>
@@ -41,8 +41,8 @@ function PlayerCard({ player, foldable }: { player: FmGroupPlayer; foldable: boo
         </span>
         <span className="fm-session-date">
           {count}
-          {player.lastActivityAt && ` · dernière activité le ${formatFmDate(player.lastActivityAt)}`}
-          {player.private && ' · profil privé : visible de toi seul'}
+          {player.lastActivityAt && `, dernière activité le ${formatFmDate(player.lastActivityAt)}`}
+          {player.private && ', profil privé : visible de toi seul'}
         </span>
       </span>
       <span className="fm-session-total"><Kamas value={player.totalKamas} /></span>

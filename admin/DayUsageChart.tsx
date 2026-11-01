@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   USAGE_LABELS,
   USAGE_METRICS,
@@ -5,11 +6,13 @@ import {
   thresholdCrossings,
   type CumulativeHour,
 } from '../src/domain/cloudflare-usage';
-import { USAGE_STYLE } from './usage-style';
+import { USAGE_SHORT, USAGE_STYLE } from './usage-style';
+import { PILL_HEIGHT, areaPath, placePills, smoothPath } from './chart-paths';
 
 const WIDTH = 600;
-const HEIGHT = 160;
-const PAD = { left: 36, right: 8, top: 8, bottom: 20 };
+const HEIGHT = 170;
+// The right margin holds the pill at the end of each curve.
+const PAD = { left: 40, right: 140, top: 10, bottom: 22 };
 const group = new Intl.NumberFormat('fr-FR');
 const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 
@@ -26,23 +29,51 @@ export function DayUsageChart({ hours, readAt }: { hours: CumulativeHour[]; read
   const x = (hour: number) => PAD.left + (hour / 23) * plotWidth;
   const y = (percent: number) => PAD.top + plotHeight - (percent / top) * plotHeight;
   const last = hours[hours.length - 1];
+  const baseline = y(0);
+  const pills = placePills(
+    USAGE_METRICS.map((metric) => ({
+      id: metric,
+      text: `${USAGE_SHORT[metric]} ${last.percent[metric]} %`,
+      endX: x(last.hour),
+      endY: y(last.percent[metric]),
+    })),
+    WIDTH,
+    PAD.top,
+    baseline,
+  );
 
   return (
     <figure className="chart-figure day-usage-chart">
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Consommation cumulée de la journée UTC en cours, en pourcentage de la limite quotidienne">
+        <defs>
+          {USAGE_METRICS.map((metric) => (
+            <linearGradient key={metric} id={`day-area-${metric}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={USAGE_STYLE[metric].stroke} stopOpacity="0.32" />
+              <stop offset="1" stopColor={USAGE_STYLE[metric].stroke} stopOpacity="0" />
+            </linearGradient>
+          ))}
+        </defs>
+        <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(50)} y2={y(50)} className="chart-grid" />
         <line x1={PAD.left} x2={WIDTH - PAD.right} y1={y(100)} y2={y(100)} className="usage-chart-limit" />
-        <text x={PAD.left - 4} y={y(100) + 3} textAnchor="end" className="usage-chart-axis">100 %</text>
-        <text x={PAD.left - 4} y={y(0) + 3} textAnchor="end" className="usage-chart-axis">0</text>
+        <text x={PAD.left - 6} y={y(100) + 3} textAnchor="end" className="usage-chart-axis">100 %</text>
+        <text x={PAD.left - 6} y={y(50) + 3} textAnchor="end" className="usage-chart-axis">50 %</text>
+        <text x={PAD.left - 6} y={y(0) + 3} textAnchor="end" className="usage-chart-axis">0</text>
         <text x={PAD.left} y={HEIGHT - 4} className="usage-chart-axis">0 h</text>
         <text x={WIDTH - PAD.right} y={HEIGHT - 4} textAnchor="end" className="usage-chart-axis">23 h UTC</text>
         {USAGE_METRICS.map((metric) => (
           <g key={metric}>
-            <polyline
+            <path
+              d={areaPath(hours.map((entry) => ({ x: x(entry.hour), y: y(entry.percent[metric]) })), baseline)}
+              fill={`url(#day-area-${metric})`}
+            />
+            <path
+              d={smoothPath(hours.map((entry) => ({ x: x(entry.hour), y: y(entry.percent[metric]) })))}
               fill="none"
-              strokeWidth="2"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               stroke={USAGE_STYLE[metric].stroke}
               strokeDasharray={USAGE_STYLE[metric].dash}
-              points={hours.map((entry) => `${x(entry.hour)},${y(entry.percent[metric])}`).join(' ')}
             />
             {hours.map((entry) => (
               <circle
@@ -57,6 +88,12 @@ export function DayUsageChart({ hours, readAt }: { hours: CumulativeHour[]; read
                 <title>{`${USAGE_LABELS[metric]} · ${entry.hour} h UTC${entry.partial ? ' (heure en cours, partielle)' : ''} : ${group.format(entry.used[metric])} (${entry.percent[metric]} %)`}</title>
               </circle>
             ))}
+          </g>
+        ))}
+        {pills.map((pill) => (
+          <g key={pill.id} className="curve-pill" style={{ '--pill': USAGE_STYLE[pill.id as keyof typeof USAGE_STYLE].stroke } as CSSProperties} aria-hidden="true">
+            <rect x={pill.x} y={pill.y} width={pill.width} height={PILL_HEIGHT} rx={PILL_HEIGHT / 2} />
+            <text x={pill.x + pill.width / 2} y={pill.y + PILL_HEIGHT / 2 + 4} textAnchor="middle">{pill.text}</text>
           </g>
         ))}
         {crossings.map((crossing) => {

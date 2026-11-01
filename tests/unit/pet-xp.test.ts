@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LotUnitPrices } from '../../src/domain/lot-price';
-import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelForTotalXp, planPetFood, quantityFor, validatePetLevels, xpNeeded, petXpProgress, rankPetFoods, petFoodPodium, petFoodTarget, formatObjectiveShare, type PetFood } from '../../src/domain/pet-xp';
+import { ALMANAX_PET_XP_MULTIPLIER, DEFAULT_PET_FOOD_MAX_QUANTITY, capPetFoodQuantity, isPetXpAlmanaxDay, levelAtProgress, levelForTotalXp, maxTotalXp, PET_MAX_LEVEL, PET_XP_CURVE, planPetFood, quantityFor, validatePetLevels, xpNeeded, petXpProgress, rankPetFoods, petFoodPodium, petFoodTarget, formatObjectiveShare, type PetFood } from '../../src/domain/pet-xp';
 
 const food = (itemId: string, name: string, xpPerUnit: number): PetFood =>
   ({ itemId, name, xpPerUnit, sourceName: name });
@@ -27,6 +27,30 @@ describe('levelForTotalXp', () => {
     // 256 (level 32) ≤ 261 < 286 (level 33)
     expect(levelForTotalXp(261)).toEqual({ level: 32, xpInLevel: 5 });
     expect(levelForTotalXp(179592)).toEqual({ level: 100, xpInLevel: 0 });
+  });
+});
+
+describe('levelAtProgress (specs/075)', () => {
+  it('gives the first level at 0 and the last level at 1', () => {
+    expect(levelAtProgress(0)).toBe(0);
+    expect(levelAtProgress(1)).toBe(PET_MAX_LEVEL);
+  });
+
+  it('brings positions outside the bar, or not numbers, back to its ends', () => {
+    expect(levelAtProgress(-0.4)).toBe(0);
+    expect(levelAtProgress(3)).toBe(PET_MAX_LEVEL);
+    expect(levelAtProgress(Number.NaN)).toBe(0);
+  });
+
+  it('gives back every level from the position of its exact start', () => {
+    for (let level = 0; level <= PET_MAX_LEVEL; level += 1) {
+      expect(levelAtProgress(PET_XP_CURVE[level] / maxTotalXp())).toBe(level);
+    }
+  });
+
+  it('stays on a level until the next one starts', () => {
+    expect(levelAtProgress((PET_XP_CURVE[85] + 1) / maxTotalXp())).toBe(85);
+    expect(levelAtProgress((PET_XP_CURVE[86] - 1) / maxTotalXp())).toBe(85);
   });
 });
 

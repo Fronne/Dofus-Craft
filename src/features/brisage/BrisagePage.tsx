@@ -19,7 +19,8 @@ import {
   type BrisageOption,
 } from '../../domain/brisage';
 import { resolveItemPrice } from '../../domain/brisage-price';
-import { DEFAULT_RANKING_VIEW, type RankingView } from '../../domain/brisage-ranking';
+import { bestExoFor, buildRankingRow, DEFAULT_RANKING_VIEW, exoCandidates, type RankingContext, type RankingView } from '../../domain/brisage-ranking';
+import type { IndexedItem } from '../../domain/brisage-search';
 import { useSiteSettings } from '../../app/useSiteSettings';
 import { applyRankingAccessFromSearch,withoutRankingParameter } from '../../persistence/brisage-ranking-access';
 import type { RuneItemsData } from '../../domain/forgemagie';
@@ -97,6 +98,29 @@ function mergeRanges(ranges: Range[]): Range[] {
     merged.set(range.effectId, known ? { effectId: range.effectId, from: known.from + range.from, to: known.to + range.to } : range);
   }
   return [...merged.values()];
+}
+
+/** The best exo to add, inside the verdict: its rune and what breaking the item with it brings. */
+function BestExo({ exo, onAdd }: { exo: NonNullable<ReturnType<typeof bestExoFor>>; onAdd: () => void }) {
+  return (
+    <div className="brisage-best-exo" aria-label="Meilleur exo à ajouter">
+      <span className="brisage-verdict-label">Meilleur exo à ajouter</span>
+      <div className="brisage-best-exo-head">
+        <div className="brisage-best-exo-rune">
+          {exo.runeImageUrl && <img src={exo.runeImageUrl} alt="" width="40" height="40" />}
+          <div>
+            <strong>{exo.runeName}</strong>
+            {exo.improvementKamas !== undefined ? (
+              <p className="verdict-subtitle"><Kamas value={Math.round(exo.improvementKamas)} signed /></p>
+            ) : exo.thresholdCoefficient !== undefined && (
+              <p className="verdict-subtitle">Rentable tant que le coefficient reste au-dessus de {number.format(exo.thresholdCoefficient)} %</p>
+            )}
+          </div>
+        </div>
+        <button type="button" className="btn btn-secondary" onClick={onAdd}>+ Ajouter</button>
+      </div>
+    </div>
+  );
 }
 
 export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
@@ -183,6 +207,30 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
     setExos(next);
     if (serverId && item) setBrisageExos(serverId, item.id, next.flatMap((exo) => (exo.effectId === undefined ? [] : [{ effectId: exo.effectId, value: exo.value }])));
   };
+
+  // An exo taken off is kept a few seconds, so « Annuler » puts it back where it was.
+  const [removedExo, setRemovedExo] = useState<{ entry: ExoEntry; index: number }>();
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const removeExo = (entry: ExoEntry) => {
+    const index = exoEntries.indexOf(entry);
+    changeExos(exoEntries.filter((other) => other !== entry));
+    clearTimeout(undoTimer.current);
+    if (entry.effectId === undefined) { setRemovedExo(undefined); return; }
+    setRemovedExo({ entry, index });
+    undoTimer.current = setTimeout(() => setRemovedExo(undefined), 6000);
+  };
+  const undoRemoveExo = () => {
+    if (!removedExo) return;
+    clearTimeout(undoTimer.current);
+    // The same rune was put again in the meantime: nothing to bring back.
+    if (exos.some((exo) => exo.effectId === removedExo.entry.effectId)) { setRemovedExo(undefined); return; }
+    const next = [...exoEntries];
+    next.splice(Math.min(removedExo.index, next.length), 0, removedExo.entry);
+    changeExos(next);
+    setRemovedExo(undefined);
+  };
+  useEffect(() => { clearTimeout(undoTimer.current); setRemovedExo(undefined); }, [item?.id]);
+  useEffect(() => () => clearTimeout(undoTimer.current), []);
 
   // specs/069 (FR-006): the notes made before they were shared are sent once, with their original date; the flag is
   // set only once the server has them, so a failed send is tried again at the next visit.
@@ -316,26 +364,51 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       const found = exo.effectId === undefined ? undefined : runeForStat(RUNES, exo.effectId, SETTINGS.runeSize);
       if (found) ids.add(found.rune.id);
     }
+    // The prices of the runes that could be put on the item as an exo, to find the best one.
+    for (const { found } of exoCandidates(new Set([...ranges, ...negativeRanges].map((range) => range.effectId)), RUNES, SETTINGS)) ids.add(found.rune.id);
     return [...ids].sort();
   }, [ranges, negativeRanges, storedExos]);
   const fetched = useRunePrices(serverId, priceMode, runeIds);
   // specs/067: a price typed in the table is used at once, before the carnet is read again; one entry per server and mode.
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  const [dateOverrides, setDateOverrides] = useState<Record<string, string>>({});
   const overrideKey = (runeId: string) => `${serverId}:${priceMode}:${runeId}`;
   const prices: Record<string, number | undefined> = { ...fetched.prices };
   for (const runeId of runeIds) {
     const typedPrice = priceOverrides[overrideKey(runeId)];
     if (typedPrice !== undefined) prices[runeId] = typedPrice;
   }
+  // The exo that pays the most when put on the item as it is (average rolls, no exo of the table); nothing when none pays more.
+  const bestExo = (() => {
+    if (!item || !(item.level !== undefined && item.level > 0) || ranges.length === 0 || !(cost > 0) || priceLoading) return undefined;
+    const indexed: IndexedItem = { id: item.id, name: item.name, level: item.level, effects: ranges };
+    const context: RankingContext = {
+      runes: RUNES, settings: SETTINGS, runePrices: prices, runePriceDates: {},
+      itemPrices: new Map([[item.id, { kamas: cost }]]),
+      coefficients: coefficient > 0 ? new Map([[item.id, { coefficient, savedAt: '' }]]) : new Map(),
+    };
+    return bestExoFor(indexed, buildRankingRow(indexed, context), context, negativeRanges.map((range) => range.effectId));
+  })();
+  // Once the exo is in the table it is no longer offered.
+  const offeredExo = bestExo && !exos.some((exo) => exo.effectId === bestExo.effectId) ? bestExo : undefined;
+  const addBestExo = () => {
+    if (!offeredExo) return;
+    newExoCount.current += 1;
+    changeExos([{ id: `new-${newExoCount.current}`, effectId: offeredExo.effectId, value: 1 }, ...exoEntries]);
+  };
   /** The price of a rune: typed in the table when a server is chosen, else only shown. */
   const runePriceCell = (runeId: string, runeName: string) => (serverId
     ? (
       <RunePriceInput
         key={runeId} runeId={runeId} runeName={runeName} serverId={serverId} priceMode={priceMode} price={prices[runeId]}
-        onSaved={(id, amount) => setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }))}
+        updatedAt={dateOverrides[overrideKey(runeId)] ?? fetched.dates[runeId]}
+        onSaved={(id, amount) => {
+          setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }));
+          setDateOverrides((known) => ({ ...known, [overrideKey(id)]: new Date().toISOString() }));
+        }}
       />
     )
-    : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">prix manquant</span>);
+    : typeof prices[runeId] === 'number' ? <Kamas value={prices[runeId]!} /> : <span className="fm-note">—</span>);
 
   const ready = item && (ranges.length > 0 || flippedLines.length > 0) && !priceLoading;
   const lineInputs = [
@@ -383,13 +456,14 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
   const totalTone = (amount: number | undefined) => (
     amount === undefined || Math.round(amount) === 0 ? undefined : amount > 0 ? 'brisage-total-gain' : 'brisage-total-loss'
   );
-  const highlightedEffectId = noCoefficient ? (adviceOk?.focusBeatsNormal ? bestFocus?.focusEffectId : undefined) : best?.kind === 'focus' ? best.focusEffectId : undefined; // the best focus is shown even when the item is a loss
+  // The line with the best focus is always marked, even when breaking without focus pays more or the item is a loss.
+  const highlightedEffectId = bestFocus?.focusEffectId;
   const nextGains = ok && normal?.gainKamas !== undefined && coefficient > 0
     ? nextCoefficients(coefficient, 3).map((next) => ({ coefficient: next, gain: (normal.valueKamas * next) / coefficient - cost }))
     : [];
 
   let verdict = { title: 'Prix manquants', hint: undefined as string | undefined, tone: 'neutral' as 'good' | 'bad' | 'neutral' };
-  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: 'Même le meilleur choix ne couvre pas le prix de l\'objet.', tone: 'bad' };
+  if (best && best.gainKamas! < 0) verdict = { title: 'Pas rentable', hint: undefined, tone: 'bad' };
   else if (best?.kind === 'normal') verdict = { title: 'Rentable sans focus', hint: 'Le focus ne rapporte pas plus : brisez normalement.', tone: 'good' };
   else if (best) verdict = { title: `Rentable avec un focus ${shortRune(best)}`, hint: undefined, tone: 'good' };
 
@@ -504,7 +578,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <span className="brisage-verdict-label">Conseil</span>
                           <p className="verdict-title">{adviceTitle}</p>
                           <p className="verdict-subtitle">{adviceHint}</p>
-                          <p className="verdict-subtitle">Coefficient inconnu : indiquez-le (relevé en jeu) pour un verdict précis.</p>
+                          <p className="verdict-subtitle">Coefficient inconnu : indiquez-le pour un verdict précis.</p>
                         </div>
                       </div>
                       {adviceBreakEven !== undefined && (
@@ -512,6 +586,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                           <div><dt>Rentable tant que le coefficient reste au-dessus de</dt><dd>{number.format(adviceBreakEven)} %</dd></div>
                         </dl>
                       )}
+                      {offeredExo && <BestExo exo={offeredExo} onAdd={addBestExo} />}
                     </div>
                   </div>
                 </section>
@@ -524,18 +599,18 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                     <div className="verdict-head">
                       <span className="verdict-icon" aria-hidden="true"><Icon name={verdict.tone === 'good' ? 'check' : 'info'} size={22} /></span>
                       <div className="verdict-text">
-                        <span className="brisage-verdict-label">Verdict</span>
+                        <span className="visually-hidden">Verdict</span>
                         <p className="verdict-title">{verdict.title}</p>
-                        {best && (
-                          <p className="verdict-subtitle">
-                            <Kamas value={Math.round(best.gainKamas!)} signed /> par objet
-                            {focusWins && normal?.gainKamas !== undefined && (
-                              <>{', contre '}<Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</>
-                            )}
-                          </p>
+                        {focusWins && normal?.gainKamas !== undefined && (
+                          <p className="verdict-subtitle">Contre <Kamas value={Math.round(normal.gainKamas)} signed /> sans focus</p>
                         )}
                         {verdict.hint && <p className="verdict-subtitle">{verdict.hint}</p>}
                       </div>
+                      {best && (
+                        <div className="brisage-verdict-gain">
+                          <Kamas value={Math.round(best.gainKamas!)} signed />
+                        </div>
+                      )}
                     </div>
                     {(ok.thresholdCoefficient !== undefined || ok.focusThresholdCoefficient !== undefined) && (
                       <dl className="brisage-facts">
@@ -550,9 +625,17 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         )}
                       </dl>
                     )}
+                    {offeredExo && <BestExo exo={offeredExo} onAdd={addBestExo} />}
                   </div>
                 </div>
               </section>
+              )}
+
+              {removedExo && (
+                <div className="brisage-undo-toast" role="status">
+                  <span>Exo retiré</span>
+                  <button type="button" onClick={undoRemoveExo}>Annuler</button>
+                </div>
               )}
 
               <section className="brisage-part brisage-block" aria-labelledby="brisage-lines-title">
@@ -582,6 +665,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                         <th scope="col" rowSpan={2}>Prix unitaire</th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--plain"><span className="brisage-group-title">Sans focus</span></th>
                         <th scope="colgroup" colSpan={2} className="brisage-group brisage-group--focus"><span className="brisage-group-title">Avec focus</span></th>
+                        <th scope="col" rowSpan={2} className="brisage-actions"><span className="visually-hidden">Actions</span></th>
                       </tr>
                       <tr role="row">
                         <th scope="col">Runes</th><th scope="col">Valeur des runes</th><th scope="col">Runes</th><th scope="col">Valeur des runes</th>
@@ -606,7 +690,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                               changeExos(exoEntries.map((other) => (other === entry ? { id: entry.id, effectId, value: Math.min(Math.max(entry.value, 1), max) } : other)));
                             }}
                             onValue={(value) => changeExos(exoEntries.map((other) => (other === entry ? { ...entry, value } : other)))}
-                            onRemove={() => changeExos(exoEntries.filter((other) => other !== entry))}
+                            onRemove={() => removeExo(entry)}
                           />
                         );
                       })}
@@ -650,6 +734,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes">{focusYield ? number.format(wholeRunes(focusYield.count)) : '—'}</td>
                             <td role="cell" data-label="Focus : valeur des runes">{focusValue !== undefined ? <Kamas value={Math.round(focusValue)} /> : <span className="fm-note">—</span>}</td>
+                            <td role="cell" className="brisage-actions" />
                           </tr>
                         );
                       })}
@@ -690,6 +775,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
                             <td role="cell" data-label="Sans focus : valeur des runes">{plain?.valueKamas !== undefined ? <Kamas value={Math.round(plain.valueKamas)} /> : <span className="fm-note">—</span>}</td>
                             <td role="cell" data-label="Focus : runes" title="Pas de focus possible sur un malus">—</td>
                             <td role="cell" data-label="Focus : valeur des runes" title="Pas de focus possible sur un malus">—</td>
+                            <td role="cell" className="brisage-actions" />
                           </tr>
                         );
                       })}

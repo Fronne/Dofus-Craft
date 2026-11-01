@@ -305,3 +305,20 @@ a.dashboard-figure:focus-visible { outline: 2px solid var(--accent-bright); outl
 .cleanup-confirm p { margin: 0; font-weight: 650; }
 .cleanup-log { display: grid; gap: var(--space-3); }
 .cleanup-log h3 { margin: 0; font-size: 1rem; }
+
+/* ---- Charts: rounded columns and bars, soft grid, curves with an area, pills at the end of each curve ---- */
+.chart-grid { stroke: var(--text-muted); stroke-opacity: .18; }
+.bar-list-rows { gap: .6rem; }
+.bar-list-track { height: .75rem; background: color-mix(in srgb, var(--text-muted) 18%, transparent); }
+.bar-list-fill { border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 58%, black), var(--accent-bright)); }
+.bar-list-value { font-size: .95rem; }
+.daily-hit { fill: transparent; }
+.daily-column { outline: none; }
+.daily-column .daily-bar { transition: filter .15s ease; }
+.daily-column:hover .daily-bar, .daily-column:focus-visible .daily-bar { filter: brightness(1.2); }
+.daily-column:focus-visible .daily-hit { stroke: var(--accent-bright); stroke-width: 1.5; rx: 6; }
+.daily-value { fill: var(--text); font-size: 10px; font-weight: 700; opacity: 0; transition: opacity .15s ease; pointer-events: none; font-variant-numeric: tabular-nums; }
+.daily-value--best, .daily-column:hover .daily-value, .daily-column:focus-visible .daily-value { opacity: 1; }
+.curve-pill rect { fill: color-mix(in srgb, var(--pill) 20%, var(--inner-bg)); stroke: var(--pill); stroke-width: 1.5; }
+.curve-pill text { fill: var(--text); font-size: 11px; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .daily-column .daily-bar, .daily-value { transition: none; } }

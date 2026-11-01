@@ -63,7 +63,15 @@ function Age({ date, what }: { date: string | undefined; what: string }) {
   );
 }
 
-const COLUMNS: { column: RankingColumn | undefined; label: string; note?: string }[] = [
+const RUNE_IMAGES = new Map(RUNES.map((rune) => [rune.name, rune.imageUrl]));
+
+/** The icon of the rune of an exo, in front of its stat. */
+function RuneIcon({ name }: { name: string }) {
+  const url = RUNE_IMAGES.get(name);
+  return url ? <img className="ranking-rune-icon" src={url} alt="" loading="lazy" width="20" height="20" /> : null;
+}
+
+const COLUMNS: { column: RankingColumn | undefined; label: string }[] = [
   { column: 'name', label: 'Objet' },
   { column: 'level', label: 'Niveau' },
   { column: 'price', label: 'Prix' },
@@ -71,8 +79,7 @@ const COLUMNS: { column: RankingColumn | undefined; label: string; note?: string
   { column: 'gain', label: 'Gain' },
   { column: undefined, label: 'Coefficient' },
   { column: 'threshold', label: 'Seuil de coefficient' },
-  { column: 'exoGain', label: 'Gain avec exo', note: 'une rune déduite' },
-  { column: undefined, label: 'Prix des runes' },
+  { column: 'exoGain', label: 'Gain avec exo' },
 ];
 
 function bestChoice(row: RankingRow) {
@@ -97,13 +104,8 @@ function thresholdCell(row: RankingRow) {
 function exoCell(row: RankingRow, exo: RankingExo | undefined, pending: boolean) {
   if (row.status !== 'ok') return <span className="fm-note">—</span>;
   if (!exo) return <span className="fm-note">{pending ? 'calcul…' : '—'}</span>;
-  if (row.group === 'unknown') return <><strong>{exo.statLabel}</strong> : {percent.format(exo.thresholdCoefficient!)} %</>;
-  return (
-    <>
-      <strong>{exo.statLabel}</strong> : <Kamas value={Math.round(exo.gainKamas!)} signed />
-      {' '}<span className="fm-note">(+<Kamas value={Math.round(exo.improvementKamas!)} />)</span>
-    </>
-  );
+  if (row.group === 'unknown') return <><RuneIcon name={exo.runeName} /><strong>{exo.runeName}</strong> : {percent.format(exo.thresholdCoefficient!)} %</>;
+  return <><RuneIcon name={exo.runeName} /><strong>{exo.runeName}</strong> : +<Kamas value={Math.round(exo.improvementKamas!)} /></>;
 }
 
 export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
@@ -192,7 +194,6 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
     ? { sortDirection: view.sortDirection === 'desc' ? 'asc' : 'desc' }
     : { sortColumn: column, sortDirection: column === 'name' || column === 'threshold' ? 'asc' : 'desc' });
   const rangeError = levelRangeError({ minLevel: view.minLevel, maxLevel: view.maxLevel });
-  const sourceLabel = priceMode === 'community' ? 'communautaire' : 'personnel';
 
   // Coming back from an item page, the list is where it was left (same number of rows, same scroll) instead of at the top.
   const hasRows = shown.length > 0;
@@ -223,7 +224,7 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
         <td data-label="Niveau">{row.level}</td>
         <td data-label="Prix">
           {row.priceKamas !== undefined
-            ? <><Kamas value={row.priceKamas} /><span className="fm-note"> ({sourceLabel}) </span><Age date={row.priceUpdatedAt} what="Prix de l'objet" /></>
+            ? <><Kamas value={row.priceKamas} />{' '}<Age date={row.priceUpdatedAt} what="Prix de l'objet" /></>
             : <span className="fm-note">—</span>}
         </td>
         <td data-label="Meilleur choix">{bestChoice(row)}</td>
@@ -235,7 +236,6 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
         </td>
         <td data-label="Seuil de coefficient">{thresholdCell(row)}</td>
         <td data-label="Gain avec exo">{exoCell(row, exo, exosPending)}</td>
-        <td data-label="Prix des runes">{row.status === 'ok' ? <Age date={row.oldestRunePriceAt} what="Prix de rune le plus ancien" /> : <span className="fm-note">—</span>}</td>
       </tr>
     );
   };
@@ -305,14 +305,13 @@ export function RankingTab({ serverId, priceMode, view, onView, onOpen }: {
             <caption className="visually-hidden">Objets à briser, classés par rentabilité estimée</caption>
             <thead>
               <tr role="row">
-                {COLUMNS.map(({ column, label, note }) => (
+                {COLUMNS.map(({ column, label }) => (
                   <th key={label} scope="col" aria-sort={column ? sortState(column) : undefined}>
                     {column ? (
                       <button type="button" className="ranking-sort" onClick={() => sortBy(column)}>
                         {label}{view.sortColumn === column ? (view.sortDirection === 'asc' ? ' ▲' : ' ▼') : ''}
                       </button>
                     ) : label}
-                    {note && <span className="fm-note ranking-column-note"> ({note} ; échecs et runes en plus non comptés)</span>}
                   </th>
                 ))}
               </tr>

@@ -108,10 +108,82 @@ describe('Familier page (specs/022)', () => {
     it('shows the progress towards level 100 with the current level', async () => {
       await openFamilier('personal');
       type('XP totale du familier', '1703');
-      const bar = screen.getByRole('progressbar', { name: 'Progression du familier' });
+      const bar = screen.getByRole('slider', { name: 'Progression du familier' });
       expect(normalize(bar.getAttribute('aria-valuetext'))).toBe('0,9 %, niveau 50');
       type('XP totale du familier', '179592');
-      expect(normalize(screen.getByRole('progressbar').getAttribute('aria-valuetext'))).toBe('100,0 %, niveau 100');
+      expect(normalize(screen.getByRole('slider').getAttribute('aria-valuetext'))).toBe('100,0 %, niveau 100');
+    });
+
+    // specs/075: the bar is a slider that sets the current level.
+    describe('progress slider (specs/075)', () => {
+      const slider = () => screen.getByRole('slider', { name: 'Progression du familier' });
+
+      it('moves the level one by one with the arrows and puts the total XP on the start of the level', async () => {
+        await openFamilier('personal');
+        type('XP totale du familier', '1703');
+        const start = Number(field('XP totale du familier').value);
+        fireEvent.keyDown(slider(), { key: 'ArrowRight' });
+        expect(field('Niveau actuel').value).toBe('51');
+        expect(slider()).toHaveAttribute('aria-valuenow', '51');
+        expect(Number(field('XP totale du familier').value)).toBeGreaterThan(start);
+        fireEvent.keyDown(slider(), { key: 'ArrowLeft' });
+        fireEvent.keyDown(slider(), { key: 'ArrowDown' });
+        expect(field('Niveau actuel').value).toBe('49');
+      });
+
+      it('replaces the extra XP typed with the exact start of the level chosen', async () => {
+        await openFamilier('personal');
+        type('Niveau actuel', '50');
+        const exactStart = field('XP totale du familier').value;
+        type('XP totale du familier', String(Number(exactStart) + 7));
+        expect(field('Niveau actuel').value).toBe('50');
+        fireEvent.keyDown(slider(), { key: 'ArrowRight' });
+        fireEvent.keyDown(slider(), { key: 'ArrowLeft' });
+        expect(field('XP totale du familier').value).toBe(exactStart);
+      });
+
+      it('goes to the first and last levels with Home and End, and stops at them', async () => {
+        await openFamilier('personal');
+        type('Niveau actuel', '50');
+        fireEvent.keyDown(slider(), { key: 'End' });
+        expect(field('Niveau actuel').value).toBe('100');
+        fireEvent.keyDown(slider(), { key: 'ArrowRight' });
+        expect(field('Niveau actuel').value).toBe('100');
+        fireEvent.keyDown(slider(), { key: 'Home' });
+        expect(field('Niveau actuel').value).toBe('0');
+        fireEvent.keyDown(slider(), { key: 'ArrowLeft' });
+        expect(field('Niveau actuel').value).toBe('0');
+      });
+
+      it('leaves the target level as it is, and says nothing is left to give above it', async () => {
+        await openFamilier('personal');
+        type('Niveau visé', '60');
+        fireEvent.keyDown(slider(), { key: 'End' });
+        expect(field('Niveau visé').value).toBe('60');
+        expect(screen.getByText(/Aucune XP à donner/)).toBeInTheDocument();
+      });
+
+      it('follows the level typed in the field', async () => {
+        await openFamilier('personal');
+        type('Niveau actuel', '70');
+        expect(slider()).toHaveAttribute('aria-valuenow', '70');
+      });
+
+      it('picks the level under the pointer and shows its bubble only while dragging', async () => {
+        await openFamilier('personal');
+        type('Niveau actuel', '0');
+        const bar = slider();
+        bar.getBoundingClientRect = () => ({ left: 0, width: 1000, top: 0, height: 14, right: 1000, bottom: 14, x: 0, y: 0, toJSON: () => ({}) });
+        // jsdom has no PointerEvent: a mouse event of the pointer type carries the position.
+        const pointer = (type: string, clientX: number) => act(() => { bar.dispatchEvent(new MouseEvent(type, { clientX, bubbles: true })); });
+        pointer('pointerdown', 1000);
+        expect(field('Niveau actuel').value).toBe('100');
+        expect(screen.getByText('Niveau 100')).toBeInTheDocument();
+        pointer('pointermove', 0);
+        expect(field('Niveau actuel').value).toBe('0');
+        pointer('pointerup', 0);
+        expect(screen.queryByText(/^Niveau \d+$/)).not.toBeInTheDocument();
+      });
     });
 
     it('brings a value typed above the maximum back to it', async () => {
@@ -154,11 +226,11 @@ describe('Familier page (specs/022)', () => {
       type('Niveau visé', '60');
       await waitFor(() => expect(podiumNames()).toEqual(['Peau de Rat', 'Rune Pa Vi', 'Pépite']));
       const peau = normalize(cardOf('Peau de Rat')?.textContent);
-      expect(peau).toContain('1re · la moins chère');
+      expect(peau).toContain('1re, la moins chère');
       expect(peau).toContain('1 081');
       expect(peau).toContain('10 810');
-      expect(normalize(cardOf('Rune Pa Vi')?.querySelector('.pet-podium-rank')?.textContent)).toBe('2e · +1 897');
-      expect(normalize(cardOf('Pépite')?.querySelector('.pet-podium-rank')?.textContent)).toBe('3e · +46 370');
+      expect(normalize(cardOf('Rune Pa Vi')?.querySelector('.pet-podium-rank')?.textContent)).toBe('2e, +1 897');
+      expect(normalize(cardOf('Pépite')?.querySelector('.pet-podium-rank')?.textContent)).toBe('3e, +46 370');
       expect(normalize(cardOf('Pépite')?.textContent)).toContain('57 180');
       expect(cardOf('Peau de Rat')?.querySelector('.market-date')).toHaveTextContent(/maintenant|il y a/i);
       expect(screen.queryByText(/sans prix connu|Dafous|indisponibles/)).not.toBeInTheDocument();
@@ -361,7 +433,7 @@ describe('Familier page (specs/022)', () => {
     it('shows the rank, cost, gap with the 1st and share of the objective of a priced food', async () => {
       await openWithThreeFoods();
       const card = normalize(aim('pepi', 'Pépite').textContent);
-      expect(card).toContain('1 XP par unité · 3e la moins chère');
+      expect(card).toContain('1 XP par unité, 3e la moins chère');
       expect(card).toContain('2 859'); // quantity
       expect(card).toContain('57 180');
       expect(card).toContain('+429 %'); // (57 180 − 10 810) ÷ 10 810 = 428,95 %
@@ -392,7 +464,7 @@ describe('Familier page (specs/022)', () => {
       await openWithThreeFoods();
       type('Quantité max', '1000');
       const card = normalize(aim('peau de r', 'Peau de Rat').textContent);
-      expect(card).toContain('Non classée (plus de 1 000 unités)');
+      expect(card).toContain('non classée (plus de 1 000 unités)');
       expect(card).not.toContain('Écart avec la 1re');
     });
   });

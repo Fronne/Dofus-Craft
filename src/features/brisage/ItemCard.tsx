@@ -16,14 +16,16 @@ export function ItemCard({ item, selected, stored, onPick }: {
 }) {
   return (
     <button type="button" className={selected ? 'selected' : undefined} aria-pressed={selected} onClick={onPick}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" loading="lazy" width="36" height="36" />
-      ) : (
-        <span className="result-image-fallback" aria-hidden="true">{item.name.slice(0, 1)}</span>
-      )}
+      <span className="brisage-card-image">
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt="" loading="lazy" width="36" height="36" />
+        ) : (
+          <span className="result-image-fallback" aria-hidden="true">{item.name.slice(0, 1)}</span>
+        )}
+      </span>
       <span className="result-item-info">
         <span className="result-item-name" title={item.name}>{item.name}</span>
-        <span className="result-item-level">Niveau {item.level}</span>
+        <span className="brisage-card-level">Niveau {item.level}</span>
         {stored
           ? <span className="brisage-card-coef">Coef. {number.format(stored.coefficient)} %</span>
           : <span className="brisage-card-coef is-missing">Coef. à saisir</span>}

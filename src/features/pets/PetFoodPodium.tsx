@@ -23,12 +23,11 @@ export function PriceAge({ date }: { date?: string }) {
   return <small className={`market-date${ageClass}`}>{date ? `Prix relevé ${formatRelativeTime(date)}` : 'Date du prix inconnue'}</small>;
 }
 
-export function PetFoodPodium({ entries, caption }: { entries: PetFoodPodiumEntry[]; caption: string }) {
+export function PetFoodPodium({ entries }: { entries: PetFoodPodiumEntry[] }) {
   return (
     <section className="pet-podium" aria-labelledby="pet-podium-title">
       <div className="pet-block-head">
         <h2 id="pet-podium-title">Les moins chères pour cet objectif</h2>
-        <span>{caption}</span>
       </div>
       <ol className="pet-podium-list">
         {entries.map((entry) => (
@@ -38,7 +37,7 @@ export function PetFoodPodium({ entries, caption }: { entries: PetFoodPodiumEntr
                 <FoodImage food={entry.food} />
                 <div>
                   <span className="pet-podium-rank">
-                    {entry.rank === 1 ? '1re · la moins chère' : <>{ordinal(entry.rank)} · <Kamas value={entry.gapKamas} signed /></>}
+                    {entry.rank === 1 ? '1re, la moins chère' : <>{ordinal(entry.rank)}, <Kamas value={entry.gapKamas} signed /></>}
                   </span>
                   <h3>{entry.food.name}</h3>
                 </div>
