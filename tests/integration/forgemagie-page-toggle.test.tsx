@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SITE_SETTINGS as ALL_PAGES } from '../../src/domain/site-settings';
@@ -26,7 +26,12 @@ function open(path: string) {
   );
 }
 
-const forgemagieLink = () => screen.queryByRole('link', { name: 'Forgemagie' });
+// Forgemagie is in the « Outils » menu, opened first.
+const forgemagieLink = () => {
+  const tools = screen.queryByRole('button', { name: 'Outils' });
+  if (tools?.getAttribute('aria-expanded') === 'false') fireEvent.click(tools);
+  return screen.queryByRole('link', { name: 'Forgemagie' });
+};
 
 // specs/050-forgemagie-page-toggle: the Forgemagie page follows the owner's setting.
 describe('page Forgemagie activée ou désactivée (specs/050)', () => {

@@ -53,6 +53,7 @@ async function openFamilier(mode: 'community' | 'personal') {
   window.localStorage.setItem('craftcheck-search-tour-seen', '1');
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Outils' }));
   fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
   await screen.findByRole('heading', { name: 'XP Familier' });
 }
@@ -209,7 +210,8 @@ describe('Familier page (specs/022)', () => {
       type('Niveau visé', '60');
       cleanup();
       render(<App />);
-      fireEvent.click(await screen.findByRole('link', { name: 'XP Familier' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Outils' }));
+      fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
       expect(field('XP totale du familier').value).toBe('1703');
       expect(field('Niveau visé').value).toBe('60');
     });
@@ -508,7 +510,8 @@ describe('Familier page (specs/022)', () => {
       cleanup();
       document.body.innerHTML = '';
       render(<App />);
-      fireEvent.click(await screen.findByRole('link', { name: 'XP Familier' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Outils' }));
+      fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
       await waitFor(() => expect(podiumNames()).toHaveLength(3));
       expect(field('Quantité max').value).toBe('');
     });

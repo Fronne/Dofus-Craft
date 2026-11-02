@@ -27,9 +27,11 @@ function open(path: string) {
   return screen.getByRole('navigation', { name: 'Navigation principale' });
 }
 
-// What the navigation holds, in reading order (links and buttons).
+// What the navigation holds, in reading order (links and buttons), the entries kept out of sight left aside.
 function entries(nav: HTMLElement) {
-  return [...nav.querySelectorAll('a, button')].map((entry) => entry.getAttribute('aria-label') ?? entry.textContent);
+  return [...nav.querySelectorAll('a, button')]
+    .filter((entry) => !entry.closest('[aria-hidden="true"]'))
+    .map((entry) => entry.getAttribute('aria-label') ?? entry.textContent);
 }
 
 // specs/051-site-visual-refresh (US2): the same entries as before, in the order of the top bar.
@@ -44,11 +46,11 @@ describe('navigation principale (specs/051)', () => {
   it('lists the pages, then the active server, Paramètres and the theme toggle', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
-    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    await within(nav).findByRole('button', { name: 'Outils' });
     expect(nav).toHaveTextContent(/^DofusCraft/);
     expect(entries(nav)).toEqual([
       'DofusCraft, aller à la recherche',
-      'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'XP Familier', 'Forgemagie', 'Brisage',
+      'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'Outils',
       'Serveur actif Mikhal',
       'Communauté, prix partagés avec le groupe', 'Perso, prix gardés sur cet appareil',
       'Paramètres', 'Activer le thème clair',
@@ -58,7 +60,7 @@ describe('navigation principale (specs/051)', () => {
   it('switches the price mode in one click from the bar', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
-    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    await within(nav).findByRole('button', { name: 'Outils' });
     const community = within(nav).getByRole('button', { name: /Communauté/ });
     const personal = within(nav).getByRole('button', { name: /Perso/ });
     expect(community).toHaveAttribute('aria-pressed', 'true');
@@ -73,7 +75,7 @@ describe('navigation principale (specs/051)', () => {
   it('shows no mode toast on load, and no mode badge on Paramètres', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
-    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    await within(nav).findByRole('button', { name: 'Outils' });
     expect(screen.queryByText(/Mode (personnel|communautaire) activé/)).not.toBeInTheDocument();
     expect(screen.getByText('Prix communautaires')).toBeInTheDocument();
     cleanup();
@@ -92,14 +94,26 @@ describe('navigation principale (specs/051)', () => {
   it('leaves Forgemagie out while the page is disabled', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: false, hdvPage: true });
     const nav = open('/');
-    await waitFor(() => expect(getSiteSettings).toHaveBeenCalled());
-    expect(entries(nav)).not.toContain('Forgemagie');
+    fireEvent.click(await within(nav).findByRole('button', { name: 'Outils' }));
+    expect(within(nav).getByRole('link', { name: 'Brisage' })).toBeInTheDocument();
+    expect(within(nav).queryByRole('link', { name: 'Forgemagie' })).not.toBeInTheDocument();
+  });
+
+  it('keeps XP Familier, Forgemagie and Brisage in the Outils menu, not on the bar', async () => {
+    getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
+    const nav = open('/');
+    const tools = await within(nav).findByRole('button', { name: 'Outils' });
+    expect(within(nav).queryByRole('link', { name: 'Brisage' })).not.toBeInTheDocument();
+    fireEvent.click(tools);
+    for (const name of ['XP Familier', 'Forgemagie', 'Brisage']) expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(within(nav).queryByRole('link', { name: 'Brisage' })).not.toBeInTheDocument();
   });
 
   it('leaves HDV out while the page is disabled (specs/053)', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: false });
     const nav = open('/');
-    await within(nav).findByRole('link', { name: 'Forgemagie' });
+    await within(nav).findByRole('button', { name: 'Outils' });
     expect(entries(nav)).not.toContain('HDV');
   });
 

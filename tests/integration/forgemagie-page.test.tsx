@@ -122,7 +122,7 @@ async function openForgemagie(path = '/forgemagie') {
   window.history.replaceState(null, '', path);
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
-  if (!window.location.pathname.startsWith('/forgemagie')) fireEvent.click(screen.getByRole('link', { name: 'Forgemagie' }));
+  if (!window.location.pathname.startsWith('/forgemagie')) { fireEvent.click(screen.getByRole('button', { name: 'Outils' })); fireEvent.click(screen.getByRole('link', { name: 'Forgemagie' })); }
   await screen.findByRole('heading', { name: 'Forgemagie' });
 }
 
@@ -237,7 +237,7 @@ describe('Forgemagie page — login (US1)', () => {
     window.history.replaceState(null, '', '/');
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
-    await screen.findByRole('link', { name: 'Forgemagie' });
+    await screen.findByRole('button', { name: 'Outils' });
     Object.values(fm).forEach((mock) => expect(mock).not.toHaveBeenCalled());
   });
 

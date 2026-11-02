@@ -6,7 +6,9 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ROUTES } from './router';
 import { NoPageAvailable, PageUnavailable, type PageEntry } from './PageUnavailable';
 import { firstEnabledPage, type SiteSettingField } from '../domain/site-settings';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
+import { NavMenu } from './NavMenu';
+import { groupKey, layoutNav, type NavGroup } from './nav-layout';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
 import { PriceModeSwitch } from '../features/settings/PriceModeSwitch';
 import { PriceModeBadge } from '../features/settings/PriceModeBadge';
@@ -40,16 +42,27 @@ const BonsPlansPage = lazyPage(() => import('../features/good-deals/BonsPlansPag
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
-// `priority`: the higher it is, the longer the link stays on the bar when it is too narrow (the rest goes to « Plus »).
-const NAV_ITEMS = [
-  { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true, page: 'searchPage' as const, priority: 10 },
-  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false, page: 'pinnedPage' as const, priority: 8 },
-  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false, page: 'pricesPage' as const, priority: 9 },
-  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false, page: 'hdvPage' as const, priority: 7 },
-  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false, page: 'petsPage' as const, priority: 4 },
-  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false, page: 'forgemagiePage' as const, priority: 3 },
-  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false, page: 'brisagePage' as const, priority: 5 },
-  { to: ROUTES.bonsPlans, label: 'Bons plans', icon: 'coins' as const, end: false, page: 'bonsPlansPage' as const, priority: 6 },
+// `group`: the pages of « Marché » (HDV, Bons plans) are links while the bar has room and one menu when it has not;
+// the pages of « Outils » are always in one menu. `priority`: the higher it is, the longer a free link stays on the
+// bar when it is too narrow (the rest goes to « Plus »). See nav-layout.ts.
+interface NavItem {
+  to: string;
+  label: string;
+  icon: IconName;
+  end: boolean;
+  page: SiteSettingField;
+  priority: number;
+  group?: NavGroup;
+}
+const NAV_ITEMS: NavItem[] = [
+  { to: ROUTES.search, label: 'Recherche', icon: 'search', end: true, page: 'searchPage', priority: 10 },
+  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark', end: false, page: 'pinnedPage', priority: 8 },
+  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up', end: false, page: 'pricesPage', priority: 9 },
+  { to: ROUTES.hdv, label: 'HDV', icon: 'store', end: false, page: 'hdvPage', priority: 7, group: 'market' },
+  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw', end: false, page: 'petsPage', priority: 4, group: 'tools' },
+  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil', end: false, page: 'forgemagiePage', priority: 3, group: 'tools' },
+  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer', end: false, page: 'brisagePage', priority: 5, group: 'tools' },
+  { to: ROUTES.bonsPlans, label: 'Bons plans', icon: 'coins', end: false, page: 'bonsPlansPage', priority: 6, group: 'market' },
 ];
 
 const SITE_NAME = 'Dofus Craft';
@@ -164,70 +177,52 @@ export function AppShell() {
   const navListRef = useRef<HTMLUListElement>(null);
   const navMainRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
-  // The links that don't fit on the bar's single line go into the « Plus » menu, so a new page never
-  // pushes the server, mode, settings and theme controls onto a second line. Every link is always
-  // rendered (the hidden ones are only invisible) so their natural widths can be measured.
-  // Indexes (in navItems) of the links moved into « Plus », comma-joined so an unchanged answer is no new state.
-  const [hiddenKey, setHiddenKey] = useState('');
-  const [moreOpen, setMoreOpen] = useState(false);
+  // The top bar stays on one line, so a new page never pushes the server, mode, settings and theme controls onto a
+  // second one: what does not fit goes into a menu (nav-layout.ts says which). Every entry is always rendered, the
+  // ones left out only invisible, so their natural widths can be measured. null: not measured yet (all rendered).
+  const [shownKey, setShownKey] = useState<string | null>(null);
   const navKey = navItems.map((item) => item.to).join();
   useLayoutEffect(() => {
     const main = navMainRef.current;
     const list = navListRef.current;
     if (!main || !list) return;
     const fit = () => {
-      const items = Array.from(list.children) as HTMLElement[];
-      // The phone layout is a bottom tab bar that shares its width between the links: nothing moves to « Plus ».
-      if (typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 961px)').matches) return setHiddenKey('');
-      const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
-      const widths = items.map((item) => item.offsetWidth);
-      const total = widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1);
-      if (total <= main.clientWidth) return setHiddenKey('');
-      // The most important links stay on the bar; the least important go to « Plus » first.
-      const room = main.clientWidth - (moreRef.current?.offsetWidth || 96) - gap;
-      const byPriority = navItems.map((_, index) => index).sort((x, y) => navItems[y].priority - navItems[x].priority || x - y);
-      const kept = new Set<number>();
-      let used = 0;
-      for (const index of byPriority) {
-        const next = used + (kept.size ? gap : 0) + widths[index];
-        if (next > room) break;
-        used = next;
-        kept.add(index);
-      }
-      setHiddenKey(items.map((_, index) => index).filter((index) => !kept.has(index)).join());
+      const widths: Record<string, number> = {};
+      Array.from(list.children).forEach((entry) => {
+        const key = (entry as HTMLElement).dataset.key;
+        if (key) widths[key] = (entry as HTMLElement).offsetWidth;
+      });
+      const shown = layoutNav({
+        items: navItems,
+        widths,
+        room: main.clientWidth,
+        gap: parseFloat(getComputedStyle(list).columnGap) || 0,
+        moreWidth: moreRef.current?.offsetWidth || 96,
+        // The phone layout is a bottom tab bar that shares its width between the links: no menu there.
+        compact: typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 961px)').matches,
+      });
+      setShownKey([...shown].sort().join('|'));
     };
     fit();
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : undefined;
     observer?.observe(main);
-    Array.from(list.children).forEach((item) => observer?.observe(item));
+    Array.from(list.children).forEach((entry) => observer?.observe(entry));
     return () => observer?.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navKey]);
-  const hidden = useMemo(() => new Set(hiddenKey ? hiddenKey.split(',').map(Number) : []), [hiddenKey]);
-  const overflowItems = navItems.filter((_, index) => hidden.has(index));
-  const moreActive = overflowItems.some((item) => item.end ? pathname === item.to : pathname.startsWith(item.to));
-  useEffect(() => setMoreOpen(false), [pathname, overflowItems.length]);
-  useEffect(() => {
-    if (!moreOpen) return;
-    const close = (event: PointerEvent) => {
-      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMoreOpen(false);
-    };
-    document.addEventListener('pointerdown', close);
-    document.addEventListener('keydown', escape);
-    return () => {
-      document.removeEventListener('pointerdown', close);
-      document.removeEventListener('keydown', escape);
-    };
-  }, [moreOpen]);
+  const shown = useMemo(() => (shownKey === null ? null : new Set(shownKey.split('|'))), [shownKey]);
+  const isShown = (key: string) => shown === null || shown.has(key);
+  const marketItems = navItems.filter((item) => item.group === 'market');
+  const toolItems = navItems.filter((item) => item.group === 'tools');
+  const marketMenu = marketItems.length >= 2;
+  // The pages that are neither a link on the bar nor in one of its menus.
+  const plusItems = navItems.filter((item) => item.group !== 'tools' && !(marketMenu && item.group === 'market') && !isShown(item.to));
   useLayoutEffect(() => {
     const list = navListRef.current;
     if (!list) return;
     const place = () => {
-      const item = list.querySelector<HTMLElement>('.app-nav-link.active')?.parentElement;
-      const shown = item && !item.classList.contains('is-overflow') ? item : null;
+      // The first active link of the entries in sight: a menu's button when the page is inside the menu.
+      const shown = list.querySelector<HTMLElement>('li:not(.is-overflow) .app-nav-link.active')?.closest('li');
       list.style.setProperty('--nav-marker-on', shown ? '1' : '0');
       if (!shown) return;
       list.style.setProperty('--nav-marker-x', `${shown.offsetLeft + shown.offsetWidth / 2}px`);
@@ -244,7 +239,7 @@ export function AppShell() {
       cancelAnimationFrame(ready);
       observer?.disconnect();
     };
-  }, [pathname, navItems.length, siteSettings, hiddenKey]);
+  }, [pathname, navItems.length, siteSettings, shownKey]);
 
   return (
     <div className="app-shell">
@@ -268,12 +263,12 @@ export function AppShell() {
         </Link>
         <div className="app-nav-main" ref={navMainRef}>
           <ul className="app-nav-list" ref={navListRef}>
-            {navItems.map((item, index) => (
-              <li key={item.to} className={hidden.has(index) ? 'is-overflow' : undefined}>
+            {navItems.map((item) => (
+              <li key={item.to} data-key={item.to} className={isShown(item.to) ? undefined : 'is-overflow'} aria-hidden={isShown(item.to) ? undefined : true}>
                 <NavLink
                   to={item.to}
                   end={item.end}
-                  tabIndex={hidden.has(index) ? -1 : undefined}
+                  tabIndex={isShown(item.to) ? undefined : -1}
                   className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
                 >
                   <Icon name={item.icon} size={20} />
@@ -281,36 +276,20 @@ export function AppShell() {
                 </NavLink>
               </li>
             ))}
+            {marketMenu && (
+              <li data-key={groupKey('market')} className={isShown(groupKey('market')) ? undefined : 'is-overflow'} aria-hidden={isShown(groupKey('market')) ? undefined : true}>
+                <NavMenu label="Marché" items={marketItems} hidden={!isShown(groupKey('market'))} />
+              </li>
+            )}
+            {toolItems.length > 0 && (
+              <li data-key={groupKey('tools')} className={isShown(groupKey('tools')) ? undefined : 'is-overflow'} aria-hidden={isShown(groupKey('tools')) ? undefined : true}>
+                <NavMenu label="Outils" items={toolItems} hidden={!isShown(groupKey('tools'))} />
+              </li>
+            )}
           </ul>
-          {overflowItems.length > 0 && (
+          {plusItems.length > 0 && (
             <div className="app-nav-more" ref={moreRef}>
-              <button
-                type="button"
-                className={`app-nav-link app-nav-more-button${moreActive ? ' active' : ''}`}
-                aria-haspopup="true"
-                aria-expanded={moreOpen}
-                onClick={() => setMoreOpen((open) => !open)}
-              >
-                <span>Plus</span>
-                <Icon name="chevron-down" size={16} />
-              </button>
-              {moreOpen && (
-                <ul className="app-nav-more-menu">
-                  {overflowItems.map((item) => (
-                    <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        end={item.end}
-                        onClick={() => setMoreOpen(false)}
-                        className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
-                      >
-                        <Icon name={item.icon} size={20} />
-                        <span>{item.label}</span>
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <NavMenu label="Plus" items={plusItems} />
             </div>
           )}
         </div>

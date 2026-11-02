@@ -82,12 +82,13 @@ describe('HDV page (specs/023)', () => {
   });
 
   describe('US1 — record the prices of one HDV', () => {
-    it('replaces Accueil with an HDV entry between Prix and Familier', async () => {
+    it('replaces Accueil with an HDV entry after Rentabilité, XP Familier being in the Outils menu', async () => {
       await openHdv('personal');
       const links = within(screen.getByRole('navigation', { name: 'Navigation principale' })).getAllByRole('link').map((link) => link.textContent);
       expect(links).not.toContain('Accueil');
       expect(links.indexOf('HDV')).toBe(links.indexOf('Rentabilité') + 1);
-      expect(links.indexOf('XP Familier')).toBe(links.indexOf('HDV') + 1);
+      expect(links).not.toContain('XP Familier');
+      expect(screen.getByRole('button', { name: 'Outils' })).toBeInTheDocument();
     });
 
     it('lists the pet foods of the Créatures tab, each with its type and a price field', async () => {
@@ -157,7 +158,8 @@ describe('HDV page (specs/023)', () => {
       await openHdv('personal');
       typePrice(CROQUETTE.name, '1500');
       await waitFor(async () => expect((await resourcePricesFor('personal').getMany('mikhal', [CROQUETTE.id]))[CROQUETTE.id]).toBeDefined());
-      fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Outils' }));
+  fireEvent.click(screen.getByRole('link', { name: 'XP Familier' }));
       await screen.findByRole('heading', { name: 'XP Familier' });
       fireEvent.change(screen.getByLabelText('XP totale du familier'), { target: { value: '1703' } });
       fireEvent.change(screen.getByLabelText('Niveau visé'), { target: { value: '60' } });

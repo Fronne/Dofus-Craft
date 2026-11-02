@@ -90,13 +90,13 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .app-nav-list > li { flex: 0 0 auto; }
 /* Kept in the list so its width can be measured, but out of sight and out of reach. */
 .app-nav-list > li.is-overflow { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; }
-.app-nav-more { position: relative; flex: 0 0 auto; }
-.app-nav-more-button { border: 0; background: none; cursor: pointer; font-family: inherit; }
-.app-nav-more-menu {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  left: 0;
-  z-index: 30;
+.app-nav-more { flex: 0 0 auto; }
+/* « Marché », « Outils » and « Plus »: a button that opens a list of pages under it. The pop-up starts right under the
+   button, its top padding being the gap, so a mouse going down to it never leaves the menu. */
+.app-nav-menu { position: relative; }
+.app-nav-menu-button { border: 0; background: none; cursor: pointer; font-family: inherit; }
+.app-nav-menu-pop { position: absolute; top: 100%; left: 0; z-index: 30; padding-top: var(--space-2); }
+.app-nav-menu-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);

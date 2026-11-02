@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SITE_SETTINGS, SITE_PAGES, type SiteSettings } from '../../src/domain/site-settings';
@@ -38,7 +38,12 @@ const PATHS: Record<string, string> = {
 };
 const settings = (overrides: Partial<SiteSettings>): SiteSettings => ({ ...DEFAULT_SITE_SETTINGS, forgemagiePage: true, bonsPlansPage: true, ...overrides });
 const allOff = Object.fromEntries(SITE_PAGES.map((page) => [page.field, false])) as SiteSettings;
-const navLink = (name: string) => screen.queryByRole('link', { name });
+// XP Familier, Forgemagie and Brisage are in the « Outils » menu: opened first, as a player would.
+const navLink = (name: string) => {
+  const tools = screen.queryByRole('button', { name: 'Outils' });
+  if (tools?.getAttribute('aria-expanded') === 'false') fireEvent.click(tools);
+  return screen.queryByRole('link', { name });
+};
 
 // specs/071-admin-dashboard-moderne (FR-001 to FR-007): every page of the navigation follows the owner's setting.
 describe('les huit pages activées ou désactivées (specs/071)', () => {
