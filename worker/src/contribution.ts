@@ -4,6 +4,7 @@ import { resolveOutlierFields } from './outlier';
 import { readLatestContribution } from './latest';
 import { readExternalPrices, withExternalPrice } from './external-price';
 import type { ItemType } from './item-types';
+import { AUTHOR_JOIN_SQL, AUTHOR_NAME_SQL } from './price-author';
 
 // Upper bound for a single contribution: the in-game kamas cap. Anything above can only be a typo
 // or an abusive request, and would never be a real price.
@@ -16,7 +17,9 @@ export type ContributionKind = 'resource' | 'item';
 // (the client can't claim another one); only the Forgemagie routes record 'capture' or 'bot'.
 // specs/071-sniffer-tous-hdv: `itemType`, the nature the friends' tool 0.4.0+ gives a price; absent (NULL)
 // everywhere else.
-export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind; origin: PriceOrigin; itemType?: ItemType };
+export type Contribution = { resourceId: string; serverId: string; amountKamas: number; deviceId: string; kind: ContributionKind; origin: PriceOrigin; itemType?: ItemType;
+  // specs/082-auteur-prix-communautaires: the logged-in player who entered the price on the site; never set from a request body.
+  authorDiscordUserId?: string };
 
 // The D1 calls these need, typed structurally (like retention.ts) so the module also compiles in
 // the app's test setup, which doesn't load the Workers types. D1Database is assignable to it.
@@ -62,16 +65,18 @@ export async function fetchCurrentMedian(
   serverId: string,
 ): Promise<ContributionsSummary | undefined> {
   const { results } = await db.prepare(
-    `SELECT amount_kamas, created_at, device_id, origin FROM community_price_contributions
-     WHERE resource_id = ? AND server_id = ? AND created_at >= ? AND kind = 'resource'
-     ORDER BY created_at, rowid`,
-  ).bind(resourceId, serverId, retentionCutoff()).all<{ amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin }>();
+    `SELECT c.amount_kamas, c.created_at, c.device_id, c.origin, ${AUTHOR_NAME_SQL} AS author_name
+     FROM community_price_contributions c ${AUTHOR_JOIN_SQL}
+     WHERE c.resource_id = ? AND c.server_id = ? AND c.created_at >= ? AND c.kind = 'resource'
+     ORDER BY c.created_at, c.rowid`,
+  ).bind(resourceId, serverId, retentionCutoff()).all<{ amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin; author_name: string | null }>();
 
   return summarizeContributions(results.map((row) => ({
     amountKamas: row.amount_kamas,
     createdAt: row.created_at,
     deviceId: row.device_id,
     origin: row.origin,
+    authorName: row.author_name,
   })));
 }
 
@@ -89,15 +94,16 @@ export async function fetchCurrentMedians(
   if (resourceIds.length === 0) return medians;
   const placeholders = resourceIds.map(() => '?').join(', ');
   const { results } = await db.prepare(
-    `SELECT resource_id, amount_kamas, created_at, device_id, origin FROM community_price_contributions
-     WHERE resource_id IN (${placeholders}) AND server_id = ? AND created_at >= ? AND kind = 'resource'
-     ORDER BY created_at, rowid`,
-  ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin }>();
+    `SELECT c.resource_id, c.amount_kamas, c.created_at, c.device_id, c.origin, ${AUTHOR_NAME_SQL} AS author_name
+     FROM community_price_contributions c ${AUTHOR_JOIN_SQL}
+     WHERE c.resource_id IN (${placeholders}) AND c.server_id = ? AND c.created_at >= ? AND c.kind = 'resource'
+     ORDER BY c.created_at, c.rowid`,
+  ).bind(...resourceIds, serverId, retentionCutoff()).all<{ resource_id: string; amount_kamas: number; created_at: string; device_id: string; origin: PriceOrigin; author_name: string | null }>();
 
   const byResource = new Map<string, ContributionRow[]>();
   for (const row of results) {
     const rows = byResource.get(row.resource_id) ?? [];
-    rows.push({ amountKamas: row.amount_kamas, createdAt: row.created_at, deviceId: row.device_id, origin: row.origin });
+    rows.push({ amountKamas: row.amount_kamas, createdAt: row.created_at, deviceId: row.device_id, origin: row.origin, authorName: row.author_name });
     byResource.set(row.resource_id, rows);
   }
   for (const [resourceId, rows] of byResource) {
@@ -151,11 +157,11 @@ export function contributionInsert<S>(
   contribution: Contribution,
   reference: { medianAmountKamas: number } | undefined,
 ): { id: string; statement: S } {
-  const { resourceId, serverId, amountKamas, deviceId, kind, origin, itemType } = contribution;
+  const { resourceId, serverId, amountKamas, deviceId, kind, origin, itemType, authorDiscordUserId } = contribution;
   const { medianAtSubmissionKamas, deviationPercent } = resolveOutlierFields(amountKamas, reference);
   const id = crypto.randomUUID();
   const statement = db.prepare(
-    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin, item_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin, itemType ?? null);
+    `INSERT INTO community_price_contributions (id, resource_id, server_id, amount_kamas, device_id, median_at_submission_kamas, deviation_percent, kind, origin, item_type, author_discord_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, resourceId, serverId, Math.round(amountKamas), deviceId, medianAtSubmissionKamas, deviationPercent, kind, origin, itemType ?? null, authorDiscordUserId ?? null);
   return { id, statement };
 }

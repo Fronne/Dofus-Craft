@@ -38,8 +38,14 @@ CREATE TABLE IF NOT EXISTS community_price_contributions (
   -- specs/071-sniffer-tous-hdv (migrations/0024_add_contribution_item_type.sql, so last, as ADD COLUMN
   -- puts it): the nature of a price sent by the friends' tool 0.4.0+, from the HDV's item type; NULL
   -- otherwise.
-  item_type TEXT CHECK (item_type IN ('equipment', 'resource', 'rune', 'consumable'))
+  item_type TEXT CHECK (item_type IN ('equipment', 'resource', 'rune', 'consumable')),
+  -- specs/082-auteur-prix-communautaires (migrations/0031_add_price_author.sql, so last): the Discord id of
+  -- the logged-in player who entered the price on the site; NULL = no author. Never returned by any route.
+  author_discord_user_id TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_community_price_contributions_author
+  ON community_price_contributions (author_discord_user_id, created_at);
 
 -- Every read is scoped to a single (resource_id, server_id) pair (FR-001/FR-003).
 CREATE INDEX IF NOT EXISTS idx_community_price_contributions_lookup

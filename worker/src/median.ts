@@ -38,7 +38,9 @@ export function computeCommunityMedian(amounts: number[]): { medianAmountKamas: 
 // specs/056: 'sniffer' for a price sent by the friends' HDV tool (POST /community-price/batch).
 export type PriceOrigin = 'manual' | 'capture' | 'bot' | 'sniffer';
 
-export type ContributionRow = { amountKamas: number; createdAt: string; deviceId: string; origin?: PriceOrigin };
+// specs/082-auteur-prix-communautaires: `authorName`, the pseudonym of the player who entered the price, only
+// when their profile is public (resolved by the query, never an id); absent for an anonymous price.
+export type ContributionRow = { amountKamas: number; createdAt: string; deviceId: string; origin?: PriceOrigin; authorName?: string | null };
 
 // specs/004-community-price-sharing FR-023 (révision 7): a device that corrects its price several
 // times counts once, with its latest value — otherwise one player re-typing a price would show as
@@ -66,6 +68,8 @@ export type ContributionsSummary = {
   latestContributionAt: string;
   // specs/025-rune-purchase-import (FR-011): the origin of that latest contribution.
   latestOrigin: PriceOrigin;
+  // specs/082: the pseudonym of that latest contribution's author, when it has one and it is public.
+  latestAuthor?: string;
 };
 
 // What GET /community-price returns: the median over one contribution per device, and the date of
@@ -88,5 +92,6 @@ export function summarizeContributions(rows: ContributionRow[]): ContributionsSu
     latestAmountKamas: latest.amountKamas,
     latestContributionAt: latest.createdAt,
     latestOrigin: latest.origin ?? 'manual',
+    ...(latest.authorName ? { latestAuthor: latest.authorName } : {}),
   };
 }

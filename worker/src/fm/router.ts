@@ -6,6 +6,7 @@ import { acknowledgeCommand, listCommands } from './bot-commands';
 import { resendSession, startSession, stopSession } from './site-sessions';
 import { attachChannelItem, listMyChannels, readChannelRequest, requestChannel } from './channels';
 import { attachSession, createItem, deleteItem, detachSession, readItemRecap, renameItem } from './items';
+import { getMyContributions } from './contributions';
 import { deleteMe, getMe, patchMe } from './me';
 import { playerProfile, sessionDetail, sessionsPage } from './reads';
 import { archiveSeance, listSeances, readSeance, removeSeanceItem, reopenSeance, setSeanceItem } from './seances';
@@ -37,6 +38,8 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
     if (method === 'PATCH') return patchMe(request, env.DB, viewerId, viewer.isMember);
     if (method === 'DELETE') return deleteMe(env.DB, viewerId);
   }
+  // specs/082-auteur-prix-communautaires: the prices the player entered, also for a player outside the group's server.
+  if (method === 'GET' && pathname === '/fm/me/contributions') return getMyContributions(env.DB, viewerId);
   // Everything below is the group's data: members of its Discord server only.
   if (!viewer.isMember) return forbiddenNotMember();
   // specs/045-restore-production-worker (contracts/api.md): the séances de FM and the correction of a capture.
