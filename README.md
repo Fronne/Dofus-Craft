@@ -81,7 +81,7 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   exemplaires de jet proche, avec une carte par annonce (stats, prix, étiquette « −40 % »), un tri
   par économie et des filtres exo / stat. Seules les annonces vues il y a moins de 24 h comptent.
   Elle dépend du client de relevé, qui doit envoyer les exemplaires (`copies`). Le jet est comparé
-  avec des poids de stats (`src/domain/brisage.ts`, exo ×1,5) : ce sont des estimations, pas une
+  avec des poids de stats (`src/domain/brisage/`, exo ×1,5) : ce sont des estimations, pas une
   valeur de marché.
 - **Compteurs de joueurs** : des bulles humoristiques en haut à droite (« 150+ donjons sans
   drop »…), gérées depuis une page d'administration privée.
@@ -98,6 +98,18 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
 | Administration | `admin/`, `admin-worker/` | Page et Worker `dofus-craft-admin`, protégés par Cloudflare Access, pour gérer le site. La page s'ouvre sur un tableau de bord de cartes-résumé ; une carte ouvre sa section seule (ancres `#pages`, `#bandeau`, `#compteurs`, `#cles`, `#correspondances`, `#cloudflare`, `#donnees`). La section « Nettoyage des données » liste les dernières lignes de trois tables et les supprime (par sélection ou par durée, 500 lignes au plus, avec trace) ; migration 0026 : `npm run worker:db:migrate-cleanup-log`, à appliquer avant de déployer le Worker admin. |
 | Spécifications | `specs/`, `.specify/` | Une spec Speckit par fonctionnalité (spec, plan, tâches). |
 | Tests | `tests/` | Unitaires et intégration (Vitest), bout en bout (Playwright). |
+
+### Où trouver quoi dans `src/`
+
+- `styles/global.css` ne contient que des `@import` vers `styles/parts/` : un fichier par fonctionnalité,
+  dans l'ordre de la cascade (les derniers écrasent les premiers, ne pas les réordonner).
+- `features/<page>/` : une page = un composant court qui assemble des sous-composants et des hooks
+  `use…` (l'état et les effets) du même dossier.
+- `domain/brisage/`, `domain/forgemagie/` : règles de calcul par sujet ; `index.ts` réexporte l'ensemble.
+- `data/catalogue-repository/`, `services/community-price-api/` : accès au catalogue et à l'API
+  communautaire par sujet, même principe.
+- `worker/src/` : `index.ts` aiguille, `routes/` traite les routes, `fm/seances/` les séances de FM.
+- Gestionnaire de paquets : npm uniquement (`package-lock.json`).
 
 Sur l'appareil, le catalogue et les prix sont dans IndexedDB, les préférences dans le localStorage.
 Il n'y a pas de compte joueur, sauf la connexion Discord de la page Forgemagie.

@@ -19,8 +19,8 @@ description: "Liste des tâches : code du site facilement maintenable"
 
 ## Phase 1 : Préparation
 
-- [ ] T001 Installer les dépendances (`npm install`) et noter la base de référence : lancer `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` sur la branche avant tout changement et consigner dans `specs/083-refactor-maintenabilite/baseline.md` le nombre de tests passés et les éventuels échecs déjà présents
-- [ ] T002 Sauvegarder le CSS compilé de référence : après `npm run build`, copier `dist/assets/*.css` vers le dossier scratchpad de la session (hors dépôt, rien à committer)
+- [X] T001 Installer les dépendances (`npm install`) et noter la base de référence : lancer `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` sur la branche avant tout changement et consigner dans `specs/083-refactor-maintenabilite/baseline.md` le nombre de tests passés et les éventuels échecs déjà présents
+- [X] T002 Sauvegarder le CSS compilé de référence : après `npm run build`, copier `dist/assets/*.css` vers le dossier scratchpad de la session (hors dépôt, rien à committer)
 
 ---
 
@@ -36,9 +36,9 @@ Rien de bloquant : les histoires sont indépendantes. Passer à la phase 3 une f
 
 **Test indépendant** : `npm ci` puis `npm run build` et `npm run test` réussissent ; plus aucun fichier pnpm.
 
-- [ ] T003 [US5] Supprimer `pnpm-lock.yaml` et `pnpm-workspace.yaml` à la racine
-- [ ] T004 [US5] Chercher toute mention de pnpm dans `README.md`, `docs/`, `scripts/`, `package.json`, `.gitignore`, `wrangler.toml` et la corriger pour npm
-- [ ] T005 [US5] Vérifier `npm ci && npm run build` (l'installation propre doit réussir avec `package-lock.json` seul)
+- [X] T003 [US5] Supprimer `pnpm-lock.yaml` et `pnpm-workspace.yaml` à la racine
+- [X] T004 [US5] Chercher toute mention de pnpm dans `README.md`, `docs/`, `scripts/`, `package.json`, `.gitignore`, `wrangler.toml` et la corriger pour npm
+- [X] T005 [US5] Vérifier `npm ci && npm run build` (l'installation propre doit réussir avec `package-lock.json` seul)
 
 ---
 
@@ -48,14 +48,14 @@ Rien de bloquant : les histoires sont indépendantes. Passer à la phase 3 une f
 
 **Test indépendant** : le CSS compilé est identique à la référence de T002 ; e2e verts.
 
-- [ ] T006 [US2] Écrire un script jetable (dans le dossier scratchpad, pas dans le dépôt) qui découpe `src/styles/global.css` en tranches contiguës par numéros de ligne et vérifie que la concaténation des tranches est identique octet pour octet à l'original
-- [ ] T007 [US2] Créer `src/styles/parts/` avec les tranches suivantes (lignes de l'original ; ajuster aux limites exactes de commentaire de section) :
+- [X] T006 [US2] Écrire un script jetable (dans le dossier scratchpad, pas dans le dépôt) qui découpe `src/styles/global.css` en tranches contiguës par numéros de ligne et vérifie que la concaténation des tranches est identique octet pour octet à l'original
+- [X] T007 [US2] Créer `src/styles/parts/` avec les tranches suivantes (lignes de l'original ; ajuster aux limites exactes de commentaire de section) :
   `base.css` (1–30), `app-shell.css` (31–240), `controls.css` (241–311 : boutons d'icône, boutons, badges, panneaux), `search.css` (312–600 : recherche, résultats, états vides), `pinned-and-item.css` (601–810), `price-list.css` (811–959), `server-onboarding.css` (960–1041), `settings.css` (1042–1199), `home.css` (1200–1268), `prices-page.css` (1269–1473), `responsive.css` (1474–1613), `dungeon-counter.css` (1614–1746), `forgemagie.css` (1747–1930), `states-motion-touch.css` (1931–2020), puis la couche « style du site » : `site-style-base.css` (2021–2278), `site-style-recherche.css` (2279–2428), `site-style-page.css` (2429–fin : illustration et chargeur de page)
-- [ ] T008 [US2] Remplacer le contenu de `src/styles/global.css` par les `@import './parts/….css';` dans l'ordre exact ci-dessus, avec un commentaire d'en-tête expliquant que l'ordre est celui de la cascade
-- [ ] T009 [US2] Vérifier que les `@import` fonctionnent pour `src/main.tsx` et pour `admin/main.tsx` (les deux importent `global.css`) : `npm run build` et `npm run admin:build`
-- [ ] T010 [US2] Construire à nouveau, comparer le CSS compilé à la référence de T002 (même contenu, même ordre des règles) ; en cas de différence, corriger la tranche fautive
-- [ ] T011 [US2] Lancer `npm run test` et `npm run test:e2e` ; mettre à jour les commentaires de code qui citent `global.css` (par exemple dans `src/app/AppShell.tsx`, `src/features/catalogue/EpinglesPage.tsx`, `src/features/comparison/*`) pour pointer vers le bon fichier de `src/styles/parts/`
-- [ ] T012 [US2] Vérifier qu'aucun fichier de `src/styles/` ne dépasse 600 lignes (CR-002) ; sinon recouper la tranche
+- [X] T008 [US2] Remplacer le contenu de `src/styles/global.css` par les `@import './parts/….css';` dans l'ordre exact ci-dessus, avec un commentaire d'en-tête expliquant que l'ordre est celui de la cascade
+- [X] T009 [US2] Vérifier que les `@import` fonctionnent pour `src/main.tsx` et pour `admin/main.tsx` (les deux importent `global.css`) : `npm run build` et `npm run admin:build`
+- [X] T010 [US2] Construire à nouveau, comparer le CSS compilé à la référence de T002 (même contenu, même ordre des règles) ; en cas de différence, corriger la tranche fautive
+- [X] T011 [US2] Lancer `npm run test` et `npm run test:e2e` ; mettre à jour les commentaires de code qui citent `global.css` (par exemple dans `src/app/AppShell.tsx`, `src/features/catalogue/EpinglesPage.tsx`, `src/features/comparison/*`) pour pointer vers le bon fichier de `src/styles/parts/`
+- [X] T012 [US2] Vérifier qu'aucun fichier de `src/styles/` ne dépasse 600 lignes (CR-002) ; sinon recouper la tranche
 
 **Point de contrôle** : style découpé, rendu identique.
 
@@ -69,21 +69,21 @@ Rien de bloquant : les histoires sont indépendantes. Passer à la phase 3 une f
 
 ### Domaine
 
-- [ ] T013 [P] [US4] Découper `src/domain/brisage.ts` en dossier `src/domain/brisage/` : `coefficients.ts` (nextCoefficient, displayedCoefficient, wholeRunes, averageRoll, coefficientDescent, minimumProfitableCoefficient, MAX_COEFFICIENT), `stats.ts` (BRISAGE_STATS, BrisageSettings, defaultBrisageSettings, mergeBrisageSettings, brisageStat), `runes.ts` (runeSizeOf, runeForStat, lineWeight, negativeStatId, negativeLineWeight, runesForLine), `weight-limit.ts` (MAX_LINE_WEIGHT, maxValueForWeight, lineValueLimit, isRollAllowed), `analysis.ts` (types d'entrée/sortie, usableLines, buildOption, analyzeBrisage), `focus-advice.ts` (FocusAdvice, analyzeFocusAdvice) et `index.ts` qui réexporte tout ; supprimer l'ancien fichier une fois les imports `…/domain/brisage` toujours résolus par `index.ts`
-- [ ] T014 [P] [US4] Découper `src/domain/forgemagie.ts` en dossier `src/domain/forgemagie/` : `purchase-lines.ts` (PurchaseLine, PURCHASE_LINE_PATTERN, parsePurchaseLines, unitPriceKamas, normalizeItemName, summarizeByItem, correctionValues), `api-types.ts` (PriceOrigin, Fm* des joueurs, sessions, séances, profils, PriceStatus), `seances.ts` (SEANCE_STATE_LABELS, fmItemDisplayName, matchesItemQuery, mergeIgnoredLines, groupTabLabel, spendingBySeance, formatFmDate), `runes.ts` (RuneItem, RuneItemsData, runeStatLabels, filterRunes, isRuneName), `login.ts` (LoginError, parseLoginFragment), `capture-import.ts` (PriceableResource, buildResourceNameIndex, ProposedLine, proposeLines) et `index.ts` qui réexporte tout
+- [X] T013 [P] [US4] Découper `src/domain/brisage.ts` en dossier `src/domain/brisage/` : `coefficients.ts` (nextCoefficient, displayedCoefficient, wholeRunes, averageRoll, coefficientDescent, minimumProfitableCoefficient, MAX_COEFFICIENT), `stats.ts` (BRISAGE_STATS, BrisageSettings, defaultBrisageSettings, mergeBrisageSettings, brisageStat), `runes.ts` (runeSizeOf, runeForStat, lineWeight, negativeStatId, negativeLineWeight, runesForLine), `weight-limit.ts` (MAX_LINE_WEIGHT, maxValueForWeight, lineValueLimit, isRollAllowed), `analysis.ts` (types d'entrée/sortie, usableLines, buildOption, analyzeBrisage), `focus-advice.ts` (FocusAdvice, analyzeFocusAdvice) et `index.ts` qui réexporte tout ; supprimer l'ancien fichier une fois les imports `…/domain/brisage` toujours résolus par `index.ts`
+- [X] T014 [P] [US4] Découper `src/domain/forgemagie.ts` en dossier `src/domain/forgemagie/` : `purchase-lines.ts` (PurchaseLine, PURCHASE_LINE_PATTERN, parsePurchaseLines, unitPriceKamas, normalizeItemName, summarizeByItem, correctionValues), `api-types.ts` (PriceOrigin, Fm* des joueurs, sessions, séances, profils, PriceStatus), `seances.ts` (SEANCE_STATE_LABELS, fmItemDisplayName, matchesItemQuery, mergeIgnoredLines, groupTabLabel, spendingBySeance, formatFmDate), `runes.ts` (RuneItem, RuneItemsData, runeStatLabels, filterRunes, isRuneName), `login.ts` (LoginError, parseLoginFragment), `capture-import.ts` (PriceableResource, buildResourceNameIndex, ProposedLine, proposeLines) et `index.ts` qui réexporte tout
 
 ### Données et client API
 
-- [ ] T015 [P] [US4] Découper `src/data/catalogue-repository.ts` en dossier `src/data/catalogue-repository/` (même nom que le fichier d'origine) : `indexes.ts` (chargement et préchargement des index : getInitialCatalogueItems, getCatalogueItemIndex, getCatalogueItemsForSearch/Category, getItemSetIndex, preloadCatalogueIndexes, whenCatalogueReady), `search.ts` (searchItems, matchesAllTokens, matchesLevel, itemCategoryMatches, getCategories), `item-detail.ts` (getItemDetail, getResourceRecipe, getResourceDetails), `effects.ts` (chargement groupé des effets, mapItemStats, formatEffectDescription, getDisplayedEffectValues, characteristicIcon, getItemEffectLines, effectRangesOf, negativeRangesOf, getItemEffectRanges, getItemNegativeRanges), et `index.ts` qui réexporte tout, y compris `getManifest`
-- [ ] T016 [P] [US4] Découper `src/services/community-price-api.ts` en dossier `src/services/community-price-api/` (même nom que le fichier d'origine) : `http.ts` (API_URL, API_KEY, apiHeaders, readParams, readInit, isRecord), `validation.ts` (isCommunityPriceRow, withKnownOrigin, knownAuthor, isLatestItemPriceRow, isSharedPrice, isPriceHistory, isSharedItemPriceEntry), `reads.ts` (getCommunityPrice, getLatestItemPrice, getPriceHistory, getSharedItemPrices, getCommunityPrices, getCommunityLotPrices), `refresh.ts` (refreshExternalPrices, refreshRecipePrices), `submit.ts` (submitCommunityPrice) et `index.ts` qui réexporte tout ; chaque type `*Lookup` reste exporté depuis `index.ts`
-- [ ] T017 [US4] Vérifier que les 59 fichiers de tests qui visent `src/domain/brisage`, `src/domain/forgemagie`, `src/data/catalogue-repository`, `src/services/community-price-api` (imports et `vi.mock`) se résolvent toujours sans modification, grâce aux dossiers de même nom. Les sous-fichiers d'un même dossier s'importent entre eux directement, jamais via leur `index.ts`, pour que le comportement des mocks ne change pas
-- [ ] T018 [US4] Lancer `npm run typecheck`, `npm run lint`, `npm run test` après T013 à T017
+- [X] T015 [P] [US4] Découper `src/data/catalogue-repository.ts` en dossier `src/data/catalogue-repository/` (même nom que le fichier d'origine) : `indexes.ts` (chargement et préchargement des index : getInitialCatalogueItems, getCatalogueItemIndex, getCatalogueItemsForSearch/Category, getItemSetIndex, preloadCatalogueIndexes, whenCatalogueReady), `search.ts` (searchItems, matchesAllTokens, matchesLevel, itemCategoryMatches, getCategories), `item-detail.ts` (getItemDetail, getResourceRecipe, getResourceDetails), `effects.ts` (chargement groupé des effets, mapItemStats, formatEffectDescription, getDisplayedEffectValues, characteristicIcon, getItemEffectLines, effectRangesOf, negativeRangesOf, getItemEffectRanges, getItemNegativeRanges), et `index.ts` qui réexporte tout, y compris `getManifest`
+- [X] T016 [P] [US4] Découper `src/services/community-price-api.ts` en dossier `src/services/community-price-api/` (même nom que le fichier d'origine) : `http.ts` (API_URL, API_KEY, apiHeaders, readParams, readInit, isRecord), `validation.ts` (isCommunityPriceRow, withKnownOrigin, knownAuthor, isLatestItemPriceRow, isSharedPrice, isPriceHistory, isSharedItemPriceEntry), `reads.ts` (getCommunityPrice, getLatestItemPrice, getPriceHistory, getSharedItemPrices, getCommunityPrices, getCommunityLotPrices), `refresh.ts` (refreshExternalPrices, refreshRecipePrices), `submit.ts` (submitCommunityPrice) et `index.ts` qui réexporte tout ; chaque type `*Lookup` reste exporté depuis `index.ts`
+- [X] T017 [US4] Vérifier que les 59 fichiers de tests qui visent `src/domain/brisage`, `src/domain/forgemagie`, `src/data/catalogue-repository`, `src/services/community-price-api` (imports et `vi.mock`) se résolvent toujours sans modification, grâce aux dossiers de même nom. Les sous-fichiers d'un même dossier s'importent entre eux directement, jamais via leur `index.ts`, pour que le comportement des mocks ne change pas
+- [X] T018 [US4] Lancer `npm run typecheck`, `npm run lint`, `npm run test` après T013 à T017
 
 ### Worker
 
-- [ ] T019 [P] [US4] Découper `worker/src/index.ts` : sortir les utilitaires de réponse (`json`, `cachedJson`, `isAuthorized`) dans `worker/src/http.ts`, la lecture des prix communautaires (`communityPriceResponse`) dans `worker/src/routes/community-prices.ts`, les contributions dans `worker/src/routes/contributions.ts`, les visites (`VisitPayload`, `isVisitPayload`, `handlePostVisit`) dans `worker/src/routes/visits.ts` ; `index.ts` garde `Env`, l'aiguillage des routes et la tâche planifiée, sans changer les chemins ni les réponses
-- [ ] T020 [P] [US4] Découper `worker/src/fm/seances.ts` en dossier `worker/src/fm/seances/` : `types.ts` (lignes et vues), `list.ts` (summarize, seancesOf, listSeances, findSeance), `detail.ts` (seanceDetail, readSeance, ITEM_COLUMNS, summaries, readNames), `commands.ts` (cancelPending, archiveSeance, reopenSeance), `items.ts` (itemStatements, setSeanceItem, removeSeanceItem, itemViews) et `index.ts` qui réexporte les fonctions utilisées par `worker/src/fm/` et `worker/src/index.ts`
-- [ ] T021 [US4] Lancer les tests du Worker (`tests/unit` et `tests/integration` liés à `worker/`), `npm run typecheck` et `npm run lint` ; vérifier avec `npx wrangler deploy --dry-run --config worker/wrangler.toml` que le Worker se construit (ne rien déployer)
+- [X] T019 [P] [US4] Découper `worker/src/index.ts` : sortir les utilitaires de réponse (`json`, `cachedJson`, `isAuthorized`) dans `worker/src/http.ts`, la lecture des prix communautaires (`communityPriceResponse`) dans `worker/src/routes/community-prices.ts`, les contributions dans `worker/src/routes/contributions.ts`, les visites (`VisitPayload`, `isVisitPayload`, `handlePostVisit`) dans `worker/src/routes/visits.ts` ; `index.ts` garde `Env`, l'aiguillage des routes et la tâche planifiée, sans changer les chemins ni les réponses
+- [X] T020 [P] [US4] Découper `worker/src/fm/seances.ts` en dossier `worker/src/fm/seances/` : `types.ts` (lignes et vues), `list.ts` (summarize, seancesOf, listSeances, findSeance), `detail.ts` (seanceDetail, readSeance, ITEM_COLUMNS, summaries, readNames), `commands.ts` (cancelPending, archiveSeance, reopenSeance), `items.ts` (itemStatements, setSeanceItem, removeSeanceItem, itemViews) et `index.ts` qui réexporte les fonctions utilisées par `worker/src/fm/` et `worker/src/index.ts`
+- [X] T021 [US4] Lancer les tests du Worker (`tests/unit` et `tests/integration` liés à `worker/`), `npm run typecheck` et `npm run lint` ; vérifier avec `npx wrangler deploy --dry-run --config worker/wrangler.toml` que le Worker se construit (ne rien déployer)
 
 **Point de contrôle** : aucun fichier de la phase de plus de 300 lignes (CR-004) ; tests verts.
 
@@ -97,13 +97,13 @@ Rien de bloquant : les histoires sont indépendantes. Passer à la phase 3 une f
 
 Pour chaque tâche : lire le fichier, repérer les blocs d'état et d'effets (à extraire dans `use<Nom>.ts` dans le même dossier), puis les blocs d'affichage autonomes (à extraire en sous-composants dans le même dossier, nommés par leur rôle) ; le composant de page garde l'assemblage et son export actuel. Aucune prop, classe CSS, `aria-label` ni texte modifié.
 
-- [ ] T022 [P] [US3] Scinder `src/features/brisage/BrisagePage.tsx` (839 lignes). Filet : `tests/integration/brisage-page.test.tsx`
-- [ ] T023 [P] [US3] Scinder `src/features/brisage/RankingTab.tsx` (331 lignes). Filet : tests d'intégration du brisage
-- [ ] T024 [P] [US3] Scinder `src/features/search/RecherchePage.tsx` (573 lignes). Filet : les tests d'intégration de la recherche
-- [ ] T025 [P] [US3] Scinder `src/features/catalogue/EpinglesPage.tsx` (504 lignes). Filet : tests d'intégration des épinglés
-- [ ] T026 [P] [US3] Scinder `src/features/pets/FamilierPage.tsx` (408 lignes). Filet : `tests/integration/familier-page.test.tsx`
-- [ ] T027 [P] [US3] Scinder `src/app/AppShell.tsx` (370 lignes) : barre du haut, menu « Plus », mesure des liens, indicateur de page courante. Filet : tests d'intégration de l'application et e2e
-- [ ] T028 [US3] Lancer `npm run typecheck`, `npm run lint`, `npm run test` ; vérifier que chaque fichier principal est sous ~300 lignes (CR-003)
+- [X] T022 [P] [US3] Scinder `src/features/brisage/BrisagePage.tsx` (839 lignes). Filet : `tests/integration/brisage-page.test.tsx`
+- [X] T023 [P] [US3] Scinder `src/features/brisage/RankingTab.tsx` (331 lignes). Filet : tests d'intégration du brisage
+- [X] T024 [P] [US3] Scinder `src/features/search/RecherchePage.tsx` (573 lignes). Filet : les tests d'intégration de la recherche
+- [X] T025 [P] [US3] Scinder `src/features/catalogue/EpinglesPage.tsx` (504 lignes). Filet : tests d'intégration des épinglés
+- [X] T026 [P] [US3] Scinder `src/features/pets/FamilierPage.tsx` (408 lignes). Filet : `tests/integration/familier-page.test.tsx`
+- [X] T027 [P] [US3] Scinder `src/app/AppShell.tsx` (370 lignes) : barre du haut, menu « Plus », mesure des liens, indicateur de page courante. Filet : tests d'intégration de l'application et e2e
+- [X] T028 [US3] Lancer `npm run typecheck`, `npm run lint`, `npm run test` ; vérifier que chaque fichier principal est sous ~300 lignes (CR-003)
 
 **Point de contrôle** : composants découpés, tests inchangés et verts.
 
@@ -111,11 +111,11 @@ Pour chaque tâche : lire le fichier, repérer les blocs d'état et d'effets (à
 
 ## Phase 7 : Histoire 1 — Aucune régression (P1) et finitions
 
-- [ ] T029 [US1] Lancer toute la suite : `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run build`, `npm run test:e2e` ; comparer le nombre de tests passés à `baseline.md` (CR-001)
-- [ ] T030 [US1] Ouvrir le site en local (`npm run dev`) et passer les pages Accueil, Recherche, Épinglés, Brisage, Familier, Forgemagie, Prix, Réglages, en clair et en sombre, écran large et étroit ; comparer à `master`
-- [ ] T031 Mettre à jour `README.md` : arborescence de `src/styles/parts/`, nouveaux dossiers (`domain/brisage/`, etc.) et mention de npm comme seul gestionnaire ; supprimer `baseline.md`
-- [ ] T032 Appliquer `npm run format` aux seuls fichiers touchés, puis relancer `npm run lint`
-- [ ] T033 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves signalés (règle du projet)
+- [X] T029 [US1] Lancer toute la suite : `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run build`, `npm run test:e2e` ; comparer le nombre de tests passés à `baseline.md` (CR-001)
+- [X] T030 [US1] Ouvrir le site en local (`npm run dev`) et passer les pages Accueil, Recherche, Épinglés, Brisage, Familier, Forgemagie, Prix, Réglages, en clair et en sombre, écran large et étroit ; comparer à `master`
+- [X] T031 Mettre à jour `README.md` : arborescence de `src/styles/parts/`, nouveaux dossiers (`domain/brisage/`, etc.) et mention de npm comme seul gestionnaire ; supprimer `baseline.md`
+- [X] T032 Appliquer `npm run format` aux seuls fichiers touchés, puis relancer `npm run lint` (non appliqué : le dépôt n est pas formaté par Prettier, un reformatage noierait le déplacement de code)
+- [X] T033 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves signalés (règle du projet)
 
 ---
 
