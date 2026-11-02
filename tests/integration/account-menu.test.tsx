@@ -80,6 +80,14 @@ describe('the login coming back from Discord', () => {
     expect(screen.getByRole('link', { name: 'Se connecter avec Discord' })).toBeInTheDocument();
   });
 
+  it('is a visitor, not « loading » for ever, when the session given back cannot be kept', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    open(`/hdv#session=${TOKEN}`);
+    expect(await screen.findByRole('link', { name: 'Se connecter avec Discord' })).toBeInTheDocument();
+    expect(fm.getFmMe).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
   it('leaves another hash of the address alone', () => {
     open('/hdv#contenu');
     expect(window.location.hash).toBe('#contenu');

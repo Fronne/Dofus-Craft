@@ -37,7 +37,7 @@ function localSiteOrigin(value: string | null): string | undefined {
 // The page of the site to go back to (`return_path`): a path of the site itself, never another address.
 export function safeReturnPath(value: string | null): string | undefined {
   if (!value || value.length > MAX_RETURN_PATH_LENGTH) return undefined;
-  if (!value.startsWith('/') || value.startsWith('//') || /[\\:\u0000-\u001f\u007f]/.test(value)) return undefined;
+  if (!value.startsWith('/') || value.startsWith('//') || /[\\:#\u0000-\u001f\u007f]/.test(value)) return undefined;
   return value;
 }
 

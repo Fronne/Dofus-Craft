@@ -50,12 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fragment]);
 
   useEffect(() => {
-    if (!readFmSessionToken()) return;
+    // No readable token (storage blocked, so the one just given back could not be kept): a visitor, not « loading ».
+    if (!readFmSessionToken()) {
+      setStatus('anonymous');
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const result = await getFmMe();
       if (cancelled) return;
       if (result.status !== 'ok') {
+        // A profile that no longer exists: its token is of no use, and is not tried again at every load.
+        if (result.status === 'not-found') clearFmSessionToken();
         setStatus(result.status === 'unauthorized' || result.status === 'not-found' ? 'anonymous' : 'unavailable');
         return;
       }

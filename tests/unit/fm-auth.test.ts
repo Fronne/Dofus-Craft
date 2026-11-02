@@ -207,7 +207,7 @@ describe('the page the player goes back to', () => {
 
   it('is never another address', async () => {
     const tooLong = `/${'a'.repeat(200)}`;
-    for (const path of ['//evil.test', 'https://evil.test', '/a\\b', '/a:b', 'hdv', tooLong, '/a%0Ab']) {
+    for (const path of ['//evil.test', 'https://evil.test', '/a\\b', '/a:b', '/a#b', 'hdv', tooLong, '/a%0Ab']) {
       const found = await back(`?return_path=${encodeURIComponent(path)}`);
       // « /a%0Ab » stays an ordinary path (the line break is encoded); every other one is refused.
       expect(found).toMatch(path === '/a%0Ab' ? /^\/a%0Ab#session=/ : /^\/forgemagie#session=/);

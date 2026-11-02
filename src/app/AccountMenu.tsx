@@ -108,7 +108,6 @@ export function AccountMenu() {
         ref={buttonRef}
         type="button"
         className="account-button"
-        aria-haspopup="true"
         aria-expanded={open}
         aria-label={`Compte de ${me.displayName}`}
         onClick={() => setOpen((current) => !current)}
