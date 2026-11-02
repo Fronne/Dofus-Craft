@@ -100,6 +100,17 @@ function activitySummary(read: Read<Activity>, summarize: (activity: Activity) =
 // read so one failing read only makes its own card "Indisponible". specs/070-admin-dashboard-graphiques: a card is
 // the link (title and summary) followed by its visual, a sibling of the link and not inside it, so a chart's
 // controls and value table are never nested in a link.
+// specs/082: who visited today — the pseudonyms of the logged-in players, then the ones kept private and the anonymous devices.
+function TodayPlayersNote({ players }: { players: Activity['todayPlayers'] }) {
+  if (!players) return null;
+  const rest = [
+    players.private > 0 ? `${players.private} profil${players.private > 1 ? 's privés' : ' privé'}` : '',
+    players.anonymous > 0 ? `${players.anonymous} anonyme${players.anonymous > 1 ? 's' : ''}` : '',
+  ].filter(Boolean);
+  const parts = [...(players.names.length > 0 ? [players.names.join(', ')] : []), ...rest];
+  return <p className="dashboard-visual-note" data-testid="today-players">Aujourd'hui : {parts.length > 0 ? parts.join(' · ') : 'personne'}</p>;
+}
+
 export function Dashboard() {
   const [summaries, setSummaries] = useState<Summaries>(INITIAL);
   const [raw, setRaw] = useState<Raw>({});
@@ -217,6 +228,7 @@ export function Dashboard() {
                 columns={activity.value.days.map((day) => ({ date: day.date, parts: { visitors: day.visitors } }))}
               />
               <p className="dashboard-visual-note">{group.format(activity.value.visitorsToday)} visiteur(s) aujourd'hui · un appareil compte une fois par jour</p>
+              <TodayPlayersNote players={activity.value.todayPlayers} />
             </>
           )}
         </DashboardVisual>

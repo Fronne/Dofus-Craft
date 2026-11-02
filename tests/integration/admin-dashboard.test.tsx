@@ -406,6 +406,12 @@ describe('tableau de bord de l\'administration (specs/068-admin-dashboard)', () 
       expect(sectionLinks()).toHaveLength(7);
     });
 
+    it('nomme les visiteurs du jour (spec 082), sans le nom des profils privés', async () => {
+      api.getActivity.mockResolvedValue({ ...activity, value: { ...activity.value, todayPlayers: { names: ['Cyril', 'Zoe'], private: 1, anonymous: 2 } } });
+      await renderPage();
+      expect(itemOf('Visites').getByTestId('today-players')).toHaveTextContent("Aujourd'hui : Cyril, Zoe · 1 profil privé · 2 anonymes");
+    });
+
     it('un historique indisponible rend seulement ces deux cartes indisponibles', async () => {
       await renderPage();
       expect(itemOf('Prix communautaires').getAllByText('Indisponible')).toHaveLength(2);

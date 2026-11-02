@@ -11,7 +11,10 @@ export type PriceOrigin = (typeof PRICE_ORIGINS)[number];
 export const ACTIVITY_DAYS = 30;
 
 export type ActivityDay = { date: string; prices: Record<PriceOrigin, number>; visitors: number };
-export type Activity = { days: ActivityDay[]; pricesTotal: number; visitorsToday: number };
+// specs/082: who the day's devices belong to. Names are the Discord pseudonyms of logged-in players whose profile is
+// public; a private profile is only counted, and a device with no login is anonymous.
+export type TodayPlayers = { names: string[]; private: number; anonymous: number };
+export type Activity = { days: ActivityDay[]; pricesTotal: number; visitorsToday: number; todayPlayers?: TodayPlayers };
 
 const isOrigin = (value: unknown): value is PriceOrigin => PRICE_ORIGINS.includes(value as PriceOrigin);
 
@@ -36,9 +39,32 @@ export async function readActivity(db: ActivityDb, now: Date = new Date()): Prom
   }
 
   const list = [...days.values()];
+  const today = list[list.length - 1].date;
   return {
     days: list,
     pricesTotal: list.reduce((sum, day) => sum + PRICE_ORIGINS.reduce((inner, origin) => inner + day.prices[origin], 0), 0),
     visitorsToday: list[list.length - 1].visitors,
+    todayPlayers: await readTodayPlayers(db, today),
   };
+}
+
+async function readTodayPlayers(db: ActivityDb, day: string): Promise<TodayPlayers | undefined> {
+  try {
+    const players = await db.prepare(
+      `SELECT p.display_name AS display_name, p.is_private AS is_private FROM app_visits v
+       JOIN fm_players p ON p.discord_user_id = v.discord_user_id
+       WHERE v.day = ? GROUP BY v.discord_user_id ORDER BY p.display_name`,
+    ).bind(day).all<{ display_name: string; is_private: number }>();
+    const anonymous = await db.prepare(
+      'SELECT COUNT(*) AS total FROM app_visits WHERE day = ? AND discord_user_id IS NULL',
+    ).bind(day).all<{ total: number }>();
+    return {
+      names: players.results.filter((row) => !row.is_private).map((row) => row.display_name),
+      private: players.results.filter((row) => row.is_private).length,
+      anonymous: Number(anonymous.results[0]?.total ?? 0),
+    };
+  } catch {
+    // The column is not there yet (migration 0032 not applied): the dashboard keeps its counts.
+    return undefined;
+  }
 }

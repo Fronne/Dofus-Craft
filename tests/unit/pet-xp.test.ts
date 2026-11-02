@@ -274,7 +274,7 @@ describe('ranking, podium and targeted resource', () => {
 });
 
 describe('author of the price (specs/082)', () => {
-  const food: PetFood = { itemId: 'f1', name: 'Nourriture', xpPerUnit: 10 };
+  const food: PetFood = { itemId: 'f1', name: 'Nourriture', xpPerUnit: 10, sourceName: 'Nourriture' };
   const DATE = '2026-11-02T10:00:00.000Z';
 
   it('goes with the shared price of the lot of 1 only', () => {

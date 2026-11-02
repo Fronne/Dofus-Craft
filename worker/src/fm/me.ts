@@ -69,6 +69,7 @@ export async function deleteMe(db: FmDb, discordUserId: string): Promise<Respons
     db.prepare('DELETE FROM fm_items WHERE owner_discord_user_id = ?').bind(discordUserId),
     // specs/082-auteur-prix-communautaires: their prices stay in the group's data, anonymous.
     db.prepare('UPDATE community_price_contributions SET author_discord_user_id = NULL WHERE author_discord_user_id = ?').bind(discordUserId),
+    db.prepare('UPDATE app_visits SET discord_user_id = NULL WHERE discord_user_id = ?').bind(discordUserId),
     db.prepare('DELETE FROM fm_players WHERE discord_user_id = ?').bind(discordUserId),
   ]);
   clearReadCache();

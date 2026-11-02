@@ -208,3 +208,34 @@ describe('the prices of a capture', () => {
     expect(rows.every((row) => row.origin !== 'bot' || row.author_discord_user_id === null)).toBe(true);
   });
 });
+
+describe('the visits', () => {
+  const visits = (t: ReturnType<typeof setup>) => t.query<{ device_id: string; discord_user_id: string | null }>('SELECT device_id, discord_user_id FROM app_visits ORDER BY device_id');
+  const visit = (t: ReturnType<typeof setup>, deviceId: string, session?: string) => t.api('POST', '/visit', { body: { deviceId }, session });
+
+  it('are linked to the logged-in player, and stay anonymous without a valid session', async () => {
+    const t = setup();
+    const token = await t.login('42', { displayName: 'Cyril' });
+    expect((await visit(t, 'd1', token)).status).toBe(204);
+    await visit(t, 'd2');
+    await visit(t, 'd3', 'unknown-token');
+    expect(visits(t)).toEqual([{ device_id: 'd1', discord_user_id: '42' }, { device_id: 'd2', discord_user_id: null }, { device_id: 'd3', discord_user_id: null }]);
+  });
+
+  it('get linked when the same device logs in later that day, and are never unlinked by an anonymous repeat', async () => {
+    const t = setup();
+    const token = await t.login('42');
+    await visit(t, 'd1');
+    await visit(t, 'd1', token);
+    await visit(t, 'd1');
+    expect(visits(t)).toEqual([{ device_id: 'd1', discord_user_id: '42' }]);
+  });
+
+  it('are unlinked when the profile is deleted', async () => {
+    const t = setup();
+    const token = await t.login('42');
+    await visit(t, 'd1', token);
+    await t.call('DELETE', '/fm/me', { token });
+    expect(visits(t)).toEqual([{ device_id: 'd1', discord_user_id: null }]);
+  });
+});

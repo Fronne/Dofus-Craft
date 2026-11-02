@@ -59,6 +59,8 @@ CREATE INDEX IF NOT EXISTS idx_community_price_contributions_created_at ON commu
 CREATE TABLE IF NOT EXISTS app_visits (
   device_id TEXT NOT NULL,
   day TEXT NOT NULL,
+  -- specs/082: the player behind the device that day, when logged in (migrations/0032_add_visit_player.sql).
+  discord_user_id TEXT,
   PRIMARY KEY (device_id, day)
 );
 

@@ -48,6 +48,7 @@ npm run worker:db:migrate-line-read-name    # migration 0014 (specs/045: name as
 npm run worker:db:migrate-channel-commands  # migration 0015 (specs/045: archive / reopen a channel)
 npm run worker:db:migrate-site-login        # migration 0030 (specs/075: site-wide login), before deploying the Worker
 npm run worker:db:migrate-price-author      # migration 0031 (specs/082: author of community prices), before deploying the Worker
+npm run worker:db:migrate-visit-player      # migration 0032 (specs/082: visits linked to the logged-in player, named on the admin dashboard)
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml

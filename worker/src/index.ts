@@ -132,9 +132,13 @@ async function handlePostVisit(request: Request, env: Env): Promise<Response> {
   }
 
   const day = new Date().toISOString().slice(0, 10);
+  // specs/082: a logged-in player's visit is linked to them (the admin dashboard names the day's visitors). Without a
+  // valid session the visit stays anonymous, and an anonymous repeat never unlinks a visit already linked.
+  const discordUserId = await optionalViewer(request, env.DB);
   await env.DB.prepare(
-    `INSERT OR IGNORE INTO app_visits (device_id, day) VALUES (?, ?)`,
-  ).bind(body.deviceId, day).run();
+    `INSERT INTO app_visits (device_id, day, discord_user_id) VALUES (?, ?, ?)
+     ON CONFLICT (device_id, day) DO UPDATE SET discord_user_id = excluded.discord_user_id WHERE excluded.discord_user_id IS NOT NULL`,
+  ).bind(body.deviceId, day, discordUserId ?? null).run();
 
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
