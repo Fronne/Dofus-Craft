@@ -161,16 +161,71 @@ export function AppShell() {
   // middle of the active link's bottom edge, handed to the list as CSS variables (global.css). No
   // active link (Paramètres), no diamond.
   const navListRef = useRef<HTMLUListElement>(null);
+  const navMainRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  // The links that don't fit on the bar's single line go into the « Plus » menu, so a new page never
+  // pushes the server, mode, settings and theme controls onto a second line. Every link is always
+  // rendered (the hidden ones are only invisible) so their natural widths can be measured.
+  const [visibleCount, setVisibleCount] = useState(Number.POSITIVE_INFINITY);
+  const [moreOpen, setMoreOpen] = useState(false);
+  useLayoutEffect(() => {
+    const main = navMainRef.current;
+    const list = navListRef.current;
+    if (!main || !list) return;
+    const fit = () => {
+      const items = Array.from(list.children) as HTMLElement[];
+      // The phone layout is a bottom tab bar that shares its width between the links: nothing moves to « Plus ».
+      if (typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 961px)').matches) return setVisibleCount(items.length);
+      const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
+      const widths = items.map((item) => item.offsetWidth);
+      const total = widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1);
+      if (total <= main.clientWidth) return setVisibleCount(items.length);
+      const room = main.clientWidth - (moreRef.current?.offsetWidth || 96) - gap;
+      let count = 0;
+      let used = 0;
+      for (const width of widths) {
+        const next = used + (count ? gap : 0) + width;
+        if (next > room) break;
+        used = next;
+        count += 1;
+      }
+      setVisibleCount(count);
+    };
+    fit();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : undefined;
+    observer?.observe(main);
+    Array.from(list.children).forEach((item) => observer?.observe(item));
+    return () => observer?.disconnect();
+  }, [navItems.length]);
+  const overflowItems = navItems.slice(visibleCount);
+  const moreActive = overflowItems.some((item) => item.end ? pathname === item.to : pathname.startsWith(item.to));
+  useEffect(() => setMoreOpen(false), [pathname, overflowItems.length]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [moreOpen]);
   useLayoutEffect(() => {
     const list = navListRef.current;
     if (!list) return;
     const place = () => {
       const item = list.querySelector<HTMLElement>('.app-nav-link.active')?.parentElement;
-      list.style.setProperty('--nav-marker-on', item ? '1' : '0');
-      if (!item) return;
-      list.style.setProperty('--nav-marker-x', `${item.offsetLeft + item.offsetWidth / 2}px`);
+      const shown = item && !item.classList.contains('is-overflow') ? item : null;
+      list.style.setProperty('--nav-marker-on', shown ? '1' : '0');
+      if (!shown) return;
+      list.style.setProperty('--nav-marker-x', `${shown.offsetLeft + shown.offsetWidth / 2}px`);
       // Its own line when the links wrap on two.
-      list.style.setProperty('--nav-marker-y', `${item.offsetTop + item.offsetHeight}px`);
+      list.style.setProperty('--nav-marker-y', `${shown.offsetTop + shown.offsetHeight}px`);
     };
     place();
     // It slides only once it has been placed a first time: it must not glide in when the page opens.
@@ -182,7 +237,7 @@ export function AppShell() {
       cancelAnimationFrame(ready);
       observer?.disconnect();
     };
-  }, [pathname, navItems.length, siteSettings]);
+  }, [pathname, navItems.length, siteSettings, visibleCount]);
 
   return (
     <div className="app-shell">
@@ -204,20 +259,54 @@ export function AppShell() {
             Dofus<span className="app-nav-brand-accent">Craft</span>
           </span>
         </Link>
-        <ul className="app-nav-list" ref={navListRef}>
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
+        <div className="app-nav-main" ref={navMainRef}>
+          <ul className="app-nav-list" ref={navListRef}>
+            {navItems.map((item, index) => (
+              <li key={item.to} className={index >= visibleCount ? 'is-overflow' : undefined}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  tabIndex={index >= visibleCount ? -1 : undefined}
+                  className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
+                >
+                  <Icon name={item.icon} size={20} />
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+          {overflowItems.length > 0 && (
+            <div className="app-nav-more" ref={moreRef}>
+              <button
+                type="button"
+                className={`app-nav-link app-nav-more-button${moreActive ? ' active' : ''}`}
+                aria-haspopup="true"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((open) => !open)}
               >
-                <Icon name={item.icon} size={20} />
-                <span>{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+                <span>Plus</span>
+                <Icon name="chevron-down" size={16} />
+              </button>
+              {moreOpen && (
+                <ul className="app-nav-more-menu">
+                  {overflowItems.map((item) => (
+                    <li key={item.to}>
+                      <NavLink
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => setMoreOpen(false)}
+                        className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
+                      >
+                        <Icon name={item.icon} size={20} />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         {/* specs/051-site-visual-refresh: the right end of the top bar — active server, then
             Paramètres (reached from this icon, not from the page list) and the theme toggle. */}
         <div className="app-nav-footer">
