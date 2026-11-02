@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import type { Resource } from '../../domain/types';
 import { KAMAS_ICON_URL, formatKamas, formatKamasInput, isValidKamas } from '../../domain/kamas';
-import { formatRelativeTime } from '../../domain/time';
+import { PriceUpdateNote } from '../../components/PriceUpdateNote';
 import { classifyPriceAge } from '../../domain/price-age';
 import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { usePriceEntry } from './usePriceEntry';
@@ -11,6 +11,7 @@ export function ResourcePriceInput({
   quantity,
   value,
   updatedAt,
+  updatedBy,
   onChange,
   onBlur,
   onCommit,
@@ -25,6 +26,8 @@ export function ResourcePriceInput({
   quantity: number;
   value: string;
   updatedAt?: string;
+  /** specs/082: pseudonym of whoever entered the price shown, when it is public. */
+  updatedBy?: string;
   onChange: (value: string) => void;
   // Called on every blur with the field's current value — the caller decides whether the value
   // actually changed (e.g. against its own persisted copy) before writing it anywhere. Persistence
@@ -81,7 +84,7 @@ export function ResourcePriceInput({
       {!updatedAt && priceNote && <small><span className="price-note">{priceNote}</span></small>}
       {updatedAt && (
         <small>
-          Dernière mise à jour : {formatRelativeTime(updatedAt)}
+          <PriceUpdateNote date={updatedAt} author={updatedBy} />
           {priceNote && <span className="price-note">, {priceNote}</span>}
         </small>
       )}

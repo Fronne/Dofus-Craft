@@ -137,6 +137,7 @@ export function CommunityResourcePriceRow({
         quantity={quantity}
         value={value}
         updatedAt={carnetEntry?.updatedAt ?? (communityState.kind === 'found' ? communityState.price.latestContributionAt : undefined)}
+        updatedBy={latest && (!carnetEntry || carnetEntry.updatedAt === latest.latestContributionAt) ? latest.latestAuthor : undefined}
         onChange={onChange}
         onCommit={handleCommit}
         onUnloadCommit={handleUnloadCommit}

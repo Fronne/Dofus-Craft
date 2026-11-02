@@ -4,9 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FmMe } from '../../src/domain/forgemagie';
 
 // specs/075-connexion-discord-site (US3): the profile page — who the player is, the deletion.
-const fm = vi.hoisted(() => ({ getFmMe: vi.fn(), updateFmMe: vi.fn(), deleteFmMe: vi.fn(), logoutFm: vi.fn() }));
+const fm = vi.hoisted(() => ({ getFmMe: vi.fn(), updateFmMe: vi.fn(), deleteFmMe: vi.fn(), logoutFm: vi.fn(), getFmContributions: vi.fn() }));
 vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: (returnPath?: string) => `https://api.test/fm/auth/login?return_path=${returnPath ?? ''}` }));
-vi.mock('../../src/app/ServerContext', () => ({ useActiveServer: () => ({ serverId: 'mikhal' }) }));
+vi.mock('../../src/app/ServerContext', () => ({ useActiveServer: () => ({ serverId: 'mikhal', servers: [{ id: 'mikhal', name: 'Mikhal', type: 'classic' }] }) }));
+vi.mock('../../src/data/catalogue-repository', () => ({
+  getResourceDetails: async (ids: string[]) => ids.map((id) => ({ id, name: id === 'res-1' ? 'Bois de Frêne' : 'Épée' })),
+}));
 
 import { AccountMenu } from '../../src/app/AccountMenu';
 import { AuthProvider } from '../../src/app/AuthContext';
@@ -37,6 +40,7 @@ beforeEach(() => {
   fm.updateFmMe.mockImplementation(async (changes: Partial<FmMe>) => ok({ ...me, ...changes }));
   fm.deleteFmMe.mockResolvedValue(ok(undefined));
   fm.logoutFm.mockResolvedValue(ok(undefined));
+  fm.getFmContributions.mockResolvedValue(ok({ total: 0, recent: [] }));
 });
 afterEach(cleanup);
 
@@ -76,5 +80,40 @@ describe('the profile page of a logged-in player', () => {
     await waitFor(() => expect(fm.deleteFmMe).toHaveBeenCalledTimes(1));
     await screen.findAllByRole('link', { name: 'Se connecter avec Discord' });
     expect(readFmSessionToken()).toBeUndefined();
+  });
+
+  it('lets them choose whether their pseudonym is shown on the prices they enter', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: 'Privé' }));
+    await waitFor(() => expect(fm.updateFmMe).toHaveBeenCalledWith({ isPrivate: true }));
+    expect(await screen.findByRole('button', { name: 'Privé', pressed: true })).toBeInTheDocument();
+  });
+
+  it('tells a player who entered no price that nothing is listed yet', async () => {
+    open();
+    expect(await screen.findByRole('heading', { name: 'Mes contributions' })).toBeInTheDocument();
+    expect(await screen.findByText(/Tu n'as encore saisi aucun prix/)).toBeInTheDocument();
+  });
+
+  it('counts the prices entered and lists the latest, with their names', async () => {
+    fm.getFmContributions.mockResolvedValue(ok({
+      total: 3,
+      recent: [
+        { resourceId: 'res-1', kind: 'resource', serverId: 'mikhal', amountKamas: 1200, createdAt: new Date().toISOString() },
+        { resourceId: 'item-1', kind: 'item', serverId: 'mikhal', amountKamas: 50000, createdAt: new Date().toISOString() },
+      ],
+    }));
+    open();
+    expect(await screen.findByText('Bois de Frêne')).toBeInTheDocument();
+    expect(screen.getByText('Épée')).toBeInTheDocument();
+    expect(screen.getByText('prix saisis', { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText(/Mikhal/).length).toBeGreaterThan(0);
+  });
+
+  it('says so when the contributions cannot be read, the rest of the profile staying usable', async () => {
+    fm.getFmContributions.mockResolvedValue({ status: 'unavailable' });
+    open();
+    expect(await screen.findByText(/Tes contributions ne sont pas disponibles/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Supprimer mon profil' })).toBeInTheDocument();
   });
 });

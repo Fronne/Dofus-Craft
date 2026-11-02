@@ -1,5 +1,5 @@
 import type {
-  FmAttachTarget, FmChannelRequest, FmGroupPlayer, FmMe, FmOwnedItem, FmProfile, FmSeance, FmSeanceDetail, PriceStatus,
+  FmAttachTarget, FmChannelRequest, FmContributions, FmGroupPlayer, FmMe, FmOwnedItem, FmProfile, FmSeance, FmSeanceDetail, PriceStatus,
 } from '../domain/forgemagie';
 import { clearFmSessionToken, readFmSessionToken } from '../persistence/fm-session-token';
 
@@ -113,6 +113,14 @@ function isImportAnswer(value: unknown): value is ImportAnswer {
   return isRecord(value) && typeof value.captureId === 'string' && Array.isArray(value.lines);
 }
 
+function isContributions(value: unknown): value is FmContributions {
+  return isRecord(value) && typeof value.total === 'number' && Array.isArray(value.recent) && value.recent.every((row) =>
+    isRecord(row) && typeof row.resourceId === 'string' && (row.kind === 'resource' || row.kind === 'item') &&
+    typeof row.serverId === 'string' && typeof row.amountKamas === 'number' && typeof row.createdAt === 'string');
+}
+
+// specs/082-auteur-prix-communautaires: « Mes contributions » of the profile page.
+export const getFmContributions = () => request('GET', '/fm/me/contributions', isContributions);
 export const getFmMe = () => request('GET', '/fm/me', isMe);
 export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean }) => request('PATCH', '/fm/me', isMe, changes);
 export const deleteFmMe = () => request('DELETE', '/fm/me', isNothing);

@@ -3,7 +3,9 @@ export type ServerId=string;
 export type PinnedItemPrice={itemId:string;marketPriceKamas:number;updatedAt:string};
 export type CommunityPrice={resourceId:string;serverId:string;medianAmountKamas:number;sampleSize:number;lastContributionAt?:string;latestAmountKamas:number;latestContributionAt:string;latestOrigin?:'manual'|'capture'|'bot'|'external'|'sniffer';
   // specs/046-hdv-huzounet-load: for a price read on Huzounet ('external'), what its source says of it.
-  latestFragile?:'stale'|'provisional'};
+  latestFragile?:'stale'|'provisional';
+  // specs/082-auteur-prix-communautaires: pseudonym of the author of the latest price, when public.
+  latestAuthor?:string};
 
 // specs/015-intermediate-craft-costs: a resource's own recipe, fetched as needed. `null` means
 // checked and not craftable (no recipe, or none could be obtained); a missing key means not loaded yet.

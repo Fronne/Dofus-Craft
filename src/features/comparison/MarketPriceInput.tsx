@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { KAMAS_ICON_URL, formatKamasInput, isValidKamas } from '../../domain/kamas';
-import { formatRelativeTime } from '../../domain/time';
+import { PriceUpdateNote } from '../../components/PriceUpdateNote';
 import { classifyPriceAge } from '../../domain/price-age';
 import { usePriceEntry } from './usePriceEntry';
 
@@ -8,6 +8,7 @@ export function MarketPriceInput({
   value,
   onChange,
   updatedAt,
+  updatedBy,
   onCommit,
   onUnloadCommit,
   onTypingChange,
@@ -17,6 +18,8 @@ export function MarketPriceInput({
   onChange: (value: string) => void;
   // specs/016 FR-002: date of the latest shared price, shown under the field (no contribution count).
   updatedAt?: string;
+  /** specs/082: pseudonym of whoever entered the price shown, when it is public. */
+  updatedBy?: string;
   // specs/016 (Mode communautaire): called on blur only after an actual edit — never for a plain
   // focus/blur — with the typed value; resolving to 'rejected' (e.g. a canceled confirmation) puts
   // the previous value back. Omitted in Mode personnel.
@@ -67,7 +70,7 @@ export function MarketPriceInput({
           comparison. It targets #market-price-input via htmlFor, so the association (and
           screen.getByLabelText('Prix HDV')) holds regardless of where it sits in the DOM. */}
       {history ? <div className="market-input-row">{field}{history}</div> : field}
-      {updatedAt && <small className={`market-date${ageClass}`}>Dernière mise à jour : {formatRelativeTime(updatedAt)}</small>}
+      {updatedAt && <small className={`market-date${ageClass}`}><PriceUpdateNote date={updatedAt} author={updatedBy} /></small>}
       {!valid && <em id="market-price-error" role="alert">Entrez un nombre entier positif ou zéro.</em>}
     </div>
   );

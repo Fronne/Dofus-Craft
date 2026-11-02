@@ -236,6 +236,12 @@ export type FmMe = {
   isMember: boolean;
 };
 
+/** specs/082-auteur-prix-communautaires: the prices a player entered — how many are kept, and the latest ones. */
+export type FmContributions = {
+  total: number;
+  recent: { resourceId: string; kind: 'resource' | 'item'; serverId: string; amountKamas: number; createdAt: string }[];
+};
+
 /** specs/049: the name of the players' tab — the group's Discord server, when it is known. */
 export function groupTabLabel(me: Pick<FmMe, 'guildName'>): string {
   return me.guildName?.trim() || 'Joueurs';

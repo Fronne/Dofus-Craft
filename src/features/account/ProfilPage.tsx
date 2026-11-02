@@ -2,12 +2,14 @@ import { AccountAvatar } from '../../app/AccountMenu';
 import { useAuth } from '../../app/AuthContext';
 import { EmptyState } from '../../components/EmptyState';
 import { DeleteProfile } from '../forgemagie/ProfileTab';
+import { ContributionsSection } from './ContributionsSection';
+import { PricePrivacy } from './PricePrivacy';
 
 // specs/075-connexion-discord-site (US2): the profile of the whole site — who the player is on Discord, whether
 // they belong to the group's server, and the deletion of the profile.
 
 export function ProfilPage() {
-  const { status, me, loginUrl, forget, retry } = useAuth();
+  const { status, me, loginUrl, forget, retry, updateMe } = useAuth();
 
   return (
     <>
@@ -50,6 +52,9 @@ export function ProfilPage() {
                 </p>
               </div>
             </div>
+
+            <PricePrivacy me={me} updateMe={updateMe} />
+            <ContributionsSection />
 
             <DeleteProfile onDeleted={forget} />
           </>

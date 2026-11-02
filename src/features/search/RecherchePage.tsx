@@ -473,6 +473,7 @@ export function RecherchePage({ priceMode }: { priceMode: PriceMode }) {
                   <MarketPriceInput
                     value={market}
                     updatedAt={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.contributedAt : undefined}
+                    updatedBy={community && sharedItemPrice.kind === 'found' ? sharedItemPrice.price.author : undefined}
                     onCommit={community ? commitMarketPrice : undefined}
                     onUnloadCommit={community ? commitMarketPriceOnUnload : undefined}
                     onTypingChange={(typing) => {
