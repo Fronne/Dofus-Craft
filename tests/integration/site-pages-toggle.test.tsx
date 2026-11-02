@@ -149,3 +149,43 @@ describe('les huit pages activées ou désactivées (specs/071)', () => {
     await waitFor(() => expect(screen.getByText('Contenu XP Familier')).toBeInTheDocument());
   });
 });
+
+// specs/081-bons-plans-aide-acces (US2): the owner keeps the page in their own browsers while it is off for everyone.
+describe('accès réservé à la page Bons plans', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    getSiteSettings.mockReset();
+    getSiteSettings.mockResolvedValue(settings({ bonsPlansPage: false }));
+  });
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('opens the page in a browser that was given the access, and leaves the address clean', async () => {
+    window.history.replaceState(null, '', '/?bonsplans=1');
+    open('/bons-plans');
+    expect(await screen.findByText('Contenu Bons plans')).toBeInTheDocument();
+    expect(navLink('Bons plans')).toBeInTheDocument();
+    expect(window.location.search).toBe('');
+  });
+
+  it('keeps the access for the next visits', async () => {
+    window.localStorage.setItem('dofus-craft-bons-plans-access', '1');
+    open('/bons-plans');
+    expect(await screen.findByText('Contenu Bons plans')).toBeInTheDocument();
+  });
+
+  it('stays closed without the access', async () => {
+    open('/bons-plans');
+    expect(await screen.findByText('Bons plans est momentanément indisponible')).toBeInTheDocument();
+    expect(navLink('Bons plans')).not.toBeInTheDocument();
+  });
+
+  it('closes the page again with ?bonsplans=0', async () => {
+    window.localStorage.setItem('dofus-craft-bons-plans-access', '1');
+    window.history.replaceState(null, '', '/?bonsplans=0');
+    open('/bons-plans');
+    expect(await screen.findByText('Bons plans est momentanément indisponible')).toBeInTheDocument();
+  });
+});

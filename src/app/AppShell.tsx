@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { InfoBanner } from '../components/InfoBanner';
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
@@ -16,6 +16,7 @@ import { RecherchePage } from '../features/search/RecherchePage';
 import { preloadCraftProfits } from '../features/prices/useCraftProfits';
 import { useActiveServer } from './ServerContext';
 import { useSiteSettings } from './useSiteSettings';
+import { applyBonsPlansAccessFromSearch, withoutBonsPlansParameter } from '../persistence/bons-plans-access';
 import type { PriceMode } from '../domain/price-modes';
 import { getPriceMode, setPriceMode } from '../persistence/price-mode-preference';
 import { recordVisit } from '../services/visit-api';
@@ -112,7 +113,15 @@ export function AppShell() {
   const { serverId } = useActiveServer();
   // specs/050-forgemagie-page-toggle, specs/053-hdv-page-toggle: the owner turns the Forgemagie and
   // HDV pages on or off; off, a page's link is gone and its address says so (FR-003, FR-004).
-  const { settings: siteSettings, reading: readingSiteSettings } = useSiteSettings();
+  const { settings: sharedSettings, reading: readingSiteSettings } = useSiteSettings();
+  // specs/081-bons-plans-aide-acces (US2): a browser the owner opened with `?bonsplans=1` keeps that page, whatever the
+  // shared setting says. Read here because the navigation shows its link on every page.
+  const [bonsPlansAccess] = useState(() => {
+    const { access, touched } = applyBonsPlansAccessFromSearch(window.location.search);
+    if (touched) window.history.replaceState(window.history.state, '', withoutBonsPlansParameter(window.location));
+    return access;
+  });
+  const siteSettings = useMemo(() => (bonsPlansAccess ? { ...sharedSettings, bonsPlansPage: true } : sharedSettings), [bonsPlansAccess, sharedSettings]);
   const hdvEnabled = siteSettings.hdvPage;
   // specs/071 (seven pages): every page of the navigation can be turned off. The entry points of the site
   // (home, logo, « back » links) lead to the first page still on; none left, to a message (FR-007, FR-006).

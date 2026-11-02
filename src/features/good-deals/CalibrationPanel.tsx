@@ -42,6 +42,8 @@ function gapText(calibration: DealCalibration, effectId: number): string {
   return hasScaledGap(effectId) ? '' : String(acceptedGap(effectId, 0) ?? '');
 }
 
+const importanceText = (value: number) => (value === 0 ? 'ignorée' : `compte ${value.toLocaleString('fr-FR')} fois`);
+
 function ThresholdField({ value, onChange }: { value: number; onChange: (value: number) => void }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
@@ -76,7 +78,27 @@ export function CalibrationPanel({ calibration, defaultThreshold, onChange }: {
         />
         <button type="button" className="btn btn-secondary" onClick={() => onChange({})}>Réinitialiser</button>
       </div>
-      <p className="fm-note">Pour chaque stat : son importance et l'écart accepté sous le maximum de l'objet. Ces réglages restent dans ce navigateur.</p>
+      <div className="fm-note good-deal-calibration-help">
+        <p>
+          Chaque annonce est comparée aux exemplaires de jet proche du même objet. Elle devient un bon plan si elle coûte au moins
+          le seuil de moins que leur prix médian. Ces réglages restent dans ce navigateur.
+        </p>
+        <p><strong>Importance</strong> : le poids de la stat dans la valeur du jet.</p>
+        <ul>
+          {IMPORTANCE_LEVELS.map((level) => <li key={level.value}>{level.label} : {importanceText(level.value)}</li>)}
+        </ul>
+        <p>
+          <strong>Écart accepté</strong> : de combien la stat peut être sous le maximum de l'objet sans compter comme un défaut.
+          Deux annonces ne sont comparées que si elles ont les mêmes défauts. Exemple : Force maximum 100, écart 5 : 95 est correct, 94 est un défaut.
+        </p>
+        <ul>
+          <li>Auto : l'écart dépend du maximum de l'objet (Vitalité, Dommages Critiques).</li>
+          <li>Vide : la stat ne fait jamais de défaut.</li>
+        </ul>
+      </div>
+      <div className="good-deal-calibration-stat good-deal-calibration-titles" aria-hidden="true">
+        <span>Stat</span><span>Importance</span><span>Écart accepté</span>
+      </div>
       <ul className="good-deal-calibration-stats">
         {BRISAGE_STATS.map((stat) => (
           <li key={stat.effectId} className="good-deal-calibration-stat">

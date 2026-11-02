@@ -168,6 +168,19 @@ describe('page Bons plans', () => {
       getGoodDealsPayload.mockResolvedValue({ thresholdPercent: 25, listings: [...MARKET, DEAL] });
     });
 
+    it('explains the columns, the levels and the states of a gap', async () => {
+      render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      expect(document.querySelector('.good-deal-calibration-titles')?.textContent).toBe('StatImportanceÉcart accepté');
+      for (const text of ['Primordiale : compte 1,5 fois', 'Très importante : compte 1 fois', 'Moyenne : compte 0,5 fois', 'Faible : compte 0,25 fois', 'Aucune : ignorée']) {
+        expect(screen.getByText(text)).toBeInTheDocument();
+      }
+      expect(screen.getByText(/prix médian/)).toBeInTheDocument();
+      expect(screen.getByText(/95 est correct, 94 est un défaut/)).toBeInTheDocument();
+      expect(screen.getByText(/^Auto :/)).toBeInTheDocument();
+      expect(screen.getByText(/^Vide :/)).toBeInTheDocument();
+    });
+
     it('judges again at once, without reading the announcements again', async () => {
       render(<BonsPlansPage />);
       await screen.findByText('1 bon plan');
