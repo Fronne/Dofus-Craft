@@ -124,7 +124,7 @@ Quand l'utilisateur supprime son profil, ses prix restent dans la base commune (
 - **SC-002** : 0 prix de visiteur anonyme, de profil privé, de profil supprimé ou antérieur à la fonctionnalité n'affiche de nom.
 - **SC-003** : Un visiteur identifie en moins de 5 secondes, sans cliquer, qui a mis un prix à jour et depuis quand.
 - **SC-004** : La saisie d'un prix ne demande aucune action supplémentaire : le temps pour saisir un prix reste identique à celui d'aujourd'hui, connecté ou non.
-- **SC-005** : Après un changement de confidentialité, la mention de tous les prix de l'utilisateur est à jour au rechargement suivant de la page.
+- **SC-005** : Après un changement de confidentialité, la mention de tous les prix de l'utilisateur est à jour au plus tard une minute après le changement, au rechargement de la page.
 - **SC-006** : Après suppression d'un profil, 0 prix reste rattaché à cette personne, et 100 % de ses prix restent consultables.
 - **SC-007** : Les prix et leurs valeurs affichés avant et après la mise en ligne sont identiques ; seule la mention s'ajoute.
 - **SC-008** : La mention reste lisible, sans casser la mise en page, sur mobile comme sur ordinateur.
