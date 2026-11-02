@@ -113,7 +113,8 @@ CREATE TABLE IF NOT EXISTS fm_players (
   server_id TEXT,
   is_private INTEGER NOT NULL DEFAULT 0 CHECK (is_private IN (0, 1)),
   first_login_at TEXT,
-  -- specs/075-connexion-discord-site: the class icon the player chose (an id of src/domain/breeds.ts); NULL = none.
+  -- specs/075-connexion-discord-site: unused. The class icon it was added for was dropped; the column stays
+  -- because it exists in production (migration 0030) and SQLite cannot drop it cheaply.
   breed_id INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );

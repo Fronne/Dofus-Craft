@@ -69,7 +69,7 @@ describe('GET /fm/auth/callback', () => {
     const token = response.headers.get('Location')!.split('#session=')[1];
     expect(fm.query('SELECT discord_user_id, is_member FROM fm_auth_sessions')).toEqual([{ discord_user_id: '42', is_member: 0 }]);
     expect(fm.query('SELECT discord_user_id FROM fm_players')).toEqual([{ discord_user_id: '42' }]);
-    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ discordUserId: '42', isMember: false, breedId: null });
+    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ discordUserId: '42', isMember: false });
   });
 
   it('marks the session of a member', async () => {

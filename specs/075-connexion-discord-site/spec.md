@@ -6,6 +6,8 @@
 
 **Statut** : Brouillon
 
+**Révision (2026-11-02)** : le parcours 3 (icône de classe, FR-010, FR-011, SC-005 et la mention de l'icône dans FR-006 et FR-016) a été abandonné après livraison, faute d'utilité. Le code correspondant est retiré ; la colonne `fm_players.breed_id` (migration 0030) reste en base, inutilisée. Les autres documents de ce dossier décrivent l'état livré avant ce retrait.
+
 **Entrée** : « Connexion Discord pour tout le site (sans mot de passe). Aujourd'hui la connexion Discord n'existe que pour la Forgemagie et exige d'être membre du serveur Discord de la communauté. Généraliser la connexion à tout le site, lever l'obligation d'être membre du serveur pour la connexion générale (la garder là où elle est utile), ajouter une icône de classe Dofus au profil, et permettre à la page du bot et aux autres fonctionnalités de s'appuyer sur ce même profil. »
 
 ## Scénarios utilisateur et tests *(obligatoire)*

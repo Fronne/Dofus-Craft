@@ -13,7 +13,7 @@ import { fmLoginUrl, getFmMe, logoutFm, updateFmMe } from '../services/fm-api';
 
 export type AuthStatus = 'loading' | 'anonymous' | 'connected' | 'unavailable';
 
-export type ProfileChanges = { serverId?: string; isPrivate?: boolean; breedId?: number | null };
+export type ProfileChanges = { serverId?: string; isPrivate?: boolean };
 
 export type AuthValue = {
   status: AuthStatus;

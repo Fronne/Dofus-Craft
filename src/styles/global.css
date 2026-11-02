@@ -160,7 +160,7 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .app-nav-footer .icon-button:hover { background: var(--button-bg); }
 
 /* specs/075-connexion-discord-site: the account at the right end of the bar — « Se connecter avec Discord » for a
-   visitor; the Discord avatar (class icon on its corner) and name opening a menu for a logged-in player. */
+   visitor; the Discord avatar and name opening a menu for a logged-in player. */
 .account-menu { position: relative; flex: 0 0 auto; }
 .account-menu--loading { width: 44px; height: 44px; }
 .account-login { gap: var(--space-2); white-space: nowrap; }
@@ -185,17 +185,6 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
 .account-avatar-wrap { position: relative; display: inline-flex; flex: none; }
 .account-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 .account-avatar--empty { display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent-bright); font-size: var(--text-xs); font-weight: 700; }
-.account-breed {
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--panel-strong);
-  border-radius: 50%;
-  background: var(--panel-strong);
-  object-fit: cover;
-}
 .account-menu-pop { position: absolute; top: 100%; right: 0; z-index: 30; padding-top: var(--space-2); }
 .account-logout { width: 100%; border: 0; background: none; font-family: inherit; cursor: pointer; }
 .account-message {
@@ -217,32 +206,10 @@ button, a { transition: background var(--transition-fast), border-color var(--tr
   font-size: var(--text-sm);
 }
 
-/* The profile page (specs/075): identity, class icon, membership. */
+/* The profile page (specs/075): identity, membership. */
 .profile-identity { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
 .profile-identity .account-avatar { width: 56px; height: 56px; font-size: var(--text-lg); }
-.profile-identity .account-breed { width: 28px; height: 28px; right: -8px; bottom: -8px; }
 .profile-name { margin: 0; font-size: var(--text-lg); }
-.breed-picker { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); width: 100%; }
-.breed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: var(--space-2); width: 100%; }
-.breed-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border: .5px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--button-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-.breed-option:hover:not(:disabled) { border-color: var(--border-strong); }
-.breed-option--selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-bright); font-weight: 600; }
-.breed-portrait { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-.breed-portrait--empty { display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent-bright); font-weight: 700; }
-.breed-name { overflow-wrap: anywhere; text-align: center; }
 .app-nav-settings.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-bright); }
 /* Price-mode switch: two pills, the active one tinted green (whichever mode: green means "active"). */
 .price-mode-switch { display: inline-flex; padding: 3px; gap: 2px; border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--button-bg); }

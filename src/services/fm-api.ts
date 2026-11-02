@@ -80,7 +80,7 @@ function isMe(value: unknown): value is FmMe {
   return isRecord(value) && typeof value.discordUserId === 'string' && typeof value.displayName === 'string' &&
     typeof value.isPrivate === 'boolean' && (value.serverId === null || typeof value.serverId === 'string') &&
     (value.guildName === undefined || value.guildName === null || typeof value.guildName === 'string') &&
-    (value.breedId === null || typeof value.breedId === 'number') && typeof value.isMember === 'boolean';
+    typeof value.isMember === 'boolean';
 }
 
 function isPlayer(value: unknown): boolean {
@@ -114,7 +114,7 @@ function isImportAnswer(value: unknown): value is ImportAnswer {
 }
 
 export const getFmMe = () => request('GET', '/fm/me', isMe);
-export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean; breedId?: number | null }) => request('PATCH', '/fm/me', isMe, changes);
+export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean }) => request('PATCH', '/fm/me', isMe, changes);
 export const deleteFmMe = () => request('DELETE', '/fm/me', isNothing);
 export const logoutFm = () => request('POST', '/fm/auth/logout', isNothing);
 
