@@ -109,7 +109,7 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     fireEvent.change(input, { target: { value: '7000' } });
     fireEvent.blur(input);
     await waitFor(() => expect(submitCommunityPrice).toHaveBeenCalledWith('208', 'mikhal', 7000, 'item'));
-    await waitFor(() => expect(hdvRow()).toHaveTextContent('Dernière mise à jour : maintenant'));
+    await waitFor(() => expect(hdvRow()).toHaveTextContent('Dernière mise à jour : il y a quelques instants'));
     expect(input).not.toHaveAttribute('readonly');
   });
 
@@ -184,7 +184,7 @@ describe('prix HDV partagé en Mode communautaire (specs/016)', () => {
     await waitFor(() => expect(getLatestItemPrice).toHaveBeenCalledTimes(2));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(input).toHaveValue('7 000');
-    expect(hdvRow()).toHaveTextContent('Dernière mise à jour : maintenant');
+    expect(hdvRow()).toHaveTextContent('Dernière mise à jour : il y a quelques instants');
   });
 
   it('keeps a typed value when a background refresh cannot reach the service', async () => {

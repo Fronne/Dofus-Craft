@@ -232,10 +232,14 @@ export type FmMe = {
   firstLoginAt: string | null;
   /** specs/049: the name of the group's Discord server, read at login. */
   guildName?: string | null;
-  /** specs/075-connexion-discord-site: the class icon the player chose (an id of `BREEDS`), if any. */
-  breedId: number | null;
   /** specs/075: member of the group's Discord server when this session was opened — the Forgemagie needs it. */
   isMember: boolean;
+};
+
+/** specs/082-auteur-prix-communautaires: the prices a player entered — how many are kept, and the latest ones. */
+export type FmContributions = {
+  total: number;
+  recent: { resourceId: string; kind: 'resource' | 'item'; serverId: string; amountKamas: number; createdAt: string }[];
 };
 
 /** specs/049: the name of the players' tab — the group's Discord server, when it is known. */

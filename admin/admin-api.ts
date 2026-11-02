@@ -80,8 +80,13 @@ export function isKeyContributions(value: unknown): value is KeyContributions {
     Array.isArray(value.days) && value.days.every((day) => isRecord(day) && typeof day.date === 'string' && isCount(day.rows));
 }
 
+function isTodayPlayers(value: unknown): boolean {
+  return value === undefined || (isRecord(value) && Array.isArray(value.names) && value.names.every((name) => typeof name === 'string') &&
+    isCount(value.private) && isCount(value.anonymous));
+}
+
 export function isActivity(value: unknown): value is Activity {
-  return isRecord(value) && isCount(value.pricesTotal) && isCount(value.visitorsToday) && Array.isArray(value.days) &&
+  return isRecord(value) && isCount(value.pricesTotal) && isCount(value.visitorsToday) && isTodayPlayers(value.todayPlayers) && Array.isArray(value.days) &&
     value.days.every((day) =>
       isRecord(day) && typeof day.date === 'string' && isCount(day.visitors) && isRecord(day.prices) &&
       PRICE_ORIGINS.every((origin) => isCount((day.prices as Record<string, unknown>)[origin])));

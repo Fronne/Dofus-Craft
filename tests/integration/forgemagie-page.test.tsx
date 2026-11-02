@@ -67,7 +67,7 @@ import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/f
 const TOKEN = 'a'.repeat(64);
 const me: FmMe = {
   discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: '2026-09-30T10:00:00.000Z',
-  guildName: 'Les Forgemages', breedId: null, isMember: true,
+  guildName: 'Les Forgemages', isMember: true,
 };
 const cyril = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false };
 const rtograf = { id: 'i1', name: 'Rtograf PA', itemName: 'Anneau Rtograf', label: 'Rtograf PA', imageUrl: null };

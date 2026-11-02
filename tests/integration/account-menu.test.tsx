@@ -15,7 +15,7 @@ import { FM_SESSION_TOKEN_KEY, readFmSessionToken, writeFmSessionToken } from '.
 const TOKEN = 'b'.repeat(64);
 const me: FmMe = {
   discordUserId: '42', displayName: 'Cyril', avatarUrl: 'https://cdn.test/avatar.png', serverId: 'mikhal', isPrivate: false,
-  firstLoginAt: null, guildName: null, breedId: null, isMember: false,
+  firstLoginAt: null, guildName: null, isMember: false,
 };
 const ok = <T,>(data: T) => ({ status: 'ok', data });
 
@@ -97,17 +97,15 @@ describe('the login coming back from Discord', () => {
 describe('a logged-in player', () => {
   beforeEach(() => writeFmSessionToken(TOKEN));
 
-  it('sees their Discord name and avatar, and the class icon they chose', async () => {
-    fm.getFmMe.mockResolvedValue(ok({ ...me, breedId: 8 }));
+  it('sees their Discord name and avatar', async () => {
     open();
     const button = await screen.findByRole('button', { name: 'Compte de Cyril' });
     expect(button).toHaveTextContent('Cyril');
     expect(button.querySelector('img.account-avatar')).toHaveAttribute('src', 'https://cdn.test/avatar.png');
-    expect(button.querySelector('img.account-breed')).toHaveAttribute('src', '/class-heads/Head_80.png');
     expect(screen.queryByRole('link', { name: 'Se connecter avec Discord' })).not.toBeInTheDocument();
   });
 
-  it('has the initial of their name when Discord gave no avatar, and no class icon when none is chosen', async () => {
+  it('has the initial of their name when Discord gave no avatar', async () => {
     fm.getFmMe.mockResolvedValue(ok({ ...me, avatarUrl: null }));
     open();
     const button = await screen.findByRole('button', { name: 'Compte de Cyril' });

@@ -52,6 +52,9 @@ export async function recordLinePrice(db: FmDb, input: {
     deviceId: await playerDeviceId(input.discordUserId),
     kind: 'resource',
     origin: input.origin,
+    // specs/082-auteur-prix-communautaires: a capture imported on the site is entered by a logged-in player;
+    // a price sent by the bot keeps no author.
+    ...(input.origin === 'capture' ? { authorDiscordUserId: input.discordUserId } : {}),
   });
   return { priceStatus: 'recorded', contributionId };
 }

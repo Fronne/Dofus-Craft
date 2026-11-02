@@ -40,6 +40,8 @@
     "worker:db:migrate-hdv-listings": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0028_add_hdv_listings.sql --remote",
     "worker:db:migrate-bons-plans-setting": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0029_add_bons_plans_setting.sql --remote",
     "worker:db:migrate-site-login": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0030_add_site_login.sql --remote",
+    "worker:db:migrate-price-author": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0031_add_price_author.sql --remote",
+    "worker:db:migrate-visit-player": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0032_add_visit_player.sql --remote",
     "worker:db:migrate-brisage-coefficients": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0021_add_brisage_coefficients.sql --remote",
     "worker:db:migrate-dashboard-indexes": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0022_add_dashboard_indexes.sql --remote",
     "worker:db:migrate-site-pages": "wrangler d1 execute dofus-craft-community-prices --config worker/wrangler.toml --file worker/migrations/0023_widen_site_settings_keys.sql --remote",

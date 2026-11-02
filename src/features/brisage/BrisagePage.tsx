@@ -402,6 +402,7 @@ export function BrisagePage({ priceMode }: { priceMode: PriceMode }) {
       <RunePriceInput
         key={runeId} runeId={runeId} runeName={runeName} serverId={serverId} priceMode={priceMode} price={prices[runeId]}
         updatedAt={dateOverrides[overrideKey(runeId)] ?? fetched.dates[runeId]}
+        updatedBy={dateOverrides[overrideKey(runeId)] ? undefined : fetched.authors[runeId]}
         onSaved={(id, amount) => {
           setPriceOverrides((known) => ({ ...known, [overrideKey(id)]: amount }));
           setDateOverrides((known) => ({ ...known, [overrideKey(id)]: new Date().toISOString() }));

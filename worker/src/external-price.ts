@@ -52,5 +52,9 @@ export function withExternalPrice(summary: ContributionsSummary | undefined, ext
     ...(external.stale ? { latestFragile: 'stale' as const } : external.provisional ? { latestFragile: 'provisional' as const } : {}),
   };
   if (!summary) return { medianAmountKamas: 0, sampleSize: 0, ...latest } as ExternalSummary;
-  return external.observedAt > summary.latestContributionAt ? { ...summary, ...latest } : summary;
+  // specs/082: a price read on Huzounet has no author — the one of the shared price it replaces must not stay.
+  if (external.observedAt <= summary.latestContributionAt) return summary;
+  const replaced: ExternalSummary = { ...summary, ...latest };
+  delete replaced.latestAuthor;
+  return replaced;
 }

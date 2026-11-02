@@ -7,7 +7,8 @@ import { getLatestItemPrice, submitCommunityPrice, type LatestItemPrice } from '
 // once on the next visit and used whenever the service can't be reached (FR-011).
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
-export type SharedItemPrice = { amountKamas: number; contributedAt: string };
+// specs/082: `author` is the pseudonym of whoever entered the price, when public.
+export type SharedItemPrice = { amountKamas: number; contributedAt: string; author?: string };
 
 export type SharedItemPriceState =
   | { kind: 'loading' }
@@ -23,7 +24,7 @@ function readCache(itemId: string, serverId: string): SharedItemPrice | undefine
   try {
     const parsed = JSON.parse(window.localStorage.getItem(cacheKey(itemId, serverId)) ?? 'null') as Partial<SharedItemPrice> | null;
     if (!parsed || typeof parsed.amountKamas !== 'number' || typeof parsed.contributedAt !== 'string') return undefined;
-    return { amountKamas: parsed.amountKamas, contributedAt: parsed.contributedAt };
+    return { amountKamas: parsed.amountKamas, contributedAt: parsed.contributedAt, ...(typeof parsed.author === 'string' && parsed.author !== '' ? { author: parsed.author } : {}) };
   } catch {
     return undefined;
   }
@@ -31,7 +32,7 @@ function readCache(itemId: string, serverId: string): SharedItemPrice | undefine
 
 function writeCache(itemId: string, serverId: string, price: LatestItemPrice) {
   try {
-    window.localStorage.setItem(cacheKey(itemId, serverId), JSON.stringify({ amountKamas: price.amountKamas, contributedAt: price.contributedAt }));
+    window.localStorage.setItem(cacheKey(itemId, serverId), JSON.stringify({ amountKamas: price.amountKamas, contributedAt: price.contributedAt, author: price.author }));
   } catch {
     // localStorage unavailable — the price just won't show while offline.
   }
@@ -41,7 +42,7 @@ async function fetchState(itemId: string, serverId: string): Promise<SharedItemP
   const result = await getLatestItemPrice(itemId, serverId);
   if (result.status === 'found') {
     writeCache(itemId, serverId, result.price);
-    return { kind: 'found', price: { amountKamas: result.price.amountKamas, contributedAt: result.price.contributedAt }, stale: false };
+    return { kind: 'found', price: { amountKamas: result.price.amountKamas, contributedAt: result.price.contributedAt, ...(result.price.author ? { author: result.price.author } : {}) }, stale: false };
   }
   if (result.status === 'not-found') return { kind: 'not-found' };
   const cached = readCache(itemId, serverId);

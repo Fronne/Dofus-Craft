@@ -4,7 +4,7 @@ import { formatKamasInput, KAMAS_ICON_URL, parseKamas } from '../../domain/kamas
 import { computeDeviationPercent, OUTLIER_THRESHOLD_PERCENT } from '../../domain/outlier-threshold';
 import { classifyPriceAge } from '../../domain/price-age';
 import type { PriceMode } from '../../domain/price-modes';
-import { formatRelativeTime } from '../../domain/time';
+import { formatPriceUpdate } from '../../domain/price-update';
 import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import { submitCommunityPrice } from '../../services/community-price-api';
 import { useOutlierConfirm } from '../comparison/OutlierConfirmDialog';
@@ -14,7 +14,7 @@ import { lookupCommunityPrice } from '../comparison/useCommunityPrice';
 // in Mode communautaire it is also shared with the group, after the same outlier confirmation as the other pages
 // (specs/007), so a mistyped price is not published unchecked.
 
-export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, updatedAt, onSaved }: {
+export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, updatedAt, updatedBy, onSaved }: {
   runeId: string;
   runeName: string;
   serverId: string;
@@ -23,6 +23,8 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
   price: number | undefined;
   /** When the price in use was last changed, if known. */
   updatedAt?: string;
+  /** specs/082: pseudonym of whoever entered the shared price in use, when public. */
+  updatedBy?: string;
   /** Called with the price once it is saved, so the table recomputes at once. */
   onSaved: (runeId: string, price: number) => void;
 }) {
@@ -78,8 +80,8 @@ export function RunePriceInput({ runeId, runeName, serverId, priceMode, price, u
         <span
           role="img" tabIndex={0}
           className={`market-date brisage-price-date${age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : ''}`}
-          aria-label={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
-          data-tip={updatedAt ? `Prix relevé ${formatRelativeTime(updatedAt)}` : 'Date du prix inconnue'}
+          aria-label={updatedAt ? `Prix relevé ${formatPriceUpdate(updatedAt, updatedBy)}` : 'Date du prix inconnue'}
+          data-tip={updatedAt ? `Prix relevé ${formatPriceUpdate(updatedAt, updatedBy)}` : 'Date du prix inconnue'}
         >
           <Icon name="clock" size={16} />
         </span>

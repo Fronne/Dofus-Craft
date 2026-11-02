@@ -3,6 +3,7 @@
 // happens to share the identifier never leaks in.
 
 import { HUZOUNET_SOURCE, readExternalPrices } from './external-price';
+import { AUTHOR_JOIN_SQL, AUTHOR_NAME_SQL } from './price-author';
 
 // The one D1 call this needs, typed structurally (like retention.ts) so the module also compiles in
 // the app's own test setup, which doesn't load the Workers types.
@@ -18,13 +19,14 @@ export async function readLatestContribution(
   db: LatestDb,
   itemId: string,
   serverId: string,
-): Promise<{ amountKamas: number; contributedAt: string } | undefined> {
+): Promise<{ amountKamas: number; contributedAt: string; authorName?: string } | undefined> {
   const row = await db.prepare(
-    `SELECT amount_kamas, created_at FROM community_price_contributions
-     WHERE resource_id = ? AND server_id = ? AND kind = 'item'
-     ORDER BY created_at DESC LIMIT 1`,
-  ).bind(itemId, serverId).first<{ amount_kamas: number; created_at: string }>();
-  return row ? { amountKamas: row.amount_kamas, contributedAt: row.created_at } : undefined;
+    `SELECT c.amount_kamas, c.created_at, ${AUTHOR_NAME_SQL} AS author_name
+     FROM community_price_contributions c ${AUTHOR_JOIN_SQL}
+     WHERE c.resource_id = ? AND c.server_id = ? AND c.kind = 'item'
+     ORDER BY c.created_at DESC LIMIT 1`,
+  ).bind(itemId, serverId).first<{ amount_kamas: number; created_at: string; author_name: string | null }>();
+  return row ? { amountKamas: row.amount_kamas, contributedAt: row.created_at, ...(row.author_name ? { authorName: row.author_name } : {}) } : undefined;
 }
 
 // specs/071-sniffer-tous-hdv: readLatestContribution's price for several items of one server at once —
@@ -65,13 +67,15 @@ export async function latestPriceResponse(db: LatestDb, url: URL): Promise<{ sta
     ? { amountKamas: external.unitPriceKamas, contributedAt: external.observedAt }
     : group;
   if (!latest) return { status: 404, body: null };
-  return { status: 200, body: { itemId, serverId, amountKamas: latest.amountKamas, contributedAt: latest.contributedAt } };
+  // specs/082: the author's pseudonym comes with a shared price only; a price read on Huzounet has none.
+  const author = 'authorName' in latest ? latest.authorName : undefined;
+  return { status: 200, body: { itemId, serverId, amountKamas: latest.amountKamas, contributedAt: latest.contributedAt, author } };
 }
 
 // specs/019-craft-profit-list (contracts/item-prices-api.md): every item's latest shared HDV price on
 // a server, in one query — the same rule as /latest-price, so the Prix page lists exactly the prices
 // the item detail would show. Only the amount and its date leave the Worker, never a device id.
-const LATEST_ITEM_PRICES_SQL = `SELECT c.resource_id, c.amount_kamas, c.created_at FROM community_price_contributions c
+const LATEST_ITEM_PRICES_SQL = `SELECT c.resource_id, c.amount_kamas, c.created_at, ${AUTHOR_NAME_SQL} AS author_name FROM community_price_contributions c ${AUTHOR_JOIN_SQL}
      JOIN (SELECT resource_id, MAX(created_at) AS latest FROM community_price_contributions
            WHERE server_id = ? AND kind = 'item' GROUP BY resource_id) l
        ON c.resource_id = l.resource_id AND c.created_at = l.latest
@@ -81,9 +85,11 @@ const LATEST_ITEM_PRICES_SQL = `SELECT c.resource_id, c.amount_kamas, c.created_
 export async function readLatestItemPrices(
   db: LatestListDb,
   serverId: string,
-): Promise<{ itemId: string; amountKamas: number; contributedAt: string }[]> {
-  const { results } = await db.prepare(LATEST_ITEM_PRICES_SQL).bind(serverId, serverId).all<{ resource_id: string; amount_kamas: number; created_at: string }>();
-  const prices = new Map(results.map((row) => [row.resource_id, { itemId: row.resource_id, amountKamas: row.amount_kamas, contributedAt: row.created_at }]));
+): Promise<{ itemId: string; amountKamas: number; contributedAt: string; author?: string }[]> {
+  const { results } = await db.prepare(LATEST_ITEM_PRICES_SQL).bind(serverId, serverId).all<{ resource_id: string; amount_kamas: number; created_at: string; author_name: string | null }>();
+  const prices = new Map<string, { itemId: string; amountKamas: number; contributedAt: string; author?: string }>(results.map((row) => [row.resource_id, {
+    itemId: row.resource_id, amountKamas: row.amount_kamas, contributedAt: row.created_at, ...(row.author_name ? { author: row.author_name } : {}),
+  }]));
   // specs/045-restore-production-worker: plus the items Huzounet prices (is_item = 1), the most recent winning.
   const { results: external } = await db.prepare(
     `SELECT resource_id, unit_price_kamas, observed_at FROM external_prices WHERE source = ? AND server_id = ? AND is_item = 1`,

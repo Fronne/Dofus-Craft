@@ -47,6 +47,8 @@ npm run worker:db:migrate-line-corrections  # migration 0013 (specs/045: correct
 npm run worker:db:migrate-line-read-name    # migration 0014 (specs/045: name as read, lines that count)
 npm run worker:db:migrate-channel-commands  # migration 0015 (specs/045: archive / reopen a channel)
 npm run worker:db:migrate-site-login        # migration 0030 (specs/075: site-wide login), before deploying the Worker
+npm run worker:db:migrate-price-author      # migration 0031 (specs/082: author of community prices), before deploying the Worker
+npm run worker:db:migrate-visit-player      # migration 0032 (specs/082: visits linked to the logged-in player, named on the admin dashboard)
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
@@ -59,6 +61,13 @@ session, with or without being a member of the group's server. The session recor
 `403 not-member` without it, while `/fm/me` and the logout stay open to every logged-in player.
 `GET /fm/auth/login` takes `return_path` (a path of the site, `/forgemagie` by default) to come back to
 the page the player left. Without `DISCORD_GUILD_ID`, everybody logs in as a non-member.
+
+Community prices keep their author (specs/082): a logged-in player sends the session token in the
+`X-Fm-Session` header of `POST /community-price` (`Authorization` stays the app key); without a valid session the
+price is entered anonymously. Reads give the pseudonym (`latestAuthor` / `author`) unless the profile is private,
+never the Discord id. `GET /fm/me/contributions` gives the player's own prices (`{ total, recent[20] }`); deleting
+the profile unlinks the prices from the player. Reads are cached for 60 s (the Worker's and the browser's): after a
+player goes private or deletes their profile, their pseudonym can stay visible up to 60 s.
 
 The Discord application needs `{worker URL}/fm/auth/callback` as a redirect URL. For local work, the
 same values go in `worker/.dev.vars` (not committed), with `SITE_URL=http://localhost:5173`. The bot's

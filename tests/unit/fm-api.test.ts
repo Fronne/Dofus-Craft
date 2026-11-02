@@ -8,7 +8,7 @@ import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/f
 
 // specs/025-rune-purchase-import then specs/049-fm-seances (contracts/fm-seances-client.md): the site's
 // client of the /fm/* routes.
-const me = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: null, guildName: 'Les Forgemages', breedId: 8, isMember: true };
+const me = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: null, guildName: 'Les Forgemages', isMember: true };
 const player = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false };
 const seance = {
   id: 'c1', name: 'fm-cyril-rtograf', state: 'running', discord: 'active', fmItem: null, totalKamas: 15868, sessionCount: 1, captureCount: 1,
@@ -67,21 +67,11 @@ describe('fm-api — transport', () => {
     expect(readFmSessionToken()).toBe('abc');
   });
 
-  it('refuses a profile without the class icon or the membership', async () => {
+  it('refuses a profile without the membership', async () => {
     stubFetch(() => Response.json(without(me, 'isMember')));
     await expect(getFmMe()).resolves.toEqual({ status: 'unavailable' });
-    stubFetch(() => Response.json(without(me, 'breedId')));
-    await expect(getFmMe()).resolves.toEqual({ status: 'unavailable' });
-    stubFetch(() => Response.json({ ...me, breedId: null, isMember: false }));
+    stubFetch(() => Response.json({ ...me, isMember: false }));
     await expect(getFmMe()).resolves.toMatchObject({ status: 'ok' });
-  });
-
-  it('sends the class icon, or null to remove it, with the profile update', async () => {
-    const fetchMock = stubFetch(() => Response.json(me));
-    await updateFmMe({ breedId: 8 });
-    expect(lastCall(fetchMock)).toEqual({ path: '/fm/me', method: 'PATCH', body: { breedId: 8 } });
-    await updateFmMe({ breedId: null });
-    expect(lastCall(fetchMock).body).toEqual({ breedId: null });
   });
 
   it('is unauthorized without calling the Worker when there is no token', async () => {

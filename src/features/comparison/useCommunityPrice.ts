@@ -49,6 +49,7 @@ function readCache(resourceId: string, serverId: string): CommunityPrice | undef
       latestAmountKamas: parsed.latestAmountKamas,
       latestContributionAt: parsed.latestContributionAt,
       latestOrigin,
+      latestAuthor: typeof parsed.latestAuthor === 'string' && parsed.latestAuthor !== '' ? parsed.latestAuthor : undefined,
       latestFragile: latestOrigin === 'external' && (parsed.latestFragile === 'stale' || parsed.latestFragile === 'provisional')
         ? parsed.latestFragile
         : undefined,

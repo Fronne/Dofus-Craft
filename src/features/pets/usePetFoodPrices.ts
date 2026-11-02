@@ -33,7 +33,7 @@ async function loadPrices(serverId: string, priceMode: PriceMode): Promise<Omit<
   await Promise.all(lookup.prices.map(async (shared) => {
     const choice = pickCommunityPrice(carnet[shared.resourceId], { amountKamas: shared.latestAmountKamas, contributedAt: shared.latestContributionAt });
     if (!choice.replacesCarnet || !choice.price) return;
-    prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, date: choice.price.updatedAt, origin: 'community-latest' };
+    prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, date: choice.price.updatedAt, origin: 'community-latest', ...(shared.latestAuthor && choice.price.updatedAt === shared.latestContributionAt ? { author: shared.latestAuthor } : {}) };
     await repository.save(serverId, shared.resourceId, shared.latestAmountKamas, shared.latestContributionAt).catch(() => undefined);
   }));
   // specs/059-prix-par-lot: the price of each lot size seen on the HDV, to price a quantity with the right lot.

@@ -25,7 +25,7 @@ const CONCURRENCY = 6;
 const BACKGROUND_CONCURRENCY = 4;
 const YIELD_TIMEOUT_MS = 200;
 
-type Candidate = { itemId: string; marketPriceKamas: number; marketPriceDate: string };
+type Candidate = { itemId: string; marketPriceKamas: number; marketPriceDate: string; marketPriceAuthor?: string };
 type Costed = { item: { id: string; name: string; imageUrl?: string }; candidate: Candidate; recipe: Recipe; tree: RecipeTree };
 
 export type CraftProfitsState = {
@@ -71,7 +71,7 @@ async function loadCandidates(serverId: string, priceMode: PriceMode): Promise<C
   if (priceMode === 'community') {
     const lookup = await getSharedItemPrices(serverId);
     if (lookup.status === 'unavailable') return undefined;
-    return lookup.items.map((entry) => ({ itemId: entry.itemId, marketPriceKamas: entry.amountKamas, marketPriceDate: entry.contributedAt }));
+    return lookup.items.map((entry) => ({ itemId: entry.itemId, marketPriceKamas: entry.amountKamas, marketPriceDate: entry.contributedAt, marketPriceAuthor: entry.author }));
   }
   const entries = await pinnedItemPrices.listAllForServer(serverId);
   return entries.map((entry) => ({ itemId: entry.itemId, marketPriceKamas: entry.marketPriceKamas, marketPriceDate: entry.updatedAt }));
@@ -136,6 +136,7 @@ async function compute(serverId: string, priceMode: PriceMode, run: Run, publish
       item,
       compare(recipe, effectiveIngredientPrices(recipe, tree, prices, {}), candidate.marketPriceKamas),
       candidate.marketPriceDate,
+      candidate.marketPriceAuthor,
     ))
     .filter((row): row is CraftProfitRow => row !== undefined);
   const progress = () => publish({ status: 'loading', rows: rows(), done, total: candidates.length });

@@ -54,6 +54,7 @@ async function sharedPrice(db: FmDb, capture: CaptureRow, line: LineRow, unit: n
       deviceId: await playerDeviceId(capture.discord_user_id),
       kind: 'resource',
       origin: capture.origin,
+      ...(capture.origin === 'capture' ? { authorDiscordUserId: capture.discord_user_id } : {}),
     });
   }
   return { contributionId, priceStatus: 'recorded' };

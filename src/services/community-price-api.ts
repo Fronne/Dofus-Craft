@@ -5,6 +5,7 @@ import type { RecipeRefreshOutcome } from '../domain/recipe-refresh';
 import { HISTORY_WINDOWS, type PriceHistory, type SharedPrice } from '../domain/price-history';
 import { LOT_SIZES, type LotUnitPrices } from '../domain/lot-price';
 import { getOrCreateDeviceId } from '../persistence/community-device-id';
+import { readFmSessionToken } from '../persistence/fm-session-token';
 
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
 const API_KEY = import.meta.env.VITE_COMMUNITY_API_KEY;
@@ -58,8 +59,14 @@ function withKnownOrigin(price: CommunityPrice): CommunityPrice {
   const latestFragile = latestOrigin === 'external' && (price.latestFragile === 'stale' || price.latestFragile === 'provisional')
     ? price.latestFragile
     : undefined;
-  if (latestOrigin === price.latestOrigin && latestFragile === price.latestFragile) return price;
-  return { ...price, latestOrigin, latestFragile };
+  // specs/082: an author that is not a plain name is dropped, never shown.
+  const latestAuthor = typeof price.latestAuthor === 'string' && price.latestAuthor !== '' ? price.latestAuthor : undefined;
+  if (latestOrigin === price.latestOrigin && latestFragile === price.latestFragile && latestAuthor === price.latestAuthor) return price;
+  return { ...price, latestOrigin, latestFragile, latestAuthor };
+}
+
+function knownAuthor(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '' ? value : undefined;
 }
 
 export type CommunityPriceLookup =
@@ -92,7 +99,7 @@ export async function getCommunityPrice(resourceId: string, serverId: string): P
 
 // specs/016-shared-item-prices: an item's shared HDV price — the latest contribution of the group
 // for this item and server, with its date (no median, no contribution count).
-export type LatestItemPrice = { itemId: string; serverId: string; amountKamas: number; contributedAt: string };
+export type LatestItemPrice = { itemId: string; serverId: string; amountKamas: number; contributedAt: string; author?: string };
 export type LatestItemPriceLookup =
   | { status: 'found'; price: LatestItemPrice }
   | { status: 'not-found' }
@@ -124,7 +131,7 @@ export async function getLatestItemPrice(itemId: string, serverId: string): Prom
     return { status: 'unavailable' };
   }
   if (!isLatestItemPriceRow(payload)) return { status: 'unavailable' };
-  return { status: 'found', price: payload };
+  return { status: 'found', price: { ...payload, author: knownAuthor(payload.author) } };
 }
 
 function isSharedPrice(value: unknown): value is SharedPrice {
@@ -160,7 +167,7 @@ export async function getPriceHistory(kind: 'resource' | 'item', id: string, ser
   return { status: 'found', history: payload };
 }
 
-export type SharedItemPriceEntry = { itemId: string; amountKamas: number; contributedAt: string };
+export type SharedItemPriceEntry = { itemId: string; amountKamas: number; contributedAt: string; author?: string };
 export type SharedItemPricesLookup = { status: 'found'; items: SharedItemPriceEntry[] } | { status: 'unavailable' };
 
 function isSharedItemPriceEntry(value: unknown): value is SharedItemPriceEntry {
@@ -190,7 +197,7 @@ export async function getSharedItemPrices(serverId: string): Promise<SharedItemP
   if (!isRecord(payload) || !Array.isArray(payload.items) || !payload.items.every(isSharedItemPriceEntry)) {
     return { status: 'unavailable' };
   }
-  return { status: 'found', items: payload.items };
+  return { status: 'found', items: payload.items.map((item) => ({ ...item, author: knownAuthor(item.author) })) };
 }
 
 // specs/021-background-data-loading (FR-010): several resources' community medians in one request
@@ -335,11 +342,13 @@ export async function submitCommunityPrice(
   kind?: 'item',
 ): Promise<{ id: string } | undefined> {
   const deviceId = getOrCreateDeviceId();
+  // specs/082-auteur-prix-communautaires: a logged-in player signs the price; without a session it stays anonymous.
+  const session = readFmSessionToken();
   let response: Response;
   try {
     response = await fetch(`${API_URL}/community-price`, {
       method: 'POST',
-      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      headers: apiHeaders({ 'Content-Type': 'application/json', ...(session ? { 'X-Fm-Session': session } : {}) }),
       body: JSON.stringify(kind ? { resourceId, serverId, amountKamas, deviceId, kind } : { resourceId, serverId, amountKamas, deviceId }),
       // specs/052-direct-price-entry: a price typed just before the page unloads is still sent.
       keepalive: true,

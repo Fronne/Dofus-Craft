@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { breedName, portraitUrl } from '../domain/breeds';
 import type { FmMe, LoginError } from '../domain/forgemagie';
 import { useAuth } from './AuthContext';
 import { ROUTES } from './router';
 
 // specs/075-connexion-discord-site: the right end of the top bar, on every page — « Se connecter avec Discord » for a
-// visitor; for a logged-in player their Discord name and avatar (and the class icon they chose) opening a menu with
+// visitor; for a logged-in player their Discord name and avatar opening a menu with
 // their profile and the logout.
 
 const LOGIN_ERROR_MESSAGES: Record<LoginError, string> = {
@@ -16,28 +15,15 @@ const LOGIN_ERROR_MESSAGES: Record<LoginError, string> = {
 };
 
 /** The player's Discord avatar, or their initial when they have none (or it does not load). */
-export function AccountAvatar({ me }: { me: Pick<FmMe, 'avatarUrl' | 'displayName' | 'breedId'> }) {
+export function AccountAvatar({ me }: { me: Pick<FmMe, 'avatarUrl' | 'displayName'> }) {
   const [avatarBroken, setAvatarBroken] = useState(false);
-  const [breedBroken, setBreedBroken] = useState(false);
   useEffect(() => setAvatarBroken(false), [me.avatarUrl]);
-  useEffect(() => setBreedBroken(false), [me.breedId]);
   return (
     <span className="account-avatar-wrap">
       {me.avatarUrl && !avatarBroken ? (
         <img className="account-avatar" src={me.avatarUrl} alt="" width={28} height={28} onError={() => setAvatarBroken(true)} />
       ) : (
         <span className="account-avatar account-avatar--empty" aria-hidden="true">{me.displayName.charAt(0).toUpperCase() || '?'}</span>
-      )}
-      {me.breedId !== null && !breedBroken && (
-        <img
-          className="account-breed"
-          src={portraitUrl(me.breedId, 'm')}
-          alt=""
-          title={breedName(me.breedId)}
-          width={18}
-          height={18}
-          onError={() => setBreedBroken(true)}
-        />
       )}
     </span>
   );

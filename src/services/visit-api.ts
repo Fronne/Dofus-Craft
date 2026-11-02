@@ -1,4 +1,5 @@
 import { getOrCreateVisitDeviceId } from '../persistence/visit-device-id';
+import { readFmSessionToken } from '../persistence/fm-session-token';
 
 const API_URL = import.meta.env.VITE_COMMUNITY_API_URL;
 const API_KEY = import.meta.env.VITE_COMMUNITY_API_KEY;
@@ -12,12 +13,15 @@ export async function recordVisit(): Promise<void> {
   // .env.local: each fresh browser context would otherwise count as a new production visitor.
   if (import.meta.env.MODE === 'development') return;
   const deviceId = getOrCreateVisitDeviceId();
+  // specs/082: a logged-in player's visit is linked to them, for the admin dashboard; without a session it stays anonymous.
+  const session = readFmSessionToken();
   try {
     await fetch(`${API_URL}/visit`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
+        ...(session ? { 'X-Fm-Session': session } : {}),
       },
       body: JSON.stringify({ deviceId }),
     });

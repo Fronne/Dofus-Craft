@@ -1,6 +1,6 @@
 import { Kamas } from '../prices/PricesPage';
 import { classifyPriceAge } from '../../domain/price-age';
-import { formatRelativeTime } from '../../domain/time';
+import { formatPriceUpdate } from '../../domain/price-update';
 import { ordinal, type PetFood, type PetFoodPodiumEntry } from '../../domain/pet-xp';
 
 // specs/055-refonte-xp-familier (US2): the 3 cheapest foods for the objective, in large cards.
@@ -17,10 +17,10 @@ export function FoodImage({ food }: { food: PetFood }) {
 }
 
 /** The age of a price, flagged amber or coral like elsewhere once it gets old. */
-export function PriceAge({ date }: { date?: string }) {
+export function PriceAge({ date, author }: { date?: string; author?: string }) {
   const age = classifyPriceAge(date);
   const ageClass = age === 'stale' ? ' market-date--stale' : age === 'expired' ? ' market-date--expired' : '';
-  return <small className={`market-date${ageClass}`}>{date ? `Prix relevé ${formatRelativeTime(date)}` : 'Date du prix inconnue'}</small>;
+  return <small className={`market-date${ageClass}`}>{date ? `Prix relevé ${formatPriceUpdate(date, author)}` : 'Date du prix inconnue'}</small>;
 }
 
 export function PetFoodPodium({ entries }: { entries: PetFoodPodiumEntry[] }) {
@@ -48,7 +48,7 @@ export function PetFoodPodium({ entries }: { entries: PetFoodPodiumEntry[] }) {
                 <div><dt>Prix unitaire</dt><dd><Kamas value={entry.unitPriceKamas} />{entry.lotSize > 1 && <small> lot ×{entry.lotSize}</small>}</dd></div>
                 <div><dt>XP / unité</dt><dd>{numberFormat.format(entry.xpPerUnit)}</dd></div>
               </dl>
-              <PriceAge date={entry.priceDate} />
+              <PriceAge date={entry.priceDate} author={entry.priceAuthor} />
             </article>
           </li>
         ))}

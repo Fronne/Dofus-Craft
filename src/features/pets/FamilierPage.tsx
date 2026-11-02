@@ -8,7 +8,7 @@ import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import { Kamas } from '../prices/PricesPage';
 import { classifyPriceAge } from '../../domain/price-age';
 import type { PriceMode } from '../../domain/price-modes';
-import { formatRelativeTime } from '../../domain/time';
+import { formatPriceUpdate } from '../../domain/price-update';
 import { Icon } from '../../components/Icon';
 import { normalizeSearchText } from '../../services/dofusdb-api';
 import {
@@ -148,7 +148,7 @@ function FoodLine({ line, rank }: { line: PetFoodRecommendation; rank?: number }
         <b><Kamas value={line.unitPriceKamas} /></b>
         {line.lotSize > 1 && <small>prix du lot ×{line.lotSize}</small>}
         <small className={`market-date${ageClass}`}>
-          {line.priceDate ? formatRelativeTime(line.priceDate) : 'date inconnue'}
+          {line.priceDate ? formatPriceUpdate(line.priceDate, line.priceAuthor) : 'date inconnue'}
         </small>
       </div>
       <div className="profit-cell">

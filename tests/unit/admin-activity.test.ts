@@ -118,3 +118,26 @@ describe('GET /api/activity', () => {
     expect(text).not.toMatch(/device|resource|secret|deviceId|key/i);
   });
 });
+
+// specs/082-auteur-prix-communautaires: who visited today.
+describe('readActivity — the visitors of the day', () => {
+  const visit = (device: string, day: string, player: string | null) =>
+    test.sqlite.prepare('INSERT INTO app_visits (device_id, day, discord_user_id) VALUES (?, ?, ?)').run(device, day, player);
+  const player = (id: string, name: string, isPrivate = 0) =>
+    test.sqlite.prepare('INSERT INTO fm_players (discord_user_id, display_name, is_private) VALUES (?, ?, ?)').run(id, name, isPrivate);
+
+  it('names the logged-in players, counts the private profiles and the anonymous devices', async () => {
+    player('1', 'Cyril'); player('2', 'Zoe'); player('3', 'Secret', 1);
+    visit('a', '2026-10-22', '1'); visit('a2', '2026-10-22', '1'); visit('b', '2026-10-22', '2'); visit('c', '2026-10-22', '3');
+    visit('d', '2026-10-22', null); visit('e', '2026-10-22', null);
+    visit('old', '2026-10-21', '2');
+    const activity = await readActivity(env.DB, NOW);
+    expect(activity.visitorsToday).toBe(6);
+    expect(activity.todayPlayers).toEqual({ names: ['Cyril', 'Zoe'], private: 1, anonymous: 2 });
+    expect(JSON.stringify(activity)).not.toContain('Secret');
+  });
+
+  it('is empty when nobody visited', async () => {
+    expect((await readActivity(env.DB, NOW)).todayPlayers).toEqual({ names: [], private: 0, anonymous: 0 });
+  });
+});

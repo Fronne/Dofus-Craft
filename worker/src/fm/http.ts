@@ -84,6 +84,21 @@ export async function requireSession(request: Request, db: FmDb): Promise<Viewer
   return row ? { discordUserId: row.discord_user_id, isMember: row.is_member === 1 } : undefined;
 }
 
+// specs/082-auteur-prix-communautaires: the Discord id of the player whose session token the site sent in
+// `X-Fm-Session` with a price entry. A missing, unknown or expired token — or a database that fails — is no
+// author, never an error: the price is entered all the same.
+export async function optionalViewer(request: Request, db: FmDb): Promise<string | undefined> {
+  const token = request.headers.get('X-Fm-Session')?.trim();
+  if (!token) return undefined;
+  try {
+    const row = await db.prepare('SELECT discord_user_id FROM fm_auth_sessions WHERE token_hash = ? AND expires_at > ?')
+      .bind(await sha256Hex(token), nowIso()).first<{ discord_user_id: string }>();
+    return row?.discord_user_id;
+  } catch {
+    return undefined;
+  }
+}
+
 export type PlayerIdentity = { discordUserId: string; displayName: string; avatarUrl: string | null };
 
 // Creates the player (public, no server yet — FR-006) or refreshes their name and avatar; never

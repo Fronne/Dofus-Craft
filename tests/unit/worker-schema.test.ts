@@ -135,7 +135,7 @@ describe('worker/migrations', () => {
     db.exec(migration);
     const indexes = (table: string) =>
       (db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND name NOT LIKE 'sqlite_%' ORDER BY name").all(table) as { name: string }[]).map((row) => row.name);
-    expect(indexes('community_price_contributions')).toEqual(['idx_community_price_contributions_created_at', 'idx_community_price_contributions_lookup']);
+    expect(indexes('community_price_contributions')).toEqual(['idx_community_price_contributions_author', 'idx_community_price_contributions_created_at', 'idx_community_price_contributions_lookup']);
     expect(indexes('app_visits')).toEqual(['idx_app_visits_day']);
     expect(db.prepare('SELECT id, amount_kamas FROM community_price_contributions').all()).toEqual([{ id: 'kept', amount_kamas: 10 }]);
     expect(db.prepare('SELECT device_id, day FROM app_visits').all()).toEqual([{ device_id: 'a', day: '2026-10-22' }]);
