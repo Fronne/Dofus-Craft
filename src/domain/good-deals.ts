@@ -135,8 +135,33 @@ const GAP_OF_0 = new Set([115, 111, 128, 117, 182]); // Critique, PA, PM, Porté
 const DOMMAGES_CRITIQUES = 418;
 const VITALITE = 125;
 
+/** specs/080: what a player sets for themselves, in the browser. An absent entry keeps the default of specs/079. */
+export type DealCalibration = {
+  importance?: Record<number, number>;
+  /** The gap accepted for a stat; null means it is never a defect. */
+  gaps?: Record<number, number | null>;
+  thresholdPercent?: number;
+};
+
+export const IMPORTANCE_LEVELS = [
+  { value: 1.5, label: 'Primordiale' },
+  { value: 1, label: 'Très importante' },
+  { value: 0.5, label: 'Moyenne' },
+  { value: 0.25, label: 'Faible' },
+  { value: 0, label: 'Aucune' },
+];
+
+export function statImportance(effectId: number, calibration?: DealCalibration): number {
+  return calibration?.importance?.[effectId] ?? STAT_IMPORTANCE[effectId] ?? 1;
+}
+
+/** True for a stat whose default gap follows the item's max, so no single number stands for it. */
+export const hasScaledGap = (effectId: number) => effectId === DOMMAGES_CRITIQUES || effectId === VITALITE;
+
 /** The gap accepted under the item's `max`; undefined for a stat that is never a defect. */
-export function acceptedGap(effectId: number, max: number): number | undefined {
+export function acceptedGap(effectId: number, max: number, calibration?: DealCalibration): number | undefined {
+  const own = calibration?.gaps?.[effectId];
+  if (own !== undefined) return own ?? undefined;
   if (GAP_OF_5.has(effectId)) return 5;
   if (GAP_OF_1.has(effectId)) return 1;
   if (GAP_OF_0.has(effectId)) return 0;
@@ -156,12 +181,12 @@ export type JetQuality = {
 };
 
 // specs/079 (FR-008): a line the copy lacks counts 0; bounds the item doesn't know make no defect.
-function jetDefects(stats: JetLine[], itemEffects: ItemEffect[]): number[] {
+function jetDefects(stats: JetLine[], itemEffects: ItemEffect[], calibration?: DealCalibration): number[] {
   const defects: number[] = [];
   for (const effect of itemEffects) {
     if (effect.from === undefined && effect.to === undefined) continue;
     const max = Math.max(effect.from ?? effect.to!, effect.to ?? effect.from!);
-    const gap = acceptedGap(effect.effectId, max);
+    const gap = acceptedGap(effect.effectId, max, calibration);
     if (gap === undefined) continue;
     const value = stats.find((line) => line.effectId === effect.effectId)?.value ?? 0;
     if (value < max - gap) defects.push(effect.effectId);
@@ -170,7 +195,7 @@ function jetDefects(stats: JetLine[], itemEffects: ItemEffect[]): number[] {
 }
 
 /** Sum of value × weight × importance of each line; an exo line counts EXO_FACTOR times; a stat without a weight counts for nothing. */
-export function jetQuality(stats: JetLine[], itemEffects: ItemEffect[]): JetQuality {
+export function jetQuality(stats: JetLine[], itemEffects: ItemEffect[], calibration?: DealCalibration): JetQuality {
   const normal = new Set(itemEffects.map((effect) => effect.effectId));
   let quality = 0;
   let unknownLines = 0;
@@ -189,14 +214,14 @@ export function jetQuality(stats: JetLine[], itemEffects: ItemEffect[]): JetQual
       // The tier is about how hard the exo is to make, so it stays on the brisage weight, without the importance.
       exoTiers.push(`${line.effectId}:${line.value * known.weight >= EXO_WEIGHT_TIER ? 'high' : 'low'}`);
     }
-    quality += line.value * known.weight * (isExo ? EXO_FACTOR : 1) * (STAT_IMPORTANCE[line.effectId] ?? 1);
+    quality += line.value * known.weight * (isExo ? EXO_FACTOR : 1) * statImportance(line.effectId, calibration);
   }
   return {
     quality,
     unknownLines,
     exoEffectIds: exoEffectIds.sort((a, b) => a - b),
     exoTiers: exoTiers.sort(),
-    defectEffectIds: jetDefects(stats, itemEffects),
+    defectEffectIds: jetDefects(stats, itemEffects, calibration),
   };
 }
 
@@ -214,8 +239,8 @@ const sameList = <T,>(a: T[], b: T[]) => a.length === b.length && a.every((entry
  * Comparable = same exos on the same side of EXO_WEIGHT_TIER, same defects, quality within NEIGHBOUR_RANGE,
  * at least MIN_NEIGHBOURS of them.
  */
-export function evaluateListings(listings: Listing[], itemEffects: ItemEffect[], thresholdPercent: number): DealVerdict[] {
-  const rated = listings.map((listing) => ({ listing, ...jetQuality(listing.stats, itemEffects) }));
+export function evaluateListings(listings: Listing[], itemEffects: ItemEffect[], thresholdPercent: number, calibration?: DealCalibration): DealVerdict[] {
+  const rated = listings.map((listing) => ({ listing, ...jetQuality(listing.stats, itemEffects, calibration) }));
   return rated.map((entry) => {
     const base: DealVerdict = {
       listingId: entry.listing.listingId,
@@ -263,13 +288,21 @@ export const DEAL_SORTS: { id: DealSort; label: string }[] = [
   { id: 'savingPercent', label: 'Économie en pourcentage' },
 ];
 
-export type DealFilter = { sort: DealSort; exoOnly: boolean; effectId?: number };
+/** specs/080: one exo, and the exact value wanted; no value keeps every value of that exo. */
+export type ExoFilter = { effectId: number; value?: number };
+export type DealFilter = { sort: DealSort; exo?: ExoFilter };
 
-/** The good deals only, filtered (exo, a given stat) and sorted by saving, biggest first. */
+/** The exos carried by the announcements, each once. */
+export function exoEffectIdsOf(deals: DealVerdict[]): number[] {
+  return [...new Set(deals.flatMap((deal) => deal.exoEffectIds))].sort((a, b) => a - b);
+}
+
+/** The good deals only, filtered on an exo and sorted by saving, biggest first. */
 export function selectGoodDeals<T extends DealVerdict & { listing: Listing }>(deals: T[], filter: DealFilter): T[] {
+  const { exo } = filter;
   return deals
     .filter((deal) => deal.isGoodDeal)
-    .filter((deal) => !filter.exoOnly || deal.hasExo)
-    .filter((deal) => filter.effectId === undefined || deal.listing.stats.some((line) => line.effectId === filter.effectId))
+    .filter((deal) => !exo || deal.exoEffectIds.includes(exo.effectId))
+    .filter((deal) => exo?.value === undefined || deal.listing.stats.some((line) => line.effectId === exo.effectId && line.value === exo.value))
     .sort((a, b) => b[filter.sort] - a[filter.sort] || a.priceKamas - b.priceKamas);
 }

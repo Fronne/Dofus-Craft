@@ -2877,6 +2877,15 @@ body::before {
 .good-deal-range { white-space: nowrap; color: var(--text-muted); opacity: .75; font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; }
 .good-deal-icon-gap { display: inline-block; width: 18px; height: 18px; flex: none; }
 .good-deal-foot { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-top: .6rem; border-top: 1px solid var(--border-strong); }
+.good-deal-exo-filter { display: inline-flex; align-items: center; gap: var(--space-2); }
+.good-deal-exo-value { width: 5.5rem; }
+.good-deal-calibration { margin: 0 0 var(--space-4); padding: var(--space-2) var(--space-3); border-radius: var(--radius-xs); background: var(--panel); border: 1px solid var(--border-strong); }
+.good-deal-calibration summary { cursor: pointer; font-weight: 600; }
+.good-deal-calibration-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin: var(--space-3) 0; }
+.good-deal-calibration-threshold { width: 5rem; }
+.good-deal-calibration-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: var(--space-2) var(--space-4); max-height: 24rem; margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+.good-deal-calibration-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto 5.5rem; align-items: center; gap: var(--space-2); font-size: .85rem; }
+@media (max-width: 480px) { .good-deal-calibration-stats { grid-template-columns: minmax(0, 1fr); } }
 .good-deal-prices { display: grid; font-variant-numeric: tabular-nums; }
 .good-deal-price { color: var(--kamas); font-size: 1.05rem; }
 .good-deal-reference, .good-deal-age { font-size: .78rem; color: var(--text-muted); }

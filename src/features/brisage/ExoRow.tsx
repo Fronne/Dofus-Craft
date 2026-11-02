@@ -7,6 +7,7 @@ import { Kamas } from '../prices/PricesPage';
 // it in a list that shows each rune's icon, then types the value. The page owns the data and the weight limit.
 
 export type ExoRuneChoice = { effectId: number; label: string; runeName: string; imageUrl?: string; max: number };
+export type RuneChoice = Omit<ExoRuneChoice, 'max'>;
 /** `id` is local and stable (the row keeps its identity, and its focus, when its rune is picked); it is not stored. */
 export type ExoEntry = { id: string; effectId?: number; value: number };
 
@@ -15,14 +16,14 @@ const number = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 /** Case and accents do not matter when searching a rune. */
 const fold = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-function RuneIcon({ choice }: { choice: ExoRuneChoice }) {
+function RuneIcon({ choice }: { choice: RuneChoice }) {
   return choice.imageUrl
     ? <img src={choice.imageUrl} alt="" width="28" height="28" className="brisage-exo-icon" />
     : <span className="result-image-fallback brisage-exo-icon" aria-hidden="true">{choice.runeName.replace('Rune ', '').slice(0, 1)}</span>;
 }
 
 /** The rune of the exo, picked in a list with the icon of every rune. */
-function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choices: ExoRuneChoice[]; onPick: (effectId: number) => void }) {
+export function RunePicker({ chosen, choices, onPick, placeholder = 'Choisir une rune' }: { chosen?: RuneChoice; choices: RuneChoice[]; onPick: (effectId: number) => void; placeholder?: string }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const box = useRef<HTMLSpanElement>(null);
@@ -44,7 +45,7 @@ function RunePicker({ chosen, choices, onPick }: { chosen?: ExoRuneChoice; choic
         aria-label={chosen ? `Rune de l'exo : ${chosen.runeName}` : "Choisir la rune de l'exo"}
         onClick={() => { setOpen(!open); setQuery(''); }}
       >
-        {chosen ? <><RuneIcon choice={chosen} /><span>{chosen.runeName}</span></> : <span>Choisir une rune</span>}
+        {chosen ? <><RuneIcon choice={chosen} /><span>{chosen.runeName}</span></> : <span>{placeholder}</span>}
       </button>
       {open && (
         <div className="brisage-exo-options">

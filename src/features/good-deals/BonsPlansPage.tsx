@@ -2,10 +2,15 @@ import { useMemo, useState } from 'react';
 import { useActiveServer } from '../../app/ServerContext';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { EmptyState } from '../../components/EmptyState';
-import { BRISAGE_STATS } from '../../domain/brisage';
-import { DEAL_SORTS, jetCardLines, selectGoodDeals, type DealSort } from '../../domain/good-deals';
+import runeItems from '../../data/rune-items.json';
+import { BRISAGE_STATS, defaultBrisageSettings, runeForStat } from '../../domain/brisage';
+import type { RuneItem } from '../../domain/forgemagie';
+import { DEAL_SORTS, exoEffectIdsOf, jetCardLines, selectGoodDeals, type DealCalibration, type DealSort } from '../../domain/good-deals';
 import { formatKamas } from '../../domain/kamas';
 import { formatRelativeTime } from '../../domain/time';
+import { RunePicker, type RuneChoice } from '../brisage/ExoRow';
+import { CalibrationPanel } from './CalibrationPanel';
+import { readCalibration, writeCalibration } from './deal-calibration';
 import { GoodDealBadge } from './GoodDealBadge';
 import { statIconAsset } from './stat-icons';
 import { useGoodDeals, type Deal } from './useGoodDeals';
@@ -13,6 +18,14 @@ import { useGoodDeals, type Deal } from './useGoodDeals';
 // specs/078-bons-plans-hdv (US2): every good deal of the active server, with the sort and the filters of the spec.
 
 const PAGE_SIZE = 40;
+
+// specs/080: the exo filter shows the rune of each stat, as the page Brisage does.
+const RUNES = (runeItems as { runes: RuneItem[] }).runes;
+const RUNE_SIZE = defaultBrisageSettings().runeSize;
+const RUNE_CHOICES: RuneChoice[] = BRISAGE_STATS.flatMap((stat) => {
+  const found = runeForStat(RUNES, stat.effectId, RUNE_SIZE);
+  return found ? [{ effectId: stat.effectId, label: stat.label, runeName: found.rune.name, imageUrl: found.rune.imageUrl }] : [];
+});
 
 // One card per announcement: the item, the −40 % tag, each line of the roll with its stat icon, the price.
 function DealCard({ deal }: { deal: Deal }) {
@@ -52,17 +65,28 @@ function DealCard({ deal }: { deal: Deal }) {
 
 export function BonsPlansPage() {
   const { serverId, servers } = useActiveServer();
-  const state = useGoodDeals(serverId);
+  const [calibration, setCalibration] = useState<DealCalibration>(readCalibration);
+  const state = useGoodDeals(serverId, calibration);
   const [sort, setSort] = useState<DealSort>('savingKamas');
-  const [exoOnly, setExoOnly] = useState(false);
-  const [effectId, setEffectId] = useState<number | undefined>(undefined);
+  const [exoId, setExoId] = useState<number | undefined>(undefined);
+  const [exoValue, setExoValue] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
   const serverName = servers.find((server) => server.id === serverId)?.name ?? serverId;
-  const deals = useMemo(
-    () => (state.status === 'ready' ? selectGoodDeals(state.deals, { sort, exoOnly, effectId }) : []),
-    [state, sort, exoOnly, effectId],
-  );
+  const deals = useMemo(() => {
+    if (state.status !== 'ready') return [];
+    const exo = exoId === undefined ? undefined : { effectId: exoId, value: exoValue === '' ? undefined : Number(exoValue) };
+    return selectGoodDeals(state.deals, { sort, exo });
+  }, [state, sort, exoId, exoValue]);
+  const exoChoices = useMemo(() => {
+    const present = new Set(state.status === 'ready' ? exoEffectIdsOf(state.deals) : []);
+    return RUNE_CHOICES.filter((choice) => present.has(choice.effectId));
+  }, [state]);
+  const calibrate = (next: DealCalibration) => {
+    setCalibration(next);
+    writeCalibration(next);
+    setVisible(PAGE_SIZE);
+  };
 
   return (
     <>
@@ -91,20 +115,30 @@ export function BonsPlansPage() {
                 {DEAL_SORTS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
               </select>
             </label>
-            <label>
-              Jet{' '}
-              <select
-                value={effectId ?? ''}
-                onChange={(event) => { setEffectId(event.target.value === '' ? undefined : Number(event.target.value)); setVisible(PAGE_SIZE); }}
-              >
-                <option value="">Tous</option>
-                {BRISAGE_STATS.map((stat) => <option key={stat.effectId} value={stat.effectId}>{stat.label}</option>)}
-              </select>
-            </label>
-            <label>
-              <input type="checkbox" checked={exoOnly} onChange={(event) => { setExoOnly(event.target.checked); setVisible(PAGE_SIZE); }} /> Exo uniquement
-            </label>
+            <span className="good-deal-exo-filter">
+              Exo{' '}
+              <RunePicker
+                chosen={RUNE_CHOICES.find((choice) => choice.effectId === exoId)} choices={exoChoices} placeholder="Tous les exos"
+                onPick={(effectId) => { setExoId(effectId); setExoValue(''); setVisible(PAGE_SIZE); }}
+              />
+            </span>
+            {exoId !== undefined && (
+              <>
+                <label>
+                  Valeur{' '}
+                  <input
+                    type="number" min="1" step="1" className="good-deal-exo-value" placeholder="Toutes" value={exoValue}
+                    onChange={(event) => { setExoValue(event.target.value); setVisible(PAGE_SIZE); }}
+                  />
+                </label>
+                <button type="button" className="btn btn-secondary" onClick={() => { setExoId(undefined); setExoValue(''); setVisible(PAGE_SIZE); }}>
+                  Retirer l'exo
+                </button>
+              </>
+            )}
           </div>
+
+          <CalibrationPanel calibration={calibration} defaultThreshold={state.adminThresholdPercent} onChange={calibrate} />
 
           {deals.length === 0 ? (
             <EmptyState

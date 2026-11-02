@@ -26,6 +26,7 @@ vi.mock('../../src/app/ServerContext', () => ({
 }));
 
 import { BonsPlansPage } from '../../src/features/good-deals/BonsPlansPage';
+import { CALIBRATION_STORAGE_KEY } from '../../src/features/good-deals/deal-calibration';
 
 const NOW = Date.now();
 const minutesAgo = (minutes: number) => new Date(NOW - minutes * 60_000).toISOString();
@@ -41,6 +42,7 @@ const EXO_DEAL = listing('exodeal', '2500', 1_200_000, 40, minutesAgo(30), [{ ef
 
 beforeEach(() => {
   getGoodDealsPayload.mockReset();
+  window.localStorage.clear();
 });
 
 afterEach(cleanup);
@@ -106,24 +108,120 @@ describe('page Bons plans', () => {
     await waitFor(() => expect(order()).toEqual(['Abracapa', 'Abrabottes']));
   });
 
-  it('keeps only exo announcements with « Exo uniquement »', async () => {
-    getGoodDealsPayload.mockResolvedValue({ thresholdPercent: 25, listings: [...MARKET, DEAL, ...EXO_MARKET, EXO_DEAL] });
-    render(<BonsPlansPage />);
-    await screen.findAllByText('Abrabottes');
-    expect(screen.getByText('Abracapa')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Exo uniquement'));
-    await waitFor(() => expect(screen.queryByText('Abrabottes')).not.toBeInTheDocument());
-    expect(screen.getByText('Abracapa')).toBeInTheDocument();
-    expect(screen.getByText('Exo')).toBeInTheDocument();
+  // specs/080-bons-plans-filtre-calibrage (US1): one exo at a time, and optionally its exact value.
+  describe('filtre par exo', () => {
+    const pickForce = async () => {
+      await screen.findAllByText('Abrabottes');
+      fireEvent.click(screen.getByRole('button', { name: "Choisir la rune de l'exo" }));
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: 'force' } });
+      fireEvent.click(within(screen.getByRole('list', { name: "Runes disponibles pour l'exo" })).getByRole('button'));
+    };
+
+    beforeEach(() => {
+      getGoodDealsPayload.mockResolvedValue({ thresholdPercent: 25, listings: [...MARKET, DEAL, ...EXO_MARKET, EXO_DEAL] });
+    });
+
+    it('no longer offers the list « Jet » nor « Exo uniquement »', async () => {
+      render(<BonsPlansPage />);
+      await screen.findAllByText('Abrabottes');
+      expect(screen.queryByRole('combobox', { name: /^Jet/ })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Exo uniquement')).not.toBeInTheDocument();
+    });
+
+    it('offers the exos of the announcements only, and finds them by search', async () => {
+      render(<BonsPlansPage />);
+      await screen.findAllByText('Abrabottes');
+      fireEvent.click(screen.getByRole('button', { name: "Choisir la rune de l'exo" }));
+      expect(within(screen.getByRole('list', { name: "Runes disponibles pour l'exo" })).getAllByRole('button')).toHaveLength(1);
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une rune' }), { target: { value: 'sagesse' } });
+      expect(screen.getByText('Aucune rune ne correspond.')).toBeInTheDocument();
+    });
+
+    it('keeps every value of the exo until one is given', async () => {
+      render(<BonsPlansPage />);
+      await pickForce();
+      await waitFor(() => expect(screen.queryByText('Abrabottes')).not.toBeInTheDocument());
+      const row = screen.getByText('Abracapa').closest('li') as HTMLElement;
+      expect(within(row).getByText(/10 Force/)).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('Valeur'), { target: { value: '10' } });
+      expect(screen.getByText('Abracapa')).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText('Valeur'), { target: { value: '11' } });
+      await waitFor(() => expect(screen.queryByText('Abracapa')).not.toBeInTheDocument());
+    });
+
+    it('takes the exo off', async () => {
+      render(<BonsPlansPage />);
+      await pickForce();
+      await waitFor(() => expect(screen.queryByText('Abrabottes')).not.toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: "Retirer l'exo" }));
+      expect(await screen.findByText('Abrabottes')).toBeInTheDocument();
+      expect(screen.getByText('Abracapa')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Valeur')).not.toBeInTheDocument();
+    });
   });
 
-  it('filters on a stat of the roll', async () => {
-    getGoodDealsPayload.mockResolvedValue({ thresholdPercent: 25, listings: [...MARKET, DEAL, ...EXO_MARKET, EXO_DEAL] });
-    render(<BonsPlansPage />);
-    await screen.findAllByText('Abrabottes');
-    fireEvent.change(screen.getByRole('combobox', { name: /^Jet/ }), { target: { value: '118' } });
-    await waitFor(() => expect(screen.queryByText('Abrabottes')).not.toBeInTheDocument());
-    const row = screen.getByText('Abracapa').closest('li') as HTMLElement;
-    expect(within(row).getByText(/10 Force/)).toBeInTheDocument();
+  // specs/080-bons-plans-filtre-calibrage (US2): the player's calibration, kept in the browser.
+  describe('calibrage', () => {
+    const threshold = () => screen.getByLabelText(/Seuil de bon plan/);
+
+    beforeEach(() => {
+      getGoodDealsPayload.mockResolvedValue({ thresholdPercent: 25, listings: [...MARKET, DEAL] });
+    });
+
+    it('judges again at once, without reading the announcements again', async () => {
+      render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      fireEvent.change(threshold(), { target: { value: '60' } });
+      expect(await screen.findByText('Aucun bon plan pour le moment')).toBeInTheDocument();
+      expect(getGoodDealsPayload).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores a threshold out of bounds', async () => {
+      render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      fireEvent.change(threshold(), { target: { value: '900' } });
+      expect(screen.getByText('1 bon plan')).toBeInTheDocument();
+      expect(window.localStorage.getItem(CALIBRATION_STORAGE_KEY)).toBeNull();
+    });
+
+    it('finds the calibration back after a reload', async () => {
+      const { unmount } = render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      fireEvent.change(threshold(), { target: { value: '60' } });
+      fireEvent.change(screen.getByLabelText('Importance de Sagesse'), { target: { value: '1.5' } });
+      fireEvent.change(screen.getByLabelText('Écart accepté de Force'), { target: { value: '12' } });
+      unmount();
+      render(<BonsPlansPage />);
+      expect(await screen.findByText('Aucun bon plan pour le moment')).toBeInTheDocument();
+      expect(threshold()).toHaveValue(60);
+      expect(screen.getByLabelText('Importance de Sagesse')).toHaveValue('1.5');
+      expect(screen.getByLabelText('Écart accepté de Force')).toHaveValue(12);
+    });
+
+    it('stops a stat with a scaled gap from making defects when its field is emptied', async () => {
+      render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      const vitality = screen.getByLabelText('Écart accepté de Vitalité');
+      expect(vitality).toHaveAttribute('placeholder', 'Auto');
+      fireEvent.change(vitality, { target: { value: '5' } });
+      fireEvent.change(vitality, { target: { value: '' } });
+      expect(vitality).toHaveAttribute('placeholder', 'Aucun');
+      expect(JSON.parse(window.localStorage.getItem(CALIBRATION_STORAGE_KEY) as string)).toEqual({ gaps: { 125: null } });
+    });
+
+    it('goes back to the defaults with « Réinitialiser »', async () => {
+      render(<BonsPlansPage />);
+      await screen.findByText('1 bon plan');
+      const force = screen.getByLabelText('Écart accepté de Force');
+      const defaultGap = (force as HTMLInputElement).value;
+      fireEvent.change(threshold(), { target: { value: '60' } });
+      fireEvent.change(force, { target: { value: '' } });
+      await screen.findByText('Aucun bon plan pour le moment');
+      fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser' }));
+      expect(await screen.findByText('1 bon plan')).toBeInTheDocument();
+      expect(threshold()).toHaveValue(25);
+      expect(screen.getByLabelText('Écart accepté de Force')).toHaveValue(Number(defaultGap));
+      expect(window.localStorage.getItem(CALIBRATION_STORAGE_KEY)).toBeNull();
+    });
   });
 });

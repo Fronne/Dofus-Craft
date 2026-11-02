@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeJetLine, evaluateListings, jetCardLines, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, theoreticalRange, type DealVerdict, type Listing } from '../../src/domain/good-deals';
+import { acceptedGap, describeJetLine, evaluateListings, exoEffectIdsOf, jetCardLines, jetQuality, MIN_NEIGHBOURS, selectGoodDeals, theoreticalRange, type DealVerdict, type Listing } from '../../src/domain/good-deals';
 
 // specs/078-bons-plans-hdv (research R2–R4): the quality of a roll and the good-deal rule.
 // Effect 125 = Vitalité (weight 0.2), 118 = Force, 178 = Soins. 999 is in no table.
@@ -96,18 +96,22 @@ describe('selectGoodDeals', () => {
 
   it('keeps only the good deals, biggest saving first in the chosen unit', () => {
     const deals = [deal('a', 100, 40), deal('b', 300, 26), deal('c', 999, 90, { isGoodDeal: false })];
-    expect(selectGoodDeals(deals, { sort: 'savingKamas', exoOnly: false }).map((d) => d.listingId)).toEqual(['b', 'a']);
-    expect(selectGoodDeals(deals, { sort: 'savingPercent', exoOnly: false }).map((d) => d.listingId)).toEqual(['a', 'b']);
+    expect(selectGoodDeals(deals, { sort: 'savingKamas' }).map((d) => d.listingId)).toEqual(['b', 'a']);
+    expect(selectGoodDeals(deals, { sort: 'savingPercent' }).map((d) => d.listingId)).toEqual(['a', 'b']);
   });
 
-  it('filters on exo and on a given stat', () => {
-    const deals = [deal('a', 100, 40, { hasExo: true }), deal('b', 300, 26, {}, [{ effectId: 118, value: 10 }])];
-    expect(selectGoodDeals(deals, { sort: 'savingKamas', exoOnly: true }).map((d) => d.listingId)).toEqual(['a']);
-    expect(selectGoodDeals(deals, { sort: 'savingKamas', exoOnly: false, effectId: 118 }).map((d) => d.listingId)).toEqual(['b']);
+  it('filters on one exo, with or without its value', () => {
+    const exo = (id: string, value: number, saving: number) =>
+      deal(id, saving, 40, { hasExo: true, exoEffectIds: [2812] }, [{ effectId: 2812, value }]);
+    const deals = [exo('a', 1, 100), exo('b', 2, 300), exo('c', 3, 200), deal('d', 900, 40)];
+    const ids = (filter: { sort: 'savingKamas'; exo: { effectId: number; value?: number } }) => selectGoodDeals(deals, filter).map((d) => d.listingId);
+    expect(ids({ sort: 'savingKamas', exo: { effectId: 2812 } })).toEqual(['b', 'c', 'a']);
+    expect(ids({ sort: 'savingKamas', exo: { effectId: 2812, value: 2 } })).toEqual(['b']);
+    expect(ids({ sort: 'savingKamas', exo: { effectId: 115 } })).toEqual([]);
   });
 
   it('answers nothing when nothing matches', () => {
-    expect(selectGoodDeals([], { sort: 'savingKamas', exoOnly: true })).toEqual([]);
+    expect(selectGoodDeals([], { sort: 'savingKamas', exo: { effectId: 1 } })).toEqual([]);
   });
 });
 
@@ -290,5 +294,44 @@ describe('jetCardLines', () => {
 
   it('leaves out an item effect with no known stat', () => {
     expect(jetCardLines([], [{ effectId: 999, from: 1, to: 2 }])).toEqual([]);
+  });
+});
+
+describe('calibration', () => {
+  const ITEM = [{ effectId: 118, from: 1, to: 100 }];
+  const force = (value: number) => [{ effectId: 118, value }];
+
+  it('changes nothing without a calibration', () => {
+    expect(jetQuality(force(90), ITEM, {})).toEqual(jetQuality(force(90), ITEM));
+    expect(acceptedGap(125, 400, {})).toBe(30);
+  });
+
+  it('applies the importance a player gives a stat', () => {
+    expect(jetQuality([{ effectId: 124, value: 40 }], [{ effectId: 124, from: 1, to: 40 }], { importance: { 124: 1 } }).quality).toBeCloseTo(120);
+  });
+
+  it('replaces the gap, or removes the defect with null', () => {
+    expect(jetQuality(force(80), ITEM).defectEffectIds).toEqual([118]);
+    expect(jetQuality(force(80), ITEM, { gaps: { 118: 20 } }).defectEffectIds).toEqual([]);
+    expect(jetQuality(force(1), ITEM, { gaps: { 118: null } }).defectEffectIds).toEqual([]);
+    expect(acceptedGap(125, 400, { gaps: { 125: 3 } })).toBe(3);
+  });
+
+  it('judges the copies with the calibration', () => {
+    const copy = (value: number, price: number): Listing => {
+      counter += 1;
+      return { listingId: `C${counter}`, itemId: '1', priceKamas: price, stats: force(value) };
+    };
+    const judged = copy(80, 1_000);
+    const others = [copy(100, 1_000), copy(100, 1_000), copy(100, 1_000)];
+    const neighbours = (calibration?: { gaps: Record<number, number> }) =>
+      evaluateListings([judged, ...others], ITEM, 25, calibration).find((v) => v.listingId === judged.listingId)!.neighbourCount;
+    expect(neighbours()).toBe(0);
+    expect(neighbours({ gaps: { 118: 30 } })).toBe(3);
+  });
+
+  it('lists each exo once', () => {
+    const verdicts = [{ exoEffectIds: [2812, 115] }, { exoEffectIds: [2812] }, { exoEffectIds: [] }] as unknown as Parameters<typeof exoEffectIdsOf>[0];
+    expect(exoEffectIdsOf(verdicts)).toEqual([115, 2812]);
   });
 });
