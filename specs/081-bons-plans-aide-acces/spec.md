@@ -48,6 +48,8 @@ Le propriétaire coupe la page Bons plans pour tout le monde dans l'administrati
 - **FR-003**: Le panneau DOIT définir l'écart accepté, dire que seules les annonces aux mêmes défauts sont comparées, et donner l'exemple de la Force.
 - **FR-004**: Le panneau DOIT expliquer les états « Auto » et vide du champ d'écart.
 - **FR-005**: La liste des stats DOIT montrer des titres de colonnes qui restent visibles et alignés quand elle défile.
+- **FR-012**: L'explication (FR-001 à FR-004) DOIT rester repliée derrière un petit bouton d'information en haut à droite du panneau, qui se ferme avec Échap ou un clic à côté.
+- **FR-013**: Toutes les stats DOIVENT défiler dans une seule zone, à lignes compactes et alternées, sur un fond opaque, pour rester lisibles.
 - **FR-006**: Le site DOIT accorder l'accès à la page dans un navigateur quand l'adresse porte `bonsplans=1`, et le retirer avec `bonsplans=0`.
 - **FR-007**: Cet accès DOIT survivre aux visites suivantes dans le même navigateur.
 - **FR-008**: Avec cet accès, le lien de menu et la page DOIVENT se comporter comme si la page était allumée.

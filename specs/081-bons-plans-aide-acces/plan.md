@@ -37,5 +37,6 @@ tests/unit/bons-plans-access.test.ts, tests/integration/site-pages-toggle.test.t
 
 - **Lecture dans `AppShell`** : le menu doit montrer le lien sur toutes les pages (edge case), donc la lecture ne peut pas être dans la page Bons plans, à la différence de Brisage.
 - **Réglages surchargés** : `AppShell` dérive `siteSettings` avec `bonsPlansPage: true`. Le menu et `guarded` n'ont rien d'autre à savoir. `useSiteSettings` et l'administration ne changent pas.
-- **Liste sur une colonne** : avec plusieurs colonnes, une ligne de titres ne peut pas s'aligner. La largeur des colonnes Importance et Écart devient fixe pour que titres et lignes coïncident, et `scrollbar-gutter` garde la place de la barre de défilement.
+- **Liste sur une colonne** : avec plusieurs colonnes, une ligne de titres ne peut pas s'aligner. Les titres sont collants dans la zone qui défile, avec des largeurs fixes pour coïncider avec les lignes.
+- **Aide repliée** : un bouton d'information ouvre l'explication dans une bulle, sur le modèle de `RunePicker` (clic à côté, Échap).
 - **Niveaux tirés de `IMPORTANCE_LEVELS`** : le texte ne peut pas diverger de la liste du calcul.

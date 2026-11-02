@@ -172,6 +172,9 @@ describe('page Bons plans', () => {
       render(<BonsPlansPage />);
       await screen.findByText('1 bon plan');
       expect(document.querySelector('.good-deal-calibration-titles')?.textContent).toBe('StatImportanceÉcart accepté');
+      expect(screen.queryByText(/prix médian/)).not.toBeInTheDocument();
+      const help = screen.getByRole('button', { name: 'Comment fonctionne le calibrage' });
+      fireEvent.click(help);
       for (const text of ['Primordiale : compte 1,5 fois', 'Très importante : compte 1 fois', 'Moyenne : compte 0,5 fois', 'Faible : compte 0,25 fois', 'Aucune : ignorée']) {
         expect(screen.getByText(text)).toBeInTheDocument();
       }
@@ -179,6 +182,12 @@ describe('page Bons plans', () => {
       expect(screen.getByText(/95 est correct, 94 est un défaut/)).toBeInTheDocument();
       expect(screen.getByText(/^Auto :/)).toBeInTheDocument();
       expect(screen.getByText(/^Vide :/)).toBeInTheDocument();
+      fireEvent.keyDown(document.body, { key: 'Escape' });
+      expect(screen.queryByText(/prix médian/)).not.toBeInTheDocument();
+      expect(help).toHaveFocus();
+      fireEvent.click(help);
+      fireEvent.mouseDown(document.body);
+      expect(screen.queryByText(/prix médian/)).not.toBeInTheDocument();
     });
 
     it('judges again at once, without reading the announcements again', async () => {

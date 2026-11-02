@@ -23,6 +23,11 @@
 - [X] T007 Lancer le typage avec `npx tsc -b`, puis `npm run test`.
 - [X] T008 Lancer le sous-agent `relecteur` et corriger les points graves.
 
+## Phase 4: Lisibilité du panneau
+
+- [X] T009 [US1] Dans `src/features/good-deals/CalibrationPanel.tsx`, déplacer l'explication dans une bulle ouverte par un bouton d'information (FR-012) et la tester dans `tests/integration/bons-plans-page.test.tsx`.
+- [X] T010 [US1] Dans `src/styles/global.css`, une seule zone de défilement à titres collants, lignes compactes et alternées, fond opaque (FR-013).
+
 ## Dependencies
 
 US1 et US2 sont indépendantes. T005 dépend de T004.
