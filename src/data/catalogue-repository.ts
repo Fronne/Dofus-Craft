@@ -245,6 +245,9 @@ function characteristicIcon(characteristicId: number | undefined, elementId: num
     : characteristicId !== undefined ? CHARACTERISTIC_ASSET_BY_ID[characteristicId] : undefined;
 }
 
+// Long enough to gather what several items ask around the same moment, too short to be seen.
+const EFFECT_GATHERING_MS = 20;
+
 type WaitingEffect = { resolve: (effect: DofusDbEffect | null) => void; reject: (reason: unknown) => void };
 const waitingEffects = new Map<number, WaitingEffect[]>();
 
@@ -260,7 +263,7 @@ function askWaitingEffects() {
 /** Several items open at once share their effects: what is asked in the same moment goes out in one request. */
 function loadEffect(effectId: number): Promise<DofusDbEffect | null> {
   return new Promise((resolve, reject) => {
-    if (waitingEffects.size === 0) setTimeout(askWaitingEffects);
+    if (waitingEffects.size === 0) setTimeout(askWaitingEffects, EFFECT_GATHERING_MS);
     waitingEffects.set(effectId, [...(waitingEffects.get(effectId) ?? []), { resolve, reject }]);
   });
 }
