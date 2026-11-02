@@ -297,7 +297,8 @@ export function AppShell() {
           )}
         </div>
         {/* specs/051-site-visual-refresh: the right end of the top bar — active server, then
-            Paramètres (reached from this icon, not from the page list) and the theme toggle. */}
+            the account, then Paramètres (reached from this icon, not from the page list). The theme is chosen in
+            Paramètres only: its toggle left the bar to give the pages more room. */}
         <div className="app-nav-footer">
           <ServerSwitcher />
           <PriceModeSwitch priceMode={priceMode} setPriceMode={setPriceModeState} />
@@ -310,14 +311,6 @@ export function AppShell() {
           >
             <Icon name="settings" size={18} />
           </NavLink>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={theme === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'}
-            onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
-          >
-            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-          </button>
         </div>
       </nav>
       <PriceModeToast priceMode={priceMode} />

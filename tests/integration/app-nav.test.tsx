@@ -45,7 +45,7 @@ describe('navigation principale (specs/051)', () => {
   afterEach(cleanup);
 
   // specs/075-connexion-discord-site: « Se connecter avec Discord » joins the right end of the bar, before Paramètres.
-  it('lists the pages, then the active server, the Discord login, Paramètres and the theme toggle', async () => {
+  it('lists the pages, then the active server, the Discord login and Paramètres — the theme is chosen in Paramètres only', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
     await within(nav).findByRole('button', { name: 'Outils' });
@@ -56,7 +56,7 @@ describe('navigation principale (specs/051)', () => {
       'Serveur actif Mikhal',
       'Communauté, prix partagés avec le groupe', 'Perso, prix gardés sur cet appareil',
       'Se connecter avec Discord',
-      'Paramètres', 'Activer le thème clair',
+      'Paramètres',
     ]);
   });
 
