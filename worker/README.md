@@ -65,7 +65,8 @@ Community prices keep their author (specs/082): a logged-in player sends the ses
 `X-Fm-Session` header of `POST /community-price` (`Authorization` stays the app key); without a valid session the
 price is entered anonymously. Reads give the pseudonym (`latestAuthor` / `author`) unless the profile is private,
 never the Discord id. `GET /fm/me/contributions` gives the player's own prices (`{ total, recent[20] }`); deleting
-the profile unlinks the prices from the player.
+the profile unlinks the prices from the player. Reads are cached for 60 s (the Worker's and the browser's): after a
+player goes private or deletes their profile, their pseudonym can stay visible up to 60 s.
 
 The Discord application needs `{worker URL}/fm/auth/callback` as a redirect URL. For local work, the
 same values go in `worker/.dev.vars` (not committed), with `SITE_URL=http://localhost:5173`. The bot's
