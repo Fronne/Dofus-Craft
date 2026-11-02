@@ -11,6 +11,8 @@ export type CraftProfitRow = {
   item: ProfitItem;
   marketPriceKamas: number;
   marketPriceDate: string;
+  // specs/082: pseudonym of whoever entered the shared price, when public.
+  marketPriceAuthor?: string;
   craftCostKamas: number;
   profitKamas: number;
   // Absent when the craft costs nothing: a percentage of zero means nothing.
@@ -22,12 +24,13 @@ export type ProfitSortKey = 'name' | 'market' | 'cost' | 'kamas' | 'percent';
 export type ProfitSort = { key: ProfitSortKey; direction: 'asc' | 'desc' };
 export const DEFAULT_PROFIT_SORT: ProfitSort = { key: 'kamas', direction: 'desc' };
 
-export function profitRow(item: ProfitItem, comparison: Comparison, marketPriceDate: string): CraftProfitRow | undefined {
+export function profitRow(item: ProfitItem, comparison: Comparison, marketPriceDate: string, marketPriceAuthor?: string): CraftProfitRow | undefined {
   const marketPriceKamas = comparison.marketPriceKamas;
   if (comparison.craftCostStatus !== 'complete' || marketPriceKamas === undefined) return undefined;
   const craftCostKamas = comparison.knownCraftCostKamas;
   const profitKamas = marketPriceKamas - craftCostKamas;
   const row: CraftProfitRow = { item, marketPriceKamas, marketPriceDate, craftCostKamas, profitKamas };
+  if (marketPriceAuthor) row.marketPriceAuthor = marketPriceAuthor;
   if (craftCostKamas > 0) row.marginPercent = Math.round((profitKamas / craftCostKamas) * 100);
   return row;
 }

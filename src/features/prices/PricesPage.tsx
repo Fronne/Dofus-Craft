@@ -9,7 +9,7 @@ import { ResourceDisplay } from '../catalogue/ResourceDisplay';
 import type { PriceMode } from '../../domain/price-modes';
 import { KAMAS_ICON_URL } from '../../domain/kamas';
 import { classifyPriceAge } from '../../domain/price-age';
-import { formatRelativeTime } from '../../domain/time';
+import { formatPriceUpdate } from '../../domain/price-update';
 import { DEFAULT_PROFIT_SORT, filterProfitRows, sortProfitRows, type CraftProfitRow, type ProfitSort, type ProfitSortKey } from '../../domain/craft-profit';
 import { useCraftProfits } from './useCraftProfits';
 import { useLoadMoreOnScroll } from '../../hooks/useLoadMoreOnScroll';
@@ -59,7 +59,7 @@ function ProfitLine({ row, onOpen }: { row: CraftProfitRow; onOpen: () => void }
       <div className="profit-cell">
         <span className="profit-cell-label">Prix HDV</span>
         <b><Kamas value={row.marketPriceKamas} /></b>
-        <small className={`market-date${ageClass}`}>{formatRelativeTime(row.marketPriceDate)}</small>
+        <small className={`market-date${ageClass}`}>{formatPriceUpdate(row.marketPriceDate, row.marketPriceAuthor)}</small>
       </div>
       <div className="profit-cell">
         <span className="profit-cell-label">Coût de craft</span>

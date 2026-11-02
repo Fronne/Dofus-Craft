@@ -54,3 +54,10 @@ describe('sortProfitRows / filterProfitRows (specs/019)', () => {
     expect(filterProfitRows([row('Épée', 1)], 'epee')).toHaveLength(1);
   });
 });
+
+describe('author of the market price (specs/082)', () => {
+  it('is kept on the row when there is one, left out otherwise', () => {
+    expect(profitRow({ id: '1', name: 'A' }, comparison(3000, 4000), DATE, 'Cyril')).toMatchObject({ marketPriceAuthor: 'Cyril' });
+    expect(profitRow({ id: '1', name: 'A' }, comparison(3000, 4000), DATE)).not.toHaveProperty('marketPriceAuthor');
+  });
+});

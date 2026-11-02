@@ -21,7 +21,13 @@ export type PetLevelsInput = { totalXp: number; targetLevel: number };
  * `unitPriceKamas` is the price of the lot of 1 (the carnet's, or the latest shared one); `lots` are the
  * unit prices seen per lot size on the HDV (specs/059-prix-par-lot), community mode only.
  */
-export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest'; lots?: LotUnitPrices };
+export type PetFoodPrice = { unitPriceKamas: number; date?: string; origin: 'carnet' | 'community-latest'; lots?: LotUnitPrices;
+  /** specs/082: pseudonym of whoever entered the shared price of the lot of 1, when public. */
+  author?: string };
+
+// The author only goes with the price of a lot of 1 that is the shared one: the other lots come from the HDV, with no author.
+const authorOf = (price: PetFoodPrice, lot: { lotSize: number; date?: string }): string | undefined =>
+  lot.lotSize === 1 && lot.date === price.date ? price.author : undefined;
 
 const hasAnyPrice = (price: PetFoodPrice | undefined): price is PetFoodPrice =>
   !!price && (price.unitPriceKamas > 0 || Object.values(price.lots ?? {}).some((lot) => (lot?.unitPriceKamas ?? 0) > 0));
@@ -43,6 +49,7 @@ export type PetFoodRecommendation = {
   /** The HDV lot size whose price this is (specs/059-prix-par-lot). */
   lotSize: LotSize;
   priceDate?: string;
+  priceAuthor?: string;
   priceOrigin: PetFoodPrice['origin'];
   quantity: number;
   totalKamas: number;
@@ -170,6 +177,7 @@ export function planPetFood(
         unitPriceKamas: lot.unitPriceKamas,
         lotSize: lot.lotSize,
         priceDate: lot.date,
+        priceAuthor: authorOf(price, lot),
         priceOrigin: price.origin,
         quantity,
         totalKamas: Math.round(quantity * lot.unitPriceKamas),
@@ -243,7 +251,7 @@ export type PetFoodTarget = {
   quantity: number;
   /** Share of the XP to give that one unit brings, at most 100. */
   sharePercent: number;
-  price?: { unitPriceKamas: number; lotSize: LotSize; date?: string; totalKamas: number };
+  price?: { unitPriceKamas: number; lotSize: LotSize; date?: string; author?: string; totalKamas: number };
   standing: PetFoodStanding;
 };
 
@@ -263,7 +271,7 @@ export function petFoodTarget(
   const lot = foodPrice ? priceForQuantity(foodPrice, quantity) : undefined;
   if (!lot) return { food, xpPerUnit, quantity, sharePercent, standing: { kind: 'unpriced' } };
   const totalKamas = Math.round(quantity * lot.unitPriceKamas);
-  const price = { unitPriceKamas: lot.unitPriceKamas, lotSize: lot.lotSize, date: lot.date, totalKamas };
+  const price = { unitPriceKamas: lot.unitPriceKamas, lotSize: lot.lotSize, date: lot.date, author: authorOf(foodPrice!, lot), totalKamas };
   const line = ranked.find((entry) => entry.food.itemId === food.itemId);
   const standing: PetFoodStanding = line
     ? { kind: 'ranked', rank: line.rank, gapPercent: Math.round(((totalKamas - ranked[0].totalKamas) / ranked[0].totalKamas) * 1000) / 10 }

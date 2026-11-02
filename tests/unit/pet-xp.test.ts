@@ -272,3 +272,23 @@ describe('ranking, podium and targeted resource', () => {
     expect(formatObjectiveShare(100)).toBe('100');
   });
 });
+
+describe('author of the price (specs/082)', () => {
+  const food: PetFood = { itemId: 'f1', name: 'Nourriture', xpPerUnit: 10 };
+  const DATE = '2026-11-02T10:00:00.000Z';
+
+  it('goes with the shared price of the lot of 1 only', () => {
+    const prices = { f1: { unitPriceKamas: 100, date: DATE, origin: 'community-latest' as const, author: 'Cyril' } };
+    const [line] = planPetFood(50, [food], prices).recommendations;
+    expect(line.priceAuthor).toBe('Cyril');
+    const target = petFoodTarget(food, 50, prices, rankPetFoods(50, [food], prices, undefined), undefined);
+    expect(target.price?.author).toBe('Cyril');
+  });
+
+  it('is left out when the price comes from a bigger lot', () => {
+    const prices = { f1: { unitPriceKamas: 100, date: DATE, origin: 'community-latest' as const, author: 'Cyril', lots: { 10: { unitPriceKamas: 80, date: '2026-11-01T10:00:00.000Z' } } } };
+    const [line] = planPetFood(500, [food], prices).recommendations;
+    expect(line.lotSize).toBe(10);
+    expect(line.priceAuthor).toBeUndefined();
+  });
+});

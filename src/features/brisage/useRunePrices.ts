@@ -8,12 +8,12 @@ import { getCommunityPrices } from '../../services/community-price-api';
 // Mode communautaire the latest shared price replaces an older carnet entry, like the XP Familier page
 // (specs/024). A rune without a price is simply absent: the page asks for it, it never guesses one.
 
-export type RunePricesState = { status: 'loading' | 'ready'; prices: Record<string, number>; dates: Record<string, string | undefined>; communityUnavailable: boolean };
+export type RunePricesState = { status: 'loading' | 'ready'; prices: Record<string, number>; dates: Record<string, string | undefined>; /** specs/082: pseudonym of whoever entered the shared price in use, when public. */ authors: Record<string, string | undefined>; communityUnavailable: boolean };
 
-const LOADING: RunePricesState = { status: 'loading', prices: {}, dates: {}, communityUnavailable: false };
+const LOADING: RunePricesState = { status: 'loading', prices: {}, dates: {}, authors: {}, communityUnavailable: false };
 
 /** A rune price with the date it was noted (specs/072: the ranking shows how fresh the prices it uses are). */
-export type RunePriceDetail = { unitPriceKamas: number; updatedAt?: string };
+export type RunePriceDetail = { unitPriceKamas: number; updatedAt?: string; author?: string };
 
 /** The price of each rune of the active mode, with its date; a rune without a price is absent. */
 export async function loadRunePriceDetails(
@@ -28,7 +28,12 @@ export async function loadRunePriceDetails(
   if (lookup.status === 'unavailable') return { prices, communityUnavailable: true };
   for (const shared of lookup.prices) {
     const choice = pickCommunityPrice(carnet[shared.resourceId], { amountKamas: shared.latestAmountKamas, contributedAt: shared.latestContributionAt });
-    if (choice.price) prices[shared.resourceId] = { unitPriceKamas: choice.price.unitPriceKamas, updatedAt: choice.price.updatedAt };
+    if (choice.price) prices[shared.resourceId] = {
+      unitPriceKamas: choice.price.unitPriceKamas,
+      updatedAt: choice.price.updatedAt,
+      // The author goes with the shared price only, not with a carnet price that was kept instead.
+      ...(shared.latestAuthor && choice.price.updatedAt === shared.latestContributionAt ? { author: shared.latestAuthor } : {}),
+    };
   }
   return { prices, communityUnavailable: false };
 }
@@ -37,8 +42,9 @@ async function loadPrices(serverId: string, priceMode: PriceMode, ids: string[])
   const { prices: detailed, communityUnavailable } = await loadRunePriceDetails(serverId, priceMode, ids);
   const prices: Record<string, number> = {};
   const dates: Record<string, string | undefined> = {};
-  for (const [id, detail] of Object.entries(detailed)) { prices[id] = detail.unitPriceKamas; dates[id] = detail.updatedAt; }
-  return { prices, dates, communityUnavailable };
+  const authors: Record<string, string | undefined> = {};
+  for (const [id, detail] of Object.entries(detailed)) { prices[id] = detail.unitPriceKamas; dates[id] = detail.updatedAt; authors[id] = detail.author; }
+  return { prices, dates, authors, communityUnavailable };
 }
 
 export function useRunePrices(serverId: string | undefined, priceMode: PriceMode, ids: string[]): RunePricesState {
@@ -49,7 +55,7 @@ export function useRunePrices(serverId: string | undefined, priceMode: PriceMode
     let cancelled = false;
     loadPrices(serverId, priceMode, ids)
       .then((result) => { if (!cancelled) setLoaded({ key, state: { status: 'ready', ...result } }); })
-      .catch(() => { if (!cancelled) setLoaded({ key, state: { status: 'ready', prices: {}, dates: {}, communityUnavailable: priceMode === 'community' } }); });
+      .catch(() => { if (!cancelled) setLoaded({ key, state: { status: 'ready', prices: {}, dates: {}, authors: {}, communityUnavailable: priceMode === 'community' } }); });
     return () => { cancelled = true; };
     // `ids` is covered by `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
