@@ -20,7 +20,7 @@ description: "Liste des tâches : code du site facilement maintenable"
 ## Phase 1 : Préparation
 
 - [ ] T001 Installer les dépendances (`npm install`) et noter la base de référence : lancer `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` sur la branche avant tout changement et consigner dans `specs/083-refactor-maintenabilite/baseline.md` le nombre de tests passés et les éventuels échecs déjà présents
-- [ ] T002 Sauvegarder le CSS compilé de référence : après `npm run build`, copier `dist/assets/*.css` vers `specs/083-refactor-maintenabilite/.baseline-css/` (dossier à ne pas committer : l'ajouter à `.git/info/exclude` du worktree)
+- [ ] T002 Sauvegarder le CSS compilé de référence : après `npm run build`, copier `dist/assets/*.css` vers le dossier scratchpad de la session (hors dépôt, rien à committer)
 
 ---
 
@@ -74,9 +74,9 @@ Rien de bloquant : les histoires sont indépendantes. Passer à la phase 3 une f
 
 ### Données et client API
 
-- [ ] T015 [P] [US4] Découper `src/data/catalogue-repository.ts` en dossier `src/data/catalogue/` : `indexes.ts` (chargement et préchargement des index : getInitialCatalogueItems, getCatalogueItemIndex, getCatalogueItemsForSearch/Category, getItemSetIndex, preloadCatalogueIndexes, whenCatalogueReady), `search.ts` (searchItems, matchesAllTokens, matchesLevel, itemCategoryMatches, getCategories), `item-detail.ts` (getItemDetail, getResourceRecipe, getResourceDetails), `effects.ts` (chargement groupé des effets, mapItemStats, formatEffectDescription, getDisplayedEffectValues, characteristicIcon, getItemEffectLines, effectRangesOf, negativeRangesOf, getItemEffectRanges, getItemNegativeRanges), et `index.ts` qui réexporte tout, y compris `getManifest`
-- [ ] T016 [P] [US4] Découper `src/services/community-price-api.ts` en dossier `src/services/community-price/` : `http.ts` (API_URL, API_KEY, apiHeaders, readParams, readInit, isRecord), `validation.ts` (isCommunityPriceRow, withKnownOrigin, knownAuthor, isLatestItemPriceRow, isSharedPrice, isPriceHistory, isSharedItemPriceEntry), `reads.ts` (getCommunityPrice, getLatestItemPrice, getPriceHistory, getSharedItemPrices, getCommunityPrices, getCommunityLotPrices), `refresh.ts` (refreshExternalPrices, refreshRecipePrices), `submit.ts` (submitCommunityPrice) et `index.ts` qui réexporte tout ; chaque type `*Lookup` reste exporté depuis `index.ts`
-- [ ] T017 [US4] Mettre à jour les appels `vi.mock(…)` et les imports qui visent les anciens chemins de fichier (`src/domain/brisage`, `src/domain/forgemagie`, `src/data/catalogue-repository`, `src/services/community-price-api`) uniquement si la résolution ne passe plus par un `index.ts` ; les chemins simples de dossier restent valables
+- [ ] T015 [P] [US4] Découper `src/data/catalogue-repository.ts` en dossier `src/data/catalogue-repository/` (même nom que le fichier d'origine) : `indexes.ts` (chargement et préchargement des index : getInitialCatalogueItems, getCatalogueItemIndex, getCatalogueItemsForSearch/Category, getItemSetIndex, preloadCatalogueIndexes, whenCatalogueReady), `search.ts` (searchItems, matchesAllTokens, matchesLevel, itemCategoryMatches, getCategories), `item-detail.ts` (getItemDetail, getResourceRecipe, getResourceDetails), `effects.ts` (chargement groupé des effets, mapItemStats, formatEffectDescription, getDisplayedEffectValues, characteristicIcon, getItemEffectLines, effectRangesOf, negativeRangesOf, getItemEffectRanges, getItemNegativeRanges), et `index.ts` qui réexporte tout, y compris `getManifest`
+- [ ] T016 [P] [US4] Découper `src/services/community-price-api.ts` en dossier `src/services/community-price-api/` (même nom que le fichier d'origine) : `http.ts` (API_URL, API_KEY, apiHeaders, readParams, readInit, isRecord), `validation.ts` (isCommunityPriceRow, withKnownOrigin, knownAuthor, isLatestItemPriceRow, isSharedPrice, isPriceHistory, isSharedItemPriceEntry), `reads.ts` (getCommunityPrice, getLatestItemPrice, getPriceHistory, getSharedItemPrices, getCommunityPrices, getCommunityLotPrices), `refresh.ts` (refreshExternalPrices, refreshRecipePrices), `submit.ts` (submitCommunityPrice) et `index.ts` qui réexporte tout ; chaque type `*Lookup` reste exporté depuis `index.ts`
+- [ ] T017 [US4] Vérifier que les 59 fichiers de tests qui visent `src/domain/brisage`, `src/domain/forgemagie`, `src/data/catalogue-repository`, `src/services/community-price-api` (imports et `vi.mock`) se résolvent toujours sans modification, grâce aux dossiers de même nom. Les sous-fichiers d'un même dossier s'importent entre eux directement, jamais via leur `index.ts`, pour que le comportement des mocks ne change pas
 - [ ] T018 [US4] Lancer `npm run typecheck`, `npm run lint`, `npm run test` après T013 à T017
 
 ### Worker
@@ -113,7 +113,7 @@ Pour chaque tâche : lire le fichier, repérer les blocs d'état et d'effets (à
 
 - [ ] T029 [US1] Lancer toute la suite : `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run build`, `npm run test:e2e` ; comparer le nombre de tests passés à `baseline.md` (CR-001)
 - [ ] T030 [US1] Ouvrir le site en local (`npm run dev`) et passer les pages Accueil, Recherche, Épinglés, Brisage, Familier, Forgemagie, Prix, Réglages, en clair et en sombre, écran large et étroit ; comparer à `master`
-- [ ] T031 Mettre à jour `README.md` : arborescence de `src/styles/parts/`, nouveaux dossiers (`domain/brisage/`, etc.) et mention de npm comme seul gestionnaire ; supprimer `baseline.md` et le dossier `.baseline-css/`
+- [ ] T031 Mettre à jour `README.md` : arborescence de `src/styles/parts/`, nouveaux dossiers (`domain/brisage/`, etc.) et mention de npm comme seul gestionnaire ; supprimer `baseline.md`
 - [ ] T032 Appliquer `npm run format` aux seuls fichiers touchés, puis relancer `npm run lint`
 - [ ] T033 Lancer le sous-agent `relecteur` sur les changements et corriger les points graves signalés (règle du projet)
 

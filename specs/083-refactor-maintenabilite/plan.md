@@ -61,8 +61,8 @@ src/styles/
 src/features/<page>/      # chaque gros composant : <Page>.tsx court + sous-composants + use<Nom>.ts
 src/domain/brisage/       # règles de brisage par sujet ; index.ts réexporte l'API actuelle
 src/domain/forgemagie/    # idem
-src/data/catalogue/       # dépôt de données par sujet ; index.ts réexporte
-src/services/community-price/  # client API par sujet ; index.ts réexporte
+src/data/catalogue-repository/       # dépôt de données par sujet ; index.ts réexporte (même nom que l'ancien module : les vi.mock des tests restent valables)
+src/services/community-price-api/    # client API par sujet ; index.ts réexporte (même raison)
 worker/src/routes/        # une route ou un groupe de routes par fichier ; index.ts assemble
 worker/src/fm/seances/    # séances de forgemagie par sujet
 ```
