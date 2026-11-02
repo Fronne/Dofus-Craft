@@ -1,42 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePinnedItems } from './usePinnedItems';
 import { EmptyState } from '../../components/EmptyState';
-import { Icon } from '../../components/Icon';
 import { ROUTES } from '../../app/router';
 import { useActiveServer } from '../../app/ServerContext';
-import { getItemDetail } from '../../data/catalogue-repository';
-import { resourcePricesFor } from '../../persistence/resource-prices-for-mode';
 import type { PriceMode } from '../../domain/price-modes';
-import { pinnedItemPrices } from '../../persistence/indexeddb-pinned-item-price-repository';
-import { compare } from '../../domain/craft-comparison';
-import { effectiveIngredientPrices, treeResourceIds } from '../../domain/craft-tree';
-import { loadRecipeTree } from '../comparison/recipe-tree-loader';
-import { lookupLatestItemPrice } from '../comparison/useSharedItemPrice';
-import { getIngredientChoices } from '../../persistence/ingredient-choices';
-import type { RecipeTree, ResourcePrice } from '../../domain/types';
-import { syncCommunityPrices } from '../comparison/community-gap-fill';
-import { formatKamas } from '../../domain/kamas';
 import type { PinnedItem } from '../../persistence/pinned-items';
-import { leaveThen } from '../../services/motion';
-
-type PinnedPriceSummary = {
-  craftCostKamas?: number;
-  marketPriceKamas?: number;
-  recommendation?: 'craft' | 'buy' | 'equal';
-};
-
-function formatPriceValue(value: number | undefined, loading: boolean) {
-  if (loading) return '…';
-  return value !== undefined ? formatKamas(value) : 'Non renseigné';
-}
-
-function priceClass(value: number | undefined, recommendation: PinnedPriceSummary['recommendation'], side: 'craft' | 'buy') {
-  if (value === undefined) return 'unset';
-  if (recommendation === side) return 'cheaper';
-  if (recommendation && recommendation !== 'equal') return 'pricier';
-  return '';
-}
+import { usePinnedSummaries } from './usePinnedSummaries';
+import { CollectionHeading, NewCollectionButton } from './PinnedCollectionControls';
+import { PinnedCard } from './PinnedCard';
 
 // 005-pinned-item-collections FR-004/FR-011: one group per registered collection name (from
 // `listCollectionNames()`, which may include collections with zero items — created via the
@@ -60,201 +32,10 @@ function groupByCollection(
   return ungrouped.length > 0 ? [...namedGroups, { name: undefined, items: ungrouped }] : namedGroups;
 }
 
-// 005-pinned-item-collections US3: "Sans collection" can never be renamed or deleted (it isn't a
-// real collection — it's just every item without one), so it renders as a plain heading with no
-// actions, unlike a named group.
-function CollectionHeading({
-  name,
-  onRename,
-  onDelete,
-}: {
-  name?: string;
-  onRename: (newName: string) => void;
-  onDelete: () => void;
-}) {
-  const [renaming, setRenaming] = useState(false);
-  // Deleting asks once more, in place: a list is not brought back with one click.
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [draft, setDraft] = useState(name ?? '');
-  // After an edit is validated or canceled, the focus goes back to the button that opened it.
-  const renameButton = useRef<HTMLButtonElement>(null);
-  const deleteButton = useRef<HTMLButtonElement>(null);
-  const focusBack = useRef<'rename' | 'delete' | undefined>(undefined);
-  useEffect(() => {
-    if (renaming || confirmingDelete || !focusBack.current) return;
-    (focusBack.current === 'rename' ? renameButton : deleteButton).current?.focus();
-    focusBack.current = undefined;
-  }, [renaming, confirmingDelete]);
-
-  if (!name) {
-    return <h2 className="pinned-collection-title">Sans liste</h2>;
-  }
-
-  if (confirmingDelete) {
-    const cancel = () => {
-      focusBack.current = 'delete';
-      setConfirmingDelete(false);
-    };
-    return (
-      <div
-        className="pinned-collection-title pinned-collection-confirm"
-        role="group"
-        aria-label={`Supprimer la liste ${name}`}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') cancel();
-        }}
-      >
-        <span>Supprimer la liste « {name} » ? Ses objets restent suivis.</span>
-        <button type="button" className="btn btn-danger btn-small" onClick={onDelete}>Supprimer</button>
-        <button type="button" className="btn btn-secondary btn-small" autoFocus onClick={cancel}>Annuler</button>
-      </div>
-    );
-  }
-
-  if (renaming) {
-    const cancel = () => {
-      focusBack.current = 'rename';
-      setRenaming(false);
-      setDraft(name);
-    };
-    return (
-      <form
-        className="pinned-collection-title pinned-collection-title-editing"
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') cancel();
-        }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const trimmed = draft.trim();
-          if (trimmed) onRename(trimmed);
-          focusBack.current = 'rename';
-          setRenaming(false);
-        }}
-      >
-        <input
-          type="text"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          aria-label={`Renommer la liste ${name}`}
-          autoFocus
-        />
-        <button type="submit" className="icon-button" aria-label="Valider le renommage">
-          <Icon name="check" size={14} />
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Annuler le renommage"
-          onClick={cancel}
-        >
-          <Icon name="close" size={14} />
-        </button>
-      </form>
-    );
-  }
-
-  return (
-    <h2 className="pinned-collection-title">
-      {name}
-      <button
-        ref={renameButton}
-        type="button"
-        className="icon-button"
-        aria-label={`Renommer la liste ${name}`}
-        onClick={() => {
-          setDraft(name);
-          setRenaming(true);
-        }}
-      >
-        <Icon name="edit" size={14} />
-      </button>
-      <button ref={deleteButton} type="button" className="icon-button" aria-label={`Supprimer la liste ${name}`} onClick={() => setConfirmingDelete(true)}>
-        <Icon name="close" size={14} />
-      </button>
-    </h2>
-  );
-}
-
-// 005-pinned-item-collections: the single, page-level way to create a collection — items are
-// assigned to it afterward from their own card, never at creation time (feedback from the earlier
-// design where each card offered its own inline "create" option: too repetitive across many cards).
-function NewCollectionButton({ onCreate }: { onCreate: (name: string) => void }) {
-  const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState('');
-  const openButton = useRef<HTMLButtonElement>(null);
-  const wasCreating = useRef(false);
-  useEffect(() => {
-    if (wasCreating.current && !creating) openButton.current?.focus();
-    wasCreating.current = creating;
-  }, [creating]);
-
-  if (creating) {
-    const close = () => {
-      setCreating(false);
-      setDraft('');
-    };
-    return (
-      <form
-        className="new-collection-form"
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') close();
-        }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const trimmed = draft.trim();
-          if (trimmed) onCreate(trimmed);
-          close();
-        }}
-      >
-        <input
-          type="text"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Nom de la liste"
-          aria-label="Nom de la nouvelle liste"
-          autoFocus
-        />
-        <button type="submit" className="icon-button" aria-label="Créer la liste">
-          <Icon name="check" size={16} />
-        </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Annuler la création de liste"
-          onClick={close}
-        >
-          <Icon name="close" size={16} />
-        </button>
-      </form>
-    );
-  }
-
-  return (
-    <button ref={openButton} type="button" className="btn btn-secondary" onClick={() => setCreating(true)}>
-      + Nouvelle liste
-    </button>
-  );
-}
-
-async function sharedMarketPrices(serverId: string, ids: string[]): Promise<Record<string, { marketPriceKamas: number }>> {
-  const prices = await Promise.all(ids.map((id) => lookupLatestItemPrice(id, serverId)));
-  const byId: Record<string, { marketPriceKamas: number }> = {};
-  ids.forEach((id, index) => {
-    const price = prices[index];
-    if (price) byId[id] = { marketPriceKamas: price.amountKamas };
-  });
-  return byId;
-}
-
 export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
   const { pinnedItems, pin, unpin, listCollectionNames, createCollection, assignCollection, renameCollection, deleteCollection } = usePinnedItems();
   const navigate = useNavigate();
   const { serverId } = useActiveServer();
-  const [summaries, setSummaries] = useState<Record<string, PinnedPriceSummary>>({});
-  const [loadingSummaries, setLoadingSummaries] = useState(true);
-  // The prices could not be computed (a recipe or a carnet read failed); « Réessayer » asks again.
-  const [summariesError, setSummariesError] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   // The item just removed from the list, kept for a while so « Annuler » can put it back.
   const [removed, setRemoved] = useState<PinnedItem>();
   const collectionNames = listCollectionNames();
@@ -263,88 +44,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dragOverGroupKey, setDragOverGroupKey] = useState<string | null>(null);
   const pinnedItemIds = pinnedItems.map((entry) => entry.item.id).join(',');
-
-  useEffect(() => {
-    if (!serverId || !pinnedItemIds) {
-      setSummaries({});
-      setLoadingSummaries(false);
-      return;
-    }
-    let cancelled = false;
-    setLoadingSummaries(true);
-    setSummariesError(false);
-    const ids = pinnedItemIds.split(',');
-    (async () => {
-      const [details, marketPrices] = await Promise.all([
-        Promise.all(ids.map((id) => getItemDetail(id))),
-        // specs/016 FR-009: in Mode communautaire each card shows the group's latest shared HDV price
-        // (the same one as the item's detail); Mode personnel keeps the device's own price.
-        priceMode === 'community' ? sharedMarketPrices(serverId, ids) : pinnedItemPrices.getMany(serverId, ids),
-      ]);
-      // specs/015 FR-011: the whole craft chain of each item, exactly as its detail page counts it —
-      // same recipe tree, same carnet (every resource of the chain), same forced choices. The cards
-      // first show what the top-level carnet prices give, then refine once the recipe trees are in.
-      const trees: RecipeTree[] = details.map((detail) => ({
-        recipes: {},
-        resources: Object.fromEntries(detail.resources.map((resource) => [resource.id, resource])),
-      }));
-      const choices = getIngredientChoices();
-      const repository = resourcePricesFor(priceMode);
-      const resourcePrices: Record<string, ResourcePrice> = {};
-      const chainResourceIds = () => [...new Set(details.flatMap((detail, index) =>
-        (detail.recipe ? treeResourceIds(detail.recipe, trees[index]) : [])))];
-      const readCarnet = async () => {
-        const missing = chainResourceIds().filter((resourceId) => !resourcePrices[resourceId]);
-        Object.assign(resourcePrices, await repository.getMany(serverId, missing));
-      };
-      const summarize = () => {
-        const next: Record<string, PinnedPriceSummary> = {};
-        ids.forEach((id, index) => {
-          const detail = details[index];
-          const marketPriceKamas = marketPrices[id]?.marketPriceKamas;
-          const result = detail.recipe
-            ? compare(detail.recipe, effectiveIngredientPrices(detail.recipe, trees[index], resourcePrices, choices), marketPriceKamas)
-            : undefined;
-          next[id] = {
-            craftCostKamas: result?.craftCostStatus === 'complete' ? result.knownCraftCostKamas : undefined,
-            marketPriceKamas,
-            recommendation: result && result.recommendation !== 'insufficient-data' ? result.recommendation : undefined,
-          };
-        });
-        setSummaries(next);
-      };
-      await readCarnet();
-      if (cancelled) return;
-      summarize();
-      setLoadingSummaries(false);
-
-      const loaded = await Promise.all(details.map((detail, index) => (detail.recipe
-        ? loadRecipeTree(detail.recipe, detail.resources)
-        : Promise.resolve(trees[index]))));
-      if (cancelled) return;
-      loaded.forEach((tree, index) => {
-        trees[index] = tree;
-      });
-      await readCarnet();
-      if (cancelled) return;
-      summarize();
-      // Mode communautaire (specs/024): RecherchePage only syncs a resource's latest shared price into
-      // the carnet when that item's detail is displayed, so an item pinned earlier could show an old
-      // price (or "Non renseigné") here. Sync the same way, so both pages agree — after the carnet
-      // values are already on screen, so a slow network never delays them.
-      if (priceMode !== 'community') return;
-      await syncCommunityPrices(serverId, chainResourceIds(), resourcePrices, (resourceId, amountKamas, updatedAt) => repository.save(serverId, resourceId, amountKamas, updatedAt), () => cancelled);
-      if (!cancelled) summarize();
-    })().catch(() => {
-      // Never left on « … »: what was computed stays, and the failure is said.
-      if (cancelled) return;
-      setSummariesError(true);
-      setLoadingSummaries(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId, pinnedItemIds, priceMode, attempt]);
+  const { summaries, loadingSummaries, summariesError, retry } = usePinnedSummaries(serverId, pinnedItemIds, priceMode);
 
   return (
     <>
@@ -360,7 +60,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
       {summariesError && pinnedItems.length > 0 && (
         <div className="inline-retry" role="alert">
           <p className="warning">Impossible de calculer les prix de vos objets suivis.</p>
-          <button type="button" className="btn btn-secondary btn-small" onClick={() => setAttempt((count) => count + 1)}>Réessayer</button>
+          <button type="button" className="btn btn-secondary btn-small" onClick={retry}>Réessayer</button>
         </div>
       )}
       {removed && (
@@ -417,13 +117,15 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
               <p className="pinned-collection-empty muted">Aucun objet dans cette liste pour le moment.</p>
             ) : (
             <div className="pinned-grid" aria-label={`Objets suivis — ${group.name ?? 'Sans liste'}`}>
-              {group.items.map((entry) => {
-                const summary = summaries[entry.item.id];
-                return (
-                <div
-                  className={`pinned-card${draggedItemId === entry.item.id ? ' pinned-card-dragging' : ''}`}
+              {group.items.map((entry) => (
+                <PinnedCard
                   key={entry.item.id}
-                  draggable
+                  entry={entry}
+                  summary={summaries[entry.item.id]}
+                  loadingSummaries={loadingSummaries}
+                  collectionNames={collectionNames}
+                  groupName={group.name}
+                  dragging={draggedItemId === entry.item.id}
                   onDragStart={(event) => {
                     setDraggedItemId(entry.item.id);
                     event.dataTransfer.setData('text/plain', entry.item.id);
@@ -433,65 +135,14 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                     setDraggedItemId(null);
                     setDragOverGroupKey(null);
                   }}
-                >
-                  <div className="pinned-card-top">
-                    <button
-                      type="button"
-                      className="pinned-card-main"
-                      onClick={() => navigate(`${ROUTES.search}?item=${entry.item.id}`)}
-                    >
-                      {entry.item.imageUrl ? (
-                        <img src={entry.item.imageUrl} alt="" width="40" height="40" />
-                      ) : (
-                        <span className="pinned-card-fallback" aria-hidden="true">
-                          {entry.item.name.slice(0, 1)}
-                        </span>
-                      )}
-                      <span className="pinned-card-info">
-                        <span className="pinned-card-name">{entry.item.name}</span>
-                        {entry.item.level !== undefined && (
-                          <span className="pinned-card-level">Niveau {entry.item.level}</span>
-                        )}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button pinned-card-remove"
-                      aria-label={`Ne plus suivre ${entry.item.name}`}
-                      onClick={(event) => {
-                        // The card fades out before it goes (styles/parts).
-                        leaveThen(event.currentTarget.closest<HTMLElement>('.pinned-card'), () => {
-                          setRemoved(entry);
-                          unpin(entry.item.id);
-                        });
-                      }}
-                    >
-                      <Icon name="close" size={16} />
-                    </button>
-                  </div>
-                  <div className="pinned-card-prices">
-                    <span className={`pinned-card-price ${priceClass(summary?.craftCostKamas, summary?.recommendation, 'craft')}`}>
-                      Craft : {formatPriceValue(summary?.craftCostKamas, loadingSummaries)}
-                    </span>
-                    <span className={`pinned-card-price ${priceClass(summary?.marketPriceKamas, summary?.recommendation, 'buy')}`}>
-                      HDV : {formatPriceValue(summary?.marketPriceKamas, loadingSummaries)}
-                    </span>
-                  </div>
-                  {/* Same move as dragging the card onto another list, for the keyboard and a touch screen. */}
-                  {collectionNames.length > 0 && (
-                    <select
-                      className="pinned-card-list"
-                      aria-label={`Liste de ${entry.item.name}`}
-                      value={group.name ?? ''}
-                      onChange={(event) => assignCollection(entry.item.id, event.target.value || undefined)}
-                    >
-                      <option value="">Sans liste</option>
-                      {collectionNames.map((name) => <option key={name} value={name}>{name}</option>)}
-                    </select>
-                  )}
-                </div>
-                );
-              })}
+                  onOpen={() => navigate(`${ROUTES.search}?item=${entry.item.id}`)}
+                  onRemove={() => {
+                    setRemoved(entry);
+                    unpin(entry.item.id);
+                  }}
+                  onAssign={(collectionName) => assignCollection(entry.item.id, collectionName)}
+                />
+              ))}
             </div>
             )}
             </div>

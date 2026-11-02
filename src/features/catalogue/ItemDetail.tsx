@@ -5,7 +5,7 @@ import { playOnce } from '../../services/motion';
 import { CharacteristicIcon } from '../../components/CharacteristicIcon';
 import { CategoryIcon } from '../../components/CategoryIcon';
 
-type ItemDetailData = {
+export type ItemDetailData = {
   item: Item;
   category?: Category;
   recipe?: Recipe;
