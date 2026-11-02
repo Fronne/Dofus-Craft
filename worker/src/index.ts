@@ -1,20 +1,22 @@
 import { purgeExpiredContributions, retentionCutoff } from './retention';
 import { purgeStaleExternalPrices, refreshHuzounetPrices, syncHuzounetPrices } from './huzounet';
 import { readPlayerCounters } from './player-counters';
-import { communityPricesResponse, fetchCurrentMedian, insertContribution, MAX_AMOUNT_KAMAS, parseContributionPayload } from './contribution';
+import { communityPricesResponse } from './contribution';
 import { itemPricesResponse, latestPriceResponse } from './latest';
 import { lotPricesResponse } from './lot-prices';
 import { bonsPlansResponse, purgeStaleListings } from './listings';
 import { coefficientsResponse, insertClears, insertCoefficients, parseClearPayload, parseCoefficientPayload, purgeExpiredCoefficients } from './brisage-coefficients';
-import { readExternalPrices, withExternalPrice } from './external-price';
 import { infoMessageResponse } from './info-message';
 import { priceHistoryResponse } from './price-history';
 import { siteSettingsResponse } from './site-settings';
-import { cachedRead, clearReadCache } from './read-cache';
+import { clearReadCache } from './read-cache';
 import { CORS_HEADERS } from './cors';
 import { handleFm } from './fm/router';
-import { optionalViewer } from './fm/http';
 import { handleSniffer } from './sniffer';
+import { cachedJson, isAuthorized, json } from './http';
+import { communityPriceResponse } from './routes/community-prices';
+import { handlePostContribution } from './routes/contributions';
+import { handlePostVisit } from './routes/visits';
 
 export interface Env {
   DB: D1Database;
@@ -36,112 +38,6 @@ export interface Env {
 
 // The weekly retention's cron (wrangler.toml); any other trigger is the reading of Huzounet's prices.
 const RETENTION_CRON = '0 3 * * MON';
-
-function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS, ...extraHeaders },
-  });
-}
-
-function isAuthorized(request: Request, env: Env): boolean {
-  const header = request.headers.get('Authorization') ?? '';
-  return header === `Bearer ${env.COMMUNITY_API_KEY}`;
-}
-
-// specs/021-background-data-loading: price reads go through the 60-second read cache.
-async function cachedJson(url: URL, read: () => Promise<{ status: number; body: unknown }>): Promise<Response> {
-  const { status, body, headers } = await cachedRead(url, read);
-  return json(body, status, headers);
-}
-
-async function communityPriceResponse(url: URL, env: Env): Promise<{ status: number; body: unknown }> {
-  const resourceId = url.searchParams.get('resourceId');
-  const serverId = url.searchParams.get('serverId');
-  if (!resourceId || !serverId) return { status: 400, body: { error: 'resourceId and serverId are required' } };
-
-  const external = (await readExternalPrices(env.DB, serverId, [resourceId])).get(resourceId);
-  const median = withExternalPrice(await fetchCurrentMedian(env.DB, resourceId, serverId), external);
-  // FR-002: no row at all — never a fabricated price — when nothing (or nothing valid after
-  // FR-012's outlier filtering) remains.
-  if (!median) return { status: 404, body: null };
-
-  return {
-    status: 200,
-    body: {
-      resourceId,
-      serverId,
-      medianAmountKamas: median.medianAmountKamas,
-      sampleSize: median.sampleSize,
-      lastContributionAt: median.lastContributionAt,
-      // specs/024-latest-community-price: the price the site shows (contracts/community-price-api.md).
-      latestAmountKamas: median.latestAmountKamas,
-      latestContributionAt: median.latestContributionAt,
-      // specs/025-rune-purchase-import: the origin of that latest price (contracts/fm-site-api.md).
-      latestOrigin: median.latestOrigin,
-      // specs/035: for a price read from Huzounet, whether its source calls it provisional or old.
-      latestFragile: median.latestFragile,
-      // specs/082-auteur-prix-communautaires: the pseudonym of that latest price's author, when it has one and is public.
-      latestAuthor: median.latestAuthor,
-    },
-  };
-}
-
-async function handlePostContribution(request: Request, env: Env): Promise<Response> {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: 'Invalid JSON body' }, 400);
-  }
-  const contribution = parseContributionPayload(body);
-  if (!contribution) {
-    return json({ error: `resourceId, serverId, an amountKamas between 0 and ${MAX_AMOUNT_KAMAS} and an optional kind "item" are required` }, 400);
-  }
-  // FR-010 (revision 5): no player-identifying data (name, account, IP) is ever persisted; the
-  // outlier trace is resolved server-side (specs/007 FR-009, specs/016 FR-012) — see contribution.ts.
-  // specs/082-auteur-prix-communautaires: a logged-in player signs the price; any other request is anonymous.
-  const authorDiscordUserId = await optionalViewer(request, env.DB);
-  const id = await insertContribution(env.DB, authorDiscordUserId ? { ...contribution, authorDiscordUserId } : contribution);
-  // specs/021 (FR-013): this isolate's cached reads no longer reflect the database.
-  clearReadCache();
-
-  return json({ id }, 201);
-}
-
-type VisitPayload = { deviceId: string };
-
-function isVisitPayload(value: unknown): value is VisitPayload {
-  if (typeof value !== 'object' || value === null) return false;
-  const record = value as Record<string, unknown>;
-  return typeof record.deviceId === 'string' && record.deviceId.length > 0;
-}
-
-// specs/006-anonymous-visit-count: anonymous daily presence signal, sent on every app load
-// regardless of price mode (amends specs/004-community-price-sharing FR-015). The day is computed
-// here, never trusted from the client, so it can't be skewed by a wrong device clock/timezone.
-async function handlePostVisit(request: Request, env: Env): Promise<Response> {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: 'Invalid JSON body' }, 400);
-  }
-  if (!isVisitPayload(body)) {
-    return json({ error: 'deviceId is required' }, 400);
-  }
-
-  const day = new Date().toISOString().slice(0, 10);
-  // specs/082: a logged-in player's visit is linked to them (the admin dashboard names the day's visitors). Without a
-  // valid session the visit stays anonymous, and an anonymous repeat never unlinks a visit already linked.
-  const discordUserId = await optionalViewer(request, env.DB);
-  await env.DB.prepare(
-    `INSERT INTO app_visits (device_id, day, discord_user_id) VALUES (?, ?, ?)
-     ON CONFLICT (device_id, day) DO UPDATE SET discord_user_id = excluded.discord_user_id WHERE excluded.discord_user_id IS NOT NULL`,
-  ).bind(body.deviceId, day, discordUserId ?? null).run();
-
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
-}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
