@@ -11,7 +11,6 @@ import { NavMenu } from './NavMenu';
 import { AccountMenu } from './AccountMenu';
 import { groupKey, layoutNav, type NavGroup } from './nav-layout';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
-import { PriceModeSwitch } from '../features/settings/PriceModeSwitch';
 import { PriceModeBadge } from '../features/settings/PriceModeBadge';
 import { PriceModeToast } from '../features/settings/PriceModeToast';
 import { PinnedPriceMigrationNotice } from '../features/server/PinnedPriceMigrationNotice';
@@ -297,11 +296,10 @@ export function AppShell() {
           )}
         </div>
         {/* specs/051-site-visual-refresh: the right end of the top bar — active server, then
-            the account, then Paramètres (reached from this icon, not from the page list). The theme is chosen in
-            Paramètres only: its toggle left the bar to give the pages more room. */}
+            the account, then Paramètres (reached from this icon, not from the page list). The theme and the price
+            mode are chosen in Paramètres only: their switches left the bar to give the pages more room. */}
         <div className="app-nav-footer">
           <ServerSwitcher />
-          <PriceModeSwitch priceMode={priceMode} setPriceMode={setPriceModeState} />
           <AccountMenu />
           <NavLink
             to={ROUTES.settings}

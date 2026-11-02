@@ -45,7 +45,7 @@ describe('navigation principale (specs/051)', () => {
   afterEach(cleanup);
 
   // specs/075-connexion-discord-site: « Se connecter avec Discord » joins the right end of the bar, before Paramètres.
-  it('lists the pages, then the active server, the Discord login and Paramètres — the theme is chosen in Paramètres only', async () => {
+  it('lists the pages, then the active server, the Discord login and Paramètres — the theme and the price mode are chosen in Paramètres only', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
     await within(nav).findByRole('button', { name: 'Outils' });
@@ -54,25 +54,22 @@ describe('navigation principale (specs/051)', () => {
       'DofusCraft, aller à la recherche',
       'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'Outils',
       'Serveur actif Mikhal',
-      'Communauté, prix partagés avec le groupe', 'Perso, prix gardés sur cet appareil',
       'Se connecter avec Discord',
       'Paramètres',
     ]);
   });
 
-  it('switches the price mode in one click from the bar', async () => {
+  it('switches the price mode from Paramètres, confirmed in a toast', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
-    const nav = open('/');
-    await within(nav).findByRole('button', { name: 'Outils' });
-    const community = within(nav).getByRole('button', { name: /Communauté/ });
-    const personal = within(nav).getByRole('button', { name: /Perso/ });
+    const nav = open('/parametres');
+    expect(within(nav).queryByRole('group', { name: 'Mode de prix' })).not.toBeInTheDocument();
+    const community = await screen.findByRole('button', { name: /Mode communautaire/ });
+    const personal = screen.getByRole('button', { name: /Mode personnel/ });
     expect(community).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(personal);
     expect(personal).toHaveAttribute('aria-pressed', 'true');
     expect(community).toHaveAttribute('aria-pressed', 'false');
-    // The change is confirmed in a toast, and the page badge follows the mode.
     expect(screen.getByText(/Mode personnel activé/)).toBeInTheDocument();
-    expect(screen.getByText('Prix personnels')).toBeInTheDocument();
   });
 
   it('shows no mode toast on load, and no mode badge on Paramètres', async () => {
