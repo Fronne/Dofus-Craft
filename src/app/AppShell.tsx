@@ -40,15 +40,16 @@ const BonsPlansPage = lazyPage(() => import('../features/good-deals/BonsPlansPag
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
 // (src/features/home/AccueilPage.tsx) is kept so it can come back later.
+// `priority`: the higher it is, the longer the link stays on the bar when it is too narrow (the rest goes to « Plus »).
 const NAV_ITEMS = [
-  { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true, page: 'searchPage' as const },
-  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false, page: 'pinnedPage' as const },
-  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false, page: 'pricesPage' as const },
-  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false, page: 'hdvPage' as const },
-  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false, page: 'petsPage' as const },
-  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false, page: 'forgemagiePage' as const },
-  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false, page: 'brisagePage' as const },
-  { to: ROUTES.bonsPlans, label: 'Bons plans', icon: 'coins' as const, end: false, page: 'bonsPlansPage' as const },
+  { to: ROUTES.search, label: 'Recherche', icon: 'search' as const, end: true, page: 'searchPage' as const, priority: 10 },
+  { to: ROUTES.pinned, label: 'Suivis', icon: 'bookmark' as const, end: false, page: 'pinnedPage' as const, priority: 8 },
+  { to: ROUTES.prices, label: 'Rentabilité', icon: 'trending-up' as const, end: false, page: 'pricesPage' as const, priority: 9 },
+  { to: ROUTES.hdv, label: 'HDV', icon: 'store' as const, end: false, page: 'hdvPage' as const, priority: 7 },
+  { to: ROUTES.pets, label: 'XP Familier', icon: 'paw' as const, end: false, page: 'petsPage' as const, priority: 4 },
+  { to: ROUTES.forgemagie, label: 'Forgemagie', icon: 'anvil' as const, end: false, page: 'forgemagiePage' as const, priority: 3 },
+  { to: ROUTES.brisage, label: 'Brisage', icon: 'hammer' as const, end: false, page: 'brisagePage' as const, priority: 5 },
+  { to: ROUTES.bonsPlans, label: 'Bons plans', icon: 'coins' as const, end: false, page: 'bonsPlansPage' as const, priority: 6 },
 ];
 
 const SITE_NAME = 'Dofus Craft';
@@ -166,8 +167,10 @@ export function AppShell() {
   // The links that don't fit on the bar's single line go into the « Plus » menu, so a new page never
   // pushes the server, mode, settings and theme controls onto a second line. Every link is always
   // rendered (the hidden ones are only invisible) so their natural widths can be measured.
-  const [visibleCount, setVisibleCount] = useState(Number.POSITIVE_INFINITY);
+  // Indexes (in navItems) of the links moved into « Plus », comma-joined so an unchanged answer is no new state.
+  const [hiddenKey, setHiddenKey] = useState('');
   const [moreOpen, setMoreOpen] = useState(false);
+  const navKey = navItems.map((item) => item.to).join();
   useLayoutEffect(() => {
     const main = navMainRef.current;
     const list = navListRef.current;
@@ -175,29 +178,33 @@ export function AppShell() {
     const fit = () => {
       const items = Array.from(list.children) as HTMLElement[];
       // The phone layout is a bottom tab bar that shares its width between the links: nothing moves to « Plus ».
-      if (typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 961px)').matches) return setVisibleCount(items.length);
+      if (typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 961px)').matches) return setHiddenKey('');
       const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
       const widths = items.map((item) => item.offsetWidth);
       const total = widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1);
-      if (total <= main.clientWidth) return setVisibleCount(items.length);
+      if (total <= main.clientWidth) return setHiddenKey('');
+      // The most important links stay on the bar; the least important go to « Plus » first.
       const room = main.clientWidth - (moreRef.current?.offsetWidth || 96) - gap;
-      let count = 0;
+      const byPriority = navItems.map((_, index) => index).sort((x, y) => navItems[y].priority - navItems[x].priority || x - y);
+      const kept = new Set<number>();
       let used = 0;
-      for (const width of widths) {
-        const next = used + (count ? gap : 0) + width;
+      for (const index of byPriority) {
+        const next = used + (kept.size ? gap : 0) + widths[index];
         if (next > room) break;
         used = next;
-        count += 1;
+        kept.add(index);
       }
-      setVisibleCount(count);
+      setHiddenKey(items.map((_, index) => index).filter((index) => !kept.has(index)).join());
     };
     fit();
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : undefined;
     observer?.observe(main);
     Array.from(list.children).forEach((item) => observer?.observe(item));
     return () => observer?.disconnect();
-  }, [navItems.length]);
-  const overflowItems = navItems.slice(visibleCount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navKey]);
+  const hidden = useMemo(() => new Set(hiddenKey ? hiddenKey.split(',').map(Number) : []), [hiddenKey]);
+  const overflowItems = navItems.filter((_, index) => hidden.has(index));
   const moreActive = overflowItems.some((item) => item.end ? pathname === item.to : pathname.startsWith(item.to));
   useEffect(() => setMoreOpen(false), [pathname, overflowItems.length]);
   useEffect(() => {
@@ -237,7 +244,7 @@ export function AppShell() {
       cancelAnimationFrame(ready);
       observer?.disconnect();
     };
-  }, [pathname, navItems.length, siteSettings, visibleCount]);
+  }, [pathname, navItems.length, siteSettings, hiddenKey]);
 
   return (
     <div className="app-shell">
@@ -262,11 +269,11 @@ export function AppShell() {
         <div className="app-nav-main" ref={navMainRef}>
           <ul className="app-nav-list" ref={navListRef}>
             {navItems.map((item, index) => (
-              <li key={item.to} className={index >= visibleCount ? 'is-overflow' : undefined}>
+              <li key={item.to} className={hidden.has(index) ? 'is-overflow' : undefined}>
                 <NavLink
                   to={item.to}
                   end={item.end}
-                  tabIndex={index >= visibleCount ? -1 : undefined}
+                  tabIndex={hidden.has(index) ? -1 : undefined}
                   className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
                 >
                   <Icon name={item.icon} size={20} />
