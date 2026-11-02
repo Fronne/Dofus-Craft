@@ -4,7 +4,7 @@ import { loadCatalogueSnapshot, refreshCatalogueIfChanged } from './catalogue-sn
 import { getDofusDbEffects, getDofusDbInitialItems, getDofusDbItem, getDofusDbItemSet, getDofusDbItemSets, getDofusDbItemTypes, getDofusDbItems, getDofusDbItemsByTypeIds, getDofusDbRecipes, normalizeSearchText } from '../services/dofusdb-api';
 import { getDofusDbItemKind, isWeapon, mapDofusDbCategories, mapDofusDbItem, mapDofusDbRecipe, mapDofusDbResource } from '../services/dofusdb-mappers';
 import type { Category, ItemStat, Recipe, Resource } from '../domain/types';
-import type { DofusDbItemEffect } from '../services/dofusdb-types';
+import type { DofusDbEffect, DofusDbItemEffect } from '../services/dofusdb-types';
 import { CHARACTERISTIC_ASSET_BY_ID, ELEMENT_ASSET_BY_ID } from '../domain/characteristic-icons';
 import { negativeStatId } from '../domain/brisage';
 
@@ -245,6 +245,26 @@ function characteristicIcon(characteristicId: number | undefined, elementId: num
     : characteristicId !== undefined ? CHARACTERISTIC_ASSET_BY_ID[characteristicId] : undefined;
 }
 
+type WaitingEffect = { resolve: (effect: DofusDbEffect | null) => void; reject: (reason: unknown) => void };
+const waitingEffects = new Map<number, WaitingEffect[]>();
+
+function askWaitingEffects() {
+  const batch = new Map(waitingEffects);
+  waitingEffects.clear();
+  getDofusDbEffects([...batch.keys()]).then((effects) => {
+    const byId = new Map(effects.map((effect) => [effect.id, effect]));
+    batch.forEach((waiting, effectId) => waiting.forEach(({ resolve }) => resolve(byId.get(effectId) ?? null)));
+  }, (error: unknown) => batch.forEach((waiting) => waiting.forEach(({ reject }) => reject(error))));
+}
+
+/** Several items open at once share their effects: what is asked in the same moment goes out in one request. */
+function loadEffect(effectId: number): Promise<DofusDbEffect | null> {
+  return new Promise((resolve, reject) => {
+    if (waitingEffects.size === 0) setTimeout(askWaitingEffects);
+    waitingEffects.set(effectId, [...(waitingEffects.get(effectId) ?? []), { resolve, reject }]);
+  });
+}
+
 async function mapItemStats(
   item: Awaited<ReturnType<typeof getDofusDbItem>>,
   signal?: AbortSignal,
@@ -252,10 +272,10 @@ async function mapItemStats(
   const effects = (item.effects ?? []).filter((effect) =>
     typeof effect.effectId === 'number' && typeof effect.from === 'number' && typeof effect.to === 'number');
   if (!effects.length) return [];
-  const metadata = await getDofusDbEffects(
-    [...new Set(effects.map((effect) => effect.effectId!))],
-    signal,
-  );
+  const metadata = (await Promise.all(
+    [...new Set(effects.map((effect) => effect.effectId!))].map((effectId) => cached(`effect:${effectId}`, () => loadEffect(effectId))),
+  )).filter((effect) => effect !== null);
+  signal?.throwIfAborted();
   const descriptions = new Map(metadata.map((effect) => [effect.id, effect.description?.fr]));
   const characteristics = new Map(metadata.map((effect) => [effect.id, effect.characteristic]));
   const elements = new Map(metadata.map((effect) => [effect.id, effect.elementId]));

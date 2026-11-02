@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getItemDetail, getManifest, searchItems } from '../../src/data/catalogue-repository';
 import { clearCache, setPersistentStore } from '../../src/data/catalogue-cache';
 
@@ -400,7 +400,7 @@ it('cleans technical effect markers and collapses binary PA, PM, PO and invocati
         }), { status: 200 }));
       }
       if (input.includes('/effects?')) {
-        const id = Number(new URL(input).searchParams.get('id'));
+        const ids = new URL(input).searchParams.getAll('id[$in][]').map(Number);
         const descriptions: Record<number, string> = {
           418: '#1{{~1~2 à }}#2 Dommage{{~ps}}{{~zs}} Critiques',
           111: '#1{{~1~2 à }}#2 PA',
@@ -412,10 +412,10 @@ it('cleans technical effect markers and collapses binary PA, PM, PO and invocati
           421: '-#1{{~1~2 à -}}#2 Résistance{{~ps}}{{~zs}} Critiques',
         };
         return Promise.resolve(new Response(JSON.stringify({
-          total: 1,
-          limit: 1,
+          total: ids.length,
+          limit: 50,
           skip: 0,
-          data: [{ id, description: { fr: descriptions[id] } }],
+          data: ids.map((id) => ({ id, description: { fr: descriptions[id] } })),
         }), { status: 200 }));
       }
       return Promise.resolve(new Response(JSON.stringify({
@@ -455,16 +455,16 @@ it('flags weapon damage/steal effects as isWeaponEffect and other bonuses as not
       }), { status: 200 }));
     }
     if (input.includes('/effects?')) {
-      const id = Number(new URL(input).searchParams.get('id'));
+      const ids = new URL(input).searchParams.getAll('id[$in][]').map(Number);
       const descriptions: Record<number, string> = {
         96: '#1{{~1~2 à }}#2 dommages Eau',
         125: '#1{{~1~2 à }}#2 Vitalité',
       };
       return Promise.resolve(new Response(JSON.stringify({
-        total: 1,
-        limit: 1,
+        total: ids.length,
+        limit: 50,
         skip: 0,
-        data: [{ id, description: { fr: descriptions[id] } }],
+        data: ids.map((id) => ({ id, description: { fr: descriptions[id] } })),
       }), { status: 200 }));
     }
     return Promise.resolve(new Response(JSON.stringify({
@@ -764,4 +764,66 @@ it('does not expose the non-craftable Cire Momore apparat set', async () => {
         total: 0,
         data: [],
     });
+});
+
+describe('effects of an item', () => {
+  const effectCalls = () => (fetch as ReturnType<typeof vi.fn>).mock.calls.map(([input]) => String(input)).filter((input) => input.includes('/effects?'));
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((input: string) => {
+      const url = new URL(input);
+      const page = (data: unknown[]) => Promise.resolve(new Response(JSON.stringify({ total: data.length, limit: 50, skip: 0, data }), { status: 200 }));
+      if (input.includes('/effects?')) return page(url.searchParams.getAll('id[$in][]').map(Number).map((id) => ({ id, description: { fr: `#2 effet ${id}` } })));
+      if (input.includes('/recipes?')) return page([]);
+      const id = Number(url.pathname.split('/').pop());
+      return Promise.resolve(new Response(JSON.stringify({ id, effects: [125, 118, id].map((effectId) => ({ effectId, from: 1, to: 10 })) }), { status: 200 }));
+    }));
+  });
+
+  it('asks the effects of items opened together in one request, each effect once', async () => {
+    const details = await Promise.all([getItemDetail('1'), getItemDetail('2')]);
+    expect(details[1].stats.map((stat) => stat.label)).toEqual(['10 effet 125', '10 effet 118', '10 effet 2']);
+    expect(effectCalls()).toHaveLength(1);
+    expect(new URL(effectCalls()[0]).searchParams.getAll('id[$in][]').sort()).toEqual(['1', '118', '125', '2']);
+  });
+
+  it('never asks an effect twice', async () => {
+    await getItemDetail('1');
+    await getItemDetail('2');
+    expect(effectCalls().flatMap((call) => new URL(call).searchParams.getAll('id[$in][]')).sort()).toEqual(['1', '118', '125', '2']);
+  });
+
+  it('asks again an effect whose request failed', async () => {
+    const working = (fetch as ReturnType<typeof vi.fn>).getMockImplementation()!;
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation((input: string) =>
+      input.includes('/effects?') ? Promise.resolve(new Response('', { status: 500 })) : working(input));
+    await expect(getItemDetail('1')).rejects.toThrow();
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation(working);
+    expect((await getItemDetail('1')).stats).toHaveLength(3);
+  });
+
+  it('answers every caller of an effect asked twice at the same moment', async () => {
+    const first = getItemDetail('1');
+    await vi.waitFor(() => expect((fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0));
+    clearCache();
+    const details = await Promise.all([first, getItemDetail('1')]);
+    expect(details.map(({ stats }) => stats.length)).toEqual([3, 3]);
+  });
+
+  it('keeps an item whose effect DofusDB does not know', async () => {
+    const working = (fetch as ReturnType<typeof vi.fn>).getMockImplementation()!;
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation((input: string) =>
+      input.includes('/effects?') ? Promise.resolve(new Response(JSON.stringify({ total: 0, limit: 50, skip: 0, data: [] }), { status: 200 })) : working(input));
+    expect((await getItemDetail('1')).stats.map((stat) => stat.label)).toContain('Effet 1 à 10');
+  });
+
+  it('stops when the item is no longer wanted while its effects load', async () => {
+    const controller = new AbortController();
+    const working = (fetch as ReturnType<typeof vi.fn>).getMockImplementation()!;
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation((input: string) => {
+      if (input.includes('/effects?')) controller.abort();
+      return working(input);
+    });
+    await expect(getItemDetail('1', controller.signal)).rejects.toMatchObject({ name: 'AbortError' });
+  });
 });

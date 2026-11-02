@@ -1,4 +1,4 @@
-import type { DofusDbItem, DofusDbItemSet, DofusDbItemTypeRecord, DofusDbPage, DofusDbRecipe, DofusDbServer } from './dofusdb-types';
+import type { DofusDbEffect, DofusDbItem, DofusDbItemSet, DofusDbItemTypeRecord, DofusDbPage, DofusDbRecipe, DofusDbServer } from './dofusdb-types';
 import { stripDiacritics } from './text';
 
 const API_URL = 'https://api.dofusdb.fr';
@@ -284,12 +284,19 @@ export async function getDofusDbItemSet(itemSetId: number, signal?: AbortSignal)
     isItemSet(value), signal);
 }
 
-export async function getDofusDbEffects(effectIds: number[], signal?: AbortSignal): Promise<import('./dofusdb-types').DofusDbEffect[]> {
-  const effects = await Promise.all(effectIds.map((effectId) =>
-    request(`/effects?id=${effectId}&$limit=1`, (value): value is DofusDbPage<import('./dofusdb-types').DofusDbEffect> =>
-      isPage(value, (effect): effect is import('./dofusdb-types').DofusDbEffect =>
-        isRecord(effect) && typeof effect.id === 'number'), signal)));
-  return effects.flatMap((page) => page.data);
+/** DofusDB never answers more than 50 rows at once. */
+const EFFECTS_PER_REQUEST = 50;
+
+export async function getDofusDbEffects(effectIds: number[], signal?: AbortSignal): Promise<DofusDbEffect[]> {
+  const batches: number[][] = [];
+  for (let start = 0; start < effectIds.length; start += EFFECTS_PER_REQUEST) batches.push(effectIds.slice(start, start + EFFECTS_PER_REQUEST));
+  const pages = await Promise.all(batches.map((batch) => {
+    const params = new URLSearchParams({ $limit: String(EFFECTS_PER_REQUEST) });
+    batch.forEach((effectId) => params.append('id[$in][]', String(effectId)));
+    return request(`/effects?${params.toString()}`, (value): value is DofusDbPage<DofusDbEffect> =>
+      isPage(value, (effect): effect is DofusDbEffect => isRecord(effect) && typeof effect.id === 'number'), signal);
+  }));
+  return pages.flatMap((page) => page.data);
 }
 
 // specs/072-snapshot-catalogue-statique (FR-007): the cheap freshness probe. Only `total` matters,
