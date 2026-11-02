@@ -459,7 +459,7 @@ export function EpinglesPage({ priceMode }: { priceMode: PriceMode }) {
                       className="icon-button pinned-card-remove"
                       aria-label={`Ne plus suivre ${entry.item.name}`}
                       onClick={(event) => {
-                        // The card fades out before it goes (global.css).
+                        // The card fades out before it goes (styles/parts).
                         leaveThen(event.currentTarget.closest<HTMLElement>('.pinned-card'), () => {
                           setRemoved(entry);
                           unpin(entry.item.id);

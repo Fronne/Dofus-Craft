@@ -1,0 +1,90 @@
+/* ---------- Helpers ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* First stop of the Tab key: jumps over the navigation, straight to the page. */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-3);
+  z-index: 40;
+  padding: .6rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus { top: var(--space-3); }
+/* Receives the focus on a page change, for the keyboard and screen readers only. */
+.app-page:focus { outline: none; }
+
+
+/* What an empty or failed screen offers to do next, under its EmptyState. */
+.empty-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin-top: var(--space-2); }
+/* A short status or error line right under the field or button it is about. */
+.field-status { margin: var(--space-1) 0 0; color: var(--text-muted); font-size: var(--text-xs); }
+.field-status--error { color: var(--danger); font-weight: 650; }
+.inline-retry { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.inline-retry p { margin: 0; }
+
+/* ---------- States shared by every control ---------- */
+
+/* Disabled: visibly off, whatever the button's own colors. */
+button:disabled, input:disabled, select:disabled, textarea:disabled, fieldset:disabled button { opacity: .55; cursor: not-allowed; }
+.price-mode-option-disabled:disabled { opacity: .7; }
+/* Pressed: every button and link-button answers the click itself, not only the hover. */
+button:not(:disabled):active, a.btn:active, a.icon-button:active, .app-nav-link:active { transform: translateY(1px); filter: brightness(.92); }
+/* Hover, for the controls that had none. */
+.ingredient-choice button:hover:not([aria-pressed="true"]),
+.hdv-price-filter:hover:not(.hdv-price-filter--active):not(:disabled),
+.price-history-grouping:hover:not([aria-pressed="true"]) { background: var(--button-bg); color: var(--text); }
+.outlier-confirm-dialog-actions button:hover:not(:disabled),
+.pinned-price-migration-notice button:hover { border-color: var(--border-strong); background: var(--accent-soft); }
+.outlier-confirm-dialog-actions .outlier-confirm-dialog-confirm:hover:not(:disabled) { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.price-history-invite:hover { text-decoration-thickness: 2px; }
+.pet-almanax-switch:hover .pet-almanax-switch-track { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---------- Motion (neutralized by prefers-reduced-motion in theme.css) ---------- */
+
+
+/* ---------- Touch: targets large enough for a finger ---------- */
+
+@media (pointer: coarse), (max-width: 960px) {
+  .btn-small, .reset-filters, .server-switcher-option, .pinned-price-migration-notice button, .outlier-confirm-dialog-actions button { min-height: 44px; }
+  .icon-button, .icon-button--sm { width: 44px; height: 44px; }
+  .pinned-collection-title .icon-button { width: 36px; height: 36px; }
+  .ingredient-choice button, .ingredient-toggle, .price-history-grouping, .hdv-price-filter { min-height: 36px; padding-inline: .75rem; }
+  .hdv-price-filter { min-height: 40px; }
+  /* An inline name: its vertical padding widens the tap area without moving the line. */
+  .resource-name-copy { padding-block: .45rem; }
+  .price-history-trigger { width: 2.5rem; height: 2.5rem; }
+  .level-slider-track { height: 44px; }
+  .level-slider-track input[type='range']::-webkit-slider-thumb { width: 26px; height: 26px; }
+  .level-slider-track input[type='range']::-moz-range-thumb { width: 22px; height: 22px; }
+}
+@media (max-width: 400px) {
+  /* The server's name alone: « Serveur actif » leaves it no room on a narrow phone. */
+  .server-switcher-label { display: none; }
+}
+.item-stats-skeleton { display: block; margin-top: var(--space-2); }
+
+/* Suivis: the list a card belongs to, the delete confirmation of a list, and the « Annuler » of a removal. */
+.pinned-card-list { min-height: var(--control-sm); padding: .2rem .5rem; font-size: var(--text-xs); color: var(--text-muted); }
+.pinned-collection-confirm { flex-wrap: wrap; font-weight: 600; }
+.pinned-removed { margin-bottom: var(--space-4); padding: var(--space-2) var(--space-3); border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--panel-strong); }
+.page-header + .inline-retry, .pinned-collections-toolbar + .inline-retry { margin-bottom: var(--space-4); }
+
+@media (pointer: coarse), (max-width: 960px) {
+  .pin-item-button { min-height: 44px; }
+}

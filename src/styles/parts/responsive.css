@@ -1,0 +1,140 @@
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+  /* The top bar becomes the bottom tab bar. Never keep a backdrop-filter on .app-nav here: it
+     would become the containing block of the server switcher, which is fixed to the top of the
+     viewport on small screens, and drop it onto the tab bar. */
+  .app-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 10;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    gap: 0;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: .4rem;
+    border: 0;
+    border-top: .5px solid var(--border);
+    border-radius: 0;
+    background: var(--panel-strong);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .app-nav-list::after { content: none; }
+  .app-nav-brand { display: none; }
+  /* Every entry takes an equal share of the bar and may shrink, so the last ones (Forgemagie,
+     Paramètres) are never pushed off a narrow screen; a label that doesn't fit is cut, not wrapped. */
+  .app-nav-main { min-width: 0; gap: 0; }
+  .app-nav-list { flex: 1 1 0; flex-wrap: nowrap; gap: 0; min-width: 0; }
+  .app-nav-list > li { flex: 1 1 0; min-width: 0; }
+  .app-nav-link { flex-direction: column; gap: .2rem; min-width: 0; padding: .4rem .1rem; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 600; text-align: center; min-height: 48px; justify-content: center; }
+  .app-nav-link > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The theme toggle and version drop out on mobile (the toggle is redundant with Paramètres' own
+     theme controls); only the Paramètres icon stays, as the last tab. The server switcher escapes
+     .app-nav entirely: .app-nav is the bottom tab bar here, with no room for a text dropdown, so
+     it's pinned to the top of the screen instead. */
+  .app-nav-footer > :not(.app-nav-settings):not(.server-switcher):not(.account-menu) { display: none; }
+  /* The account (specs/075) is pinned to the top-right of the screen, beside the server switcher: the avatar alone,
+     or the login as an icon. */
+  .account-menu { position: fixed; top: .5rem; right: var(--space-3); z-index: 11; }
+  .account-name, .account-login-label { display: none; }
+  .account-login { width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+  .account-button { padding: 0 var(--space-2); }
+  .app-nav-footer { flex: 0 0 44px; justify-content: center; margin-left: 0; }
+  .app-nav-settings { align-self: center; flex: 0 0 auto; width: 44px; height: 44px; }
+  .server-switcher {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 10;
+    padding: .5rem var(--space-4);
+    background: var(--panel-strong);
+    border-bottom: .5px solid var(--border);
+  }
+  .app-shell-main { padding-top: 64px; }
+  .app-page { padding: var(--space-4) var(--space-3) calc(64px + var(--space-4)); }
+}
+
+@media (max-width: 720px) {
+  .panel, .card, .result { padding: var(--space-4); border-radius: var(--radius-md); }
+  .search-primary { max-width: none; }
+  .filters-panel { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+  .market-price-summary { padding-left: 0; border-left: 0; border-top: .5px solid var(--border); padding-top: var(--space-4); }
+  .category-icons { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
+  .category-icons button { flex: 0 0 auto; min-height: 44px; }
+  .results-meta { align-items: flex-start; flex-direction: column; gap: .5rem; }
+  .results { grid-template-columns: 1fr; gap: .55rem; }
+  .results button, .skeleton-card { min-height: 58px; }
+  .skeleton-grid { grid-template-columns: 1fr; }
+  .card > img { max-width: 100px; max-height: 100px; }
+  .price-line { grid-template-columns: 1fr 60px; }
+  .price-line .price-input-cell { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; }
+  .price-resource-formatted { grid-column: 1 / -1; grid-row: auto; justify-self: start; text-align: left; }
+  .pinned-price-migration-notice { margin: 0 var(--space-3) var(--space-3); flex-direction: column; align-items: flex-start; }
+}
+
+/* specs/011-search-onboarding: help button + guided tour of the Recherche page. */
+
+.guided-tour {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+}
+.guided-tour::backdrop { background: transparent; }
+.guided-tour-dim { position: fixed; inset: 0; background: var(--scrim); }
+.guided-tour-cutout {
+  position: fixed;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 100vmax var(--scrim);
+  outline: 2px solid var(--accent);
+  pointer-events: none;
+}
+.guided-tour-bubble {
+  position: fixed;
+  width: min(360px, calc(100vw - 32px));
+  /* Never taller than the screen: a long step scrolls inside its bubble, its buttons stay in reach. */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  border: .5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-sm);
+}
+.guided-tour-bubble--centered { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.guided-tour-bubble--wide { width: min(520px, calc(100vw - 32px)); }
+.guided-tour-bubble--docked { top: auto; bottom: 16px; left: 16px; right: 16px; width: auto; transform: none; }
+.guided-tour-bubble .tour-example { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border: .5px dashed var(--border-strong); border-radius: var(--radius-md); background: var(--panel-soft); pointer-events: none; }
+.guided-tour-bubble .tour-example-caption { margin: 0 0 var(--space-1); font-size: var(--text-xs); font-weight: 700; color: var(--text-faint); }
+.tour-example .price-line { grid-template-columns: minmax(0, 1fr) auto auto; }
+.tour-example-price { grid-column: 3; grid-row: 1; justify-self: end; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.tour-example .ingredient-toggle[data-expanded="true"] { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
+.guided-tour-bubble h2 { margin: 0 0 var(--space-2); font-size: var(--text-base); }
+.guided-tour-bubble p { margin: 0 0 var(--space-3); font-size: var(--text-sm); line-height: 1.45; color: var(--text-muted); }
+.guided-tour-bubble .guided-tour-progress { margin: 0 0 var(--space-1); font-size: var(--text-xs); font-weight: 700; color: var(--accent-bright); }
+.guided-tour-bubble .guided-tour-hint { font-style: italic; }
+.guided-tour-points { margin: 0 0 var(--space-3); padding-left: 1.1rem; display: grid; gap: .3rem; font-size: var(--text-sm); color: var(--text-muted); }
+.guided-tour-points strong { color: var(--text); }
+/* Pinned to the bottom of the bubble while a long step scrolls above it. */
+.guided-tour-actions { position: sticky; bottom: calc(-1 * var(--space-4)); display: flex; justify-content: flex-end; gap: var(--space-2); margin: 0 calc(-1 * var(--space-4)) calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4); background: var(--panel-strong); }
+.guided-tour-actions .btn { padding: .5rem .8rem; font-size: var(--text-sm); }
+/* Leaves room for the sticky mobile header when a tour step scrolls its area to the top. */
+[data-tour] { scroll-margin-top: 80px; }
+.guided-tour-skip { margin-right: auto; background: transparent; color: var(--text-muted); }
+.guided-tour-skip:hover { color: var(--text); }
+

@@ -121,7 +121,7 @@ export function ComparisonVerdict({ result, marketPriceField }: { result: Compar
       : hint && hint.charAt(0).toUpperCase() + hint.slice(1);
   return (
     <div className={`verdict verdict--${recommendation}`}>
-      {/* Keyed by the recommendation: a verdict that changes comes in again (global.css). */}
+      {/* Keyed by the recommendation: a verdict that changes comes in again (styles/parts). */}
       <div className="verdict-head" key={recommendation}>
         <span className="verdict-icon" aria-hidden="true"><Icon name={verdictIcons[recommendation]} size={22} /></span>
         <div className="verdict-text">

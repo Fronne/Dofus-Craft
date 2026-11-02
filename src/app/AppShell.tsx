@@ -111,7 +111,7 @@ export function AppShell() {
   useEffect(() => {
     const root = document.documentElement;
     // A theme chosen by the player (not the one the page opens with) fades in: every color glides
-    // for a moment (global.css).
+    // for a moment (styles/parts).
     const switching = root.dataset.theme !== undefined && root.dataset.theme !== theme;
     root.dataset.theme = theme;
     window.localStorage.setItem('craftcheck-theme', theme);
@@ -174,7 +174,7 @@ export function AppShell() {
   }, [pathname]);
 
   // The diamond under the current page's link slides from one link to the next: its place is the
-  // middle of the active link's bottom edge, handed to the list as CSS variables (global.css). No
+  // middle of the active link's bottom edge, handed to the list as CSS variables (styles/parts). No
   // active link (Paramètres), no diamond.
   const navListRef = useRef<HTMLUListElement>(null);
   const navMainRef = useRef<HTMLDivElement>(null);
@@ -318,7 +318,7 @@ export function AppShell() {
           {pathname !== ROUTES.settings && <PriceModeBadge priceMode={priceMode} />}
           <InfoBanner />
           <ErrorBoundary key={pathname}>
-          {/* Mounted again on each page, like the boundary: the page fades in (global.css). */}
+          {/* Mounted again on each page, like the boundary: the page fades in (styles/parts). */}
           <div className="page-enter">
           <Suspense fallback={<PageLoader image={dofusById(dofus).image} />}>
           <Routes>

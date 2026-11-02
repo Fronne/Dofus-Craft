@@ -1,0 +1,30 @@
+/* ---------- Base ---------- */
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* No background here: the page's light is painted on the root (theme.css). */
+}
+
+.eyebrow {
+  display: inline-block;
+  color: var(--accent-bright);
+  font-size: var(--text-xs);
+  font-weight: 800;
+}
+
+/* Titles are set in the display face, in capitals; it has a single weight (400). */
+h1, h2, h3 { color: var(--text); font-family: var(--font-display); font-weight: 400; text-transform: uppercase; text-wrap: balance; }
+h1 { margin: .5rem 0 .5rem; font-size: var(--text-display); line-height: 1.15; letter-spacing: .01em; }
+h2 { font-size: var(--text-base); line-height: 1.2; letter-spacing: .02em; }
+h3 { font-size: var(--text-base); line-height: 1.25; letter-spacing: .02em; }
+.muted, small { color: var(--text-muted); }
+small { display: block; margin-top: .75rem; font-size: var(--text-xs); }
+.warning, em { color: var(--danger); font-style: normal; font-weight: 650; }
+.empty { margin: 1rem 0 0; color: var(--text-muted); font-size: var(--text-sm); }
+
+* { box-sizing: border-box; }
+button, a { transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast); }
+

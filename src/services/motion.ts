@@ -4,7 +4,7 @@ export function prefersReducedMotion(): boolean {
 }
 
 // Plays a one-off animation on an element: `data-<flag>` is set on it for the time of the animation
-// that global.css ties to that attribute. Set on the element itself, as nothing else depends on it.
+// that styles/parts ties to that attribute. Set on the element itself, as nothing else depends on it.
 export function playOnce(element: HTMLElement, flag: string) {
   delete element.dataset[flag];
   // Reading the layout between the two lets the animation start over when played twice in a row.
@@ -15,7 +15,7 @@ export function playOnce(element: HTMLElement, flag: string) {
   window.setTimeout(() => delete element.dataset[flag], 1000);
 }
 
-// Lets an element fade out (`data-leaving`, global.css) before `remove` takes it away. Without
+// Lets an element fade out (`data-leaving`, styles/parts) before `remove` takes it away. Without
 // animations — less motion asked for, or no way to know — it is removed at once.
 export function leaveThen(element: HTMLElement | null, remove: () => void) {
   if (!element || typeof window.matchMedia !== 'function' || prefersReducedMotion()) {

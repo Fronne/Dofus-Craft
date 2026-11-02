@@ -1,0 +1,258 @@
+/* ---------- Site style (specs/051-site-visual-refresh; formerly the « Moderne » design) ---------- */
+
+/* ---------- Typography ---------- */
+
+.page-header { margin-bottom: var(--space-6); }
+.page-header p { font-size: var(--text-base); line-height: 1.6; }
+.eyebrow { font-weight: 700; }
+
+/* ---------- Panels and cards ---------- */
+
+.panel,
+.card,
+.result {
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Section titles inside cards read left-aligned like every other card title; the item card keeps
+   its centered name under the image. */
+.card:not(.item-detail-card) h2 { margin-top: 0; text-align: left; }
+
+/* Prices line up digit by digit. */
+input,
+.price-resource-formatted,
+.price-overview-row b,
+.market-price-summary strong,
+.pinned-card-prices,
+.stat-tile-value { font-variant-numeric: tabular-nums; }
+
+/* ---------- Search page ---------- */
+
+.category-icons button { border-radius: var(--radius-pill); padding-right: .95rem; }
+.results button img { border-radius: var(--radius-sm); }
+/* The verdict becomes a tinted inset instead of a column separated by a rule. */
+.market-price-summary {
+  padding: var(--space-4) var(--space-5);
+  border-left: 0;
+  border-radius: var(--radius-md);
+  background: var(--inner-bg);
+}
+.market-price-summary .badge { align-self: flex-start; padding: .3rem .7rem; font-size: var(--text-sm); }
+/* The HDV panel stays compact: it is read at a glance, between the search and the recipe. */
+.market-price-panel { padding-top: var(--space-5); padding-bottom: var(--space-5); }
+/* Badge and craft cost share a line when there is room; the savings sentence, when present,
+   always gets its own line below them. */
+.market-price-panel .market-price-summary {
+  flex: 1 1 320px;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: center;
+  gap: .3rem var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.market-price-panel .market-price-summary > :nth-child(3) { flex-basis: 100%; }
+.price-line { padding: var(--space-3) 0; }
+
+/* A decided verdict (craft or buy) stands out on the accent tint; an incomplete one stays plain. */
+.market-price-panel .market-price-summary:has(.verdict--craft, .verdict--buy) {
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 55%, transparent);
+}
+.market-price-summary p.verdict-title { font-family: var(--font-display); font-size: var(--text-display); font-weight: 400; line-height: 1.1; letter-spacing: .01em; text-transform: uppercase; }
+.market-price-summary .verdict--craft p.verdict-title,
+.market-price-summary .verdict--buy p.verdict-title { color: var(--accent-bright); }
+/* The check sits in a diamond: the box is turned, the icon turned back. */
+.verdict--craft .verdict-icon,
+.verdict--buy .verdict-icon {
+  flex-basis: 40px;
+  height: 40px;
+  margin: 0 .5rem;
+  border-radius: var(--radius-xs);
+  background: var(--accent-gradient);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--on-accent);
+  transform: rotate(45deg);
+}
+.verdict--craft .verdict-icon svg,
+.verdict--buy .verdict-icon svg { transform: rotate(-45deg); }
+.market-price-summary .verdict-savings strong { color: var(--kamas); font-weight: 700; }
+.verdict-bar-track { background: var(--input-bg); }
+.verdict-bar-fill { background: color-mix(in srgb, var(--text-faint) 75%, transparent); }
+.verdict-bar--cheaper .verdict-bar-fill {
+  background: linear-gradient(90deg, var(--accent-gradient-to), var(--accent-bright));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Resource prices: what each line weighs in the craft cost, under its subtotal. */
+.share-bar { display: block; width: min(185px, 100%); height: 5px; margin: 0 0 var(--space-2) auto; border-radius: var(--radius-pill); background: var(--input-bg); overflow: hidden; }
+.share-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--link); }
+.price-resource-formatted { color: var(--text); }
+/* Bought is money (gold), crafted is the other way (turquoise); the word says it, the tint follows. */
+.retained-cost-option { border-radius: var(--radius-xs); background: var(--kamas-soft); color: var(--kamas); }
+.retained-cost--craft .retained-cost-option { background: var(--link-soft); color: var(--link); }
+.ingredient-children { border-left-color: color-mix(in srgb, var(--link) 35%, transparent); }
+
+/* Effects: one line each, the characteristic icon of the game, the name written. */
+.item-stats { padding: 0; border: 0; background: none; }
+.item-stats li { gap: .625rem; padding: .3rem 0; color: var(--text); font-weight: 500; }
+.item-stats li.stat-positive { color: var(--text); }
+
+/* ---------- Links and link-like buttons (the link role, not the accent) ---------- */
+
+a:not([class]) { color: var(--link); }
+.price-history-invite,
+.fm-link { color: var(--link); }
+.fm-link:hover { color: var(--link); }
+
+/* ---------- Home and pinned items ---------- */
+
+.stat-tile {
+  background: color-mix(in srgb, var(--panel-strong) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+.pinned-card,
+.pinned-preview-card { border-radius: var(--radius-md); background: var(--panel-strong); }
+.pinned-card:hover,
+.pinned-preview-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* ---------- Buttons and fields ---------- */
+
+.btn,
+.settings-choice { font-weight: 650; }
+.btn-primary {
+  font-size: var(--text-sm);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.btn:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
+.settings-choice:hover:not(:disabled) { transform: translateY(-1px); }
+/* Pressed: back down from the hover lift. */
+.btn:active:not(:disabled),
+.icon-button:active:not(:disabled),
+.settings-choice:active:not(:disabled),
+.results button:active { transform: translateY(1px); }
+.settings-choice.selected {
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+input,
+select {
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: none;
+  outline: none;
+}
+
+/* ---------- Search results ---------- */
+
+.results button { border-radius: var(--radius-md); }
+.results button:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.results button.selected {
+  box-shadow: inset 0 0 0 .5px var(--accent), 0 10px 26px -14px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* ---------- Dialogs and bubbles ---------- */
+
+.guided-tour-bubble,
+.outlier-confirm-dialog {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.guided-tour-cutout { border-radius: var(--radius-lg); }
+
+/* ---------- Dungeon counter bubble (specs/013) ---------- */
+
+.dungeon-counter-trigger { border-width: .5px; box-shadow: 0 10px 28px -8px color-mix(in srgb, var(--accent) 55%, transparent); }
+.dungeon-counter-panel { border-color: var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+
+
+/* A price field being typed in only takes the accent on its border: no ring, no halo around it. */
+.kamas-input-wrap input:focus,
+.kamas-input-wrap input:focus-visible { border-color: var(--accent); box-shadow: none; outline: none; }
+.kamas-input-wrap input[aria-invalid="true"]:focus { border-color: var(--danger); }
+/* Until it is entered, a click takes the whole price (usePriceEntry): no text caret to place yet. */
+.kamas-input-wrap input:not(:focus) { cursor: pointer; }
+
+/* A price field lights up the moment it is left with a new price (usePriceEntry). */
+@keyframes price-saved {
+  from { border-color: var(--accent); background-color: var(--accent-soft); }
+}
+.kamas-input-wrap input[data-saved] { animation: price-saved 250ms ease-out; }
+
+/* Switching theme: every color glides to the other theme's (AppShell sets the attribute for it). */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: background-color 250ms ease-out, color 250ms ease-out, border-color 250ms ease-out, fill 250ms ease-out, stroke 250ms ease-out !important;
+}
+
+/* « Voir la recette » carries a chevron that turns over when the recipe is unfolded. */
+.ingredient-toggle::after {
+  content: '';
+  display: inline-block;
+  width: .4em;
+  height: .4em;
+  margin-left: .5em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-.2em) rotate(45deg);
+  transition: transform var(--transition-enter);
+}
+.ingredient-toggle[aria-expanded="true"]::after,
+.ingredient-toggle[data-expanded="true"]::after { transform: translateY(.05em) rotate(-135deg); }
+
+/* A followed item's card fades out before it is taken away (EpinglesPage, leaveThen). */
+@keyframes leave { to { opacity: 0; transform: scale(.96); } }
+.pinned-card[data-leaving] { animation: leave 250ms ease-out forwards; pointer-events: none; }
+
+/* The egg of the logo leans under the pointer. */
+/* specs/074: --brand-glow-rest / --brand-glow-peak strengthen the halo of the Dofus whose picture
+   hardly glows on its own (ébène, ivoire); the others keep these values. */
+.app-nav-brand-mark {
+  filter: var(--brand-glow-rest, drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent)));
+  transition: transform var(--transition-fast);
+}
+.app-nav-brand:hover .app-nav-brand-mark { transform: rotate(-10deg) scale(1.08); }
+
+/* ---------- Small screens: keep the classic spacing there ---------- */
+
+@media (max-width: 960px) {
+  /* A floating tab bar, inset from the screen edges. */
+  .app-nav {
+    inset: auto 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px;
+    padding: .35rem;
+    border: .5px solid var(--border);
+    border-radius: 22px;
+    background: var(--panel-strong);
+    box-shadow: var(--shadow);
+  }
+  .app-nav-link { border-radius: 16px; }
+  .app-nav-link.active { box-shadow: none; }
+  .app-page { padding-bottom: calc(64px + 20px + var(--space-4)); }
+  /* The server switcher floats as a pill at the top instead of a full-width bar. */
+  .server-switcher { background: transparent; border-bottom: 0; }
+  .server-switcher-trigger {
+    background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@media (max-width: 720px) {
+  .panel,
+  .card,
+  .result { padding: var(--space-4); border-radius: var(--radius-md); }
+  .page-header { margin-bottom: var(--space-5); }
+  .market-price-summary { padding: var(--space-4); border-top: 0; }
+}
+

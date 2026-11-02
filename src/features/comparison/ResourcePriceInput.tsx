@@ -109,7 +109,7 @@ export function ResourcePriceInput({
       </span>
       {subtotal !== undefined
         ? <b className="price-resource-formatted">{formatKamas(subtotal)}</b>
-        // No subtotal yet: a dash holds its column where the lines sit under column titles (global.css).
+        // No subtotal yet: a dash holds its column where the lines sit under column titles (styles/parts).
         : <b className="price-resource-formatted price-resource-formatted--empty" aria-hidden="true">—</b>}
       {retained}
       {!valid && <em id={errorId} role="alert">Entrez un nombre entier positif ou zéro.</em>}

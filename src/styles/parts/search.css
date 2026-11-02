@@ -1,0 +1,289 @@
+/* ---------- Search ---------- */
+
+.search { display: grid; gap: var(--space-5); align-items: start; }
+.search label, .filter, .market { display: grid; gap: .5rem; flex: 1; font-size: var(--text-sm); font-weight: 700; color: var(--text-muted); }
+/* Text-like fields only: a checkbox, a radio, a range or a file input keeps its native box.
+   :where() keeps the specificity of a bare `input`, so every per-component size below still wins. */
+.search input, select, textarea, input:where(:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file])) {
+  min-height: var(--control-md);
+  border: .5px solid var(--border-control);
+  border-radius: var(--radius-md);
+  padding: .5rem .85rem;
+  background: var(--input-bg);
+  color: var(--text);
+}
+textarea { display: block; width: 100%; line-height: 1.5; resize: vertical; }
+input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
+.search input::placeholder, input::placeholder, textarea::placeholder { color: var(--text-faint); }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--danger); }
+.search-primary { max-width: 780px; }
+.search-label { color: var(--text); font-size: var(--text-base); font-weight: 600; }
+.search-input-wrap { position: relative; display: block; width: 100%; }
+.search-input-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-4);
+  z-index: 1;
+  color: var(--link);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.search-primary input, .search-input-wrap > input {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+/* A list's own search (HDV, Rentabilité, XP Familier): the size of the fields next to it. */
+.search-input-wrap > input { min-height: var(--control-md); padding: .5rem .85rem .5rem 2.75rem; }
+.search-input-wrap > .search-input-icon { left: .8rem; width: 18px; height: 18px; }
+/* The Recherche page's main search is the one large field of the site. */
+.search-primary .search-input-wrap > input { min-height: var(--control-lg); padding: .75rem .85rem .75rem 3.25rem; font-size: var(--text-base); }
+.search-primary .search-input-wrap > .search-input-icon { left: var(--space-4); width: 22px; height: 22px; }
+
+.filters-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  align-items: start;
+  gap: var(--space-5);
+  margin: 0;
+  padding: var(--space-4);
+  border: 0;
+  border-top: .5px solid var(--border);
+}
+.filters-panel[hidden] { display: none; }
+.filters-panel legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.level-filters { display: flex; flex-direction: column; gap: .75rem; }
+.level-filter { min-width: 0; border: 0; padding: 0; margin: 0; }
+.filters-panel .level-filter legend { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 0 0 .35rem; color: var(--text); font-size: var(--text-sm); font-weight: 700; }
+.level-slider { position: relative; display: grid; gap: .35rem; padding-top: .1rem; }
+/* The current range sits on the legend's line, at the right. */
+.level-slider-value { position: absolute; top: -1.75rem; right: 0; color: var(--accent-bright); font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+.level-slider-track { position: relative; height: 28px; }
+.level-slider-track::before,
+.level-slider-fill { content: ''; position: absolute; top: 50%; height: 6px; border-radius: var(--radius-pill); transform: translateY(-50%); }
+.level-slider-track::before { left: 0; right: 0; background: var(--border); }
+.level-slider-fill { background: var(--accent); }
+/* Both inputs span the whole track; only their handles catch the pointer, so each can be grabbed. */
+.level-slider-track input[type='range'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;
+}
+.level-slider-track input.level-slider-on-top { z-index: 1; }
+.level-slider-track input[type='range']::-webkit-slider-runnable-track { background: none; border: 0; }
+.level-slider-track input[type='range']::-moz-range-track { background: none; border: 0; }
+.level-slider-track input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: .5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  pointer-events: auto;
+}
+.level-slider-track input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: .5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  pointer-events: auto;
+}
+/* The focus cue lives on the handle only: beats the whole-field halo every input gets on focus
+   (Buttons and fields, below), which would draw a pill around the track. */
+:root .level-slider-track input[type='range']:focus,
+:root .level-slider-track input[type='range']:focus-visible { border: 0; box-shadow: none; outline: none; }
+.level-slider-track input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--accent-bright); }
+.level-slider-track input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--panel-strong), 0 0 0 4px var(--accent-bright); }
+.level-slider-bounds { display: flex; justify-content: space-between; color: var(--text-faint); font-size: var(--text-xs); font-weight: 650; }
+.reset-filters {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--link);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.reset-filters:hover { color: var(--text); }
+/* The search field and, at its right, the button that unfolds the filters. */
+.search-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.search-row .search-primary { flex: 1 1 320px; min-width: 0; max-width: 780px; }
+/* Under the field: the filters applied, each removed in one click, then the reset. */
+.filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); margin-top: calc(-1 * var(--space-3)); }
+/* The button is the 44px target; the chip drawn inside it stays slim. */
+.filter-chip { display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
+.filter-chip-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 34px;
+  padding: 0 .625rem 0 .875rem;
+  border: .5px solid color-mix(in srgb, var(--link) 45%, transparent);
+  border-radius: var(--radius-pill);
+  background: var(--link-soft);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.filter-chip-body svg { color: var(--link); }
+.filter-chip:hover .filter-chip-body { border-color: var(--link); }
+.filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
+  min-height: var(--control-lg);
+  padding: 0 1.125rem;
+  border: .5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.filters-toggle:hover, .filters-toggle[aria-expanded="true"] { border-color: var(--border-strong); color: var(--accent-bright); background: var(--accent-soft); }
+.filters-toggle-chevron { transition: transform var(--transition-fast); }
+.filters-toggle[aria-expanded="true"] .filters-toggle-chevron { transform: rotate(180deg); }
+.filters-toggle-count {
+  min-width: 1.375rem;
+  padding: 0 .375rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.375rem;
+  text-align: center;
+}
+
+.category-filter { min-width: 0; border: 0; padding: 0; margin: 0; flex: 1 1 auto; }
+.category-filter legend { position: static; width: auto; height: auto; overflow: visible; clip: auto; padding: 0 0 .35rem; color: var(--text); font-size: var(--text-sm); font-weight: 700; }
+.category-icons { display: flex; flex-wrap: wrap; gap: .5rem; }
+.category-icons button, .results button {
+  border: .5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.category-icons button { display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .75rem; font-size: var(--text-sm); }
+.category-icons button:hover, .category-icons button.selected {
+  background: var(--accent-soft);
+  border-color: var(--border-strong);
+  color: var(--accent-bright);
+}
+/* A quiet slot in the theme's neutrals (--slot-*, theme.css); only the selected category's slot
+   takes the accent, like its button. The source PNGs are a single solid color with alpha edges,
+   so they're applied as a mask and tinted rather than drawn as-is — that's what lets one image
+   serve both themes and both states. */
+.category-icon {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 1.9rem;
+  border-radius: var(--radius-xs);
+  border: .5px solid var(--slot-border);
+  background: var(--slot-bg);
+  overflow: hidden;
+}
+.category-icon-glyph {
+  width: 80%;
+  height: 80%;
+  background-color: var(--slot-glyph);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.category-icon svg { color: var(--slot-glyph); }
+.category-icons button.selected .category-icon { border-color: var(--border-strong); }
+.category-icons button.selected .category-icon-glyph { background-color: var(--accent-bright); }
+.category-icons button.selected .category-icon svg { color: var(--accent-bright); }
+
+/* ---------- Results ---------- */
+
+.results-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-5); padding-top: var(--space-4); border-top: .5px solid var(--border); color: var(--text-muted); font-size: var(--text-sm); font-weight: 700; }
+.results-meta-count { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.results-meta .sync-status { font-size: inherit; font-weight: inherit; }
+
+.loading-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: .5px solid var(--border);
+  border-top-color: var(--accent-bright);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sync-status { display: inline-flex; align-items: center; gap: .5rem; font-size: var(--text-sm); font-weight: 650; color: var(--text-muted); }
+.sync-status-offline { color: var(--warning); }
+
+.results { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.results button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: .7rem .85rem;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+.results button:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: var(--border-strong); }
+.results button.selected { border-color: var(--accent); box-shadow: inset 0 0 0 .5px var(--accent); }
+.results button img, .result-image-fallback { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; border-radius: var(--radius-sm); background: var(--image-bg); }
+.result-image-fallback { display: grid; place-items: center; color: var(--text-muted); font-weight: 750; }
+.result-item-info { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.result-item-name { color: var(--text); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Empty state & skeleton loading ---------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty-state-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-soft);
+  color: var(--text-faint);
+}
+.empty-state-title { margin: 0; color: var(--text); font-weight: 700; font-size: var(--text-base); }
+.empty-state-description { margin: 0; max-width: 380px; font-size: var(--text-sm); }
+
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.skeleton-card { display: flex; align-items: center; gap: var(--space-3); min-height: 64px; padding: .7rem .85rem; border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); }
+.skeleton-block { display: block; border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--button-bg), var(--border), var(--button-bg)); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+.skeleton-thumb { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--radius-sm); }
+.skeleton-line { flex: 1 1 auto; height: .8rem; }
+.skeleton-line.short { flex: 0 0 40%; }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+

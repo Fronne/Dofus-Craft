@@ -101,7 +101,7 @@ export function usePriceEntry({
       }
       onBlur?.(value);
       if (!typed || value === startValueRef.current) return;
-      // The field lights up briefly (global.css): with no button to press, this is the sign that the
+      // The field lights up briefly (styles/parts): with no button to press, this is the sign that the
       // price was taken. Right away, without waiting for the group's answer: a late flash reads as
       // something else.
       if (value !== '' && isValidKamas(value)) playOnce(event.currentTarget, 'saved');

@@ -1,0 +1,539 @@
+/* ---------- Illustration behind the page ----------
+   The Dofus illustration (recolored per theme by scripts/recolor-page-art.mjs), fixed under everything, in
+   three parts from the back (z-index):
+   - the whole picture (body::after), one file for every screen: it covers the window, so a 21:9 screen
+     crops a band of its top and bottom (the lit centre stays), a 16:9 one nothing;
+   - a calm band as wide as the content (body::before), so the text that is not on a panel — titles,
+     counts, chips — never sits on the picture. The cards and tables are on very opaque panels (theme.css);
+   - the six little Dofus and their halos, lit, above that band (.app-shell::after). */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+}
+body::after {
+  inset: 0;
+  z-index: -3;
+  background: var(--page-art, url(/backgrounds/songe-fond-emeraude.webp?v=16)) center / cover no-repeat;
+  filter: saturate(.85) brightness(.95);
+  opacity: .4;
+}
+/* ---------- Page loader: the Dofus breathes inside a halo (motion neutralized by prefers-reduced-motion in theme.css) ---------- */
+.page-loader {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3, .75rem);
+  padding: 4rem 1rem;
+  color: var(--text-muted);
+}
+.page-loader-egg {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+}
+.page-loader-egg::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent-bright) 42%, transparent), color-mix(in srgb, var(--accent) 14%, transparent) 60%, transparent);
+  animation: page-loader-halo 1.8s ease-in-out infinite;
+}
+.page-loader-egg img {
+  position: relative;
+  animation: page-loader-egg 1.8s ease-in-out infinite;
+}
+.page-loader-label { font-size: .9rem; }
+@keyframes page-loader-halo { 0%, 100% { opacity: .45; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes page-loader-egg { 0%, 100% { transform: translateY(2px) scale(.96); } 50% { transform: translateY(-4px) scale(1.04); } }
+/* The six little Dofus of the picture and their halos, alone and clearly lit, above the calm band (which
+   would hide them) and under the panels. Same placement as body::after, so they stay on their pedestals.
+   The shadows around the jet of the fountain are lifted the same way: it is the second background, drawn
+   under the Dofus (scripts/build-fountain-art.mjs). */
+.app-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    var(--page-eggs, url(/backgrounds/songe-oeufs-emeraude.webp?v=13)) center / cover no-repeat,
+    var(--page-fountain, url(/backgrounds/songe-fontaine-emeraude.webp?v=1)) center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px));
+  mask-image: linear-gradient(to right, transparent calc(50% - 700px), #000 calc(50% - 480px), #000 calc(50% + 480px), transparent calc(50% + 700px));
+  opacity: .75;
+}
+/* 1440px is the content column (--app-width). The band is solid a little inside its edge and thins out
+   over a long, eased ramp into the margins, so there is no visible line where it ends. */
+body::before {
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--bg) 0%, transparent) calc(50% - 1020px),
+    color-mix(in srgb, var(--bg) 3%, transparent) calc(50% - 1010px),
+    color-mix(in srgb, var(--bg) 9%, transparent) calc(50% - 988px),
+    color-mix(in srgb, var(--bg) 20%, transparent) calc(50% - 950px),
+    color-mix(in srgb, var(--bg) 36%, transparent) calc(50% - 892px),
+    color-mix(in srgb, var(--bg) 54%, transparent) calc(50% - 828px),
+    color-mix(in srgb, var(--bg) 72%, transparent) calc(50% - 764px),
+    color-mix(in srgb, var(--bg) 84%, transparent) calc(50% - 722px),
+    color-mix(in srgb, var(--bg) 90%, transparent) calc(50% - 700px),
+    color-mix(in srgb, var(--bg) 90%, transparent) calc(50% + 700px),
+    color-mix(in srgb, var(--bg) 84%, transparent) calc(50% + 722px),
+    color-mix(in srgb, var(--bg) 72%, transparent) calc(50% + 764px),
+    color-mix(in srgb, var(--bg) 54%, transparent) calc(50% + 828px),
+    color-mix(in srgb, var(--bg) 36%, transparent) calc(50% + 892px),
+    color-mix(in srgb, var(--bg) 20%, transparent) calc(50% + 950px),
+    color-mix(in srgb, var(--bg) 9%, transparent) calc(50% + 988px),
+    color-mix(in srgb, var(--bg) 3%, transparent) calc(50% + 1010px),
+    color-mix(in srgb, var(--bg) 0%, transparent) calc(50% + 1020px));
+}
+/* Readable over the lit picture: what sits on the page itself (not on a card) gets the card's opaque panel,
+   or the beam of the fountain and the lit Dofus, drawn above the calm band, show through it. */
+.results button:not(.selected), .brisage-cards button:not(.selected) { background: var(--panel); }
+.results button.selected { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--panel-strong); }
+.page-enter > .empty-state, .page-enter > .brisage-invite {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+.page-enter > .brisage-invite { padding: var(--space-3) var(--space-4); }
+/* 16:9 screens (the screen's ratio, not the window's, which the browser bars change): the whole page is shown at 90%. */
+@media (min-width: 1620px) and (min-device-aspect-ratio: 17/10) and (max-device-aspect-ratio: 18/10) {
+  html { zoom: .9; }
+}
+/* Light theme: the picture darkens the pale background (multiply) instead of whitening it, the calm band lets a
+   little more of it through, and the lit layer is softer, so the page is not one white sheet. */
+:root[data-theme="light"] body::after { opacity: .5; mix-blend-mode: multiply; }
+:root[data-theme="light"] body::before { opacity: .78; }
+:root[data-theme="light"] .app-shell::after { opacity: .5; }
+
+/* specs/060-page-brisage */
+.brisage-block { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+.brisage-block h2, .brisage-block h3, .brisage-results h2, .brisage-results h3 { margin: 0; }
+.brisage-results { display: grid; gap: var(--space-3); margin-bottom: var(--space-4); }
+.brisage-block-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.brisage-item { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4) var(--space-8, 2.25rem); }
+.brisage-coef { display: flex; align-items: center; gap: var(--space-2); }
+.brisage-coef input { width: 7rem; height: 52px; font-size: var(--text-base); font-weight: 600; }
+.brisage-coef span { font-size: var(--text-base); font-weight: 600; color: var(--text-muted); }
+.brisage-field { display: grid; gap: var(--space-1); align-content: start; }
+.brisage-field-label { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); }
+.brisage-field input { width: 9rem; text-align: right; }
+.brisage-cost { display: flex; align-items: center; height: 52px; font-family: var(--font-display); font-size: var(--text-display); color: var(--kamas); font-variant-numeric: tabular-nums; }
+.brisage-cost .kamas-amount-icon { width: 22px; height: 22px; }
+.brisage-field input { height: 52px; }
+.brisage-verdict .verdict-text { display: grid; gap: .1rem; }
+.verdict--bad .verdict-icon { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.verdict--bad p.verdict-title { color: var(--danger); }
+.brisage-verdict-label { font-size: var(--text-xs); font-weight: 700; color: var(--accent-bright); }
+.brisage-verdict-gain { display: grid; justify-items: end; margin-left: auto; text-align: right; font-family: var(--font-display); font-size: var(--text-display); line-height: 1.1; color: var(--success); }
+.brisage-verdict-gain small { font-family: inherit; font-size: var(--text-xs); color: var(--text-muted); }
+.verdict--bad .brisage-verdict-gain { color: var(--danger); }
+.brisage-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-2); margin: var(--space-4) 0 0; }
+.brisage-facts > div { display: flex; flex-direction: column; gap: .15rem; padding: var(--space-3); border-radius: var(--radius-sm, 8px); background: var(--input-bg); }
+.brisage-facts dt { font-size: var(--text-xs); color: var(--text-muted); }
+.brisage-facts dd { margin: 0; font-family: var(--font-display); font-size: var(--text-lg, 1.15rem); line-height: 1.2; }
+/* The verdict reads top to bottom: the title with the gain on its right, then the figures in tiles, then the exo to add. */
+.item-verdict-panel .brisage-verdict { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+.item-verdict-panel .brisage-verdict .verdict-head { flex: none; grid-template-columns: auto minmax(0, 1fr) auto; }
+.item-verdict-panel .brisage-verdict .brisage-verdict-gain { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin: 0; }
+.item-verdict-panel .brisage-verdict .brisage-facts { margin: 0; }
+.item-verdict-panel .brisage-verdict .brisage-best-exo { margin: 0; }
+.brisage-table-wrap { overflow-x: auto; }
+.brisage-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.brisage-table th, .brisage-table td { padding: .8rem .75rem; text-align: right; border-bottom: .5px solid var(--border); vertical-align: middle; }
+.brisage-table thead th { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); vertical-align: bottom; }
+.brisage-table th:first-child { text-align: left; }
+.brisage-table tbody th { font-weight: 600; }
+.brisage-table tfoot th, .brisage-table tfoot td { font-weight: 700; border-bottom: 0; }
+.brisage-table .kamas-amount { justify-content: flex-end; }
+.brisage-line-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.brisage-roll { width: 4.5rem; height: 40px; text-align: center; }
+.brisage-table .brisage-total-gain { color: var(--success); }
+.brisage-table .brisage-total-loss { color: var(--danger); }
+.brisage-jet { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); }
+.brisage-bound { min-width: 2rem; font-size: var(--text-sm); color: var(--text-muted); }
+.brisage-table .brisage-jet-head, .brisage-table td:nth-child(2) { text-align: center; }
+.brisage-table thead th { white-space: nowrap; }
+.brisage-jet-title { display: block; margin-bottom: var(--space-1); }
+.brisage-table { --brisage-plain: color-mix(in srgb, var(--accent-bright) 40%, var(--text-muted)); }
+.brisage-seg { display: inline-flex; padding: 3px; border: .5px solid var(--border); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--bg) 70%, transparent); }
+.brisage-seg button { min-height: 28px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-size: var(--text-xs); font-weight: 600; cursor: pointer; }
+.brisage-seg button.is-on { background: var(--accent); color: var(--on-accent); }
+.brisage-roll-fixed { display: inline-flex; align-items: baseline; gap: var(--space-2); }
+.brisage-group-title { display: block; font-size: var(--text-sm); font-weight: 700; }
+.brisage-table .brisage-group { text-align: center; border-bottom: 0; }
+.brisage-roll.is-modified { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.brisage-rune-price { display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+.brisage-price-date { position: relative; display: inline-grid; place-items: center; flex: none; color: var(--text-muted); cursor: default; }
+/* The date of the price: a small bubble to the right of the clock (above or below it, the table's scroll box would cut it). */
+.brisage-price-date[data-tip]::after {
+  content: attr(data-tip); position: absolute; z-index: 5; left: calc(100% + 10px); top: 50%; transform: translate(-4px, -50%);
+  padding: .35rem .65rem; border: .5px solid var(--border-strong, var(--border)); border-radius: var(--radius-sm, 8px);
+  background: var(--panel-strong); color: var(--text); font-size: var(--text-xs); font-weight: 600; white-space: nowrap;
+  box-shadow: 0 6px 18px rgb(0 0 0 / .35); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+.brisage-price-date[data-tip]::before {
+  content: ''; position: absolute; z-index: 6; left: calc(100% + 5px); top: 50%; width: 8px; height: 8px; transform: translateY(-50%) rotate(45deg);
+  border-left: .5px solid var(--border-strong, var(--border)); border-bottom: .5px solid var(--border-strong, var(--border)); background: var(--panel-strong);
+  opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--transition-fast);
+}
+.brisage-price-date[data-tip]:hover::after, .brisage-price-date[data-tip]:focus-visible::after { opacity: 1; visibility: visible; transform: translate(0, -50%); }
+.brisage-price-date[data-tip]:hover::before, .brisage-price-date[data-tip]:focus-visible::before { opacity: 1; visibility: visible; }
+.brisage-price-date:hover, .brisage-price-date:focus-visible { color: var(--text); }
+.brisage-best-exo { display: grid; gap: var(--space-2); margin-top: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent); border-radius: var(--radius-sm, 8px); background: var(--accent-soft); }
+.brisage-best-exo p { margin: 0; }
+.brisage-best-exo-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.brisage-best-exo-rune { display: flex; align-items: center; gap: var(--space-3); font-family: var(--font-display); font-size: var(--text-base); line-height: 1.2; }
+.brisage-best-exo-rune strong { display: block; }
+.brisage-best-exo-rune img { flex: none; padding: 4px; border-radius: 50%; background: var(--accent-soft); }
+.brisage-roll-state { display: none; }
+/* The stat's name is only read out on desktop (the icon and the hover show it); a card shows it. */
+.brisage-stat-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.brisage-best th, .brisage-best td { background: var(--accent-soft); }
+.brisage-best td:nth-child(6), .brisage-best td:nth-child(7) { font-weight: 700; }
+/* The two groups of columns, framed: a muted tone of the theme for the normal breaking, the accent for the focus. */
+@media (min-width: 641px) {
+  .brisage-table .brisage-group--plain { color: var(--text); background: color-mix(in srgb, var(--brisage-plain) 24%, transparent); border: .5px solid var(--brisage-plain); border-bottom: 0; border-radius: 12px 12px 0 0; }
+  .brisage-table .brisage-group--focus { color: var(--brisage-focus-text, #d4f08a); background: color-mix(in srgb, var(--accent) 28%, transparent); border: .5px solid var(--accent); border-bottom: 0; border-radius: 12px 12px 0 0; }
+  .brisage-table thead tr:nth-child(2) th { color: var(--text-muted); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(-n+2) { background: color-mix(in srgb, var(--brisage-plain) 15%, transparent); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(n+3) { background: color-mix(in srgb, var(--accent) 17%, transparent); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(1), .brisage-table thead tr:nth-child(2) th:nth-child(2) { border-bottom: .5px solid var(--border); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(1) { border-left: .5px solid var(--brisage-plain); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(2) { border-right: .5px solid var(--brisage-plain); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(3) { border-left: .5px solid var(--accent); }
+  .brisage-table thead tr:nth-child(2) th:nth-child(4) { border-right: .5px solid var(--accent); }
+  .brisage-table tbody td:nth-child(4), .brisage-table tbody td:nth-child(5) { background-color: color-mix(in srgb, var(--brisage-plain) 9%, transparent); }
+  .brisage-table tbody td:nth-child(6), .brisage-table tbody td:nth-child(7) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); }
+  .brisage-table tbody td:nth-child(4) { border-left: .5px solid var(--brisage-plain); }
+  .brisage-table tbody td:nth-child(5) { border-right: .5px solid var(--brisage-plain); }
+  .brisage-table tbody td:nth-child(6) { border-left: .5px solid var(--accent); }
+  .brisage-table tbody td:nth-child(7) { border-right: .5px solid var(--accent); }
+  .brisage-table tbody .brisage-best td:nth-child(4), .brisage-table tbody .brisage-best td:nth-child(5) { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
+  .brisage-table tbody .brisage-best td:nth-child(6), .brisage-table tbody .brisage-best td:nth-child(7) { background-color: color-mix(in srgb, var(--accent) 34%, transparent); }
+  /* Several total rows stay in one box: a thin line between them, the thick border and the rounded corners only on the last one. */
+  .brisage-table tfoot td:nth-child(2), .brisage-table tfoot td:nth-child(3) { background-color: color-mix(in srgb, var(--brisage-plain) 9%, transparent); border-bottom: .5px solid var(--border); }
+  .brisage-table tfoot td:nth-child(4), .brisage-table tfoot td:nth-child(5) { background-color: color-mix(in srgb, var(--accent) 11%, transparent); border-bottom: .5px solid var(--border); }
+  .brisage-table tfoot tr:last-child td:nth-child(2), .brisage-table tfoot tr:last-child td:nth-child(3) { border-bottom: .5px solid var(--brisage-plain); }
+  .brisage-table tfoot tr:last-child td:nth-child(4), .brisage-table tfoot tr:last-child td:nth-child(5) { border-bottom: .5px solid var(--accent); }
+  /* The price column: its title sits over the middle of the price field and its clock. */
+  .brisage-table thead tr:first-child th:nth-child(3), .brisage-table tbody td:nth-child(3) { text-align: center; }
+  .brisage-table tfoot td:nth-child(2) { border-left: .5px solid var(--brisage-plain); }
+  .brisage-table tfoot td:nth-child(3) { border-right: .5px solid var(--brisage-plain); }
+  .brisage-table tfoot td:nth-child(4) { border-left: .5px solid var(--accent); }
+  .brisage-table tfoot td:nth-child(5) { border-right: .5px solid var(--accent); }
+  .brisage-table tfoot tr:last-child td:nth-child(2), .brisage-table tfoot tr:last-child td:nth-child(4) { border-bottom-left-radius: 12px; }
+  .brisage-table tfoot tr:last-child td:nth-child(3), .brisage-table tfoot tr:last-child td:nth-child(5) { border-bottom-right-radius: 12px; }
+}
+.brisage-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--accent); color: var(--bg, #10200a); font-size: var(--text-xs); font-weight: 700; }
+/* specs/066: an exo line sits first in the table and is blue, as in the game; the exo form sits under the table. */
+.brisage-line--exo th, .brisage-line--exo th *, .brisage-line--exo .brisage-exo-value { color: var(--exo); }
+.brisage-line--exo .brisage-badge--exo { background: var(--exo); color: var(--bg, #08181c); }
+:root[data-theme="light"] .brisage-line--exo .brisage-badge--exo { color: #ffffff; }
+/* specs/067: the unit price of a rune is typed in the table. */
+.brisage-price-wrap { display: inline-block; width: 7.5rem; }
+.brisage-price-input { height: 36px; }
+.brisage-price-missing { display: block; text-align: right; }
+/* specs/067: a malus (negative line) is red, gives no rune and has no focus. */
+.brisage-negative th, .brisage-negative th *, .brisage-negative input.brisage-roll, .brisage-negative .brisage-bound { color: var(--danger); }
+.brisage-negative .brisage-badge--negative { background: var(--danger); color: var(--bg, #10200a); }
+:root[data-theme="light"] .brisage-negative .brisage-badge--negative { color: #ffffff; }
+.brisage-negative .brisage-roll-state { display: block; color: var(--text-muted); }
+.brisage-negative-only { color: var(--danger); }
+.brisage-exo-value { font-weight: 700; }
+.brisage-exo-add { margin-left: auto; min-height: 36px; }
+.brisage-exo-picker { position: relative; display: inline-block; }
+.brisage-exo-pick { white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: .5px solid var(--exo); border-radius: var(--radius-md); background: var(--panel-soft); color: var(--exo); font: inherit; font-weight: 600; cursor: pointer; }
+/* The picker's frame sits in the padding of the cell, so the icon of the rune lines up with the icons of the other lines. */
+.brisage-line--exo .brisage-exo-pick { gap: .55rem; margin-left: calc(-1 * var(--space-3) - .5px); }
+.brisage-line--exo .brisage-exo-pick .brisage-exo-icon { width: 32px; height: 32px; }
+.brisage-exo-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; flex: none; }
+.brisage-exo-options { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: grid; gap: var(--space-1); width: max-content; min-width: 18rem; max-width: min(34rem, 92vw); padding: var(--space-1); border: .5px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.brisage-exo-list { display: grid; gap: 2px; max-height: 16rem; margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+.brisage-exo-search { width: 100%; min-height: 36px; padding: 0 var(--space-3); }
+.brisage-exo-empty { margin: 0; padding: var(--space-2); }
+.brisage-exo-options button { white-space: nowrap; display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 2px var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.brisage-exo-options button:hover, .brisage-exo-options li[aria-current] button { background: var(--accent-soft); }
+.brisage-line--exo .brisage-line-name { flex-wrap: nowrap; }
+.brisage-exo-options .fm-note { margin-left: auto; }
+.brisage-line--exo .brisage-exo-options, .brisage-line--exo .brisage-exo-options * { color: var(--text); }
+.brisage-line--exo .brisage-exo-options .fm-note { color: var(--text-muted); }
+.brisage-exo-state { display: block; margin-top: var(--space-1); text-align: center; }
+.brisage-line--exo input.brisage-exo-value { color: var(--exo); font-weight: 700; }
+.brisage-gains { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--space-3); font-variant-numeric: tabular-nums; }
+.brisage-gains li { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); border: .5px solid var(--border); border-radius: var(--radius-md); background: rgba(3, 14, 17, .4); }
+/* Price source: a two-segment switch, the chosen segment filled. The radios stay in the page (keyboard,
+   screen readers) but are hidden; .brisage-field input would otherwise size them like a typed field. */
+.brisage-field .brisage-price-source input { width: 1px; height: 1px; }
+.brisage-price-origin { justify-self: start; padding: 2px var(--space-3); border-radius: var(--radius-pill); background: var(--panel-soft); color: var(--text-muted); font-size: var(--text-xs); }
+.brisage-gains-layout { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: var(--space-4); align-items: start; }
+.brisage-gains-next { display: grid; gap: var(--space-2); }
+@media (max-width: 40rem) { .brisage-gains-layout { grid-template-columns: 1fr; } }
+.brisage-gain-label { font-size: var(--text-sm); color: var(--text-muted); }
+.brisage-gain-value { font-size: var(--text-base); font-weight: 600; color: var(--accent-bright); }
+.brisage-gain-value.is-loss { color: var(--danger); }
+@media (max-width: 640px) {
+  .brisage-item { gap: var(--space-4); }
+  /* A card per line: each cell carries its own label. */
+  .brisage-table caption { display: none; }
+  /* The column titles go; the Min / Moyen / Max switch of the Jet column stays, above the cards. */
+  .brisage-table thead, .brisage-table thead tr { display: block; }
+  .brisage-table thead th { display: none; }
+  .brisage-table thead tr:nth-child(2) { display: none; }
+  .brisage-table thead th.brisage-jet-head { display: block; padding: 0 0 var(--space-3); text-align: left; border: 0; }
+  .brisage-table, .brisage-table tbody, .brisage-table tr, .brisage-table th, .brisage-table td { display: block; }
+  .brisage-table td.brisage-actions { width: auto; padding: 0; text-align: right; }
+  .brisage-table td.brisage-actions:empty { display: none; }
+  .brisage-table tbody tr { margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--panel); }
+  .brisage-table tbody tr.brisage-best { border: .5px solid var(--accent); }
+  .brisage-table tbody th, .brisage-table tbody td,
+  .brisage-table tbody tr.brisage-best th, .brisage-table tbody tr.brisage-best td { padding: var(--space-1) 0; border: 0; text-align: left; background: none; box-shadow: none; }
+  .brisage-table td::before { content: attr(data-label); display: block; font-size: var(--text-xs); color: var(--text-muted); }
+  .brisage-table .kamas-amount { justify-content: flex-start; }
+  .brisage-roll-state { display: inline; margin-left: var(--space-2); }
+  .brisage-stat-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--text-muted); font-size: var(--text-sm); }
+  .brisage-table tfoot tr { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-3); }
+  .brisage-table tfoot th { grid-column: 1 / -1; padding: 0; }
+  .brisage-table tfoot td:empty { display: none; }
+}
+
+/* Brisage fields: no up/down arrows on the numbers. */
+.brisage-block input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+.brisage-block input[type='number']::-webkit-inner-spin-button, .brisage-block input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.brisage-table .resource-display img { background: transparent; }
+
+/* specs/065-refonte-page-brisage: item finder (search, filters, cards), item header, bottom line */
+.brisage-finder { display: grid; gap: var(--space-4); }
+.brisage-filters { display: grid; gap: var(--space-3); }
+.brisage-filters[hidden] { display: none; }
+.brisage-stat-filter { grid-column: 1 / -1; border: 0; padding: 0; margin: 0; min-width: 0; }
+.brisage-stat-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+.brisage-invite { margin: 0; }
+.brisage-item-head { display: grid; gap: var(--space-3); }
+.brisage-both-prices { display: block; }
+.brisage-coef input.is-missing { border-style: dashed; border-color: var(--warning, #c77d1a); }
+.brisage-footline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); padding: var(--space-3) var(--space-4); }
+.brisage-footline .brisage-gains-layout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-5); }
+.brisage-footline .brisage-gains-next { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.brisage-footline .brisage-gains { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.brisage-footline .brisage-gains li { padding: var(--space-1) var(--space-3); }
+@media (max-width: 700px) {
+  .brisage-stat-columns { grid-template-columns: 1fr; }
+}
+/* Item header: identity on the left, price and coefficient on one row beside it. */
+.brisage-item-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-7, 2rem); }
+.brisage-identity { display: flex; align-items: flex-start; gap: var(--space-3); flex: 1 1 260px; min-width: 0; }
+.brisage-identity > img, .brisage-identity > .image-fallback { flex: 0 0 56px; width: 56px; height: 56px; object-fit: contain; }
+.brisage-identity h2 { margin: 0; font-size: var(--text-display); line-height: 1.15; }
+.brisage-identity p { margin: .15rem 0 0; }
+.brisage-item-head .brisage-field { gap: var(--space-1); }
+.brisage-identity-main { display: grid; gap: var(--space-3); min-width: 0; }
+.brisage-coef-field { margin-left: auto; }
+.brisage-coef-field .brisage-field-label, .brisage-coef-field .fm-note { text-align: right; }
+.brisage-coef-field .brisage-coef { justify-content: flex-end; }
+.brisage-price-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.brisage-item-head .brisage-cost, .brisage-item-head .brisage-field input, .brisage-item-head .brisage-coef input { height: 44px; }
+.brisage-item-head .brisage-cost { font-size: var(--text-display); }
+.brisage-item-head .brisage-coef input { font-size: var(--text-base); }
+.brisage-item-head .brisage-field .brisage-price-source input { height: 1px; }
+/* One single block for the chosen item: header, advice / verdict, lines, bottom line — told apart by thin rules. */
+.brisage-unit { display: grid; gap: var(--space-4); }
+.brisage-unit .brisage-block { margin-bottom: 0; }
+.brisage-results { display: grid; gap: var(--space-4); }
+.brisage-results > .brisage-block, .brisage-results > .empty { margin: 0; }
+.brisage-part { margin: 0; padding: var(--space-4) 0 0; border: 0; border-top: .5px solid var(--border); border-radius: 0; background: none; box-shadow: none; }
+.brisage-part.market-price-panel { padding-left: 0; padding-right: 0; }
+.brisage-part.brisage-footline { padding: var(--space-3) 0 0; }
+
+/* ---- Brisage: finder, stat filters, price source — built on the site's own pieces (category chips, .results cards). ---- */
+.brisage-results-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-4); min-height: 24px; margin: 0; color: var(--text); font-size: var(--text-sm); font-weight: 700; }
+.brisage-cards { list-style: none; margin: 0; padding: 0; }
+.brisage-cards > li { display: contents; }
+/* Carousel (ItemCarousel): one row of cards, snapping, with arrows, edge fades, a slim scrollbar and a position counter. */
+.brisage-carousel { position: relative; min-width: 0; margin-top: calc(var(--space-2) * -1); }
+.brisage-carousel > .results.brisage-cards { margin-top: 0; grid-template-columns: none; grid-template-rows: none; grid-auto-flow: column; grid-auto-columns: min(15rem, 85%); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-3); scrollbar-width: thin; scrollbar-color: transparent transparent; cursor: grab; }
+.brisage-carousel .brisage-cards button { scroll-snap-align: start; }
+/* The scrollbar is hidden at rest; it shows only while the pointer is on the cards or a card has the focus. */
+.brisage-carousel:hover > .results.brisage-cards, .brisage-carousel:focus-within > .results.brisage-cards { scrollbar-color: var(--border-strong) transparent; }
+.brisage-carousel[data-dragging] > .results.brisage-cards { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+.brisage-carousel[data-dragging] .brisage-cards button { pointer-events: none; }
+/* Fades on the edges that still hide cards. */
+.brisage-carousel::before, .brisage-carousel::after { content: ''; position: absolute; top: 0; bottom: 14px; width: 2.5rem; z-index: 1; pointer-events: none; opacity: 1; transition: opacity var(--transition-fast); }
+.brisage-carousel::before { left: 0; background: linear-gradient(to right, var(--bg, var(--panel)), transparent); }
+.brisage-carousel::after { right: 0; background: linear-gradient(to left, var(--bg, var(--panel)), transparent); }
+.brisage-carousel[data-start]::before, .brisage-carousel[data-end]::after { opacity: 0; }
+.carousel-arrow { position: absolute; top: calc(50% - 7px); z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; transform: translateY(-50%); border: .5px solid var(--border-strong); border-radius: 50%; background: var(--panel-strong); color: var(--text); box-shadow: var(--shadow-md); cursor: pointer; transition: opacity var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast); }
+.carousel-arrow--prev { left: -1rem; }
+.carousel-arrow--next { right: -1rem; }
+.carousel-arrow:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-bright); transform: translateY(-50%) scale(1.06); }
+.carousel-arrow:disabled { opacity: 0; pointer-events: none; }
+.carousel-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .carousel-arrow, .brisage-carousel::before, .brisage-carousel::after { transition: none; } }
+@media (max-width: 640px) { .carousel-arrow { display: none; } }
+.brisage-cards button { width: 100%; height: 100%; text-align: left; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); transition: border-color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast); }
+.brisage-cards button:hover { transform: translateY(-1px); }
+.brisage-cards .result-item-info { flex: 1 1 auto; display: grid; gap: .3rem; min-width: 0; }
+.brisage-cards .result-item-name { font-size: var(--text-base); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The picture sits in a small frame of the same size on every card. */
+.brisage-card-image { flex: 0 0 auto; display: grid; place-items: center; width: 48px; height: 48px; }
+.brisage-card-image img { width: 36px; height: 36px; object-fit: contain; }
+.brisage-card-level { justify-self: start; padding: 0 .5rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--text); font-size: var(--text-xs); font-weight: 600; line-height: 1.5; }
+.brisage-card-coef { color: var(--text-muted); font-size: var(--text-xs); font-weight: 600; }
+.brisage-card-coef.is-missing { color: var(--warning, #c77d1a); font-weight: 600; }
+.brisage-cards button.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 28%, transparent); }
+.brisage-cards button.selected .brisage-card-coef { color: var(--accent-bright); }
+/* The number of items, small and on the right, above the cards. */
+.brisage-results-tally { margin-left: auto; display: inline-flex; align-items: baseline; gap: .75rem; }
+.brisage-results-count { margin-left: auto; color: var(--text-muted); font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.brisage-results-hint { color: var(--text-muted); font-size: .82rem; font-weight: 500; }
+
+/* Stats: one quiet card per theme, the stats as the same pills as the categories. */
+.brisage-stat-column { --group: var(--accent-bright); padding: var(--space-3); border: .5px solid var(--border); border-radius: var(--radius-md); background: var(--panel-soft); }
+.brisage-stat-column--degats { --group: #f0883e; }
+.brisage-stat-column--resistances { --group: #5aa9f0; }
+.brisage-stat-column h3 { display: flex; align-items: center; gap: .5rem; margin: 0 0 var(--space-3); font-size: var(--text-sm); font-weight: 700; color: var(--text); }
+.brisage-stat-column h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--group); }
+.brisage-stat-column ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.brisage-search-stat { display: inline-flex; align-items: center; gap: .4rem; min-height: 32px; padding: .2rem .7rem; border: .5px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); font: inherit; font-size: var(--text-sm); font-weight: 700; line-height: 1.2; cursor: pointer; transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast); }
+.brisage-search-stat:hover { background: var(--accent-soft); border-color: var(--border-strong); color: var(--accent-bright); }
+.brisage-search-stat:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.brisage-search-stat.is-selected { background: color-mix(in srgb, var(--group) 16%, transparent); border-color: var(--group); color: var(--text); }
+.brisage-stat-icon { flex: 0 0 18px; width: 18px; height: 18px; }
+.brisage-stat-icon:empty { display: none; }
+
+/* Price source: the same pills as the categories. */
+/* Achat | Craft: one switch, each side shows its own price; the lit side is the one the figures use. */
+.brisage-price-source { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border: .5px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); }
+.brisage-price-source label { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .4rem 1rem; border-radius: var(--radius-pill); color: var(--text-muted); font-size: var(--text-sm); font-weight: 700; cursor: pointer; transition: color var(--transition-fast); }
+.brisage-price-source label:hover, .brisage-price-source label.is-selected { color: var(--accent-bright); }
+.brisage-price-source label.is-selected.is-overridden { color: var(--text-muted); }
+.brisage-price-source label:has(input:focus-visible) { outline: 2px solid var(--link); outline-offset: -2px; }
+/* The sliding pill: it travels from Achat to Craft and fades while a custom price is typed. */
+.brisage-switch-thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: var(--radius-pill); background: var(--accent-soft); box-shadow: inset 0 0 0 .5px var(--border-strong); transition: transform var(--transition-fast), opacity var(--transition-fast); }
+.brisage-price-source[data-side="craft"] .brisage-switch-thumb { transform: translateX(calc(100% + 2px)); }
+.brisage-price-source[data-custom] .brisage-switch-thumb { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .brisage-switch-thumb { transition: none; } }
+.brisage-price-source .brisage-cost, .brisage-item-head .brisage-price-source .brisage-cost { height: auto; font-size: var(--text-base); }
+.brisage-price-source .brisage-cost .kamas-amount-icon { width: 16px; height: 16px; }
+.brisage-seg-price { font-family: var(--font-display); font-size: var(--text-base); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.brisage-perso-button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast); }
+.brisage-perso-button:hover { background: var(--accent-soft); color: var(--accent-bright); }
+.brisage-perso-button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.brisage-perso-field { display: inline-flex; align-items: center; gap: var(--space-2); }
+/* specs/070-atelier-prix-craft-brisage: opens the window of the resource prices, as a link beside the note on where the craft price comes from. */
+.brisage-price-notes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.brisage-price-notes .brisage-price-origin { display: inline-flex; align-items: center; min-height: 28px; }
+.brisage-craft-prices-button { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: .2rem .6rem; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--accent-bright); font: inherit; font-size: var(--text-sm); font-weight: 700; cursor: pointer; transition: background-color var(--transition-fast); }
+.brisage-craft-prices-button:hover { background: var(--accent-soft); }
+.brisage-craft-prices-button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+
+/* specs/066: the "Exo" badge is also the button that removes the line. */
+.brisage-line--exo .brisage-badge--exo { display: inline-flex; align-items: center; height: 1.3rem; padding: 0 .6rem; line-height: 1; }
+/* The bin at the end of an exo line: grey, red when pointed at. */
+/* The rules between the lines stay, except under the bin column; a soft highlight follows the pointer. */
+.brisage-table th.brisage-actions, .brisage-table td.brisage-actions, .brisage-table .brisage-best td.brisage-actions { border-bottom: 0; background: none; }
+.brisage-table tbody tr:hover > :not(.brisage-actions) { background-image: linear-gradient(rgb(255 255 255 / .05), rgb(255 255 255 / .05)); }
+.brisage-rune-price { flex-wrap: wrap; }
+.brisage-rune-price .brisage-price-missing { flex-basis: 100%; text-align: center; }
+.brisage-table th.brisage-actions, .brisage-table td.brisage-actions { width: 3.25rem; padding-left: var(--space-2); padding-right: var(--space-2); text-align: center; vertical-align: middle; }
+.brisage-table td.brisage-actions .brisage-exo-remove { display: grid; margin: 0 auto; }
+/* Same family as the site's round buttons: a thin frame, a faint fill, and a soft red when pointed at. */
+.brisage-exo-remove { display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border: .5px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); cursor: pointer; transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast); }
+.brisage-exo-remove svg, .brisage-exo-remove svg * { color: inherit; }
+.brisage-exo-remove:hover, .brisage-exo-remove:focus-visible { border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.brisage-exo-remove:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.brisage-exo-remove:active { transform: scale(.94); }
+.brisage-undo-toast { position: fixed; left: 50%; bottom: var(--space-5); z-index: 60; transform: translateX(-50%); display: flex; align-items: center; gap: var(--space-4); padding: .65rem .65rem .65rem 1rem; border: .5px solid var(--border-strong); border-radius: var(--radius-md); background: var(--panel-strong); box-shadow: var(--shadow-md); color: var(--text); font-size: var(--text-sm); font-weight: 600; animation: price-mode-toast-in 250ms ease-out; }
+.brisage-undo-toast button { min-height: 32px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 700; cursor: pointer; }
+@media (max-width: 960px) { .brisage-undo-toast { bottom: calc(64px + var(--space-4)); } }
+
+/* specs/072-classement-brisage: the Classement tab of the Brisage page (reserved for the owner). */
+.brisage-tabs { display: inline-flex; padding: 3px; margin-bottom: var(--space-4); border: .5px solid var(--border); border-radius: var(--radius-pill); background: rgba(3, 14, 17, .45); }
+.brisage-tabs button { min-height: 36px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-muted); font: inherit; font-weight: 600; cursor: pointer; }
+.brisage-tabs button.is-on { background: var(--link); color: #06201d; }
+.ranking { display: grid; gap: var(--space-4); }
+/* The table has nine columns: it takes the page's own 1440px column, like every other tab. */
+.ranking { padding-inline: var(--space-4); }
+.ranking-table th, .ranking-table td { padding: .6rem .4rem; }
+.ranking-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.ranking-filters label { display: grid; gap: var(--space-1); font-size: var(--text-sm); color: var(--text-muted); }
+.ranking-filters input[type='number'], .ranking-filters select { min-width: 8rem; }
+.ranking-filters .ranking-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
+.ranking-sort { border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; padding: 0; text-align: left; }
+.ranking-sort:hover { color: var(--link); }
+.ranking-row { cursor: pointer; }
+.ranking-row:hover, .ranking-row:focus-visible { background: var(--link-soft); outline: none; }
+.ranking-item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ranking-rune-icon { vertical-align: middle; margin-right: var(--space-1); }
+.ranking-open { border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; padding: 0; }
+.ranking-group th { padding-top: var(--space-4); text-align: left; font-size: var(--text-sm); color: var(--link); }
+.ranking-age { display: inline-flex; align-items: center; gap: .25rem; font-size: var(--text-xs); color: var(--text-muted); white-space: nowrap; }
+.ranking-age--stale { color: var(--danger); font-weight: 600; }
+.ranking-age--unknown { font-style: italic; }
+.ranking-unknown { color: var(--text-muted); font-style: italic; }
+/* specs/078-bons-plans-hdv: the « Bon plan » badge and the page that lists the good deals. */
+.good-deal-badge { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .55rem; border-radius: 999px; background: var(--accent-soft); border: 1px solid var(--border-strong); color: var(--accent-bright); font-size: .78rem; font-weight: 700; white-space: nowrap; cursor: help; }
+.good-deal-badge:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.good-deal-badge-partial { font-weight: 400; color: var(--text-muted); }
+.good-deal-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); margin: 0 0 var(--space-4); }
+.good-deal-list { list-style: none; margin: var(--space-3) 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-3); }
+.good-deal-card { display: flex; flex-direction: column; gap: .6rem; padding: var(--space-3) var(--space-4); border-radius: var(--radius-xs); background: var(--panel); border: 1px solid var(--border-strong); }
+.good-deal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.good-deal-tag { flex: none; }
+.good-deal-badge--tag { font-size: .85rem; }
+.good-deal-main { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; }
+.good-deal-name { font-weight: 700; }
+.good-deal-exo { padding: 0 .45rem; border-radius: 999px; background: var(--exo); color: #fff; font-size: .72rem; font-weight: 700; }
+.good-deal-jet { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; font-size: .85rem; color: var(--text-muted); }
+.good-deal-line { display: flex; align-items: center; gap: .4rem; }
+.good-deal-line-normal { color: var(--success); font-weight: 600; }
+.good-deal-line-exo { color: var(--exo); font-weight: 600; }
+.good-deal-line-malus { color: var(--danger); font-weight: 600; }
+.good-deal-line-muted { color: var(--text-muted); }
+.good-deal-range { white-space: nowrap; color: var(--text-muted); opacity: .75; font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.good-deal-icon-gap { display: inline-block; width: 18px; height: 18px; flex: none; }
+.good-deal-foot { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; padding-top: .6rem; border-top: 1px solid var(--border-strong); }
+.good-deal-exo-filter { display: inline-flex; align-items: center; gap: var(--space-2); }
+.good-deal-exo-value { width: 5.5rem; }
+.good-deal-calibration { margin: 0 0 var(--space-4); padding: var(--space-3); border-radius: var(--radius-sm); background: var(--panel-strong); border: 1px solid var(--border-strong); }
+.good-deal-calibration summary { cursor: pointer; font-weight: 600; }
+.good-deal-calibration-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin: var(--space-3) 0; }
+.good-deal-calibration-actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
+.good-deal-calibration-threshold { width: 5rem; }
+.good-deal-help { position: relative; }
+.good-deal-help-button { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--button-bg); color: var(--text-muted); cursor: pointer; }
+.good-deal-help-button:hover, .good-deal-help-button[aria-expanded="true"] { border-color: var(--accent); color: var(--text); }
+.good-deal-help-button:focus-visible, .good-deal-calibration-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.good-deal-help-text { position: absolute; z-index: 20; top: calc(100% + var(--space-1)); right: 0; width: min(28rem, calc(100vw - 3rem)); max-height: 60vh; padding: var(--space-3); overflow-y: auto; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--panel-strong); box-shadow: var(--shadow-md); color: var(--text-muted); font-size: var(--text-sm); }
+.good-deal-help-text p { margin: 0 0 var(--space-2); }
+.good-deal-help-text strong { color: var(--text); }
+.good-deal-help-text ul { margin: 0 0 var(--space-3); padding-left: var(--space-4); }
+.good-deal-help-text ul:last-child { margin-bottom: 0; }
+/* One scrolling area: the titles stick to its top, so they stay above their columns. */
+.good-deal-calibration-scroll { max-height: 22rem; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); }
+.good-deal-calibration-stats { margin: 0; padding: 0; list-style: none; }
+.good-deal-calibration-stat { display: grid; grid-template-columns: minmax(0, 1fr) 10.5rem 5.5rem; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.good-deal-calibration-stats .good-deal-calibration-stat:nth-child(odd) { background: var(--inner-bg); }
+.good-deal-calibration-stat select, .good-deal-calibration-stat input { width: 100%; min-width: 0; height: 2rem; min-height: 0; padding-block: 0; font-size: var(--text-sm); }
+.good-deal-calibration-titles { position: sticky; z-index: 1; top: 0; padding-block: var(--space-2); background: var(--panel-soft); color: var(--text); font-size: var(--text-xs); font-weight: 600; white-space: nowrap; }
+@media (max-width: 480px) {
+  .good-deal-calibration-stat { grid-template-columns: minmax(0, 1fr) 8.5rem 4.75rem; padding-inline: var(--space-2); }
+  .good-deal-calibration-stat select { padding-inline-start: var(--space-2); font-size: var(--text-xs); }
+}
+.good-deal-prices { display: grid; font-variant-numeric: tabular-nums; }
+.good-deal-price { color: var(--kamas); font-size: 1.05rem; }
+.good-deal-reference, .good-deal-age { font-size: .78rem; color: var(--text-muted); }
+.ranking-column-note { display: block; font-weight: 400; font-size: var(--text-xs); max-width: 9rem; white-space: normal; }
+
+/* specs/082-auteur-prix-communautaires */
+.price-update-note { cursor: help; }
+.profile-privacy, .profile-contributions { margin-top: 1.25rem; }
+.profile-privacy h2, .profile-contributions h2 { font-size: 1.05rem; margin: 0 0 0.4rem; }
+.contributions-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+.contributions-list li { display: grid; grid-template-columns: 1fr auto; gap: 0 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border, rgba(128, 128, 128, 0.25)); }
+.contributions-list li small { grid-column: 1 / -1; opacity: 0.75; }
+.contributions-list li span:first-child { overflow-wrap: anywhere; }

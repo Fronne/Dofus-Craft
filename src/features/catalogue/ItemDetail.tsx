@@ -81,7 +81,7 @@ export function ItemDetail({
           {onTogglePin && (
             <button type="button" className={`pin-item-button${isPinned ? ' pinned' : ''}`} aria-pressed={isPinned}
               onClick={(event) => {
-                // The bookmark bounces when the item starts being followed (global.css).
+                // The bookmark bounces when the item starts being followed (styles/parts).
                 if (!isPinned) playOnce(event.currentTarget, 'pop');
                 onTogglePin();
               }}

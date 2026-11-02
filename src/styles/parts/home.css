@@ -1,0 +1,69 @@
+/* ---------- Home page ---------- */
+
+/* Key art background for the whole Accueil page — painted on .app-shell-main (scoped via
+   :has(.home-hero) so every other route is untouched), not on .app-page itself: .app-page is
+   capped at max-width and centered, so on wide screens it leaves an empty strip of plain page
+   background on each side, while .app-shell-main spans the full width of that column. The
+   sidebar (.app-nav) is a separate flex sibling of .app-shell-main, so it's structurally
+   untouched — it keeps its normal opaque background and theme-driven colors. Blurred rather
+   than sharp: sharp, it would
+   compete with the hero text and the floating cards, and its corner watermark/logo would read as
+   a second, unrelated logo on our page. .panel/.stat-tile are already a translucent --panel color
+   by design, so they pick up a faint tint from it rather than sitting on it as flat opaque cards.
+   Hero text goes white/fixed-contrast instead of the usual theme-driven colors since the art
+   stays dark under its overlay in both light and dark mode. blur() fades to transparent within
+   its own radius at the edge of whatever box it's applied to, so scale(1.1) + overflow:hidden
+   push that fade outside the clipped, visible area instead of showing as a band next to the
+   plain background. (.app-shell-main has no fixed-position descendant — that's only the mobile
+   bottom nav, which lives in .app-nav, a sibling — so this doesn't risk clipping it.) */
+.app-shell-main:has(.home-hero) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.app-shell-main:has(.home-hero)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/home-hero.jpg');
+  background-size: cover;
+  background-position: center 22%;
+  filter: blur(0px);
+  transform: scale(1.1);
+}
+.app-shell-main:has(.home-hero)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--image-veil);
+}
+
+.home-hero { display: grid; gap: var(--space-3); margin-bottom: var(--space-5); }
+.home-hero-content { display: grid; gap: var(--space-3); max-width: 620px; }
+.home-hero .eyebrow { color: color-mix(in srgb, var(--on-image) 75%, transparent); }
+.home-hero h1 { color: var(--on-image); }
+.home-hero p { margin: 0; color: color-mix(in srgb, var(--on-image) 82%, transparent); font-size: var(--text-base); }
+.home-hero-cta { justify-self: start; margin-top: var(--space-2); }
+
+.stat-tile-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3); margin-bottom: var(--space-5); }
+.stat-tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: .5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+.stat-tile-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-bright); }
+.stat-tile-body { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.stat-tile-label { color: var(--text-muted); font-size: var(--text-xs); font-weight: 700; }
+.stat-tile-value { color: var(--text); font-size: var(--text-base); font-weight: 800; overflow-wrap: anywhere; }
+.stat-tile-hint { color: var(--text-faint); font-size: var(--text-xs); }
+
+.home-pinned-preview { margin-top: 0; }
+.home-pinned-preview-footer { margin-top: var(--space-4); text-align: center; }
+

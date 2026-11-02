@@ -1,0 +1,71 @@
+/* ---------- Icon buttons ---------- */
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: .5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--button-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+}
+.icon-button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
+.icon-button--sm { width: 32px; height: 32px; }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 44px;
+  padding: .65rem 1.1rem;
+  border: .5px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-bright); border-color: var(--accent-bright); }
+.btn-secondary { background: var(--button-bg); border-color: var(--border); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); background: var(--accent-soft); color: var(--accent-bright); }
+/* A destructive action: told apart by more than its label, and never the accent color on hover. */
+.btn-danger { background: transparent; border-color: color-mix(in srgb, var(--danger) 55%, transparent); color: var(--danger); }
+.btn-danger:hover:not(:disabled) { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+.btn-small { min-height: 36px; padding: .4rem .75rem; font-size: var(--text-sm); }
+
+/* ---------- Badges ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin: 0 0 .75rem;
+  padding: .4rem .75rem;
+  border-radius: var(--radius-pill);
+  font-weight: 750;
+  font-size: var(--text-sm);
+}
+.badge-success { background: var(--panel-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-neutral { background: var(--panel-soft); color: var(--text-muted); }
+.badge-with-hint { display: flex; flex-direction: column; gap: .3rem; }
+
+/* ---------- Panels / cards ---------- */
+
+.panel, .card, .result {
+  background: var(--panel-gradient);
+  color: var(--text);
+  border: .5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+.panel + .panel { margin-top: var(--space-4); }
+
