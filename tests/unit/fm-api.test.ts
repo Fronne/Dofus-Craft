@@ -8,7 +8,7 @@ import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/f
 
 // specs/025-rune-purchase-import then specs/049-fm-seances (contracts/fm-seances-client.md): the site's
 // client of the /fm/* routes.
-const me = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: null, guildName: 'Les Forgemages' };
+const me = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: null, guildName: 'Les Forgemages', breedId: 8, isMember: true };
 const player = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false };
 const seance = {
   id: 'c1', name: 'fm-cyril-rtograf', state: 'running', discord: 'active', fmItem: null, totalKamas: 15868, sessionCount: 1, captureCount: 1,
@@ -58,6 +58,30 @@ describe('fm-api — transport', () => {
     stubFetch(() => Response.json({ error: 'Unauthorized' }, { status: 401 }));
     await expect(getFmSeances()).resolves.toEqual({ status: 'unauthorized' });
     expect(readFmSessionToken()).toBeUndefined();
+  });
+
+  // specs/075-connexion-discord-site: logged in, but not a member of the group's server — still logged in.
+  it('keeps the token when the Worker answers 403 not-member', async () => {
+    stubFetch(() => Response.json({ error: 'not-member' }, { status: 403 }));
+    await expect(getFmSeances()).resolves.toEqual({ status: 'error', code: 'not-member' });
+    expect(readFmSessionToken()).toBe('abc');
+  });
+
+  it('refuses a profile without the class icon or the membership', async () => {
+    stubFetch(() => Response.json(without(me, 'isMember')));
+    await expect(getFmMe()).resolves.toEqual({ status: 'unavailable' });
+    stubFetch(() => Response.json(without(me, 'breedId')));
+    await expect(getFmMe()).resolves.toEqual({ status: 'unavailable' });
+    stubFetch(() => Response.json({ ...me, breedId: null, isMember: false }));
+    await expect(getFmMe()).resolves.toMatchObject({ status: 'ok' });
+  });
+
+  it('sends the class icon, or null to remove it, with the profile update', async () => {
+    const fetchMock = stubFetch(() => Response.json(me));
+    await updateFmMe({ breedId: 8 });
+    expect(lastCall(fetchMock)).toEqual({ path: '/fm/me', method: 'PATCH', body: { breedId: 8 } });
+    await updateFmMe({ breedId: null });
+    expect(lastCall(fetchMock).body).toEqual({ breedId: null });
   });
 
   it('is unauthorized without calling the Worker when there is no token', async () => {
@@ -221,14 +245,20 @@ describe('fm-api — creating a séance, and its sessions', () => {
 });
 
 describe('fmLoginUrl', () => {
+  const query = (url: string) => new URL(url).searchParams;
+
   it('asks a site running on this machine to be sent back here', () => {
     // The tests run on localhost.
     expect(window.location.hostname).toBe('localhost');
-    expect(fmLoginUrl()).toMatch(new RegExp(`/fm/auth/login\\?return_to=${encodeURIComponent(window.location.origin)}$`));
+    const url = fmLoginUrl('/hdv');
+    expect(new URL(url).pathname).toBe('/fm/auth/login');
+    expect(query(url).get('return_to')).toBe(window.location.origin);
+    expect(query(url).get('return_path')).toBe('/hdv');
   });
 
-  it('asks nothing elsewhere', () => {
-    vi.stubGlobal('location', { hostname: 'dofus-craft.handy-apps.workers.dev', origin: 'https://dofus-craft.handy-apps.workers.dev' });
-    expect(fmLoginUrl()).toMatch(/\/fm\/auth\/login$/);
+  it('asks only for the page elsewhere', () => {
+    vi.stubGlobal('location', { hostname: 'dofus-craft.handy-apps.workers.dev', origin: 'https://dofus-craft.handy-apps.workers.dev', pathname: '/bons-plans' });
+    expect(query(fmLoginUrl()).has('return_to')).toBe(false);
+    expect(query(fmLoginUrl()).get('return_path')).toBe('/bons-plans');
   });
 });

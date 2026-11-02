@@ -19,13 +19,16 @@ export type FmResult<T> =
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 /**
- * Where the « Se connecter avec Discord » button leads: the Worker sends the player on to Discord. A
- * site running on this machine asks to be sent back here rather than to the site in production.
+ * Where the « Se connecter avec Discord » button leads: the Worker sends the player on to Discord, then back to
+ * `returnPath` (specs/075-connexion-discord-site: the page they were on). A site running on this machine asks to
+ * be sent back here rather than to the site in production.
  */
-export function fmLoginUrl(): string {
+export function fmLoginUrl(returnPath: string = window.location.pathname): string {
   const { hostname, origin } = window.location;
   const local = hostname === 'localhost' || hostname === '127.0.0.1';
-  return `${API_URL}/fm/auth/login${local ? `?return_to=${encodeURIComponent(origin)}` : ''}`;
+  const params = new URLSearchParams({ return_path: returnPath });
+  if (local) params.set('return_to', origin);
+  return `${API_URL}/fm/auth/login?${params.toString()}`;
 }
 
 async function request<T>(method: string, path: string, isValid: (value: unknown) => value is T, body?: unknown): Promise<FmResult<T>> {
@@ -76,7 +79,8 @@ function mapOk<T, U>(result: FmResult<T>, map: (data: T) => U): FmResult<U> {
 function isMe(value: unknown): value is FmMe {
   return isRecord(value) && typeof value.discordUserId === 'string' && typeof value.displayName === 'string' &&
     typeof value.isPrivate === 'boolean' && (value.serverId === null || typeof value.serverId === 'string') &&
-    (value.guildName === undefined || value.guildName === null || typeof value.guildName === 'string');
+    (value.guildName === undefined || value.guildName === null || typeof value.guildName === 'string') &&
+    (value.breedId === null || typeof value.breedId === 'number') && typeof value.isMember === 'boolean';
 }
 
 function isPlayer(value: unknown): boolean {
@@ -110,7 +114,7 @@ function isImportAnswer(value: unknown): value is ImportAnswer {
 }
 
 export const getFmMe = () => request('GET', '/fm/me', isMe);
-export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean }) => request('PATCH', '/fm/me', isMe, changes);
+export const updateFmMe = (changes: { serverId?: string; isPrivate?: boolean; breedId?: number | null }) => request('PATCH', '/fm/me', isMe, changes);
 export const deleteFmMe = () => request('DELETE', '/fm/me', isNothing);
 export const logoutFm = () => request('POST', '/fm/auth/logout', isNothing);
 

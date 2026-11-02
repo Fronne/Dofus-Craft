@@ -46,11 +46,19 @@ npm run worker:db:migrate-fm-guild          # migration 0012 (specs/045: the gro
 npm run worker:db:migrate-line-corrections  # migration 0013 (specs/045: corrected capture lines)
 npm run worker:db:migrate-line-read-name    # migration 0014 (specs/045: name as read, lines that count)
 npm run worker:db:migrate-channel-commands  # migration 0015 (specs/045: archive / reopen a channel)
+npm run worker:db:migrate-site-login        # migration 0030 (specs/075: site-wide login), before deploying the Worker
 npx wrangler secret put DISCORD_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put DISCORD_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put DISCORD_GUILD_ID --config worker/wrangler.toml
 npx wrangler secret put FM_BOT_API_KEY --config worker/wrangler.toml
 ```
+
+The Discord login serves the whole site (specs/075-connexion-discord-site): any Discord player gets a
+session, with or without being a member of the group's server. The session records the membership
+(`fm_auth_sessions.is_member`, read at login with `DISCORD_GUILD_ID`); the Forgemagie routes answer
+`403 not-member` without it, while `/fm/me` and the logout stay open to every logged-in player.
+`GET /fm/auth/login` takes `return_path` (a path of the site, `/forgemagie` by default) to come back to
+the page the player left. Without `DISCORD_GUILD_ID`, everybody logs in as a non-member.
 
 The Discord application needs `{worker URL}/fm/auth/callback` as a redirect URL. For local work, the
 same values go in `worker/.dev.vars` (not committed), with `SITE_URL=http://localhost:5173`. The bot's

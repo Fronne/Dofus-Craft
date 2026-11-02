@@ -34,7 +34,8 @@
 - **Décision** : le site passe `return_path` (chemin relatif, ex. `/hdv`) à `/fm/auth/login`. Il est
   validé (commence par `/`, pas `//`, pas de `\`, longueur ≤ 200, sans retour à la ligne) puis
   inscrit dans le `state` OAuth (comme `return_to` pour le local aujourd'hui). Le callback
-  redirige vers `{site}{return_path}#session=…`. Chemin invalide ou absent : `/`.
+  redirige vers `{site}{return_path}#session=…`. Chemin invalide ou absent : `/forgemagie` (le retour
+  d'avant la généralisation, pour qu'un site resté chargé dans un navigateur continue de fonctionner).
 - **Raison** : FR-003 ; la validation interdit les redirections ouvertes.
 - **Alternative** : stocker le chemin dans `sessionStorage` côté site (rejeté : perdu si le
   navigateur change d'onglet pendant l'autorisation Discord).

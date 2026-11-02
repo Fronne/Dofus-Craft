@@ -58,15 +58,61 @@ describe('GET /fm/auth/callback', () => {
     expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ discordUserId: '42' });
   });
 
-  it('refuses a player who is not a member of the group\'s server, and records nothing', async () => {
+  // specs/075-connexion-discord-site (US1, FR-004): the login is open to any Discord player.
+  it('logs in a player who is not a member of the group\'s server, the session saying so', async () => {
     const fm = createFmWorker();
     stubDiscord('not-member');
     const state = (await startLogin(fm)).searchParams.get('state')!;
     const response = await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`);
 
-    expect(response.headers.get('Location')).toBe('https://site.test/forgemagie#error=not-member');
-    expect(fm.query('SELECT * FROM fm_players')).toEqual([]);
+    expect(response.headers.get('Location')).toMatch(/^https:\/\/site\.test\/forgemagie#session=[0-9a-f]{64}$/);
+    const token = response.headers.get('Location')!.split('#session=')[1];
+    expect(fm.query('SELECT discord_user_id, is_member FROM fm_auth_sessions')).toEqual([{ discord_user_id: '42', is_member: 0 }]);
+    expect(fm.query('SELECT discord_user_id FROM fm_players')).toEqual([{ discord_user_id: '42' }]);
+    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ discordUserId: '42', isMember: false, breedId: null });
+  });
+
+  it('marks the session of a member', async () => {
+    const fm = createFmWorker();
+    stubDiscord('member');
+    const state = (await startLogin(fm)).searchParams.get('state')!;
+    const token = (await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`)).headers.get('Location')!.split('#session=')[1];
+    expect(fm.query('SELECT is_member FROM fm_auth_sessions')).toEqual([{ is_member: 1 }]);
+    expect(await (await fm.call('GET', '/fm/me', { token })).json()).toMatchObject({ isMember: true });
+  });
+
+  it('logs in without a configured server, as a non-member', async () => {
+    const fm = createFmWorker();
+    delete fm.env.DISCORD_GUILD_ID;
+    stubDiscord('member');
+    const state = (await startLogin(fm)).searchParams.get('state')!;
+    const response = await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`);
+    expect(response.headers.get('Location')).toMatch(/#session=[0-9a-f]{64}$/);
+    expect(fm.query('SELECT is_member FROM fm_auth_sessions')).toEqual([{ is_member: 0 }]);
+  });
+
+  it('does not take a Discord error on the membership check for « not a member »', async () => {
+    const fm = createFmWorker();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/oauth2/token')) return Response.json({ access_token: 'discord-access' });
+      if (url.endsWith('/users/@me')) return Response.json({ id: '42', username: 'cyril' });
+      return new Response('boom', { status: 500 });
+    }));
+    const state = (await startLogin(fm)).searchParams.get('state')!;
+    const response = await fm.call('GET', `/fm/auth/callback?code=abc&state=${state}`);
+    expect(response.headers.get('Location')).toBe('https://site.test/forgemagie#error=login-failed');
     expect(fm.query('SELECT * FROM fm_auth_sessions')).toEqual([]);
+  });
+
+  it('tells a refusal on Discord from a failure', async () => {
+    const fm = createFmWorker();
+    stubDiscord('member');
+    const state = (await startLogin(fm, '?return_path=/hdv')).searchParams.get('state')!;
+    const response = await fm.call('GET', `/fm/auth/callback?error=access_denied&state=${encodeURIComponent(state)}`);
+    expect(response.headers.get('Location')).toBe('https://site.test/hdv#error=cancelled');
+    expect(fm.query('SELECT * FROM fm_auth_sessions')).toEqual([]);
+    expect(fm.query('SELECT * FROM fm_oauth_states')).toEqual([]);
   });
 
   it('fails with an unknown or expired state, a Discord error or a refused code', async () => {
@@ -128,13 +174,53 @@ describe('a site run on the developer\'s machine', () => {
   it('is sent back to itself, on localhost or 127.0.0.1, after a login or a refusal', async () => {
     expect(await back('http://localhost:5173/forgemagie?x=1')).toMatch(/^http:\/\/localhost:5173\/forgemagie#session=[0-9a-f]{64}$/);
     expect(await back('http://127.0.0.1:4173')).toMatch(/^http:\/\/127\.0\.0\.1:4173\/forgemagie#session=/);
-    expect(await back('http://localhost:5173', 'not-member')).toBe('http://localhost:5173/forgemagie#error=not-member');
+    expect(await back('http://localhost:5173', 'not-member')).toMatch(/^http:\/\/localhost:5173\/forgemagie#session=[0-9a-f]{64}$/);
   });
 
   it('ignores any other address: the player goes back to the site', async () => {
     for (const returnTo of ['https://evil.test', 'https://localhost:5173', 'http://localhost.evil.test', 'not a url']) {
       expect(await back(returnTo)).toMatch(/^https:\/\/site\.test\/forgemagie#session=/);
     }
+  });
+});
+
+// specs/075-connexion-discord-site (FR-003, research R3): back to the page the player came from.
+describe('the page the player goes back to', () => {
+  const back = async (query: string, site = 'https://site.test') => {
+    const fm = createFmWorker();
+    stubDiscord('member');
+    const state = (await startLogin(fm, query)).searchParams.get('state')!;
+    const location = (await fm.call('GET', `/fm/auth/callback?code=abc&state=${encodeURIComponent(state)}`)).headers.get('Location')!;
+    expect(location.startsWith(site)).toBe(true);
+    return location.slice(site.length);
+  };
+
+  it('is the one asked for with return_path', async () => {
+    expect(await back('?return_path=/hdv')).toMatch(/^\/hdv#session=[0-9a-f]{64}$/);
+    expect(await back('?return_path=/rentabilite?tri=gain')).toMatch(/^\/rentabilite\?tri=gain#session=/);
+    expect(await back(`?return_path=/&return_to=${encodeURIComponent('http://localhost:5173')}`, 'http://localhost:5173')).toMatch(/^\/#session=/);
+  });
+
+  it('is the Forgemagie when none is asked for', async () => {
+    expect(await back('')).toMatch(/^\/forgemagie#session=/);
+  });
+
+  it('is never another address', async () => {
+    const tooLong = `/${'a'.repeat(200)}`;
+    for (const path of ['//evil.test', 'https://evil.test', '/a\\b', '/a:b', 'hdv', tooLong, '/a%0Ab']) {
+      const found = await back(`?return_path=${encodeURIComponent(path)}`);
+      // « /a%0Ab » stays an ordinary path (the line break is encoded); every other one is refused.
+      expect(found).toMatch(path === '/a%0Ab' ? /^\/a%0Ab#session=/ : /^\/forgemagie#session=/);
+    }
+    expect(await back(`?return_path=${encodeURIComponent('/a\nb')}`)).toMatch(/^\/forgemagie#session=/);
+  });
+
+  it('is kept for a failure too', async () => {
+    const fm = createFmWorker();
+    stubDiscord('token-error');
+    const state = (await startLogin(fm, '?return_path=/hdv')).searchParams.get('state')!;
+    const response = await fm.call('GET', `/fm/auth/callback?code=abc&state=${encodeURIComponent(state)}`);
+    expect(response.headers.get('Location')).toBe('https://site.test/hdv#error=login-failed');
   });
 });
 

@@ -11,4 +11,5 @@ export const ROUTES = {
   brisage: '/brisage',
   bonsPlans: '/bons-plans',
   settings: '/parametres',
+  profile: '/profil',
 } as const;

@@ -1,7 +1,10 @@
 // specs/025-rune-purchase-import (research R3): the Forgemagie session token, sent as a bearer token to
 // the Worker's /fm/* routes. Storage can be unavailable (private window, blocked site data): the player
 // is then simply logged out.
-const KEY = 'dofus-craft:fm-session-token';
+// specs/075-connexion-discord-site: the same token now serves the whole site; the key is kept so the sessions
+// opened from the Forgemagie before stay valid.
+export const FM_SESSION_TOKEN_KEY = 'dofus-craft:fm-session-token';
+const KEY = FM_SESSION_TOKEN_KEY;
 
 export function readFmSessionToken(): string | undefined {
   try {

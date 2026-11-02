@@ -40,6 +40,8 @@ export function redirect(location: string): Response {
 }
 
 export const unauthorized = () => json({ error: 'Unauthorized' }, 401);
+// specs/075-connexion-discord-site: logged in, but not a member of the group's Discord server.
+export const forbiddenNotMember = () => json({ error: 'not-member' }, 403);
 
 export async function readJson(request: Request): Promise<unknown> {
   try {
@@ -69,14 +71,17 @@ export function bearerToken(request: Request): string | undefined {
   return header.startsWith('Bearer ') ? header.slice('Bearer '.length).trim() || undefined : undefined;
 }
 
+export type Viewer = { discordUserId: string; isMember: boolean };
+
 // research R3: the site sends its session token as a bearer token; only its SHA-256 is stored.
-export async function requireSession(request: Request, db: FmDb): Promise<string | undefined> {
+// specs/075-connexion-discord-site: the session also says whether its player was a member of the group's server.
+export async function requireSession(request: Request, db: FmDb): Promise<Viewer | undefined> {
   const token = bearerToken(request);
   if (!token) return undefined;
   const row = await db.prepare(
-    'SELECT discord_user_id FROM fm_auth_sessions WHERE token_hash = ? AND expires_at > ?',
-  ).bind(await sha256Hex(token), nowIso()).first<{ discord_user_id: string }>();
-  return row?.discord_user_id;
+    'SELECT discord_user_id, is_member FROM fm_auth_sessions WHERE token_hash = ? AND expires_at > ?',
+  ).bind(await sha256Hex(token), nowIso()).first<{ discord_user_id: string; is_member: number }>();
+  return row ? { discordUserId: row.discord_user_id, isMember: row.is_member === 1 } : undefined;
 }
 
 export type PlayerIdentity = { discordUserId: string; displayName: string; avatarUrl: string | null };

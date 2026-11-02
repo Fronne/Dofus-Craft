@@ -8,6 +8,7 @@ import { NoPageAvailable, PageUnavailable, type PageEntry } from './PageUnavaila
 import { firstEnabledPage, type SiteSettingField } from '../domain/site-settings';
 import { Icon, type IconName } from '../components/Icon';
 import { NavMenu } from './NavMenu';
+import { AccountMenu } from './AccountMenu';
 import { groupKey, layoutNav, type NavGroup } from './nav-layout';
 import { ServerSwitcher } from '../features/server/ServerSwitcher';
 import { PriceModeSwitch } from '../features/settings/PriceModeSwitch';
@@ -38,6 +39,7 @@ const FamilierPage = lazyPage(() => import('../features/pets/FamilierPage').then
 const HdvPage = lazyPage(() => import('../features/hdv/HdvPage').then((m) => ({ default: m.HdvPage })));
 const ForgemagiePage = lazyPage(() => import('../features/forgemagie/ForgemagiePage').then((m) => ({ default: m.ForgemagiePage })));
 const BrisagePage = lazyPage(() => import('../features/brisage/BrisagePage').then((m) => ({ default: m.BrisagePage })));
+const ProfilPage = lazyPage(() => import('../features/account/ProfilPage').then((m) => ({ default: m.ProfilPage })));
 const BonsPlansPage = lazyPage(() => import('../features/good-deals/BonsPlansPage').then((m) => ({ default: m.BonsPlansPage })));
 
 // specs/023-hdv-price-entry (FR-001b): the Accueil page is out of the navigation for now; its code
@@ -77,6 +79,7 @@ const PAGE_TITLES: Record<string, string> = {
   [ROUTES.brisage]: `Brisage — ${SITE_NAME}`,
   [ROUTES.bonsPlans]: `Bons plans de l'HDV — ${SITE_NAME}`,
   [ROUTES.settings]: `Paramètres — ${SITE_NAME}`,
+  [ROUTES.profile]: `Profil — ${SITE_NAME}`,
 };
 
 function NotFoundPage({ entry }: { entry: PageEntry | undefined }) {
@@ -298,6 +301,7 @@ export function AppShell() {
         <div className="app-nav-footer">
           <ServerSwitcher />
           <PriceModeSwitch priceMode={priceMode} setPriceMode={setPriceModeState} />
+          <AccountMenu />
           <NavLink
             to={ROUTES.settings}
             className={({ isActive }) => `icon-button app-nav-settings${isActive ? ' active' : ''}`}
@@ -360,6 +364,8 @@ export function AppShell() {
                 />
               }
             />
+            {/* specs/075-connexion-discord-site: the profile, reached from the account menu (not a page of the navigation). */}
+            <Route path={ROUTES.profile} element={<ProfilPage />} />
             <Route path="*" element={<NotFoundPage entry={entry} />} />
           </Routes>
           </Suspense>

@@ -1,6 +1,6 @@
 import { handleCallback, handleLogin, handleLogout } from './auth';
 import { handleBotEvent } from './bot-events';
-import { json, requireSession, unauthorized, type FmEnv } from './http';
+import { forbiddenNotMember, json, requireSession, unauthorized, type FmEnv } from './http';
 import { handleImport } from './imports';
 import { acknowledgeCommand, listCommands } from './bot-commands';
 import { resendSession, startSession, stopSession } from './site-sessions';
@@ -27,14 +27,18 @@ export async function handleFm(request: Request, url: URL, env: FmEnv): Promise<
   if (method === 'GET' && pathname === '/fm/auth/callback') return handleCallback(url, env);
   if (method === 'POST' && pathname === '/fm/auth/logout') return handleLogout(request, env);
 
-  const viewerId = await requireSession(request, env.DB);
-  if (!viewerId) return unauthorized();
+  const viewer = await requireSession(request, env.DB);
+  if (!viewer) return unauthorized();
+  const viewerId = viewer.discordUserId;
 
+  // specs/075-connexion-discord-site: the profile is for any logged-in player, member of the group's server or not.
   if (pathname === '/fm/me') {
-    if (method === 'GET') return getMe(env.DB, viewerId);
-    if (method === 'PATCH') return patchMe(request, env.DB, viewerId);
+    if (method === 'GET') return getMe(env.DB, viewerId, viewer.isMember);
+    if (method === 'PATCH') return patchMe(request, env.DB, viewerId, viewer.isMember);
     if (method === 'DELETE') return deleteMe(env.DB, viewerId);
   }
+  // Everything below is the group's data: members of its Discord server only.
+  if (!viewer.isMember) return forbiddenNotMember();
   // specs/045-restore-production-worker (contracts/api.md): the séances de FM and the correction of a capture.
   if (method === 'GET' && pathname === '/fm/seances') return listSeances(env.DB, viewerId);
   const seanceMatch = /^\/fm\/seances\/([^/]+)(?:\/(archive|reopen|item))?$/.exec(pathname);

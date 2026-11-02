@@ -56,7 +56,8 @@ function ProfileSettings({ me, updateMe }: { me: FmMe; updateMe: (changes: { isP
   );
 }
 
-function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
+// Also at the end of the site's profile page (specs/075-connexion-discord-site).
+export function DeleteProfile({ onDeleted }: { onDeleted: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<'idle' | 'deleting' | 'failed'>('idle');
 

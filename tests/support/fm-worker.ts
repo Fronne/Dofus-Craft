@@ -27,7 +27,7 @@ export function createFmWorker() {
   }
 
   // A logged-in player, as the Discord callback would leave them.
-  async function login(discordUserId: string, player: { displayName?: string; serverId?: string | null; isPrivate?: boolean } = {}) {
+  async function login(discordUserId: string, player: { displayName?: string; serverId?: string | null; isPrivate?: boolean; isMember?: boolean } = {}) {
     test.sqlite.prepare(
       `INSERT INTO fm_players (discord_user_id, display_name, avatar_url, server_id, is_private, first_login_at, created_at)
        VALUES (?, ?, NULL, ?, ?, ?, ?)
@@ -35,8 +35,8 @@ export function createFmWorker() {
     ).run(discordUserId, player.displayName ?? `Joueur ${discordUserId}`, player.serverId === undefined ? 'mikhal' : player.serverId,
       player.isPrivate ? 1 : 0, '2026-09-30T10:00:00.000Z', '2026-09-30T10:00:00.000Z');
     const token = `token-${discordUserId}`;
-    test.sqlite.prepare('INSERT OR REPLACE INTO fm_auth_sessions (token_hash, discord_user_id, expires_at) VALUES (?, ?, ?)')
-      .run(await sha256Hex(token), discordUserId, new Date(Date.now() + 86_400_000).toISOString());
+    test.sqlite.prepare('INSERT OR REPLACE INTO fm_auth_sessions (token_hash, discord_user_id, expires_at, is_member) VALUES (?, ?, ?, ?)')
+      .run(await sha256Hex(token), discordUserId, new Date(Date.now() + 86_400_000).toISOString(), player.isMember === false ? 0 : 1);
     return token;
   }
 

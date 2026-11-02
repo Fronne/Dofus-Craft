@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from './AppShell';
+import { AuthProvider } from './AuthContext';
 import { ServerOnboarding } from '../features/server/ServerOnboarding';
 import { ServerProvider, useActiveServer } from './ServerContext';
 import { preloadCatalogueIndexes } from '../data/catalogue-repository';
@@ -38,7 +39,9 @@ function AppContent() {
 
   return (
     <BrowserRouter>
-      <AppShell />
+      <AuthProvider>
+        <AppShell />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

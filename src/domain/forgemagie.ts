@@ -232,6 +232,10 @@ export type FmMe = {
   firstLoginAt: string | null;
   /** specs/049: the name of the group's Discord server, read at login. */
   guildName?: string | null;
+  /** specs/075-connexion-discord-site: the class icon the player chose (an id of `BREEDS`), if any. */
+  breedId: number | null;
+  /** specs/075: member of the group's Discord server when this session was opened — the Forgemagie needs it. */
+  isMember: boolean;
 };
 
 /** specs/049: the name of the players' tab — the group's Discord server, when it is known. */
@@ -343,13 +347,16 @@ export function formatFmDate(iso: string): string {
   return Number.isNaN(date.getTime()) ? '—' : sessionDateFormatter.format(date);
 }
 
+/** specs/075-connexion-discord-site: why a login did not end in a session — a refusal on Discord, or a failure. */
+export type LoginError = 'login-failed' | 'cancelled';
+
 /** Reads `#session=…` or `#error=…`, left in the address by the Worker after the Discord login. */
-export function parseLoginFragment(hash: string): { token?: string; error?: 'not-member' | 'login-failed' } {
+export function parseLoginFragment(hash: string): { token?: string; error?: LoginError } {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const token = params.get('session');
   if (token && /^[0-9a-f]{64}$/.test(token)) return { token };
   const error = params.get('error');
-  if (error === 'not-member') return { error };
+  if (error === 'cancelled') return { error };
   if (error) return { error: 'login-failed' };
   return {};
 }

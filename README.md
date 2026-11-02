@@ -49,8 +49,12 @@ Elle est faite pour un petit groupe fermé de joueurs, qui partagent leurs prix 
   le prix de l'objet (HDV ou chaîne de craft). Le bouton « Modifier le prix des ressources » ouvre un atelier qui
   liste les ressources de la recette, sous-recettes comprises, pour corriger leurs prix sans quitter
   la page ; ce sont les mêmes prix que sur Recherche.
-- **Page Forgemagie** : réservée aux membres du serveur Discord du groupe, qui s'y connectent avec
-  leur compte Discord (le reste du site reste sans compte).
+- **Connexion Discord** : un bouton « Se connecter avec Discord » dans la barre de navigation, sans mot de
+  passe et ouvert à tout compte Discord. Une fois connecté, le pseudo et l'avatar Discord s'affichent
+  dans la barre, avec un menu (« Mon profil », « Se déconnecter »). La page `/profil` permet de choisir
+  l'icône de sa classe et de supprimer son profil. Le reste du site reste utilisable sans compte.
+- **Page Forgemagie** : réservée aux membres du serveur Discord du groupe. Un joueur connecté qui n'en
+  fait pas partie voit une explication à la place de la page.
   - Chaque joueur y retrouve ses **séances de FM** : un salon Discord privé créé par le bot (bouton
     « Nouvelle séance de FM », dans Discord ou sur le site), 5 non archivées au plus, avec l'objet
     forgemagé s'il l'a choisi. Une séance est en cours, en pause ou archivée.

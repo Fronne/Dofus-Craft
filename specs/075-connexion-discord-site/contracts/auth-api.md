@@ -9,7 +9,8 @@ Paramètres de requête (tous facultatifs) :
 
 - `return_path` — chemin du site où revenir, ex. `/hdv`. Valide si : commence par `/`, ne commence
   pas par `//`, ne contient ni `\`, ni retour à la ligne, ni `:`, longueur ≤ 200. Sinon traité comme
-  `/`.
+  le chemin par défaut. Sans `return_path`, le retour se fait sur `/forgemagie` (comportement d'avant la
+  généralisation : un site déjà chargé dans un navigateur continue de fonctionner).
 - `return_to` — origine d'un site local (`http://localhost…`), comportement existant.
 
 Réponse : 302 vers `https://discord.com/oauth2/authorize` (scopes inchangés :

@@ -34,9 +34,14 @@ export type IconName =
   | 'hammer'
   | 'user'
   | 'image'
-  | 'clock';
+  | 'clock'
+  | 'log-out';
 
 const paths: Record<IconName, { filled?: boolean; children: string }> = {
+  // A door and an arrow going out, for the logout of the account menu (specs/075).
+  'log-out': {
+    children: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  },
   clock: {
     children: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
   },

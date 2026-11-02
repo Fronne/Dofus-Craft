@@ -17,11 +17,12 @@ vi.mock('../../src/services/visit-api', () => ({ recordVisit: vi.fn() }));
 vi.mock('../../src/app/ServerContext', () => ({ useActiveServer: () => ({ serverId: 'mikhal' }) }));
 
 import { AppShell } from '../../src/app/AppShell';
+import { AuthProvider } from '../../src/app/AuthContext';
 
 function open(path: string) {
   render(
     <MemoryRouter initialEntries={[path]}>
-      <AppShell />
+      <AuthProvider><AppShell /></AuthProvider>
     </MemoryRouter>,
   );
   return screen.getByRole('navigation', { name: 'Navigation principale' });
@@ -43,7 +44,8 @@ describe('navigation principale (specs/051)', () => {
   });
   afterEach(cleanup);
 
-  it('lists the pages, then the active server, Paramètres and the theme toggle', async () => {
+  // specs/075-connexion-discord-site: « Se connecter avec Discord » joins the right end of the bar, before Paramètres.
+  it('lists the pages, then the active server, the Discord login, Paramètres and the theme toggle', async () => {
     getSiteSettings.mockResolvedValue({ ...ALL_PAGES, forgemagiePage: true, hdvPage: true });
     const nav = open('/');
     await within(nav).findByRole('button', { name: 'Outils' });
@@ -53,6 +55,7 @@ describe('navigation principale (specs/051)', () => {
       'Recherche', 'Suivis', 'Rentabilité', 'HDV', 'Outils',
       'Serveur actif Mikhal',
       'Communauté, prix partagés avec le groupe', 'Perso, prix gardés sur cet appareil',
+      'Se connecter avec Discord',
       'Paramètres', 'Activer le thème clair',
     ]);
   });

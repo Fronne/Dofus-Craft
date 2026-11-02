@@ -27,7 +27,7 @@ const fm = vi.hoisted(() => ({
   getFmPlayers: vi.fn(),
   getFmPlayer: vi.fn(),
 }));
-vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: () => 'https://api.test/fm/auth/login' }));
+vi.mock('../../src/services/fm-api', () => ({ ...fm, fmLoginUrl: (returnPath?: string) => `https://api.test/fm/auth/login?return_path=${returnPath ?? ''}` }));
 
 const readCapture = vi.hoisted(() => vi.fn());
 vi.mock('../../src/services/capture-ocr', async (importOriginal) => ({
@@ -67,7 +67,7 @@ import { readFmSessionToken, writeFmSessionToken } from '../../src/persistence/f
 const TOKEN = 'a'.repeat(64);
 const me: FmMe = {
   discordUserId: '42', displayName: 'Cyril', avatarUrl: null, serverId: 'mikhal', isPrivate: false, firstLoginAt: '2026-09-30T10:00:00.000Z',
-  guildName: 'Les Forgemages',
+  guildName: 'Les Forgemages', breedId: null, isMember: true,
 };
 const cyril = { discordUserId: '42', displayName: 'Cyril', avatarUrl: null, private: false };
 const rtograf = { id: 'i1', name: 'Rtograf PA', itemName: 'Anneau Rtograf', label: 'Rtograf PA', imageUrl: null };
@@ -184,15 +184,33 @@ describe('Forgemagie page — login (US1)', () => {
     await openForgemagie();
     expect(screen.getByText('Tes séances de FM, leurs sessions et ce qu\'elles ont coûté.')).toBeInTheDocument();
     expect(screen.getByText(/Connecte-toi avec ton compte Discord pour retrouver tes séances de FM et ce qu'elles ont coûté\./)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Se connecter avec Discord' })).toHaveAttribute('href', 'https://api.test/fm/auth/login');
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Se connecter avec Discord' })).toHaveAttribute('href', 'https://api.test/fm/auth/login?return_path=/forgemagie');
     expect(screen.getByText(/Discord te demandera aussi l'accès à la liste de tes serveurs : seul le nom de celui du groupe y est lu\./)).toBeInTheDocument();
     expect(fm.getFmMe).not.toHaveBeenCalled();
   });
 
+  // specs/075-connexion-discord-site: a refusal or a failure is told in the bar, on any page.
   it('explains a refused login and removes it from the address', async () => {
-    await openForgemagie('/forgemagie#error=not-member');
-    expect(screen.getByRole('alert')).toHaveTextContent('réservée aux membres du serveur Discord du groupe');
+    await openForgemagie('/forgemagie#error=cancelled');
+    expect(screen.getByRole('alert')).toHaveTextContent('Connexion annulée');
     expect(window.location.hash).toBe('');
+  });
+
+  it('explains a failed login', async () => {
+    await openForgemagie('/forgemagie#error=login-failed');
+    expect(screen.getByRole('alert')).toHaveTextContent('La connexion a échoué');
+  });
+
+  it('tells a logged-in player who is not a member that the page is closed to them, calling none of its routes', async () => {
+    fm.getFmMe.mockResolvedValue(ok({ ...me, isMember: false }));
+    writeFmSessionToken(TOKEN);
+    await openForgemagie();
+    expect(await screen.findByText('Page réservée aux membres du serveur Discord')).toBeInTheDocument();
+    expect(screen.getByText(/« Les Forgemages ». Tu es connecté avec ton compte Discord, mais tu n'en fais pas partie\./)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Voir mon profil' })).toHaveAttribute('href', '/profil');
+    expect(screen.queryByRole('tab', { name: 'Séances de FM' })).not.toBeInTheDocument();
+    expect(fm.getFmSeances).not.toHaveBeenCalled();
+    expect(fm.getFmPlayers).not.toHaveBeenCalled();
   });
 
   it('keeps the session given back by Discord, removes it from the address and shows the player', async () => {
@@ -227,18 +245,21 @@ describe('Forgemagie page — login (US1)', () => {
   it('goes back to the login screen after logging out', async () => {
     await openSeances();
     fireEvent.click(await screen.findByRole('button', { name: 'Se déconnecter' }));
-    await screen.findByRole('link', { name: 'Se connecter avec Discord' });
+    await within(screen.getByRole('main')).findByRole('link', { name: 'Se connecter avec Discord' });
     expect(fm.logoutFm).toHaveBeenCalled();
     expect(readFmSessionToken()).toBeUndefined();
   });
 
-  it('never calls the Forgemagie routes from another page', async () => {
+  // specs/075-connexion-discord-site: the profile is read on every page (the bar shows the player), but the
+  // Forgemagie's own routes are called from its page only.
+  it('reads only the profile, never the Forgemagie routes, from another page', async () => {
     writeFmSessionToken(TOKEN);
     window.history.replaceState(null, '', '/');
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Mikhal' }));
     await screen.findByRole('button', { name: 'Outils' });
-    Object.values(fm).forEach((mock) => expect(mock).not.toHaveBeenCalled());
+    await screen.findByRole('button', { name: 'Compte de Cyril' });
+    Object.entries(fm).filter(([name]) => name !== 'getFmMe').forEach(([, mock]) => expect(mock).not.toHaveBeenCalled());
   });
 
   it('offers to retry when the service does not answer', async () => {
@@ -296,7 +317,7 @@ describe('Forgemagie page — séances de FM (US1)', () => {
   it('goes back to the login screen when the session expired', async () => {
     fm.getFmSeances.mockResolvedValue({ status: 'unauthorized' });
     await openSeances();
-    await screen.findByRole('link', { name: 'Se connecter avec Discord' });
+    await within(screen.getByRole('main')).findByRole('link', { name: 'Se connecter avec Discord' });
   });
 
   it('opens a séance: its figures, what was bought and its sessions', async () => {
@@ -872,7 +893,7 @@ describe('Forgemagie page — profile (US5)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer mon profil' }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Supprimer définitivement' }));
-    await screen.findByRole('link', { name: 'Se connecter avec Discord' });
+    await within(screen.getByRole('main')).findByRole('link', { name: 'Se connecter avec Discord' });
     expect(fm.deleteFmMe).toHaveBeenCalledTimes(1);
     expect(readFmSessionToken()).toBeUndefined();
   });

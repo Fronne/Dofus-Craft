@@ -17,11 +17,12 @@ vi.mock('../../src/services/visit-api', () => ({ recordVisit: vi.fn() }));
 vi.mock('../../src/app/ServerContext', () => ({ useActiveServer: () => ({ serverId: 'mikhal' }) }));
 
 import { AppShell } from '../../src/app/AppShell';
+import { AuthProvider } from '../../src/app/AuthContext';
 
 function open(path: string) {
   render(
     <MemoryRouter initialEntries={[path]}>
-      <AppShell />
+      <AuthProvider><AppShell /></AuthProvider>
     </MemoryRouter>,
   );
 }

@@ -1,14 +1,17 @@
+import { isKnownBreedId } from './breeds';
 import { isRecord, json, noContent, readJson, type FmDb } from './http';
 
 // specs/025-rune-purchase-import (contracts/fm-site-api.md): the logged-in player's own profile.
+// specs/075-connexion-discord-site: shared by the whole site — it also carries the class icon and whether
+// the session's player is a member of the group's Discord server.
 
-type MeRow = { discord_user_id: string; display_name: string; avatar_url: string | null; server_id: string | null; is_private: number; first_login_at: string | null; guild_name: string | null };
+type MeRow = { discord_user_id: string; display_name: string; avatar_url: string | null; server_id: string | null; is_private: number; first_login_at: string | null; breed_id: number | null; guild_name: string | null };
 
 const MAX_SERVER_ID_LENGTH = 64;
 
-async function readMe(db: FmDb, discordUserId: string) {
+async function readMe(db: FmDb, discordUserId: string, isMember: boolean) {
   const row = await db.prepare(
-    `SELECT discord_user_id, display_name, avatar_url, server_id, is_private, first_login_at,
+    `SELECT discord_user_id, display_name, avatar_url, server_id, is_private, first_login_at, breed_id,
             (SELECT name FROM fm_guild WHERE id = 'current') AS guild_name
      FROM fm_players WHERE discord_user_id = ?`,
   ).bind(discordUserId).first<MeRow>();
@@ -21,28 +24,32 @@ async function readMe(db: FmDb, discordUserId: string) {
     isPrivate: row.is_private === 1,
     firstLoginAt: row.first_login_at,
     guildName: row.guild_name,
+    breedId: row.breed_id,
+    isMember,
   };
 }
 
-export async function getMe(db: FmDb, discordUserId: string): Promise<Response> {
-  const me = await readMe(db, discordUserId);
+export async function getMe(db: FmDb, discordUserId: string, isMember: boolean): Promise<Response> {
+  const me = await readMe(db, discordUserId, isMember);
   return me ? json(me) : json({ error: 'Not found' }, 404);
 }
 
-// { serverId?, isPrivate? } — the server the bot's purchases are filed under (FR-005) and the
-// visibility (FR-006).
-export async function patchMe(request: Request, db: FmDb, discordUserId: string): Promise<Response> {
+// { serverId?, isPrivate?, breedId? } — the server the bot's purchases are filed under (FR-005), the
+// visibility (FR-006) and the class icon (specs/075: a known class id, or null to remove it).
+export async function patchMe(request: Request, db: FmDb, discordUserId: string, isMember: boolean): Promise<Response> {
   const body = await readJson(request);
   if (!isRecord(body)) return json({ error: 'Invalid JSON body' }, 400);
-  const { serverId, isPrivate } = body;
+  const { serverId, isPrivate, breedId } = body;
   const validServer = serverId === undefined || (typeof serverId === 'string' && serverId.trim() !== '' && serverId.length <= MAX_SERVER_ID_LENGTH);
   const validPrivacy = isPrivate === undefined || typeof isPrivate === 'boolean';
-  if (!validServer || !validPrivacy || (serverId === undefined && isPrivate === undefined)) {
-    return json({ error: 'serverId (a non-empty string) or isPrivate (a boolean) is required' }, 400);
+  const validBreed = breedId === undefined || breedId === null || isKnownBreedId(breedId);
+  if (!validServer || !validPrivacy || !validBreed || (serverId === undefined && isPrivate === undefined && breedId === undefined)) {
+    return json({ error: 'serverId (a non-empty string), isPrivate (a boolean) or breedId (a class id, or null) is required' }, 400);
   }
   if (serverId !== undefined) await db.prepare('UPDATE fm_players SET server_id = ? WHERE discord_user_id = ?').bind(serverId, discordUserId).run();
   if (isPrivate !== undefined) await db.prepare('UPDATE fm_players SET is_private = ? WHERE discord_user_id = ?').bind(isPrivate ? 1 : 0, discordUserId).run();
-  return getMe(db, discordUserId);
+  if (breedId !== undefined) await db.prepare('UPDATE fm_players SET breed_id = ? WHERE discord_user_id = ?').bind(breedId, discordUserId).run();
+  return getMe(db, discordUserId, isMember);
 }
 
 // FR-007: everything about the player, in one transaction. Session totals are computed at read time,

@@ -113,6 +113,8 @@ CREATE TABLE IF NOT EXISTS fm_players (
   server_id TEXT,
   is_private INTEGER NOT NULL DEFAULT 0 CHECK (is_private IN (0, 1)),
   first_login_at TEXT,
+  -- specs/075-connexion-discord-site: the class icon the player chose (an id of src/domain/breeds.ts); NULL = none.
+  breed_id INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
@@ -121,6 +123,8 @@ CREATE TABLE IF NOT EXISTS fm_auth_sessions (
   token_hash TEXT PRIMARY KEY,
   discord_user_id TEXT NOT NULL REFERENCES fm_players (discord_user_id),
   expires_at TEXT NOT NULL,
+  -- specs/075-connexion-discord-site: member of the group's Discord server when this login was made.
+  is_member INTEGER NOT NULL DEFAULT 1 CHECK (is_member IN (0, 1)),
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 

@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { tabOnKey } from '../../components/tab-keys';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon, type IconName } from '../../components/Icon';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../../app/router';
 import { groupTabLabel } from '../../domain/forgemagie';
 import type { PriceMode } from '../../domain/price-modes';
-import { fmLoginUrl } from '../../services/fm-api';
 import { PlayerBadge } from './PlayerBadge';
 import { PlayersTab } from './PlayersTab';
 import { ProfileTab } from './ProfileTab';
@@ -16,6 +17,8 @@ import { useFmAuth } from './useFmAuth';
 // (FR-001, FR-002). The rest of the site stays anonymous (FR-003).
 // specs/049-fm-seances: the page is about séances de FM — one's own, then what forgemagie cost the
 // players of the group, then one's profile.
+// specs/075-connexion-discord-site: anyone can log in on the site; this page is what asks for the membership, and
+// tells a logged-in player who is not a member why it is closed to them.
 
 type FmTab = 'seances' | 'players' | 'profile';
 
@@ -24,11 +27,6 @@ const TABS: { id: FmTab; icon: IconName }[] = [
   { id: 'players', icon: 'users' },
   { id: 'profile', icon: 'user' },
 ];
-
-const LOGIN_ERRORS = {
-  'not-member': 'La page Forgemagie est réservée aux membres du serveur Discord du groupe.',
-  'login-failed': 'La connexion a échoué, réessaie.',
-};
 
 export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
   const auth = useFmAuth();
@@ -64,8 +62,7 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
               Connecte-toi avec ton compte Discord pour retrouver tes séances de FM et ce qu'elles ont coûté. Le prix des
               runes est dans la page HDV, onglet Runes.
             </p>
-            {auth.loginError && <p className="fm-error" role="alert">{LOGIN_ERRORS[auth.loginError]}</p>}
-            <a className="btn btn-primary" href={fmLoginUrl()}>Se connecter avec Discord</a>
+            <a className="btn btn-primary" href={auth.loginUrl('/forgemagie')}>Se connecter avec Discord</a>
             <p className="fm-note">
               Seuls ton identifiant, ton pseudo et ton avatar Discord sont gardés. Discord te demandera aussi l'accès à la
               liste de tes serveurs : seul le nom de celui du groupe y est lu.
@@ -73,7 +70,19 @@ export function ForgemagiePage({ priceMode }: { priceMode: PriceMode }) {
           </div>
         )}
 
-        {auth.status === 'connected' && auth.me && (
+        {auth.status === 'connected' && auth.me && !auth.me.isMember && (
+          <div className="fm-login">
+            <EmptyState
+              icon="users"
+              title="Page réservée aux membres du serveur Discord"
+              description={`La page Forgemagie est réservée aux membres du serveur Discord ${auth.me.guildName ? `« ${auth.me.guildName} »` : 'du groupe'}. Tu es connecté avec ton compte Discord, mais tu n'en fais pas partie.`}
+            >
+              <Link to={ROUTES.profile} className="btn btn-secondary">Voir mon profil</Link>
+            </EmptyState>
+          </div>
+        )}
+
+        {auth.status === 'connected' && auth.me?.isMember && (
           <>
             <div className="fm-account">
               <PlayerBadge player={{ discordUserId: auth.me.discordUserId, displayName: auth.me.displayName, avatarUrl: auth.me.avatarUrl, private: auth.me.isPrivate }} />
