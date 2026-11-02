@@ -47,7 +47,7 @@ Un utilisateur connecté dont le profil est réglé sur « privé » (réglage e
 
 ### User Story 3 - Mes contributions dans Mon profil (Priorité : P2)
 
-La page Mon profil contient une section « Mes contributions » : le nombre de prix que l'utilisateur a saisis (au total et sur la période de conservation des prix), et la liste de ses derniers prix (nom de la ressource ou de l'objet, serveur, montant, date). Cela lui permet de retrouver ce qu'il a saisi.
+La page Mon profil contient une section « Mes contributions » : le nombre de prix que l'utilisateur a saisis et qui sont encore conservés (les prix sont supprimés après 90 jours), et la liste de ses derniers prix (nom de la ressource ou de l'objet, serveur, montant, date). Cela lui permet de retrouver ce qu'il a saisi.
 
 **Pourquoi cette priorité** : c'est un retour direct pour l'utilisateur, utile mais non indispensable pour la valeur principale (US1).
 
